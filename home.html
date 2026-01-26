@@ -16,6 +16,9 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #333;
+            background: #1a1a1a;
+            margin: 0;
+            padding: 0;
         }
 
         /* Header & Navigation */
@@ -27,11 +30,14 @@
             top: 0;
             z-index: 1000;
             transition: all 0.3s ease;
+            border: none;
+            box-shadow: none;
         }
 
         header.scrolled {
             background: rgba(26, 26, 26, 0.95);
             backdrop-filter: blur(10px);
+            border: none;
         }
 
         nav {
@@ -41,6 +47,7 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 2rem;
+            border: none;
         }
 
         .logo {
@@ -105,8 +112,9 @@
         }
 
         .login-button:hover {
-            background: white;
-            color: #333;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            border-color: #ff6b35;
             transform: translateY(-2px);
         }
 
@@ -117,6 +125,135 @@
             color: white;
             font-size: 1.5rem;
             cursor: pointer;
+            z-index: 1002;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu:hover {
+            color: #ff6b35;
+            transform: scale(1.1);
+        }
+
+        .mobile-nav-sidebar {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 300px;
+            height: 100vh;
+            background: rgba(26, 26, 26, 0.98);
+            backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            z-index: 1001;
+            transition: right 0.3s ease;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .mobile-nav-sidebar.active {
+            right: 0;
+        }
+
+        .mobile-nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mobile-nav-logo {
+            color: #ff6b35;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .mobile-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ff6b35;
+        }
+
+        .mobile-nav-links {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .mobile-nav-links li {
+            margin: 1rem 0;
+        }
+
+        .mobile-nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-nav-links a:hover {
+            background: rgba(255, 107, 53, 0.1);
+            color: #ff6b35;
+            transform: translateX(5px);
+        }
+
+        .mobile-nav-buttons {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .mobile-login-btn {
+            background: transparent;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: 2px solid white;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-login-btn:hover {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            border-color: #ff6b35;
+        }
+
+        .nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .nav-overlay.active {
+            opacity: 1;
+            visibility: visible;
         }
 
         .nav-buttons {
@@ -134,7 +271,8 @@
             justify-content: center;
             text-align: center;
             color: white;
-            margin-top: 80px;
+            padding-top: 80px;
+            margin-top: 0;
         }
 
         .hero-content h1 {
@@ -631,6 +769,36 @@
             color: #888;
         }
 
+        /* Tablet Responsive */
+        @media (max-width: 1024px) {
+            nav {
+                padding: 0 1.5rem;
+            }
+
+            .nav-buttons {
+                gap: 0.5rem;
+            }
+
+            .login-button, .cta-button {
+                padding: 0.7rem 1.2rem;
+                font-size: 0.95rem;
+            }
+
+            header {
+                border-bottom: none;
+                box-shadow: none;
+            }
+
+            header.scrolled {
+                border-bottom: none;
+                box-shadow: none;
+            }
+
+            .hero {
+                padding-top: 70px;
+            }
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .nav-links {
@@ -641,13 +809,12 @@
                 display: block;
             }
 
-            .nav-buttons {
-                gap: 0.25rem;
+            .login-button {
+                display: none;
             }
 
-            .login-button, .cta-button {
-                padding: 0.6rem 1rem;
-                font-size: 0.9rem;
+            .nav-buttons {
+                gap: 0;
             }
 
             .hero-content h1 {
@@ -741,7 +908,6 @@
             </ul>
             <div class="nav-buttons">
                 <a href="login.html" class="login-button">Login</a>
-                <a href="#membership" class="cta-button">Join Now</a>
             </div>
             <button class="mobile-menu" id="mobile-menu">
                 <i class="fas fa-bars"></i>
@@ -1148,7 +1314,60 @@
 
         // Mobile menu toggle (basic functionality)
         document.getElementById('mobile-menu').addEventListener('click', () => {
-            alert('Mobile menu would open here. Implement responsive navigation as needed.');
+            // Create mobile sidebar if it doesn't exist
+            let mobileSidebar = document.querySelector('.mobile-nav-sidebar');
+            let navOverlay = document.querySelector('.nav-overlay');
+            
+            if (!mobileSidebar) {
+                // Create mobile sidebar
+                mobileSidebar = document.createElement('div');
+                mobileSidebar.className = 'mobile-nav-sidebar';
+                mobileSidebar.innerHTML = `
+                    <div class="mobile-nav-header">
+                        <div class="mobile-nav-logo">FITNESS GURU</div>
+                        <button class="mobile-close">&times;</button>
+                    </div>
+                    <ul class="mobile-nav-links">
+                        <li><a href="#home"><i class="fas fa-home"></i> Home</a></li>
+                        <li><a href="#about"><i class="fas fa-info-circle"></i> About</a></li>
+                        <li><a href="#membership"><i class="fas fa-credit-card"></i> Membership</a></li>
+                        <li><a href="#contact"><i class="fas fa-envelope"></i> Contact</a></li>
+                    </ul>
+                    <div class="mobile-nav-buttons">
+                        <a href="login.html" class="mobile-login-btn">Login</a>
+                    </div>
+                `;
+                
+                // Create overlay
+                navOverlay = document.createElement('div');
+                navOverlay.className = 'nav-overlay';
+                
+                // Append to body
+                document.body.appendChild(mobileSidebar);
+                document.body.appendChild(navOverlay);
+                
+                const mobileCloseBtn = mobileSidebar.querySelector('.mobile-close');
+                
+                // Close sidebar function
+                const closeSidebar = () => {
+                    mobileSidebar.classList.remove('active');
+                    navOverlay.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                };
+                
+                mobileCloseBtn.addEventListener('click', closeSidebar);
+                navOverlay.addEventListener('click', closeSidebar);
+                
+                // Close sidebar when clicking on navigation links
+                mobileSidebar.querySelectorAll('.mobile-nav-links a').forEach(link => {
+                    link.addEventListener('click', closeSidebar);
+                });
+            }
+            
+            // Open sidebar
+            mobileSidebar.classList.add('active');
+            navOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
         });
 
         // Add some interactive effects to membership cards
