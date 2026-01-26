@@ -12,21 +12,28 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e 50%, #533483 75%, #7209b7 100%);
             min-height: 100vh;
             display: flex;
+            position: relative;
+            overflow-x: hidden;
         }
 
         /* Sidebar Styles */
         .sidebar {
             width: 350px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
+            background: rgba(15, 15, 35, 0.95);
+            backdrop-filter: blur(25px);
             padding: 2rem 0;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
             position: fixed;
             height: 100vh;
             left: 0;
@@ -85,22 +92,22 @@
             gap: 1rem;
             padding: 1rem 1.5rem;
             text-decoration: none;
-            color: #6c757d;
+            color: #94a3b8;
             border-radius: 10px;
             transition: all 0.3s ease;
             font-weight: 500;
         }
 
         .nav-link:hover {
-            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(247, 147, 30, 0.1));
-            color: #ff6b35;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(6, 182, 212, 0.2));
+            color: #06b6d4;
             transform: translateX(5px);
         }
 
         .nav-link.active {
-            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            background: linear-gradient(135deg, #8b5cf6, #06b6d4);
             color: white;
-            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
         }
 
         .nav-link i {
@@ -141,33 +148,41 @@
             padding: 2rem;
             flex: 1;
             position: relative;
+            width: calc(100% - 350px);
+            max-width: calc(100vw - 350px);
+            overflow-x: hidden;
         }
 
         /* Top Right Avatar */
         .top-avatar {
             position: fixed;
-            top: 2rem;
-            right: 2rem;
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            top: 1rem;
+            right: 1rem;
+            width: 60px;
+            height: 60px;
+            background: transparent;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1.2rem;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             z-index: 999;
             transition: all 0.3s ease;
-            border: 3px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .top-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
 
         .top-avatar:hover {
             transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .avatar-dropdown {
@@ -241,13 +256,18 @@
         .page-title {
             font-size: 2rem;
             font-weight: 800;
-            color: white;
+            background: linear-gradient(135deg, #ffffff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 0.5rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .page-subtitle {
-            color: rgba(255, 255, 255, 0.8);
+            color: #cbd5e1;
             font-size: 1.1rem;
+            font-weight: 400;
         }
 
         /* Profile Section */
@@ -259,16 +279,34 @@
         }
 
         .info-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
+            background: rgba(15, 15, 35, 0.8);
+            backdrop-filter: blur(25px);
             padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #ff0080, #7928ca, #06b6d4, #10b981);
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 32px 64px -12px rgba(0, 0, 0, 0.6);
         }
 
         .info-card h3 {
-            color: #333;
+            color: #ffffff;
             font-size: 1.3rem;
             font-weight: 700;
             margin-bottom: 1.5rem;
@@ -287,12 +325,12 @@
         }
 
         .info-label {
-            color: #6c757d;
+            color: #94a3b8;
             font-weight: 500;
         }
 
         .info-value {
-            color: #333;
+            color: #ffffff;
             font-weight: 600;
         }
 
@@ -312,18 +350,18 @@
         }
 
         .status-text {
-            color: #333;
+            color: #ffffff;
             font-weight: 500;
         }
 
         .enrollment-message {
-            color: #6c757d;
+            color: #94a3b8;
             margin-bottom: 1.5rem;
             line-height: 1.6;
         }
 
         .btn-enroll {
-            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            background: linear-gradient(135deg, #ff0080, #7928ca);
             color: white;
             border: none;
             padding: 0.75rem 1.5rem;
@@ -335,17 +373,17 @@
 
         .btn-enroll:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            box-shadow: 0 4px 15px rgba(255, 0, 128, 0.4);
         }
 
         /* Attendance Section */
         .attendance-section {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
+            background: rgba(15, 15, 35, 0.8);
+            backdrop-filter: blur(25px);
             padding: 2rem;
             border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .attendance-filters {
@@ -362,7 +400,7 @@
         }
 
         .filter-label {
-            color: #333;
+            color: #ffffff;
             font-weight: 500;
             font-size: 0.9rem;
         }
@@ -370,10 +408,10 @@
         .filter-input,
         .filter-select {
             padding: 0.75rem;
-            border: 2px solid #e9ecef;
+            border: 2px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
-            background: white;
-            color: #333;
+            background: rgba(15, 15, 35, 0.7);
+            color: #ffffff;
             font-size: 0.9rem;
             transition: all 0.3s ease;
         }
@@ -381,12 +419,12 @@
         .filter-input:focus,
         .filter-select:focus {
             outline: none;
-            border-color: #ff6b35;
-            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
         }
 
         .btn-apply {
-            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            background: linear-gradient(135deg, #06b6d4, #10b981);
             color: white;
             border: none;
             padding: 0.75rem 2rem;
@@ -399,12 +437,20 @@
 
         .btn-apply:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
         }
 
         /* Attendance Table */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            background: rgba(15, 15, 35, 0.6);
+        }
+
         .attendance-table {
             width: 100%;
+            min-width: 600px;
             border-collapse: collapse;
             margin-top: 1rem;
         }
@@ -417,8 +463,8 @@
         }
 
         .attendance-table th {
-            background: rgba(255, 107, 53, 0.1);
-            color: #333;
+            background: rgba(139, 92, 246, 0.2);
+            color: #ffffff;
             font-weight: 600;
             font-size: 0.9rem;
             text-transform: uppercase;
@@ -426,11 +472,11 @@
         }
 
         .attendance-table td {
-            color: #333;
+            color: #ffffff;
         }
 
         .attendance-table tr:hover {
-            background: rgba(255, 107, 53, 0.05);
+            background: rgba(139, 92, 246, 0.1);
         }
 
         .status-badge {
@@ -457,15 +503,22 @@
             top: 1rem;
             left: 1rem;
             z-index: 1001;
-            background: rgba(255, 255, 255, 0.9);
-            border: none;
-            border-radius: 50%;
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
             width: 50px;
             height: 50px;
-            cursor: pointer;
-            color: #ff6b35;
+            border-radius: 12px;
             font-size: 1.2rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
         }
 
         @media (max-width: 768px) {
@@ -481,6 +534,8 @@
             .main-content {
                 margin-left: 0;
                 padding: 1rem;
+                width: 100%;
+                max-width: 100vw;
             }
 
             .mobile-menu-toggle {
@@ -501,11 +556,31 @@
 
             .attendance-table {
                 font-size: 0.8rem;
+                min-width: auto;
             }
 
             .attendance-table th,
             .attendance-table td {
+                padding: 0.5rem 0.25rem;
+                font-size: 0.75rem;
+                white-space: nowrap;
+            }
+
+            .table-wrapper {
+                margin: -0.5rem;
                 padding: 0.5rem;
+            }
+
+            .info-card {
+                padding: 1.5rem;
+            }
+
+            .top-avatar {
+                top: 1rem;
+                right: 1rem;
+                width: 45px;
+                height: 45px;
+                font-size: 1rem;
             }
         }
     </style>
@@ -558,7 +633,7 @@
     <div class="main-content">
         <!-- Top Right Avatar -->
         <div class="top-avatar">
-            JD
+            <img src="avatar.png" alt="User Avatar">
             <div class="avatar-dropdown">
                 <div class="avatar-info">
                     <div class="avatar-name">John Doe</div>
@@ -675,7 +750,8 @@
             </div>
 
             <!-- Attendance Table -->
-            <table class="attendance-table">
+            <div class="table-wrapper">
+                <table class="attendance-table">
                 <thead>
                     <tr>
                         <th>Date</th>
