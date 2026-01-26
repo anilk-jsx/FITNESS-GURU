@@ -129,6 +129,98 @@
             margin-left: 280px;
             padding: 2rem;
             flex: 1;
+            position: relative;
+        }
+
+        /* Top Right Avatar */
+        .top-avatar {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            z-index: 999;
+            transition: all 0.3s ease;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .top-avatar:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+        }
+
+        .avatar-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .top-avatar:hover .avatar-dropdown {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .avatar-info {
+            text-align: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .avatar-name {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+
+        .avatar-email {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .avatar-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .avatar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            text-decoration: none;
+            color: #6c757d;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .avatar-link:hover {
+            background: rgba(255, 107, 53, 0.1);
+            color: #ff6b35;
         }
 
         .page-header {
@@ -453,6 +545,34 @@
 
     <!-- Main Content -->
     <div class="main-content">
+        <!-- Top Right Avatar -->
+        <div class="top-avatar">
+            JD
+            <div class="avatar-dropdown">
+                <div class="avatar-info">
+                    <div class="avatar-name">John Doe</div>
+                    <div class="avatar-email">john.doe@example.com</div>
+                </div>
+                <div class="avatar-actions">
+                    <a href="dashboard.html" class="avatar-link">
+                        <i class="fas fa-home"></i>
+                        Dashboard
+                    </a>
+                    <a href="subscriptions.html" class="avatar-link">
+                        <i class="fas fa-credit-card"></i>
+                        Subscriptions
+                    </a>
+                    <a href="#" class="avatar-link" onclick="showComingSoon('Settings')">
+                        <i class="fas fa-cog"></i>
+                        Settings
+                    </a>
+                    <a href="home.html" class="avatar-link" onclick="handleLogout()" style="color: #dc3545;">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
         <!-- Page Header -->
         <div class="page-header">
             <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
@@ -472,11 +592,11 @@
                 <h3>Personal Information</h3>
                 <div class="info-item">
                     <span class="info-label">Name:</span>
-                    <span class="info-value">Sophia Miller</span>
+                    <span class="info-value">John Doe</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Email:</span>
-                    <span class="info-value">sophia.miller@example.com</span>
+                    <span class="info-value">john.doe@example.com</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Phone:</span>
@@ -620,6 +740,11 @@
                 // Redirect to home page
                 window.location.href = 'home.html';
             }
+        }
+
+        // Placeholder function for coming soon features
+        function showComingSoon(feature) {
+            alert(`${feature} feature is coming soon! 🚀\n\nThis feature is currently under development and will be available in a future update.`);
         }
 
         // Biometric enrollment

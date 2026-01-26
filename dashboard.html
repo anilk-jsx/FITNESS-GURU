@@ -14,29 +14,29 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            display: flex;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            display: flex;
         }
 
         /* Sidebar Styles */
         .sidebar {
-            width: 250px;
+            width: 280px;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(255, 107, 53, 0.1);
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-            display: flex;
-            flex-direction: column;
+            padding: 2rem 0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
             position: fixed;
             height: 100vh;
+            left: 0;
+            top: 0;
             z-index: 1000;
         }
 
         .logo-section {
-            padding: 2rem 1.5rem;
-            border-bottom: 1px solid rgba(255, 107, 53, 0.1);
-            background: linear-gradient(135deg, rgba(255, 107, 53, 0.05), rgba(247, 147, 30, 0.05));
+            padding: 0 2rem;
+            margin-bottom: 3rem;
         }
 
         .logo {
@@ -44,20 +44,20 @@
             align-items: center;
             gap: 0.75rem;
             text-decoration: none;
-            color: #ff6b35;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .logo i {
+            font-size: 2rem;
             background: linear-gradient(135deg, #ff6b35, #f7931e);
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .logo span {
@@ -66,12 +66,11 @@
         }
 
         .nav-menu {
-            flex: 1;
-            padding: 1rem 0;
+            padding: 0 1rem;
         }
 
         .nav-item {
-            margin: 0.25rem 1rem;
+            margin-bottom: 0.5rem;
         }
 
         .nav-link {
@@ -104,8 +103,13 @@
         }
 
         .logout-section {
-            padding: 1rem;
+            position: absolute;
+            bottom: 2rem;
+            left: 0;
+            right: 0;
+            padding: 0 1rem;
             border-top: 1px solid #e9ecef;
+            padding-top: 1rem;
         }
 
         .logout-btn {
@@ -126,10 +130,101 @@
 
         /* Main Content */
         .main-content {
-            flex: 1;
-            margin-left: 250px;
+            margin-left: 280px;
             padding: 2rem;
-            background: transparent;
+            flex: 1;
+            position: relative;
+        }
+
+        /* Top Right Avatar */
+        .top-avatar {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            z-index: 999;
+            transition: all 0.3s ease;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .top-avatar:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+        }
+
+        .avatar-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .top-avatar:hover .avatar-dropdown {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .avatar-info {
+            text-align: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .avatar-name {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+
+        .avatar-email {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .avatar-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .avatar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            text-decoration: none;
+            color: #6c757d;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .avatar-link:hover {
+            background: rgba(255, 107, 53, 0.1);
+            color: #ff6b35;
         }
 
         .dashboard-header {
@@ -137,12 +232,9 @@
         }
 
         .dashboard-title {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #ff6b35, #f7931e);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: white;
             margin-bottom: 0.5rem;
         }
 
@@ -603,6 +695,34 @@
 
     <!-- Main Content -->
     <div class="main-content">
+        <!-- Top Right Avatar -->
+        <div class="top-avatar">
+            JD
+            <div class="avatar-dropdown">
+                <div class="avatar-info">
+                    <div class="avatar-name">John Doe</div>
+                    <div class="avatar-email">john.doe@example.com</div>
+                </div>
+                <div class="avatar-actions">
+                    <a href="profile.html" class="avatar-link">
+                        <i class="fas fa-user"></i>
+                        View Profile
+                    </a>
+                    <a href="subscriptions.html" class="avatar-link">
+                        <i class="fas fa-credit-card"></i>
+                        Subscriptions
+                    </a>
+                    <a href="#" class="avatar-link" onclick="showComingSoon('Settings')">
+                        <i class="fas fa-cog"></i>
+                        Settings
+                    </a>
+                    <a href="home.html" class="avatar-link" onclick="handleLogout()" style="color: #dc3545;">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
         <!-- Dashboard Header -->
         <div class="dashboard-header">
             <h1 class="dashboard-title">Dashboard</h1>
