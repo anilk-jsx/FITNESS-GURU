@@ -299,7 +299,20 @@
 
         .membership-card.current {
             border-color: #22c55e;
-            background: rgba(34, 197, 94, 0.05);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+        }
+
+        .membership-card.current .plan-name {
+            color: #333;
+        }
+
+        .membership-card.current .plan-period {
+            color: #6c757d;
+        }
+
+        .membership-card.current .plan-features li {
+            color: #333;
         }
 
         .plan-badge {
@@ -317,6 +330,9 @@
 
         .current-plan-badge {
             background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
         }
 
         .plan-name {
@@ -332,10 +348,15 @@
             margin-bottom: 2rem;
         }
 
-        .plan-price-large {
-            font-size: 3rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #ff6b35, #f7931e);
+        .membership-card.current .plan-price-large {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .membership-card.current .plan-price-large {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -390,9 +411,11 @@
         }
 
         .btn-current {
-            background: #22c55e;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
             color: white;
             cursor: not-allowed;
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+            font-weight: 600;
         }
 
         .btn-upgrade {
@@ -558,7 +581,7 @@
                     <div class="plan-billing">per month</div>
                     <div class="plan-status">
                         <i class="fas fa-check-circle"></i>
-                        <span>Active until November 30, 2024</span>
+                        <span>Active until November 30, 2026</span>
                     </div>
                 </div>
                 <div class="plan-actions">
