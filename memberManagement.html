@@ -21,7 +21,7 @@
 
         /* Sidebar Styles */
         .sidebar {
-            width: 280px;
+            width: 350px;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             padding: 2rem 0;
@@ -35,29 +35,33 @@
         }
 
         .logo-section {
-            padding: 0 2rem;
+            padding: 0 1.5rem;
             margin-bottom: 3rem;
         }
 
         .logo {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.8rem;
             text-decoration: none;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 800;
             background: linear-gradient(135deg, #ff6b35, #f7931e);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             padding: 0.5rem 0;
+            white-space: nowrap;
+            overflow: visible;
         }
 
         .logo img {
-            width: 45px;
-            height: 45px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+        }
         }
 
         .logo img {
@@ -133,7 +137,7 @@
 
         /* Main Content */
         .main-content {
-            margin-left: 280px;
+            margin-left: 350px;
             padding: 2rem;
             flex: 1;
             position: relative;
@@ -535,6 +539,92 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
+        /* Floating Action Button */
+        .floating-add-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+            transition: all 0.3s ease;
+            z-index: 998;
+        }
+
+        .floating-add-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(255, 107, 53, 0.4);
+        }
+
+        .floating-add-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #666;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: #f5f5f5;
+            color: #ff6b35;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -560,6 +650,19 @@
 
             .member-actions {
                 grid-template-columns: 1fr;
+            }
+
+            .floating-add-btn {
+                bottom: 1rem;
+                right: 1rem;
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 1.5rem;
             }
 
             .search-filter {
@@ -685,12 +788,19 @@
             <p class="page-subtitle">Create new members, manage user details, and handle biometric enrollments</p>
         </div>
 
-        <!-- Member Management Actions -->
-        <div class="member-actions">
-            <!-- Create New Member -->
-            <div class="action-card">
-                <h3><i class="fas fa-user-plus"></i> Create New Member</h3>
-                <p>Add a new member to the gym with their personal details and membership plan.</p>
+        <!-- Floating Add Button -->
+        <button class="floating-add-btn" onclick="openNewMemberModal()">
+            <i class="fas fa-plus"></i>
+        </button>
+
+        <!-- New Member Modal -->
+        <div class="modal-overlay" id="new-member-modal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeNewMemberModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h3 class="modal-title"><i class="fas fa-user-plus"></i> Create New Member</h3>
+                <p style="color: #666; margin-bottom: 1.5rem;">Add a new member to the gym with their personal details and membership plan.</p>
                 
                 <form onsubmit="createMember(event)">
                     <div class="form-row">
@@ -725,31 +835,41 @@
                         </div>
                     </div>
                     
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Height (cm)</label>
+                            <input type="number" class="form-input" min="100" max="250" placeholder="e.g. 175">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Weight (kg)</label>
+                            <input type="number" class="form-input" min="30" max="200" step="0.1" placeholder="e.g. 70.5">
+                        </div>
+                    </div>
+                    
                     <button type="submit" class="btn-primary">
                         <i class="fas fa-plus"></i> Create Member
                     </button>
                 </form>
             </div>
+        </div>
 
-            <!-- Biometric Enrollment -->
-            <div class="action-card">
-                <h3><i class="fas fa-fingerprint"></i> Biometric Enrollment</h3>
-                <p>Enroll members for biometric access to gym facilities and equipment.</p>
+        <!-- Biometric Enrollment Modal -->
+        <div class="modal-overlay" id="enrollment-modal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeEnrollmentModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h3 class="modal-title"><i class="fas fa-fingerprint"></i> Biometric Enrollment</h3>
+                <p style="color: #666; margin-bottom: 1.5rem;">Enroll member for biometric access to gym facilities and equipment.</p>
                 
                 <div class="form-group">
-                    <label class="form-label">Select Member</label>
-                    <select class="form-select" id="biometric-member-select">
-                        <option value="">Choose a member...</option>
-                        <option value="1">John Doe - GMFLW-2023-0001</option>
-                        <option value="2">Jane Smith - GMFLW-2023-0002</option>
-                        <option value="3">Mike Johnson - GMFLW-2023-0003</option>
-                        <option value="4">Sarah Wilson - GMFLW-2023-0004</option>
-                    </select>
+                    <label class="form-label">Member</label>
+                    <input type="text" class="form-input" id="enrollment-member-name" readonly>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Enrollment Device</label>
-                    <select class="form-select">
+                    <select class="form-select" id="enrollment-device">
                         <option value="">Select Device...</option>
                         <option value="entrance1">Main Entrance Scanner</option>
                         <option value="gym1">Weight Room Scanner</option>
@@ -759,7 +879,7 @@
                 </div>
                 
                 <button class="btn-primary" onclick="startBiometricEnrollment()">
-                    <i class="fas fa-scan"></i> Start Enrollment
+                    <i class="fas fa-fingerprint"></i> Start Enrollment
                 </button>
             </div>
         </div>
@@ -991,6 +1111,40 @@
             alert(`${feature} feature is coming soon! 🚀\n\nThis feature is currently under development and will be available in a future update.`);
         }
 
+        // Modal Functions
+        function openNewMemberModal() {
+            document.getElementById('new-member-modal').classList.add('active');
+        }
+
+        function closeNewMemberModal() {
+            document.getElementById('new-member-modal').classList.remove('active');
+        }
+
+        function openEnrollmentModal(memberId, memberName) {
+            const modal = document.getElementById('enrollment-modal');
+            const memberNameField = document.getElementById('enrollment-member-name');
+            
+            memberNameField.value = memberName + ' - GMFLW-2023-' + String(memberId).padStart(4, '0');
+            modal.classList.add('active');
+        }
+
+        function closeEnrollmentModal() {
+            document.getElementById('enrollment-modal').classList.remove('active');
+        }
+
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            const newMemberModal = document.getElementById('new-member-modal');
+            const enrollmentModal = document.getElementById('enrollment-modal');
+            
+            if (event.target === newMemberModal) {
+                closeNewMemberModal();
+            }
+            if (event.target === enrollmentModal) {
+                closeEnrollmentModal();
+            }
+        });
+
         // Member Management Functions
         function createMember(event) {
             event.preventDefault();
@@ -1071,41 +1225,40 @@
         }
 
         function enrollBiometric(memberId) {
-            if (confirm(`🔐 Start biometric enrollment for Member ${memberId}?\n\nThis process will:\n\n1. Activate the selected biometric device\n2. Guide the member through fingerprint/face scanning\n3. Store encrypted biometric data securely\n4. Enable access control for the member\n\nProceed with enrollment?`)) {
-                
-                // Simulate enrollment process
-                const steps = [
-                    'Initializing biometric device...',
-                    'Device ready for enrollment',
-                    'Please guide member to scanner',
-                    'Processing biometric data...',
-                    'Enrollment successful!'
-                ];
-                
-                let currentStep = 0;
-                const progressInterval = setInterval(() => {
-                    if (currentStep < steps.length) {
-                        console.log(steps[currentStep]);
-                        currentStep++;
-                    } else {
-                        clearInterval(progressInterval);
-                        alert('🎉 Biometric enrollment completed successfully!\n\nThe member now has biometric access to:\n• Main entrance\n• Designated gym areas\n• Equipment zones\n\nAccess permissions updated in the system.');
-                    }
-                }, 1000);
-                
-                alert('🔐 Biometric enrollment initiated!\n\nPlease guide the member to the selected biometric device to complete the enrollment process.\n\nEstimated time: 2-3 minutes');
+            const memberData = {
+                '1': 'John Doe',
+                '2': 'Jane Smith', 
+                '3': 'Mike Johnson',
+                '4': 'Sarah Wilson'
+            };
+            
+            const memberName = memberData[memberId];
+            if (memberName) {
+                openEnrollmentModal(memberId, memberName);
             }
         }
 
         function startBiometricEnrollment() {
-            const memberSelect = document.getElementById('biometric-member-select');
-            if (!memberSelect.value) {
-                alert('⚠️ Please select a member first.');
+            const deviceSelect = document.getElementById('enrollment-device');
+            const memberName = document.getElementById('enrollment-member-name').value;
+            
+            if (!deviceSelect.value) {
+                alert('⚠️ Please select an enrollment device first.');
                 return;
             }
             
-            const memberName = memberSelect.options[memberSelect.selectedIndex].text;
-            enrollBiometric(memberSelect.value);
+            if (confirm(`🔐 Start biometric enrollment for ${memberName}?\n\nThis process will:\n\n1. Activate the selected biometric device\n2. Guide the member through fingerprint/face scanning\n3. Store encrypted biometric data securely\n4. Enable access control for the member\n\nProceed with enrollment?`)) {
+                
+                // Close modal
+                closeEnrollmentModal();
+                
+                // Show success message
+                setTimeout(() => {
+                    alert('🎉 Biometric enrollment completed successfully!\n\nThe member now has biometric access to:\n• Main entrance\n• Designated gym areas\n• Equipment zones\n\nAccess permissions updated in the system.');
+                }, 1000);
+                
+                alert('🔐 Biometric enrollment initiated!\n\nPlease guide the member to the selected biometric device to complete the enrollment process.\n\nEstimated time: 2-3 minutes');
+            }
         }
 
         // Search and Filter Functions
