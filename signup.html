@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GYM FLOW - Sign Up</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .signup-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+        }
+
+        .logo-section {
+            text-align: center;
+            padding: 2rem 2rem 1rem;
+            background: #f8f9fa;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ff6b35;
+            text-decoration: none;
+        }
+
+        .logo i {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+
+        .form-section {
+            padding: 2rem;
+        }
+
+        .welcome-text {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .welcome-text h2 {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .welcome-text p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #ff6b35;
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #9ca3af;
+        }
+
+        .password-requirements {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .password-requirements ul {
+            list-style: none;
+            padding-left: 0;
+            margin: 0.5rem 0;
+        }
+
+        .password-requirements li {
+            margin: 0.3rem 0;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .password-requirements li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #ff6b35;
+            font-weight: bold;
+        }
+
+        .terms-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .terms-checkbox input[type="checkbox"] {
+            margin-top: 0.25rem;
+            width: auto;
+            accent-color: #ff6b35;
+        }
+
+        .terms-checkbox label {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 0;
+            color: #555;
+        }
+
+        .terms-checkbox a {
+            color: #ff6b35;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .terms-checkbox a:hover {
+            text-decoration: underline;
+        }
+
+        .submit-button {
+            width: 100%;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 107, 53, 0.3);
+        }
+
+        .submit-button:active {
+            transform: translateY(0);
+        }
+
+        .switch-mode {
+            text-align: center;
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .switch-mode a {
+            color: #ff6b35;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .switch-mode a:hover {
+            text-decoration: underline;
+        }
+
+        .subscription-link {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .subscription-link a {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .subscription-link a:hover {
+            background: #f9fafb;
+            border-color: #ff6b35;
+            color: #ff6b35;
+        }
+
+        /* Loading state */
+        .submit-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .submit-button.loading {
+            position: relative;
+            color: transparent;
+        }
+
+        .submit-button.loading::after {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 2px solid white;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Error states */
+        .form-group.error input {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .form-group.error .error-message {
+            display: block;
+        }
+
+        /* Success states */
+        .form-group.success input {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .password-strength {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .strength-weak {
+            color: #ef4444;
+        }
+
+        .strength-medium {
+            color: #f59e0b;
+        }
+
+        .strength-strong {
+            color: #10b981;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 480px) {
+            body {
+                padding: 1rem 0.5rem;
+            }
+
+            .form-section {
+                padding: 1.5rem;
+            }
+
+            .logo-section {
+                padding: 1.5rem 1.5rem 1rem;
+            }
+
+            .welcome-text h2 {
+                font-size: 1.6rem;
+            }
+
+            .signup-container {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-container">
+        <!-- Logo Section -->
+        <div class="logo-section">
+            <a href="home.html" class="logo">
+                <i class="fas fa-dumbbell"></i>
+                GYM FLOW
+            </a>
+        </div>
+
+        <!-- Form Section -->
+        <div class="form-section">
+            <!-- Welcome Text -->
+            <div class="welcome-text">
+                <h2>Create Account</h2>
+                <p>Join the GymFlow community.</p>
+            </div>
+
+            <!-- Sign Up Form -->
+            <form id="signup-form-element">
+                <div class="form-group">
+                    <label for="signup-name">Full Name</label>
+                    <input type="text" id="signup-name" name="name" placeholder="John Doe" required>
+                    <div class="error-message">Full name is required</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" name="email" placeholder="your@email.com" required>
+                    <div class="error-message">Please enter a valid email address</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" name="password" placeholder="••••••••" required>
+                    <div class="error-message">Password does not meet requirements</div>
+                    <div class="password-strength" id="password-strength"></div>
+                    <div class="password-requirements">
+                        <ul>
+                            <li>At least 8 characters long</li>
+                            <li>Contains uppercase and lowercase letters</li>
+                            <li>Contains at least one number</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="signup-confirm-password">Confirm Password</label>
+                    <input type="password" id="signup-confirm-password" name="confirmPassword" placeholder="••••••••" required>
+                    <div class="error-message">Passwords do not match</div>
+                </div>
+
+                <div class="terms-checkbox">
+                    <input type="checkbox" id="terms-agreement" required>
+                    <label for="terms-agreement">
+                        I agree to the <a href="#" onclick="showTerms()">Terms of Service</a> and 
+                        <a href="#" onclick="showPrivacy()">Privacy Policy</a>
+                    </label>
+                </div>
+
+                <button type="submit" class="submit-button" id="signup-submit">Create Account</button>
+            </form>
+
+            <div class="switch-mode">
+                Already have an account? <a href="login.html">Login</a>
+            </div>
+
+            <!-- Subscription Link -->
+            <div class="subscription-link">
+                <a href="home.html#membership">View Subscription Plans (Read-Only)</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Form validation
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function validatePassword(password) {
+            const minLength = password.length >= 8;
+            const hasUpper = /[A-Z]/.test(password);
+            const hasLower = /[a-z]/.test(password);
+            const hasNumber = /\d/.test(password);
+            return minLength && hasUpper && hasLower && hasNumber;
+        }
+
+        function getPasswordStrength(password) {
+            let score = 0;
+            if (password.length >= 8) score++;
+            if (/[A-Z]/.test(password)) score++;
+            if (/[a-z]/.test(password)) score++;
+            if (/\d/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+            
+            if (score <= 2) return { strength: 'weak', text: 'Weak' };
+            if (score <= 3) return { strength: 'medium', text: 'Medium' };
+            return { strength: 'strong', text: 'Strong' };
+        }
+
+        function showError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const formGroup = field.closest('.form-group');
+            const errorMessage = formGroup.querySelector('.error-message');
+            
+            formGroup.classList.add('error');
+            formGroup.classList.remove('success');
+            if (message && errorMessage) {
+                errorMessage.textContent = message;
+            }
+        }
+
+        function showSuccess(fieldId) {
+            const field = document.getElementById(fieldId);
+            const formGroup = field.closest('.form-group');
+            formGroup.classList.remove('error');
+            formGroup.classList.add('success');
+        }
+
+        function clearFormErrors() {
+            const errorGroups = document.querySelectorAll('.form-group.error, .form-group.success');
+            errorGroups.forEach(group => {
+                group.classList.remove('error', 'success');
+            });
+        }
+
+        // Password strength indicator
+        document.getElementById('signup-password').addEventListener('input', function() {
+            const password = this.value;
+            const strengthIndicator = document.getElementById('password-strength');
+            
+            if (password.length > 0) {
+                const strength = getPasswordStrength(password);
+                strengthIndicator.textContent = `Password strength: ${strength.text}`;
+                strengthIndicator.className = `password-strength strength-${strength.strength}`;
+            } else {
+                strengthIndicator.textContent = '';
+                strengthIndicator.className = 'password-strength';
+            }
+        });
+
+        // Signup form handling
+        document.getElementById('signup-form-element').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm-password').value;
+            const termsAgreed = document.getElementById('terms-agreement').checked;
+            const submitButton = document.getElementById('signup-submit');
+            
+            let isValid = true;
+
+            // Clear previous errors
+            clearFormErrors();
+
+            // Validate name
+            if (!name.trim()) {
+                showError('signup-name', 'Full name is required');
+                isValid = false;
+            } else if (name.trim().length < 2) {
+                showError('signup-name', 'Name must be at least 2 characters');
+                isValid = false;
+            } else {
+                showSuccess('signup-name');
+            }
+
+            // Validate email
+            if (!email || !validateEmail(email)) {
+                showError('signup-email', 'Please enter a valid email address');
+                isValid = false;
+            } else {
+                showSuccess('signup-email');
+            }
+
+            // Validate password
+            if (!password || !validatePassword(password)) {
+                showError('signup-password', 'Password does not meet requirements');
+                isValid = false;
+            } else {
+                showSuccess('signup-password');
+            }
+
+            // Validate confirm password
+            if (!confirmPassword) {
+                showError('signup-confirm-password', 'Please confirm your password');
+                isValid = false;
+            } else if (password !== confirmPassword) {
+                showError('signup-confirm-password', 'Passwords do not match');
+                isValid = false;
+            } else {
+                showSuccess('signup-confirm-password');
+            }
+
+            // Validate terms agreement
+            if (!termsAgreed) {
+                alert('Please agree to the Terms of Service and Privacy Policy to continue');
+                isValid = false;
+            }
+
+            if (isValid) {
+                // Show loading state
+                submitButton.classList.add('loading');
+                submitButton.disabled = true;
+
+                // Simulate signup process
+                setTimeout(() => {
+                    alert('🎉 Account created successfully! Welcome to GYM FLOW!');
+                    // In a real app, you would redirect to the main application or login
+                    window.location.href = 'login.html';
+                }, 2000);
+            }
+        });
+
+        // Real-time validation
+        document.getElementById('signup-email').addEventListener('blur', function() {
+            if (this.value && !validateEmail(this.value)) {
+                showError('signup-email', 'Please enter a valid email address');
+            } else if (this.value) {
+                showSuccess('signup-email');
+            }
+        });
+
+        document.getElementById('signup-password').addEventListener('blur', function() {
+            if (this.value && !validatePassword(this.value)) {
+                showError('signup-password', 'Password does not meet requirements');
+            } else if (this.value) {
+                showSuccess('signup-password');
+            }
+        });
+
+        document.getElementById('signup-confirm-password').addEventListener('blur', function() {
+            const password = document.getElementById('signup-password').value;
+            if (this.value && this.value !== password) {
+                showError('signup-confirm-password', 'Passwords do not match');
+            } else if (this.value && this.value === password) {
+                showSuccess('signup-confirm-password');
+            }
+        });
+
+        document.getElementById('signup-name').addEventListener('blur', function() {
+            if (this.value && this.value.trim().length < 2) {
+                showError('signup-name', 'Name must be at least 2 characters');
+            } else if (this.value.trim()) {
+                showSuccess('signup-name');
+            }
+        });
+
+        // Utility functions for links
+        function showTerms() {
+            alert('📋 Terms of Service:\n\n• Use GYM FLOW responsibly and respectfully\n• Maintain accurate account information\n• Follow gym rules and regulations\n• Respect other members and staff\n\nFull terms would be displayed in a modal or separate page.');
+        }
+
+        function showPrivacy() {
+            alert('🔒 Privacy Policy:\n\n• We protect your personal information\n• Data is used to improve your experience\n• We do not share info with third parties\n• You control your privacy settings\n\nFull privacy policy would be displayed in a modal or separate page.');
+        }
+
+        // Clear loading states on page refresh
+        window.addEventListener('beforeunload', function() {
+            const buttons = document.querySelectorAll('.submit-button');
+            buttons.forEach(button => {
+                button.classList.remove('loading');
+                button.disabled = false;
+            });
+        });
+
+        // Focus on first input when page loads
+        window.addEventListener('load', function() {
+            document.getElementById('signup-name').focus();
+        });
+    </script>
+</body>
+</html>
