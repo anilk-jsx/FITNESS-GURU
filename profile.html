@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile & Attendance - GymFlow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem 0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo-section {
+            padding: 0 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo i {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-menu {
+            padding: 0 1rem;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            color: #6c757d;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(247, 147, 30, 0.1));
+            color: #ff6b35;
+            transform: translateX(5px);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .logout-section {
+            position: absolute;
+            bottom: 2rem;
+            left: 0;
+            right: 0;
+            padding: 0 1rem;
+            border-top: 1px solid #e9ecef;
+            padding-top: 1rem;
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            color: #dc3545;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .logout-btn:hover {
+            background: rgba(220, 53, 69, 0.1);
+            transform: translateX(5px);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            padding: 2rem;
+            flex: 1;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+        }
+
+        /* Profile Section */
+        .profile-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .info-card h3 {
+            color: #333;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        /* Biometric Enrollment */
+        .enrollment-status {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ffc107;
+        }
+
+        .status-text {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .enrollment-message {
+            color: #6c757d;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .btn-enroll {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-enroll:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        /* Attendance Section */
+        .attendance-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .attendance-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            color: #333;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .filter-input,
+        .filter-select {
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .filter-input:focus,
+        .filter-select:focus {
+            outline: none;
+            border-color: #ff6b35;
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .btn-apply {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            align-self: end;
+        }
+
+        .btn-apply:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        /* Attendance Table */
+        .attendance-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .attendance-table th,
+        .attendance-table td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .attendance-table th {
+            background: rgba(255, 107, 53, 0.1);
+            color: #333;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .attendance-table td {
+            color: #333;
+        }
+
+        .attendance-table tr:hover {
+            background: rgba(255, 107, 53, 0.05);
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-attended {
+            background: rgba(34, 197, 94, 0.1);
+            color: #16a34a;
+        }
+
+        .status-missed {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+        }
+
+        /* Mobile Responsiveness */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            color: #ff6b35;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .page-header {
+                margin-top: 3rem;
+            }
+
+            .profile-section {
+                grid-template-columns: 1fr;
+            }
+
+            .attendance-filters {
+                grid-template-columns: 1fr;
+            }
+
+            .attendance-table {
+                font-size: 0.8rem;
+            }
+
+            .attendance-table th,
+            .attendance-table td {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="logo-section">
+            <a href="home.html" class="logo">
+                <i class="fas fa-dumbbell"></i>
+                <span>GymFlow</span>
+            </a>
+        </div>
+
+        <div class="nav-menu">
+            <div class="nav-item">
+                <a href="dashboard.html" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    Dashboard
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="subscriptions.html" class="nav-link">
+                    <i class="fas fa-credit-card"></i>
+                    Subscriptions
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="profile.html" class="nav-link active">
+                    <i class="fas fa-user"></i>
+                    Profile & Attendance
+                </a>
+            </div>
+        </div>
+
+        <div class="logout-section">
+            <a href="home.html" class="logout-btn" onclick="handleLogout()">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <a href="dashboard.html" style="color: rgba(255, 255, 255, 0.8); text-decoration: none; display: flex; align-items: center; gap: 0.5rem; transition: color 0.3s ease;" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255, 255, 255, 0.8)'">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+            <h1 class="page-title">Profile & Attendance</h1>
+            <p class="page-subtitle">Manage your personal information and track your gym attendance history</p>
+        </div>
+
+        <!-- Profile Section -->
+        <div class="profile-section">
+            <!-- Personal Information -->
+            <div class="info-card">
+                <h3>Personal Information</h3>
+                <div class="info-item">
+                    <span class="info-label">Name:</span>
+                    <span class="info-value">Sophia Miller</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">sophia.miller@example.com</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Phone:</span>
+                    <span class="info-value">+1 (555) 987-6543</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Member ID:</span>
+                    <span class="info-value">GMFLW-2023-4567</span>
+                </div>
+            </div>
+
+            <!-- Biometric Enrollment -->
+            <div class="info-card">
+                <h3>Biometric Enrollment</h3>
+                <div class="enrollment-status">
+                    <div class="status-indicator"></div>
+                    <span class="status-text">Not Enrolled</span>
+                </div>
+                <p class="enrollment-message">
+                    Biometric enrollment is pending. Please visit the front desk to complete your enrollment.
+                </p>
+                <button class="btn-enroll" onclick="handleEnrollment()">Enroll Now</button>
+            </div>
+        </div>
+
+        <!-- Attendance History -->
+        <div class="attendance-section">
+            <h3 style="color: #333; font-size: 1.3rem; font-weight: 700; margin-bottom: 2rem;">Attendance History</h3>
+            
+            <!-- Filters -->
+            <div class="attendance-filters">
+                <div class="filter-group">
+                    <label class="filter-label">Date Range</label>
+                    <input type="date" class="filter-input" value="2023-10-01" id="start-date">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">&nbsp;</label>
+                    <input type="date" class="filter-input" value="2023-10-31" id="end-date">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Class Type</label>
+                    <select class="filter-select" id="class-type">
+                        <option value="">All</option>
+                        <option value="Morning Yoga">Morning Yoga</option>
+                        <option value="Weightlifting">Weightlifting</option>
+                        <option value="Zumba Dance">Zumba Dance</option>
+                        <option value="Spin Class">Spin Class</option>
+                        <option value="Cardio Blast">Cardio Blast</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Location</label>
+                    <select class="filter-select" id="location">
+                        <option value="">All</option>
+                        <option value="Studio A">Studio A</option>
+                        <option value="Studio B">Studio B</option>
+                        <option value="Main Hall">Main Hall</option>
+                        <option value="Cycle Room">Cycle Room</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">&nbsp;</label>
+                    <button class="btn-apply" onclick="applyFilters()">Apply Filters</button>
+                </div>
+            </div>
+
+            <!-- Attendance Table -->
+            <table class="attendance-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Class Type</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="attendance-tbody">
+                    <tr>
+                        <td>2023-10-26</td>
+                        <td>08:30 AM</td>
+                        <td>Morning Yoga</td>
+                        <td>Studio A</td>
+                        <td><span class="status-badge status-attended">Attended</span></td>
+                    </tr>
+                    <tr>
+                        <td>2023-10-25</td>
+                        <td>06:00 PM</td>
+                        <td>Weightlifting</td>
+                        <td>Main Hall</td>
+                        <td><span class="status-badge status-attended">Attended</span></td>
+                    </tr>
+                    <tr>
+                        <td>2023-10-24</td>
+                        <td>07:30 AM</td>
+                        <td>Zumba Dance</td>
+                        <td>Studio B</td>
+                        <td><span class="status-badge status-missed">Missed</span></td>
+                    </tr>
+                    <tr>
+                        <td>2023-10-23</td>
+                        <td>05:00 PM</td>
+                        <td>Spin Class</td>
+                        <td>Cycle Room</td>
+                        <td><span class="status-badge status-attended">Attended</span></td>
+                    </tr>
+                    <tr>
+                        <td>2023-10-22</td>
+                        <td>09:00 AM</td>
+                        <td>Cardio Blast</td>
+                        <td>Main Hall</td>
+                        <td><span class="status-badge status-attended">Attended</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu functionality
+        document.getElementById('mobile-menu-toggle').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-open');
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('mobile-menu-toggle');
+            
+            if (window.innerWidth <= 768 && !sidebar.contains(event.target) && !toggle.contains(event.target)) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+
+        // Logout functionality
+        function handleLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                // Clear any stored session data
+                localStorage.removeItem('gymflow_session');
+                // Redirect to home page
+                window.location.href = 'home.html';
+            }
+        }
+
+        // Biometric enrollment
+        function handleEnrollment() {
+            alert('Please visit the front desk during operating hours (6 AM - 10 PM) to complete your biometric enrollment. Our staff will assist you with the process.');
+        }
+
+        // Sample attendance data
+        const attendanceData = [
+            { date: '2023-10-26', time: '08:30 AM', class: 'Morning Yoga', location: 'Studio A', status: 'Attended' },
+            { date: '2023-10-25', time: '06:00 PM', class: 'Weightlifting', location: 'Main Hall', status: 'Attended' },
+            { date: '2023-10-24', time: '07:30 AM', class: 'Zumba Dance', location: 'Studio B', status: 'Missed' },
+            { date: '2023-10-23', time: '05:00 PM', class: 'Spin Class', location: 'Cycle Room', status: 'Attended' },
+            { date: '2023-10-22', time: '09:00 AM', class: 'Cardio Blast', location: 'Main Hall', status: 'Attended' },
+            { date: '2023-10-21', time: '07:00 PM', class: 'Morning Yoga', location: 'Studio A', status: 'Attended' },
+            { date: '2023-10-20', time: '08:00 AM', class: 'Weightlifting', location: 'Main Hall', status: 'Missed' },
+            { date: '2023-10-19', time: '06:30 PM', class: 'Zumba Dance', location: 'Studio B', status: 'Attended' },
+            { date: '2023-10-18', time: '07:30 AM', class: 'Spin Class', location: 'Cycle Room', status: 'Attended' },
+            { date: '2023-10-17', time: '05:30 PM', class: 'Cardio Blast', location: 'Main Hall', status: 'Attended' }
+        ];
+
+        // Apply filters function
+        function applyFilters() {
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const classType = document.getElementById('class-type').value;
+            const location = document.getElementById('location').value;
+
+            let filteredData = [...attendanceData];
+
+            // Filter by date range
+            if (startDate && endDate) {
+                filteredData = filteredData.filter(record => {
+                    return record.date >= startDate && record.date <= endDate;
+                });
+            }
+
+            // Filter by class type
+            if (classType) {
+                filteredData = filteredData.filter(record => record.class === classType);
+            }
+
+            // Filter by location
+            if (location) {
+                filteredData = filteredData.filter(record => record.location === location);
+            }
+
+            // Update table
+            updateAttendanceTable(filteredData);
+        }
+
+        // Update attendance table
+        function updateAttendanceTable(data) {
+            const tbody = document.getElementById('attendance-tbody');
+            tbody.innerHTML = '';
+
+            data.forEach(record => {
+                const row = document.createElement('tr');
+                const statusClass = record.status === 'Attended' ? 'status-attended' : 'status-missed';
+                
+                row.innerHTML = `
+                    <td>${record.date}</td>
+                    <td>${record.time}</td>
+                    <td>${record.class}</td>
+                    <td>${record.location}</td>
+                    <td><span class="status-badge ${statusClass}">${record.status}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            if (data.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="5" style="text-align: center; color: #6c757d; padding: 2rem;">No attendance records found for the selected filters.</td>';
+                tbody.appendChild(row);
+            }
+        }
+
+        // Initialize filters with current month
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+            document.getElementById('start-date').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('end-date').value = lastDay.toISOString().split('T')[0];
+        });
+    </script>
+</body>
+</html>

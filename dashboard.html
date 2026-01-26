@@ -586,7 +586,7 @@
                 </a>
             </div>
             <div class="nav-item">
-                <a href="#" class="nav-link" onclick="showComingSoon('Profile & Attendance')">
+                <a href="profile.html" class="nav-link">
                     <i class="fas fa-user"></i>
                     Profile & Attendance
                 </a>
@@ -610,13 +610,18 @@
         </div>
 
         <!-- User Profile Card -->
-        <div class="user-profile">
-            <div class="user-avatar">JD</div>
-            <div class="user-info">
-                <h3>John Doe</h3>
-                <p>Premium Member • Joined March 2023</p>
+        <a href="profile.html" style="text-decoration: none; color: inherit;">
+            <div class="user-profile" style="cursor: pointer; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                <div class="user-avatar">JD</div>
+                <div class="user-info">
+                    <h3>John Doe</h3>
+                    <p>Premium Member • Joined March 2023</p>
+                </div>
+                <div style="margin-left: auto; color: #ff6b35;">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
             </div>
-        </div>
+        </a>
 
         <!-- Stats Grid -->
         <div class="stats-grid">
@@ -664,7 +669,7 @@
                 <div class="stat-value">85%</div>
                 <div class="stat-subtitle">Complete your profile to unlock all features</div>
                 <div class="stat-actions">
-                    <a href="#" class="btn-sm btn-outline" onclick="showComingSoon('Update Profile')">Update Profile</a>
+                    <a href="profile.html" class="btn-sm btn-outline">Update Profile</a>
                 </div>
             </div>
         </div>
@@ -728,7 +733,7 @@
                 </div>
                 <h3>View Profile & Attendance</h3>
                 <p>Update personal information, check biometric status, and track your workout history.</p>
-                <a href="#" class="btn-full btn-green" onclick="showComingSoon('Go To Profile')">Go To Profile</a>
+                <a href="profile.html" class="btn-full btn-green">Go To Profile</a>
             </div>
         </div>
     </div>
