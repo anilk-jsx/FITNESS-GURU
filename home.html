@@ -82,6 +82,24 @@
             transform: translateY(-2px);
         }
 
+        .login-button {
+            background: transparent;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: 2px solid white;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-right: 1rem;
+        }
+
+        .login-button:hover {
+            background: white;
+            color: #333;
+            transform: translateY(-2px);
+        }
+
         .mobile-menu {
             display: none;
             background: none;
@@ -89,6 +107,12 @@
             color: white;
             font-size: 1.5rem;
             cursor: pointer;
+        }
+
+        .nav-buttons {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         /* Hero Section */
@@ -510,6 +534,15 @@
                 display: block;
             }
 
+            .nav-buttons {
+                gap: 0.25rem;
+            }
+
+            .login-button, .cta-button {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+
             .hero-content h1 {
                 font-size: 2.5rem;
             }
@@ -596,7 +629,10 @@
                 <li><a href="#membership">Membership</a></li>
                 <li><a href="#contact">Contact</a></li>
             </ul>
-            <a href="#membership" class="cta-button">Join Now</a>
+            <div class="nav-buttons">
+                <a href="login.html" class="login-button">Login</a>
+                <a href="#membership" class="cta-button">Join Now</a>
+            </div>
             <button class="mobile-menu" id="mobile-menu">
                 <i class="fas fa-bars"></i>
             </button>
