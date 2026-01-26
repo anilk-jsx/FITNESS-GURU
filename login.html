@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GYM FLOW - Login</title>
+    <title>FITNESS GURU - Login</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
@@ -32,36 +32,35 @@
             position: relative;
         }
 
-        .logo-section {
-            text-align: center;
-            padding: 2rem 2rem 1rem;
-            background: #f8f9fa;
-        }
-
-        .logo {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #ff6b35;
-            text-decoration: none;
-        }
-
-        .logo i {
-            background: linear-gradient(135deg, #ff6b35, #f7931e);
-            color: white;
-            width: 45px;
-            height: 45px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-        }
-
         .form-section {
             padding: 2rem;
+        }
+
+        .form-logo {
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-logo .logo {
+            display: inline-block;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-logo .logo:hover {
+            transform: translateY(-1px);
+        }
+
+        .form-logo .logo img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            box-shadow: 0 2px 10px rgba(255, 107, 53, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .form-logo .logo:hover img {
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
         }
 
         .welcome-text {
@@ -258,8 +257,9 @@
                 padding: 1.5rem;
             }
 
-            .logo-section {
-                padding: 1.5rem 1.5rem 1rem;
+            .form-logo .logo img {
+                width: 70px;
+                height: 70px;
             }
 
             .welcome-text h2 {
@@ -270,18 +270,15 @@
 </head>
 <body>
     <div class="login-container">
-        <!-- Logo Section -->
-        <div class="logo-section">
-            <a href="home.html" class="logo">
-                <i class="fas fa-dumbbell"></i>
-                GYM FLOW
-            </a>
-        </div>
-
         <!-- Form Section -->
         <div class="form-section">
-            <!-- Welcome Text -->
+            <!-- Logo and Welcome Text -->
             <div class="welcome-text">
+                <div class="form-logo">
+                    <a href="home.html" class="logo">
+                        <img src="FGlogo.png" alt="FitnessGuru Logo">
+                    </a>
+                </div>
                 <h2>Welcome Back!</h2>
                 <p>Sign in to your account.</p>
             </div>
@@ -386,7 +383,7 @@
 
                 // Simulate login process
                 setTimeout(() => {
-                    alert('Login successful! Welcome to GYM FLOW!');
+                    alert('Login successful! Welcome to FITNESS GURU!');
                     // In a real app, you would redirect to the main application
                     window.location.href = 'home.html';
                 }, 1500);

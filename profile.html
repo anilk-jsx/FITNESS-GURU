@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile & Attendance - GymFlow</title>
+    <title>Profile & Attendance - FITNESS GURU</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
@@ -42,7 +42,7 @@
         .logo {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem;
             text-decoration: none;
             font-size: 1.5rem;
             font-weight: 800;
@@ -50,14 +50,21 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            padding: 0.5rem 0;
         }
 
-        .logo i {
-            font-size: 2rem;
-            background: linear-gradient(135deg, #ff6b35, #f7931e);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .logo img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         .nav-menu {
@@ -509,8 +516,8 @@
     <div class="sidebar" id="sidebar">
         <div class="logo-section">
             <a href="home.html" class="logo">
-                <i class="fas fa-dumbbell"></i>
-                <span>GymFlow</span>
+                <img src="FGlogo.png" alt="FitnessGuru Logo">
+                <span>FITNESS GURU</span>
             </a>
         </div>
 
@@ -736,7 +743,7 @@
         function handleLogout() {
             if (confirm('Are you sure you want to logout?')) {
                 // Clear any stored session data
-                localStorage.removeItem('gymflow_session');
+                localStorage.removeItem('FITNESS GURU_session');
                 // Redirect to home page
                 window.location.href = 'home.html';
             }
