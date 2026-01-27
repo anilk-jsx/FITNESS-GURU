@@ -943,7 +943,7 @@
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="logo-section">
-            <a href="home.html" class="logo">
+            <a href="index.html" class="logo">
                 <img src="FGlogo.png" alt="FitnessGuru Logo">
                 <span>FITNESS GURU</span>
             </a>
@@ -983,7 +983,7 @@
         </div>
 
         <div class="logout-section">
-            <a href="home.html" class="logout-btn" onclick="handleLogout()">
+            <a href="index.html" class="logout-btn" onclick="handleLogout()">
                 <i class="fas fa-sign-out-alt"></i>
                 Logout
             </a>
@@ -1025,7 +1025,7 @@
                         <i class="fas fa-cog"></i>
                         Settings
                     </a>
-                    <a href="home.html" class="avatar-link" onclick="handleLogout()" style="color: #dc3545;">
+                    <a href="index.html" class="avatar-link" onclick="handleLogout()" style="color: #dc3545;">
                         <i class="fas fa-sign-out-alt"></i>
                         Logout
                     </a>
@@ -1042,7 +1042,7 @@
                 </a>
                 <span style="color: rgba(255, 255, 255, 0.5);">|</span>
                 <nav style="display: flex; align-items: center; gap: 0.5rem; color: rgba(255, 255, 255, 0.8); font-size: 0.9rem;">
-                    <a href="home.html" style="color: rgba(255, 255, 255, 0.6); text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255, 255, 255, 0.6)'">
+                    <a href="index.html" style="color: rgba(255, 255, 255, 0.6); text-decoration: none; transition: color 0.3s ease;" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255, 255, 255, 0.6)'">
                         Home
                     </a>
                     <i class="fas fa-chevron-right" style="font-size: 0.7rem; color: rgba(255, 255, 255, 0.5);"></i>
@@ -1329,7 +1329,7 @@
             if (confirm('Are you sure you want to logout?')) {
                 alert('Logged out successfully! Redirecting to home page...');
                 setTimeout(() => {
-                    window.location.href = 'home.html';
+                    window.location.href = 'index.html';
                 }, 1000);
             }
         }
