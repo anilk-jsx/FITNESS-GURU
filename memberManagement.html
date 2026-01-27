@@ -22,6 +22,7 @@
         /* Sidebar Styles */
         .sidebar {
             width: 350px;
+            max-width: 350px;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             padding: 2rem 0;
@@ -32,6 +33,7 @@
             left: 0;
             top: 0;
             z-index: 1000;
+            overflow-y: auto;
         }
 
         .logo-section {
@@ -56,19 +58,11 @@
         }
 
         .logo img {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            flex-shrink: 0;
-        }
-        }
-
-        .logo img {
             width: 35px;
             height: 35px;
             border-radius: 50%;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
         }
 
         .nav-menu {
@@ -141,6 +135,9 @@
             padding: 2rem;
             flex: 1;
             position: relative;
+            min-width: 0;
+            width: calc(100% - 350px);
+            box-sizing: border-box;
         }
 
         /* Top Right Avatar */
@@ -260,6 +257,9 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             margin-bottom: 2rem;
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .section-title {
@@ -359,14 +359,22 @@
             box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
         }
 
+        /* Table Wrapper for Responsiveness */
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
         /* Members Table */
         .members-table {
             width: 100%;
+            min-width: 800px;
             border-collapse: collapse;
             background: white;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         .members-table th,
@@ -444,6 +452,10 @@
         .member-actions-cell {
             display: flex;
             gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            align-items: center;
+            min-width: 160px;
         }
 
         .btn-small {
@@ -454,6 +466,8 @@
             cursor: pointer;
             font-weight: 500;
             transition: all 0.3s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .btn-view {
@@ -480,7 +494,7 @@
         .search-filter {
             display: grid;
             grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: 1rem;
+            gap: 1.5rem;
             margin-bottom: 2rem;
             align-items: end;
         }
@@ -489,12 +503,28 @@
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+            min-width: 0; /* Prevents overflow */
         }
 
         .filter-label {
             color: #333;
             font-weight: 500;
             font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            min-width: 0;
+            box-sizing: border-box;
         }
 
         .biometric-status {
@@ -625,8 +655,53 @@
             gap: 0.75rem;
         }
 
-        @media (max-width: 768px) {
+        /* Tablet Styles */
+        @media (max-width: 1200px) {
+            .search-filter {
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+                gap: 1rem;
+            }
+            
+            .dashboard-section {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 1024px) {
             .sidebar {
+                width: 280px;
+                max-width: 280px;
+            }
+
+            .main-content {
+                margin-left: 280px;
+                padding: 1.5rem;
+            }
+
+            .search-filter {
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+            
+            .member-actions-cell {
+                min-width: 140px;
+            }
+            
+            .btn-small {
+                padding: 0.35rem 0.7rem;
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            body {
+                overflow-x: hidden;
+            }
+
+            .sidebar {
+                width: 280px;
+                max-width: 280px;
                 transform: translateX(-100%);
                 transition: transform 0.3s ease;
             }
@@ -638,6 +713,8 @@
             .main-content {
                 margin-left: 0;
                 padding: 1rem;
+                width: 100%;
+                box-sizing: border-box;
             }
 
             .mobile-menu-toggle {
@@ -646,6 +723,10 @@
 
             .page-header {
                 margin-top: 3rem;
+            }
+
+            .page-title {
+                font-size: 1.75rem;
             }
 
             .member-actions {
@@ -663,14 +744,158 @@
             .modal-content {
                 width: 95%;
                 padding: 1.5rem;
+                margin: 1rem;
+                max-height: 85vh;
             }
 
             .search-filter {
                 grid-template-columns: 1fr;
+                gap: 1rem;
+                margin-bottom: 1.5rem;
             }
 
             .form-row {
                 grid-template-columns: 1fr;
+            }
+
+            .table-wrapper {
+                margin: 0 -1rem;
+                padding: 0 1rem;
+                border-radius: 8px;
+            }
+
+            .members-table {
+                font-size: 0.9rem;
+                min-width: 700px;
+            }
+
+            .members-table th,
+            .members-table td {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .member-info {
+                gap: 0.75rem;
+            }
+
+            .member-avatar {
+                width: 35px;
+                height: 35px;
+                font-size: 0.8rem;
+            }
+
+            .member-actions-cell {
+                flex-direction: column;
+                gap: 0.25rem;
+                min-width: 80px;
+                align-items: stretch;
+            }
+
+            .btn-small {
+                padding: 0.3rem 0.5rem;
+                font-size: 0.7rem;
+                width: 100%;
+                text-align: center;
+            }
+
+            .top-avatar {
+                top: 1rem;
+                right: 1rem;
+                width: 45px;
+                height: 45px;
+                font-size: 1rem;
+            }
+
+            .dashboard-section {
+                margin-bottom: 1.5rem;
+            }
+        }
+
+        /* Small Mobile Styles */
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 0.75rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .page-subtitle {
+                font-size: 1rem;
+            }
+
+            .dashboard-section {
+                padding: 1.25rem;
+                border-radius: 15px;
+                margin-bottom: 1.25rem;
+            }
+
+            .section-title {
+                font-size: 1.1rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .members-table {
+                min-width: 600px;
+                font-size: 0.85rem;
+            }
+
+            .members-table th,
+            .members-table td {
+                padding: 0.6rem 0.4rem;
+            }
+
+            .search-filter {
+                gap: 0.75rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .form-input,
+            .form-select {
+                padding: 0.6rem;
+                font-size: 0.85rem;
+            }
+
+            .btn-small {
+                padding: 0.25rem 0.4rem;
+                font-size: 0.65rem;
+            }
+
+            .member-avatar {
+                width: 30px;
+                height: 30px;
+                font-size: 0.7rem;
+            }
+
+            .member-details h4 {
+                font-size: 0.9rem;
+            }
+
+            .member-email {
+                font-size: 0.75rem;
+            }
+
+            .floating-add-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 1.1rem;
+            }
+        }
+
+        /* Extra optimizations for very small screens */
+        @media (max-width: 360px) {
+            .main-content {
+                padding: 0.5rem;
+            }
+
+            .dashboard-section {
+                padding: 1rem;
+            }
+
+            .table-wrapper {
+                margin: 0 -0.5rem;
+                padding: 0 0.5rem;
             }
         }
     </style>
@@ -924,7 +1149,8 @@
             </div>
 
             <!-- Members Table -->
-            <table class="members-table" id="members-table">
+            <div class="table-wrapper">
+                <table class="members-table" id="members-table">
                 <thead>
                     <tr>
                         <th>Member</th>
@@ -1075,7 +1301,8 @@
                         </td>
                     </tr>
                 </tbody>
-            </table>
+                </table>
+            </div>
         </div>
     </div>
 
