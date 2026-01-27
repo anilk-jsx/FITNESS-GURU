@@ -929,19 +929,19 @@
                 </a>
             </div>
             <div class="nav-item">
-                <a href="#" class="nav-link" onclick="showComingSoon('Subscription Management')">
+                <a href="subscriptionManagement.html" class="nav-link">
                     <i class="fas fa-credit-card"></i>
                     Subscription Management
                 </a>
             </div>
             <div class="nav-item">
-                <a href="#" class="nav-link" onclick="showComingSoon('Attendance Management')">
+                <a href="dashboard.html" class="nav-link">
                     <i class="fas fa-calendar-check"></i>
                     Attendance Management
                 </a>
             </div>
             <div class="nav-item">
-                <a href="#" class="nav-link" onclick="showComingSoon('Reports & Analytics')">
+                <a href="quarterly_plans_summary.html" class="nav-link">
                     <i class="fas fa-chart-line"></i>
                     Reports & Analytics
                 </a>
@@ -967,7 +967,7 @@
         </div>
 
         <div class="logout-section">
-            <a href="home.html" class="logout-btn" onclick="handleLogout()">
+            <a href="login.html" class="logout-btn" onclick="handleLogout()">
                 <i class="fas fa-sign-out-alt"></i>
                 Logout
             </a>
@@ -985,7 +985,7 @@
                     <div class="avatar-email">admin@FITNESS GURU.com</div>
                 </div>
                 <div class="avatar-actions">
-                    <a href="#" class="avatar-link" onclick="showComingSoon('Admin Profile')">
+                    <a href="profile.html" class="avatar-link">
                         <i class="fas fa-user-shield"></i>
                         Admin Profile
                     </a>
@@ -993,7 +993,7 @@
                         <i class="fas fa-cog"></i>
                         System Settings
                     </a>
-                    <a href="home.html" class="avatar-link" onclick="handleLogout()" style="color: #dc3545;">
+                    <a href="login.html" class="avatar-link" onclick="handleLogout()" style="color: #dc3545;">
                         <i class="fas fa-sign-out-alt"></i>
                         Logout
                     </a>
@@ -1053,9 +1053,9 @@
                             <label class="form-label">Membership Plan</label>
                             <select class="form-select" required>
                                 <option value="">Select Plan</option>
-                                <option value="basic">Basic - $29.99/month</option>
-                                <option value="premium">Premium - $49.99/month</option>
-                                <option value="elite">Elite - $79.99/month</option>
+                                <option value="basic">Basic - ₹2,499/month</option>
+                                <option value="premium">Premium - ₹3,999/month</option>
+                                <option value="elite">Elite - ₹6,499/month</option>
                             </select>
                         </div>
                     </div>
@@ -1109,7 +1109,33 @@
             </div>
         </div>
 
-        <!-- Members List -->
+        <!-- Quick Access Actions -->
+        <div class="dashboard-section">
+            <h3 class="section-title">Quick Actions</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                <a href="subscriptionManagement.html" style="text-decoration: none;">
+                    <div style="background: linear-gradient(135deg, #ff6b35, #f7931e); color: white; padding: 1.5rem; border-radius: 15px; text-align: center; transition: transform 0.3s ease;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+                        <i class="fas fa-credit-card" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                        <h4 style="margin-bottom: 0.5rem;">Manage Subscriptions</h4>
+                        <p style="opacity: 0.9; font-size: 0.9rem;">Create packages, set pricing & offers</p>
+                    </div>
+                </a>
+                <a href="dashboard.html" style="text-decoration: none;">
+                    <div style="background: linear-gradient(135deg, #22c55e, #16a34a); color: white; padding: 1.5rem; border-radius: 15px; text-align: center; transition: transform 0.3s ease;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+                        <i class="fas fa-calendar-check" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                        <h4 style="margin-bottom: 0.5rem;">View Attendance</h4>
+                        <p style="opacity: 0.9; font-size: 0.9rem;">Track member check-ins & activity</p>
+                    </div>
+                </a>
+                <a href="quarterly_plans_summary.html" style="text-decoration: none;">
+                    <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 1.5rem; border-radius: 15px; text-align: center; transition: transform 0.3s ease;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+                        <i class="fas fa-chart-line" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                        <h4 style="margin-bottom: 0.5rem;">View Reports</h4>
+                        <p style="opacity: 0.9; font-size: 0.9rem;">Analytics & quarterly summaries</p>
+                    </div>
+                </a>
+            </div>
+        </div>
         <div class="dashboard-section">
             <h3 class="section-title">All Members</h3>
             
@@ -1326,9 +1352,9 @@
         // Logout functionality
         function handleLogout() {
             if (confirm('Are you sure you want to logout?')) {
-                alert('Logged out successfully! Redirecting to home page...');
+                alert('Logged out successfully! Redirecting to login page...');
                 setTimeout(() => {
-                    window.location.href = 'home.html';
+                    window.location.href = 'login.html';
                 }, 1000);
             }
         }
