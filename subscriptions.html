@@ -459,6 +459,15 @@
             font-size: 1rem;
         }
 
+        .plan-savings {
+            color: #10b981;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         .plan-features {
             list-style: none;
             margin-bottom: 2rem;
@@ -680,8 +689,8 @@
             <div class="current-plan-info">
                 <div class="plan-details">
                     <h3>Premium Membership</h3>
-                    <div class="plan-price">$49.99</div>
-                    <div class="plan-billing">per month</div>
+                    <div class="plan-price">$134.97</div>
+                    <div class="plan-billing">per quarter (Save 10%)</div>
                     <div class="plan-status">
                         <i class="fas fa-check-circle"></i>
                         <span>Active until November 30, 2026</span>
@@ -704,8 +713,9 @@
             <div class="membership-card">
                 <h3 class="plan-name">Basic Membership</h3>
                 <div class="plan-price-display">
-                    <div class="plan-price-large">$29.99</div>
-                    <div class="plan-period">per month</div>
+                    <div class="plan-price-large">$80.97</div>
+                    <div class="plan-period">per quarter</div>
+                    <div class="plan-savings">Save 10% vs monthly</div>
                 </div>
                 <ul class="plan-features">
                     <li><i class="fas fa-check"></i> Access to main gym floor</li>
@@ -713,7 +723,7 @@
                     <li><i class="fas fa-check"></i> Free Wi-Fi</li>
                     <li><i class="fas fa-check"></i> One guest pass per month</li>
                 </ul>
-                <button class="plan-button btn-select" onclick="selectPlan('Basic', '29.99')">
+                <button class="plan-button btn-select" onclick="selectPlan('Basic Quarterly', '80.97')">
                     Select Plan
                 </button>
             </div>
@@ -723,8 +733,9 @@
                 <div class="plan-badge current-plan-badge">CURRENT PLAN</div>
                 <h3 class="plan-name">Premium Membership</h3>
                 <div class="plan-price-display">
-                    <div class="plan-price-large">$49.99</div>
-                    <div class="plan-period">per month</div>
+                    <div class="plan-price-large">$134.97</div>
+                    <div class="plan-period">per quarter</div>
+                    <div class="plan-savings">Save 10% vs monthly - CURRENT</div>
                 </div>
                 <ul class="plan-features">
                     <li><i class="fas fa-check"></i> All Basic features</li>
@@ -743,8 +754,9 @@
                 <div class="plan-badge">MOST POPULAR</div>
                 <h3 class="plan-name">Elite Membership</h3>
                 <div class="plan-price-display">
-                    <div class="plan-price-large">$79.99</div>
-                    <div class="plan-period">per month</div>
+                    <div class="plan-price-large">$215.97</div>
+                    <div class="plan-period">per quarter</div>
+                    <div class="plan-savings">Save 10% vs monthly</div>
                 </div>
                 <ul class="plan-features">
                     <li><i class="fas fa-check"></i> All Premium features</li>
@@ -752,7 +764,7 @@
                     <li><i class="fas fa-check"></i> Sauna & Steam room access</li>
                     <li><i class="fas fa-check"></i> Priority class booking</li>
                 </ul>
-                <button class="plan-button btn-upgrade" onclick="selectPlan('Elite', '79.99')">
+                <button class="plan-button btn-upgrade" onclick="selectPlan('Elite Quarterly', '215.97')">
                     Upgrade Plan
                 </button>
             </div>

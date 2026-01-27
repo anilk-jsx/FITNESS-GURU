@@ -537,12 +537,14 @@
         .toggle-container {
             position: relative;
             display: inline-block;
-            width: 200px;
+            width: 300px;
             height: 50px;
             background: #e9ecef;
             border-radius: 25px;
             cursor: pointer;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
         }
 
         .toggle-slider {
@@ -557,39 +559,33 @@
             box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
         }
 
-        .toggle-container.annual .toggle-slider {
+        .toggle-container.quarterly .toggle-slider {
             transform: translateX(96px);
         }
 
+        .toggle-container.annual .toggle-slider {
+            transform: translateX(192px);
+        }
+
         .toggle-option {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
+            flex: 1;
+            text-align: center;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: color 0.3s ease;
             z-index: 2;
-        }
-
-        .toggle-option.monthly {
-            left: 20px;
-            color: white;
-        }
-
-        .toggle-option.annually {
-            right: 20px;
+            padding: 10px 5px;
             color: #666;
+            cursor: pointer;
         }
 
-        .toggle-container.annual .toggle-option.monthly {
-            color: #666;
-        }
-
+        .toggle-container:not(.quarterly):not(.annual) .toggle-option.monthly,
+        .toggle-container.quarterly .toggle-option.quarterly,
         .toggle-container.annual .toggle-option.annually {
             color: white;
         }
 
-        .annual-discount {
+        .discount-message {
             text-align: center;
             margin-bottom: 2rem;
             color: #28a745;
@@ -599,7 +595,7 @@
             transition: opacity 0.3s ease;
         }
 
-        .annual-discount.show {
+        .discount-message.show {
             opacity: 1;
         }
 
@@ -1072,16 +1068,20 @@
             
             <!-- Pricing Toggle -->
             <div class="pricing-toggle fade-in">
-                <div class="toggle-container" id="pricing-toggle">
+                <div class="toggle-container monthly" id="pricing-toggle">
                     <div class="toggle-slider"></div>
                     <span class="toggle-option monthly">Monthly</span>
+                    <span class="toggle-option quarterly">Quarterly</span>
                     <span class="toggle-option annually">Annually</span>
                 </div>
             </div>
             
-            <!-- Annual Discount Message -->
-            <div class="annual-discount" id="annual-discount">
-                Annually you have 2 months free 😊
+            <!-- Discount Messages -->
+            <div class="discount-message" id="quarterly-discount">
+                Save 10% with quarterly billing! 💪
+            </div>
+            <div class="discount-message" id="annual-discount">
+                Save 17% with annual billing - 2 months free! 😊
             </div>
             
             <div class="membership-grid">
@@ -1089,8 +1089,8 @@
                     <h3>Basic</h3>
                     <div class="membership-price">
                         <span class="currency">₹</span>
-                        <span class="price-value" data-monthly="1499" data-annual="14999">1499</span>
-                        <span class="original-price" data-monthly="" data-annual="₹17,988" style="display: none;"></span>
+                        <span class="price-value" data-monthly="1499" data-quarterly="4047" data-annual="14999">1499</span>
+                        <span class="original-price" data-monthly="" data-quarterly="₹4,497" data-annual="₹17,988" style="display: none;"></span>
                     </div>
                     <div class="membership-period" id="basic-period">per month</div>
                     <ul class="membership-features">
@@ -1106,8 +1106,8 @@
                     <h3>Premium</h3>
                     <div class="membership-price">
                         <span class="currency">₹</span>
-                        <span class="price-value" data-monthly="2499" data-annual="24999">2499</span>
-                        <span class="original-price" data-monthly="" data-annual="₹29,988" style="display: none;"></span>
+                        <span class="price-value" data-monthly="2499" data-quarterly="6747" data-annual="24999">2499</span>
+                        <span class="original-price" data-monthly="" data-quarterly="₹7,497" data-annual="₹29,988" style="display: none;"></span>
                     </div>
                     <div class="membership-period" id="premium-period">per month</div>
                     <ul class="membership-features">
@@ -1124,8 +1124,8 @@
                     <h3>Elite</h3>
                     <div class="membership-price">
                         <span class="currency">₹</span>
-                        <span class="price-value" data-monthly="3999" data-annual="39999">3999</span>
-                        <span class="original-price" data-monthly="" data-annual="₹47,988" style="display: none;"></span>
+                        <span class="price-value" data-monthly="3999" data-quarterly="10797" data-annual="39999">3999</span>
+                        <span class="original-price" data-monthly="" data-quarterly="₹11,997" data-annual="₹47,988" style="display: none;"></span>
                     </div>
                     <div class="membership-period" id="elite-period">per month</div>
                     <ul class="membership-features">
@@ -1264,20 +1264,75 @@
 
         // Pricing toggle functionality
         const pricingToggle = document.getElementById('pricing-toggle');
+        const quarterlyDiscount = document.getElementById('quarterly-discount');
         const annualDiscount = document.getElementById('annual-discount');
         const priceValues = document.querySelectorAll('.price-value');
         const originalPrices = document.querySelectorAll('.original-price');
         const periods = document.querySelectorAll('.membership-period');
         
-        let isAnnual = false;
+        let currentPricing = 'monthly'; // 'monthly', 'quarterly', 'annual'
         
-        pricingToggle.addEventListener('click', () => {
-            isAnnual = !isAnnual;
-            pricingToggle.classList.toggle('annual');
+        // Add click listeners to each toggle option
+        document.querySelector('.toggle-option.monthly').addEventListener('click', () => {
+            switchPricing('monthly');
+        });
+        
+        document.querySelector('.toggle-option.quarterly').addEventListener('click', () => {
+            switchPricing('quarterly');
+        });
+        
+        document.querySelector('.toggle-option.annually').addEventListener('click', () => {
+            switchPricing('annual');
+        });
+        
+        function switchPricing(newPricing) {
+            if (currentPricing === newPricing) return;
             
-            if (isAnnual) {
+            currentPricing = newPricing;
+            
+            // Update toggle container classes
+            pricingToggle.className = 'toggle-container ' + newPricing;
+            
+            // Hide all discount messages first
+            quarterlyDiscount.classList.remove('show');
+            annualDiscount.classList.remove('show');
+            
+            // Update pricing and show appropriate discount message
+            if (newPricing === 'monthly') {
+                priceValues.forEach(price => {
+                    const monthlyPrice = price.getAttribute('data-monthly');
+                    price.textContent = monthlyPrice;
+                });
+                
+                originalPrices.forEach(original => {
+                    original.style.display = 'none';
+                });
+                
+                periods.forEach(period => {
+                    period.textContent = 'per month';
+                });
+            } else if (newPricing === 'quarterly') {
+                quarterlyDiscount.classList.add('show');
+                
+                priceValues.forEach(price => {
+                    const quarterlyPrice = price.getAttribute('data-quarterly');
+                    price.textContent = quarterlyPrice;
+                });
+                
+                originalPrices.forEach(original => {
+                    const quarterlyOriginal = original.getAttribute('data-quarterly');
+                    if (quarterlyOriginal) {
+                        original.textContent = quarterlyOriginal;
+                        original.style.display = 'inline';
+                    }
+                });
+                
+                periods.forEach(period => {
+                    period.textContent = 'per quarter';
+                });
+            } else if (newPricing === 'annual') {
                 annualDiscount.classList.add('show');
-                // Switch to annual pricing
+                
                 priceValues.forEach(price => {
                     const annualPrice = price.getAttribute('data-annual');
                     price.textContent = annualPrice;
@@ -1294,23 +1349,8 @@
                 periods.forEach(period => {
                     period.textContent = 'per year';
                 });
-            } else {
-                annualDiscount.classList.remove('show');
-                // Switch to monthly pricing
-                priceValues.forEach(price => {
-                    const monthlyPrice = price.getAttribute('data-monthly');
-                    price.textContent = monthlyPrice;
-                });
-                
-                originalPrices.forEach(original => {
-                    original.style.display = 'none';
-                });
-                
-                periods.forEach(period => {
-                    period.textContent = 'per month';
-                });
             }
-        });
+        }
 
         // Mobile menu toggle (basic functionality)
         document.getElementById('mobile-menu').addEventListener('click', () => {
