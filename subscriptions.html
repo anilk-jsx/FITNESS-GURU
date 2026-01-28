@@ -478,6 +478,113 @@
             letter-spacing: 0.5px;
         }
 
+        /* Pricing Toggle Styles */
+        .pricing-toggle-section {
+            margin: 3rem 0;
+            padding: 2rem 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .pricing-toggle-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .pricing-toggle-section::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .pricing-toggle {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .toggle-container {
+            position: relative;
+            display: inline-block;
+            width: 300px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 96px;
+            height: 42px;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border-radius: 21px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
+        }
+
+        .toggle-container.quarterly .toggle-slider {
+            transform: translateX(96px);
+        }
+
+        .toggle-container.annual .toggle-slider {
+            transform: translateX(192px);
+        }
+
+        .toggle-option {
+            flex: 1;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: color 0.3s ease;
+            z-index: 2;
+            padding: 10px 5px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+        }
+
+        .toggle-container:not(.quarterly):not(.annual) .toggle-option.monthly,
+        .toggle-container.quarterly .toggle-option.quarterly,
+        .toggle-container.annual .toggle-option.annually {
+            color: white;
+            font-weight: 700;
+        }
+
+        .discount-message {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #10b981;
+            font-weight: 600;
+            font-size: 1.1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .discount-message.show {
+            opacity: 1;
+        }
+
         .plan-features {
             list-style: none;
             margin-bottom: 2rem;
@@ -717,15 +824,36 @@
             </div>
         </div>
 
+        <!-- Pricing Toggle Section -->
+        <div class="pricing-toggle-section">
+            <!-- Pricing Toggle -->
+            <div class="pricing-toggle">
+                <div class="toggle-container quarterly" id="pricing-toggle">
+                    <div class="toggle-slider"></div>
+                    <div class="toggle-option monthly">Monthly</div>
+                    <div class="toggle-option quarterly">Quarterly</div>
+                    <div class="toggle-option annually">Annually</div>
+                </div>
+            </div>
+            
+            <!-- Discount Messages -->
+            <div class="discount-message show" id="quarterly-discount">
+                💰 Save 10% with quarterly billing!
+            </div>
+            <div class="discount-message" id="annual-discount">
+                🎉 Save 16% with annual billing - Best Value!
+            </div>
+        </div>
+
         <!-- Membership Plans -->
         <div class="membership-plans">
             <!-- Basic Plan -->
             <div class="membership-card">
                 <h3 class="plan-name">Basic Membership</h3>
                 <div class="plan-price-display">
-                    <div class="plan-price-large">₹4,047</div>
-                    <div class="plan-period">per quarter</div>
-                    <div class="plan-savings">Save 10% vs monthly</div>
+                    <div class="plan-price-large" data-monthly="₹1,499" data-quarterly="₹4,047" data-annual="₹14,999">₹4,047</div>
+                    <div class="plan-period" id="basic-period">per quarter</div>
+                    <div class="plan-savings" id="basic-savings" style="display: block;">Save 10% vs monthly</div>
                 </div>
                 <ul class="plan-features">
                     <li><i class="fas fa-check"></i> Full gym access</li>
@@ -734,19 +862,19 @@
                     <li><i class="fas fa-check"></i> Mobile app access</li>
                     <li><i class="fas fa-check"></i> Community support</li>
                 </ul>
-                <button class="plan-button btn-select" onclick="selectPlan('Basic Quarterly', '4047')">
+                <button class="plan-button btn-select" onclick="selectPlan('Basic', '1499')">
                     Select Plan
                 </button>
             </div>
 
             <!-- Premium Plan (Current) -->
-            <div class="membership-card featured current">
-                <div class="plan-badge current-plan-badge">CURRENT PLAN</div>
+            <div class="membership-card featured current" id="premium-card">
+                <div class="plan-badge current-plan-badge" id="current-badge">CURRENT PLAN</div>
                 <h3 class="plan-name">Premium Membership</h3>
                 <div class="plan-price-display">
-                    <div class="plan-price-large">₹6,747</div>
-                    <div class="plan-period">per quarter</div>
-                    <div class="plan-savings">Save 10% vs monthly - CURRENT</div>
+                    <div class="plan-price-large" data-monthly="₹2,499" data-quarterly="₹6,747" data-annual="₹24,999">₹6,747</div>
+                    <div class="plan-period" id="premium-period">per quarter</div>
+                    <div class="plan-savings" id="premium-savings" style="display: block;">Save 10% vs monthly - CURRENT</div>
                 </div>
                 <ul class="plan-features">
                     <li><i class="fas fa-check"></i> Everything in Basic</li>
@@ -756,7 +884,7 @@
                     <li><i class="fas fa-check"></i> Nutrition consultation</li>
                     <li><i class="fas fa-check"></i> Guest passes (2/month)</li>
                 </ul>
-                <button class="plan-button btn-current">
+                <button class="plan-button btn-current" id="premium-button">
                     Current Plan
                 </button>
             </div>
@@ -766,9 +894,9 @@
                 <div class="plan-badge">MOST POPULAR</div>
                 <h3 class="plan-name">Elite Membership</h3>
                 <div class="plan-price-display">
-                    <div class="plan-price-large">₹10,797</div>
-                    <div class="plan-period">per quarter</div>
-                    <div class="plan-savings">Save 10% vs monthly</div>
+                    <div class="plan-price-large" data-monthly="₹3,999" data-quarterly="₹10,797" data-annual="₹39,999">₹10,797</div>
+                    <div class="plan-period" id="elite-period">per quarter</div>
+                    <div class="plan-savings" id="elite-savings" style="display: block;">Save 10% vs monthly</div>
                 </div>
                 <ul class="plan-features">
                     <li><i class="fas fa-check"></i> Everything in Premium</li>
@@ -778,7 +906,7 @@
                     <li><i class="fas fa-check"></i> Custom meal planning</li>
                     <li><i class="fas fa-check"></i> VIP locker room access</li>
                 </ul>
-                <button class="plan-button btn-upgrade" onclick="selectPlan('Elite Quarterly', '10797')">
+                <button class="plan-button btn-upgrade" onclick="selectPlan('Elite', '3999')">
                     Upgrade Plan
                 </button>
             </div>
@@ -818,8 +946,12 @@
 
         // Select plan functionality
         function selectPlan(planName, price) {
-            if (confirm(`Are you sure you want to select the ${planName} plan for $${price}/month?`)) {
-                alert(`Great choice! You selected the ${planName} plan. Redirecting to checkout...`);
+            const currentPricing = document.getElementById('pricing-toggle').className.includes('quarterly') ? 'Quarterly' : 
+                                 document.getElementById('pricing-toggle').className.includes('annual') ? 'Annual' : 'Monthly';
+            const fullPlanName = `${planName} ${currentPricing}`;
+            
+            if (confirm(`Are you sure you want to select the ${fullPlanName} plan for ₹${price}?`)) {
+                alert(`Great choice! You selected the ${fullPlanName} plan. Redirecting to checkout...`);
                 // In a real application, this would redirect to checkout
                 // For now, simulate the process
                 updateProgressSteps(2);
@@ -830,6 +962,109 @@
                         location.reload();
                     }, 2000);
                 }, 2000);
+            }
+        }
+
+        // Pricing toggle functionality
+        const pricingToggle = document.getElementById('pricing-toggle');
+        const quarterlyDiscount = document.getElementById('quarterly-discount');
+        const annualDiscount = document.getElementById('annual-discount');
+        
+        let currentPricing = 'quarterly'; // Start with quarterly as default
+        
+        // Initialize page with quarterly pricing
+        document.addEventListener('DOMContentLoaded', function() {
+            switchPricing('quarterly');
+        });
+        
+        // Add click listeners to each toggle option
+        document.querySelector('.toggle-option.monthly').addEventListener('click', () => {
+            switchPricing('monthly');
+        });
+        
+        document.querySelector('.toggle-option.quarterly').addEventListener('click', () => {
+            switchPricing('quarterly');
+        });
+        
+        document.querySelector('.toggle-option.annually').addEventListener('click', () => {
+            switchPricing('annual');
+        });
+        
+        function switchPricing(newPricing) {
+            if (currentPricing === newPricing) return;
+            
+            currentPricing = newPricing;
+            
+            // Update toggle container classes
+            pricingToggle.className = 'toggle-container ' + newPricing;
+            
+            // Hide all discount messages first
+            quarterlyDiscount.classList.remove('show');
+            annualDiscount.classList.remove('show');
+            
+            // Get all price elements and period elements
+            const priceElements = document.querySelectorAll('.plan-price-large[data-monthly]');
+            const periodElements = document.querySelectorAll('.plan-period');
+            const savingsElements = document.querySelectorAll('.plan-savings');
+            
+            // Get Premium plan elements
+            const premiumCard = document.getElementById('premium-card');
+            const currentBadge = document.getElementById('current-badge');
+            const premiumButton = document.getElementById('premium-button');
+            
+            // Update pricing and show appropriate discount message
+            if (newPricing === 'monthly') {
+                priceElements.forEach(el => {
+                    el.textContent = el.getAttribute('data-monthly');
+                });
+                periodElements.forEach(el => {
+                    el.textContent = 'per month';
+                });
+                savingsElements.forEach(el => {
+                    el.style.display = 'none';
+                });
+                // Remove current plan styling from Premium
+                premiumCard.classList.remove('current');
+                currentBadge.style.display = 'none';
+                premiumButton.className = 'plan-button btn-select';
+                premiumButton.onclick = () => selectPlan('Premium', '2499');
+                premiumButton.textContent = 'Select Plan';
+            } else if (newPricing === 'quarterly') {
+                quarterlyDiscount.classList.add('show');
+                priceElements.forEach(el => {
+                    el.textContent = el.getAttribute('data-quarterly');
+                });
+                periodElements.forEach(el => {
+                    el.textContent = 'per quarter';
+                });
+                savingsElements.forEach(el => {
+                    el.style.display = 'block';
+                    el.textContent = el.id.includes('premium') ? 'Save 10% vs monthly - CURRENT' : 'Save 10% vs monthly';
+                });
+                // Add current plan styling to Premium for quarterly
+                premiumCard.classList.add('current');
+                currentBadge.style.display = 'block';
+                premiumButton.className = 'plan-button btn-current';
+                premiumButton.onclick = null;
+                premiumButton.textContent = 'Current Plan';
+            } else if (newPricing === 'annual') {
+                annualDiscount.classList.add('show');
+                priceElements.forEach(el => {
+                    el.textContent = el.getAttribute('data-annual');
+                });
+                periodElements.forEach(el => {
+                    el.textContent = 'per year';
+                });
+                savingsElements.forEach(el => {
+                    el.style.display = 'block';
+                    el.textContent = el.id.includes('premium') ? 'Save 16% vs monthly - CURRENT' : 'Save 16% vs monthly';
+                });
+                // Remove current plan styling from Premium
+                premiumCard.classList.remove('current');
+                currentBadge.style.display = 'none';
+                premiumButton.className = 'plan-button btn-select';
+                premiumButton.onclick = () => selectPlan('Premium', '24999');
+                premiumButton.textContent = 'Select Plan';
             }
         }
 
