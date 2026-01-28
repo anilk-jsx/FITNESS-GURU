@@ -401,8 +401,16 @@
             color: #6c757d;
         }
 
+        .membership-card.current .plan-savings {
+            color: #22c55e;
+        }
+
         .membership-card.current .plan-features li {
             color: #333;
+        }
+
+        .membership-card.current .plan-features li i {
+            color: #22c55e;
         }
 
         .plan-badge {
@@ -440,11 +448,13 @@
             margin-bottom: 2rem;
         }
 
-        .membership-card.current .plan-price-large {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .plan-price-large {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #ff0080;
+            margin-bottom: 0.5rem;
+            display: block;
+            line-height: 1;
         }
 
         .membership-card.current .plan-price-large {
@@ -689,7 +699,7 @@
             <div class="current-plan-info">
                 <div class="plan-details">
                     <h3>Premium Membership</h3>
-                    <div class="plan-price">$134.97</div>
+                    <div class="plan-price">₹6,747</div>
                     <div class="plan-billing">per quarter (Save 10%)</div>
                     <div class="plan-status">
                         <i class="fas fa-check-circle"></i>
@@ -713,17 +723,18 @@
             <div class="membership-card">
                 <h3 class="plan-name">Basic Membership</h3>
                 <div class="plan-price-display">
-                    <div class="plan-price-large">$80.97</div>
+                    <div class="plan-price-large">₹4,047</div>
                     <div class="plan-period">per quarter</div>
                     <div class="plan-savings">Save 10% vs monthly</div>
                 </div>
                 <ul class="plan-features">
-                    <li><i class="fas fa-check"></i> Access to main gym floor</li>
-                    <li><i class="fas fa-check"></i> Standard locker room access</li>
-                    <li><i class="fas fa-check"></i> Free Wi-Fi</li>
-                    <li><i class="fas fa-check"></i> One guest pass per month</li>
+                    <li><i class="fas fa-check"></i> Full gym access</li>
+                    <li><i class="fas fa-check"></i> Locker room facilities</li>
+                    <li><i class="fas fa-check"></i> Basic fitness assessment</li>
+                    <li><i class="fas fa-check"></i> Mobile app access</li>
+                    <li><i class="fas fa-check"></i> Community support</li>
                 </ul>
-                <button class="plan-button btn-select" onclick="selectPlan('Basic Quarterly', '80.97')">
+                <button class="plan-button btn-select" onclick="selectPlan('Basic Quarterly', '4047')">
                     Select Plan
                 </button>
             </div>
@@ -733,16 +744,17 @@
                 <div class="plan-badge current-plan-badge">CURRENT PLAN</div>
                 <h3 class="plan-name">Premium Membership</h3>
                 <div class="plan-price-display">
-                    <div class="plan-price-large">$134.97</div>
+                    <div class="plan-price-large">₹6,747</div>
                     <div class="plan-period">per quarter</div>
                     <div class="plan-savings">Save 10% vs monthly - CURRENT</div>
                 </div>
                 <ul class="plan-features">
-                    <li><i class="fas fa-check"></i> All Basic features</li>
-                    <li><i class="fas fa-check"></i> Access to all classes</li>
-                    <li><i class="fas fa-check"></i> Personal training session (1/month)</li>
-                    <li><i class="fas fa-check"></i> Towel service</li>
-                    <li><i class="fas fa-check"></i> Nutritional guidance</li>
+                    <li><i class="fas fa-check"></i> Everything in Basic</li>
+                    <li><i class="fas fa-check"></i> Group fitness classes</li>
+                    <li><i class="fas fa-check"></i> Personal training session</li>
+                    <li><i class="fas fa-check"></i> Wellness center access</li>
+                    <li><i class="fas fa-check"></i> Nutrition consultation</li>
+                    <li><i class="fas fa-check"></i> Guest passes (2/month)</li>
                 </ul>
                 <button class="plan-button btn-current">
                     Current Plan
@@ -754,17 +766,19 @@
                 <div class="plan-badge">MOST POPULAR</div>
                 <h3 class="plan-name">Elite Membership</h3>
                 <div class="plan-price-display">
-                    <div class="plan-price-large">$215.97</div>
+                    <div class="plan-price-large">₹10,797</div>
                     <div class="plan-period">per quarter</div>
                     <div class="plan-savings">Save 10% vs monthly</div>
                 </div>
                 <ul class="plan-features">
-                    <li><i class="fas fa-check"></i> All Premium features</li>
-                    <li><i class="fas fa-check"></i> Unlimited personal training sessions</li>
-                    <li><i class="fas fa-check"></i> Sauna & Steam room access</li>
+                    <li><i class="fas fa-check"></i> Everything in Premium</li>
+                    <li><i class="fas fa-check"></i> Unlimited personal training</li>
                     <li><i class="fas fa-check"></i> Priority class booking</li>
+                    <li><i class="fas fa-check"></i> Massage therapy sessions</li>
+                    <li><i class="fas fa-check"></i> Custom meal planning</li>
+                    <li><i class="fas fa-check"></i> VIP locker room access</li>
                 </ul>
-                <button class="plan-button btn-upgrade" onclick="selectPlan('Elite Quarterly', '215.97')">
+                <button class="plan-button btn-upgrade" onclick="selectPlan('Elite Quarterly', '10797')">
                     Upgrade Plan
                 </button>
             </div>
