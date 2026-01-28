@@ -393,9 +393,7 @@
                     } else {
                         // Invalid credentials
                         showError('login-email', 'Invalid email or password');
-                        showError('login-password', 'Invalid email or password');
-                        alert('Invalid credentials! Please check your email and password.\n\nValid credentials:\n• User: user@gmail.com / user@123\n• Admin: admin@fg.com / admin@123');
-                        
+                        showError('login-password', 'Invalid email or password');                        
                         // Reset button state
                         submitButton.classList.remove('loading');
                         submitButton.disabled = false;
