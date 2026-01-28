@@ -462,6 +462,154 @@
             gap: 1rem;
         }
 
+        /* Pricing Toggle Styles */
+        .pricing-toggle {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .toggle-container {
+            position: relative;
+            display: inline-block;
+            width: 300px;
+            height: 50px;
+            background: #e9ecef;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 96px;
+            height: 42px;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border-radius: 21px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
+        }
+
+        .toggle-container.quarterly .toggle-slider {
+            transform: translateX(96px);
+        }
+
+        .toggle-container.annual .toggle-slider {
+            transform: translateX(192px);
+        }
+
+        .toggle-option {
+            flex: 1;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: color 0.3s ease;
+            z-index: 2;
+            padding: 10px 5px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .toggle-container:not(.quarterly):not(.annual) .toggle-option.monthly,
+        .toggle-container.quarterly .toggle-option.quarterly,
+        .toggle-container.annual .toggle-option.annually {
+            color: white;
+        }
+
+        .discount-message {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #28a745;
+            font-weight: 600;
+            font-size: 1.1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .discount-message.show {
+            opacity: 1;
+        }
+
+        /* Pricing Toggle Styles */
+        .pricing-toggle {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .toggle-container {
+            position: relative;
+            display: inline-block;
+            width: 300px;
+            height: 50px;
+            background: #e9ecef;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 96px;
+            height: 42px;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border-radius: 21px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
+        }
+
+        .toggle-container.quarterly .toggle-slider {
+            transform: translateX(96px);
+        }
+
+        .toggle-container.annual .toggle-slider {
+            transform: translateX(192px);
+        }
+
+        .toggle-option {
+            flex: 1;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: color 0.3s ease;
+            z-index: 2;
+            padding: 10px 5px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .toggle-container:not(.quarterly):not(.annual) .toggle-option.monthly,
+        .toggle-container.quarterly .toggle-option.quarterly,
+        .toggle-container.annual .toggle-option.annually {
+            color: white;
+        }
+
+        .discount-message {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #28a745;
+            font-weight: 600;
+            font-size: 1.1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .discount-message.show {
+            opacity: 1;
+        }
+
         /* Discount Card */
         .discount-card {
             background: linear-gradient(135deg, #22c55e, #16a34a);
@@ -1022,12 +1170,30 @@
                 Current Packages
             </h3>
             
+            <!-- Pricing Toggle -->
+            <div class="pricing-toggle">
+                <div class="toggle-container" id="pricing-toggle">
+                    <div class="toggle-slider"></div>
+                    <div class="toggle-option monthly">Monthly</div>
+                    <div class="toggle-option quarterly">Quarterly</div>
+                    <div class="toggle-option annually">Annually</div>
+                </div>
+            </div>
+            
+            <!-- Discount Messages -->
+            <div class="discount-message" id="quarterly-discount">
+                💰 Save 10% with quarterly billing!
+            </div>
+            <div class="discount-message" id="annual-discount">
+                🎉 Save 16% with annual billing - Best Value!
+            </div>
+            
             <div class="packages-grid">
                 <!-- Basic Package -->
                 <div class="package-card">
                     <div class="package-header">
                         <div class="package-name">Basic</div>
-                        <div class="package-price">₹2,499</div>
+                        <div class="package-price" data-monthly="₹2,499" data-quarterly="₹6,747" data-annual="₹24,999">₹2,499</div>
                         <div class="package-duration">per month</div>
                     </div>
                     <ul class="package-features">
@@ -1052,7 +1218,7 @@
                 <div class="package-card featured">
                     <div class="package-header">
                         <div class="package-name">Premium</div>
-                        <div class="package-price">₹3,999</div>
+                        <div class="package-price" data-monthly="₹3,999" data-quarterly="₹10,797" data-annual="₹39,999">₹3,999</div>
                         <div class="package-duration">per month</div>
                     </div>
                     <ul class="package-features">
@@ -1077,7 +1243,7 @@
                 <div class="package-card">
                     <div class="package-header">
                         <div class="package-name">Elite</div>
-                        <div class="package-price">₹6,499</div>
+                        <div class="package-price" data-monthly="₹6,499" data-quarterly="₹17,547" data-annual="₹64,999">₹6,499</div>
                         <div class="package-duration">per month</div>
                     </div>
                     <ul class="package-features">
@@ -1301,6 +1467,69 @@
         // Placeholder function for coming soon features
         function showComingSoon(feature) {
             alert(`${feature} feature is coming soon! 🚀\n\nThis feature is currently under development and will be available in a future update.`);
+        }
+
+        // Pricing toggle functionality
+        const pricingToggle = document.getElementById('pricing-toggle');
+        const quarterlyDiscount = document.getElementById('quarterly-discount');
+        const annualDiscount = document.getElementById('annual-discount');
+        
+        let currentPricing = 'monthly'; // 'monthly', 'quarterly', 'annual'
+        
+        // Add click listeners to each toggle option
+        document.querySelector('.toggle-option.monthly').addEventListener('click', () => {
+            switchPricing('monthly');
+        });
+        
+        document.querySelector('.toggle-option.quarterly').addEventListener('click', () => {
+            switchPricing('quarterly');
+        });
+        
+        document.querySelector('.toggle-option.annually').addEventListener('click', () => {
+            switchPricing('annual');
+        });
+        
+        function switchPricing(newPricing) {
+            if (currentPricing === newPricing) return;
+            
+            currentPricing = newPricing;
+            
+            // Update toggle container classes
+            pricingToggle.className = 'toggle-container ' + newPricing;
+            
+            // Hide all discount messages first
+            quarterlyDiscount.classList.remove('show');
+            annualDiscount.classList.remove('show');
+            
+            // Get all price elements and duration elements
+            const priceElements = document.querySelectorAll('.package-price[data-monthly]');
+            const durationElements = document.querySelectorAll('.package-duration');
+            
+            // Update pricing and show appropriate discount message
+            if (newPricing === 'monthly') {
+                priceElements.forEach(el => {
+                    el.textContent = el.getAttribute('data-monthly');
+                });
+                durationElements.forEach(el => {
+                    el.textContent = 'per month';
+                });
+            } else if (newPricing === 'quarterly') {
+                quarterlyDiscount.classList.add('show');
+                priceElements.forEach(el => {
+                    el.textContent = el.getAttribute('data-quarterly');
+                });
+                durationElements.forEach(el => {
+                    el.textContent = 'per quarter';
+                });
+            } else if (newPricing === 'annual') {
+                annualDiscount.classList.add('show');
+                priceElements.forEach(el => {
+                    el.textContent = el.getAttribute('data-annual');
+                });
+                durationElements.forEach(el => {
+                    el.textContent = 'per year';
+                });
+            }
         }
 
         // Package Management Functions
