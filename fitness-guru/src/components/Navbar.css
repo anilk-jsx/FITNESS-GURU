@@ -1,6 +1,6 @@
 /* Header & Navigation */
 .header {
-    background: #1a1a1a;
+    background: transparent;
     padding: 1rem 0;
     position: fixed;
     width: 100%;
@@ -12,8 +12,8 @@
 }
 
 .header.scrolled {
-    background: rgba(26, 26, 26, 0.95);
-    backdrop-filter: blur(10px);
+    background: rgba(26, 26, 26, 0.9);
+    backdrop-filter: blur(15px);
     border: none;
 }
 
