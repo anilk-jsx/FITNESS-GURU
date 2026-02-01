@@ -69,25 +69,6 @@ const Hero = () => {
           }}
         />
       </div>
-      
-      {/* Image indicators */}
-      <div className="hero-indicators">
-        {backgroundImages.map((_, index) => (
-          <button
-            key={index}
-            className={`indicator ${index === currentImageIndex ? 'active' : ''}`}
-            onClick={() => {
-              if (index !== currentImageIndex && !isTransitioning) {
-                setIsTransitioning(true);
-                setTimeout(() => {
-                  setCurrentImageIndex(index);
-                  setIsTransitioning(false);
-                }, 1000);
-              }
-            }}
-          />
-        ))}
-      </div>
 
       <div className="hero-content">
         <h1>Transform Your <span className="highlight-orange">Body</span>,<br />Transform Your <span className="highlight-orange">Life</span></h1>
