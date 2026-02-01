@@ -77,7 +77,7 @@ const Hero = () => {
 
       <div className="hero-content">
         <h1>Transform Your <span className="highlight-orange">Body</span>,<br />Transform Your <span className="highlight-orange">Life</span></h1>
-        <p>
+        <p className="hero-description">
           Join thousands who have already started their fitness journey with FITNESS GURU. 
           State-of-the-art equipment, expert trainers, and a supportive community await you.
         </p>
