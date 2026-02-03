@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import About from './components/About'
+import Facilities from './components/Facilities'
 import './App.css'
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
       <Navbar />
       <Hero />
       <About />
+      <Facilities />
       <div style={{ minHeight: '200vh', background: '#f8f9fa' }}>
         <div id="membership" style={{ paddingTop: '100px', textAlign: 'center' }}>
           <h2 style={{ color: '#333', fontSize: '2.5rem', marginBottom: '2rem' }}>Membership Section</h2>
