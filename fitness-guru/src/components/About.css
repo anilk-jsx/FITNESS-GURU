@@ -1,0 +1,231 @@
+/* Layer 1: Viewport Pin - The Stage */
+.timeline-container {
+  height: 400vh; /* Creates scroll distance for the effect */
+  position: relative;
+}
+
+.timeline-viewport {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
+}
+
+/* Layer 3: SVG Thread - The Connecting Line */
+.timeline-svg {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  z-index: 5;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.timeline-path {
+  transition: stroke-dashoffset 0.1s ease-out;
+}
+
+/* Layer 2: Horizontal Track - The Slide Movement */
+.timeline-track {
+  display: flex;
+  height: 100%;
+  width: max-content;
+  transition: transform 0.1s ease-out;
+}
+
+.timeline-event {
+  width: 100vw;
+  height: 100vh;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Layer 4: Parallax Content - The "Morph" Depth */
+
+/* Background Layer - Slow parallax movement */
+.event-background {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.bg-image {
+  position: absolute;
+  width: 400px;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 12px;
+  opacity: 0.4;
+  filter: blur(2px);
+}
+
+.bg-image-1 {
+  top: 10%;
+  left: 5%;
+  transform: rotate(-5deg);
+}
+
+.bg-image-2 {
+  top: 60%;
+  right: 10%;
+  transform: rotate(3deg);
+}
+
+.bg-image-3 {
+  top: 30%;
+  left: 60%;
+  transform: rotate(-2deg);
+}
+
+/* Foreground Content - Full speed */
+.event-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.event-year {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  z-index: 15;
+  text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
+}
+
+.event-images {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 12;
+}
+
+.event-image-card {
+  position: absolute;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.event-image-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Positioning for scattered images */
+.card-1 {
+  top: 8%;
+  left: 8%;
+  width: 320px;
+  height: 240px;
+}
+
+.card-2 {
+  top: 15%;
+  right: 8%;
+  width: 280px;
+  height: 200px;
+}
+
+.card-3 {
+  bottom: 15%;
+  right: 12%;
+  width: 300px;
+  height: 220px;
+}
+
+.event-text {
+  position: absolute;
+  bottom: 8%;
+  left: 8%;
+  max-width: 500px;
+  background: rgba(0,0,0,0.85);
+  padding: 24px;
+  border-radius: 12px;
+  color: #fff;
+  z-index: 16;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.event-text h3 {
+  font-size: 1.8rem;
+  margin: 0 0 12px 0;
+  color: #ff6b35;
+}
+
+.event-text p {
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+  opacity: 0.9;
+  font-style: italic;
+}
+
+/* Active event scaling and focus effects */
+.timeline-event.active .event-content {
+  transform: scale(1.02);
+}
+
+.timeline-event.active .event-year {
+  transform: translate(-50%, -50%) scale(1.1);
+  color: #ff6b35;
+}
+
+.timeline-event.active .event-text {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Non-active events fade slightly */
+.timeline-event:not(.active) .event-content {
+  opacity: 0.7;
+}
+
+.timeline-event:not(.active) .event-text {
+  transform: translateY(20px);
+  opacity: 0.6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .event-year {
+    font-size: clamp(2rem, 12vw, 4rem);
+  }
+  
+  .card-1, .card-2, .card-3 {
+    width: 200px;
+    height: 150px;
+  }
+  
+  .event-text {
+    max-width: 300px;
+    padding: 16px;
+    bottom: 5%;
+    left: 5%;
+  }
+  
+  .bg-image {
+    width: 250px;
+    height: 180px;
+  }
+}
