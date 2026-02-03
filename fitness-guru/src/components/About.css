@@ -12,6 +12,29 @@
   background: #000;
 }
 
+/* Hide scrollbar for all browsers */
+body {
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+body::-webkit-scrollbar {
+  display: none;
+}
+
+html {
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+html::-webkit-scrollbar {
+  display: none;
+}
+
 /* Layer 3: SVG Thread - The Connecting Line */
 .timeline-svg {
   position: absolute;
@@ -33,7 +56,8 @@
   display: flex;
   height: 100%;
   width: max-content;
-  transition: transform 0.1s ease-out;
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
 }
 
 .timeline-event {
@@ -47,13 +71,25 @@
   overflow: hidden;
 }
 
+/* Slide transition effects */
+.timeline-event.active {
+  transform: scale(1.01);
+  transition: transform 0.6s ease-out;
+}
+
+.timeline-event:not(.active) {
+  transform: scale(0.98);
+  transition: transform 0.6s ease-out;
+}
+
 /* Layer 4: Parallax Content - The "Morph" Depth */
 
 /* Background Layer - Slow parallax movement */
 .event-background {
   position: absolute;
   inset: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
 }
 
 .bg-image {
@@ -153,7 +189,8 @@
 }
 
 .event-image-card.continuous-transition {
-  transition: all 0.4s ease-out;
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform, opacity;
 }
 
 .event-image-card img {
@@ -190,7 +227,8 @@
   z-index: 16;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255,255,255,0.1);
-  transition: all 0.4s ease-out;
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform, opacity;
 }
 
 .event-text h3 {
@@ -207,9 +245,10 @@
   font-style: italic;
 }
 
-/* Continuous animation system - remove old keyframe animations */
+/* Continuous animation system - smooth transitions */
 .timeline-event .event-year {
-  transition: all 0.3s ease-out;
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform, opacity;
 }
 
 /* Remove old discrete animation classes */
