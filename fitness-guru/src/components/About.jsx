@@ -65,9 +65,10 @@ export default function About() {
         
         setScrollProgress(progress)
         
-        // Determine active event based on progress
+        // Determine active event and transition progress
         const eventProgress = progress * (TIMELINE_EVENTS.length - 1)
-        const currentIndex = Math.min(Math.floor(eventProgress), TIMELINE_EVENTS.length - 1)
+        const currentIndex = Math.floor(eventProgress)
+        const transitionProgress = eventProgress - currentIndex
         setActiveEventIndex(currentIndex)
         
         // Horizontal track animation
@@ -82,6 +83,12 @@ export default function About() {
           const dashOffset = pathLength * (1 - progress)
           path.style.strokeDashoffset = dashOffset
         }
+        
+        // Update CSS custom properties for continuous transitions
+        container.style.setProperty('--scroll-progress', progress)
+        container.style.setProperty('--active-event', currentIndex)
+        container.style.setProperty('--transition-progress', transitionProgress)
+        container.style.setProperty('--event-progress', eventProgress)
       }
     }
 
@@ -134,8 +141,7 @@ export default function About() {
               <div 
                 className="event-background"
                 style={{ 
-                  transform: `translateX(${scrollProgress * 50 * (index - activeEventIndex)}px) scale(${index === activeEventIndex ? 1.1 : 0.9})`,
-                  opacity: index === activeEventIndex ? 0.3 : 0.1 
+                  transform: `translateX(${scrollProgress * 30 * (index - activeEventIndex)}px) scale(${index === activeEventIndex ? 1.05 : 0.95})`,
                 }}
               >
                 {event.images.map((img, imgIndex) => (
@@ -143,28 +149,102 @@ export default function About() {
                     key={imgIndex} 
                     src={img} 
                     alt={`${event.title} bg ${imgIndex}`}
-                    className={`bg-image bg-image-${imgIndex + 1}`}
+                    className={`bg-image bg-image-${imgIndex + 1} animate-on-scroll`}
+                    style={{
+                      '--delay': `${imgIndex * 0.2}s`,
+                      '--initial-x': `${(imgIndex - 1) * 150}px`,
+                      '--initial-y': `${(imgIndex % 2 === 0 ? -80 : 80)}px`
+                    }}
                   />
                 ))}
               </div>
 
               {/* Foreground Content - Full speed */}
               <div className="event-content">
-                <div className="event-year">IN {event.year}...</div>
+                <div 
+                  className="event-year"
+                  style={{
+                    opacity: Math.max(0, 1 - Math.abs(index - scrollProgress * (TIMELINE_EVENTS.length - 1)) * 0.8),
+                    transform: `translate(-50%, -50%) scale(${0.8 + 0.4 * Math.max(0, 1 - Math.abs(index - scrollProgress * (TIMELINE_EVENTS.length - 1)))})`
+                  }}
+                >
+                  IN {event.year}...
+                </div>
                 
                 <div className="event-images">
-                  {event.images.map((img, imgIndex) => (
-                    <div 
-                      key={imgIndex} 
-                      className={`event-image-card card-${imgIndex + 1}`}
-                      style={{
-                        transform: `scale(${index === activeEventIndex ? 1 : 0.8}) translateZ(${index === activeEventIndex ? '20px' : '0'})`,
-                        filter: index === activeEventIndex ? 'blur(0)' : 'blur(1px)'
-                      }}
-                    >
-                      <img src={img} alt={`${event.title} ${imgIndex + 1}`} />
-                    </div>
-                  ))}
+                  {event.images.map((img, imgIndex) => {
+                    // Calculate continuous movement between slides
+                    const eventProgress = scrollProgress * (TIMELINE_EVENTS.length - 1)
+                    const distanceFromActive = index - eventProgress
+                    const isInTransition = Math.abs(distanceFromActive) <= 1
+                    
+                    // Different layouts for each slide
+                    const slideLayouts = {
+                      0: [ // 1990 - Scattered triangle layout
+                        { x: 15, y: 20 },
+                        { x: 70, y: 35 },
+                        { x: 45, y: 70 }
+                      ],
+                      1: [ // 2000 - Linear diagonal
+                        { x: 25, y: 15 },
+                        { x: 50, y: 40 },
+                        { x: 75, y: 65 }
+                      ],
+                      2: [ // 2015 - Circular arrangement
+                        { x: 20, y: 50 },
+                        { x: 60, y: 25 },
+                        { x: 65, y: 75 }
+                      ],
+                      3: [ // 2024 - Modern grid
+                        { x: 10, y: 30 },
+                        { x: 55, y: 20 },
+                        { x: 80, y: 60 }
+                      ]
+                    }
+                    
+                    const layout = slideLayouts[index] || slideLayouts[0]
+                    const basePos = layout[imgIndex] || { x: 50, y: 50 }
+                    
+                    // Calculate transition offset based on scroll
+                    let offsetX = 0
+                    let offsetY = 0
+                    let scale = 1
+                    let rotation = 0
+                    
+                    if (isInTransition) {
+                      const transitionFactor = 1 - Math.abs(distanceFromActive)
+                      
+                      // Different starting positions (not from corners)
+                      const startingPositions = {
+                        0: { x: -200, y: 300, rotation: -90 },  // From bottom-left
+                        1: { x: 400, y: -100, rotation: 180 }, // From top-right
+                        2: { x: 0, y: -200, rotation: 45 }     // From top-center
+                      }
+                      
+                      const start = startingPositions[imgIndex] || { x: 0, y: 0, rotation: 0 }
+                      
+                      // Interpolate between starting and final positions
+                      offsetX = start.x * (1 - transitionFactor)
+                      offsetY = start.y * (1 - transitionFactor)
+                      rotation = start.rotation * (1 - transitionFactor)
+                      scale = 0.4 + (0.6 * transitionFactor)
+                    }
+                    
+                    return (
+                      <div 
+                        key={imgIndex} 
+                        className={`event-image-card card-${imgIndex + 1} continuous-transition`}
+                        style={{
+                          left: `calc(${basePos.x}% + ${offsetX}px)`,
+                          top: `calc(${basePos.y}% + ${offsetY}px)`,
+                          transform: `rotate(${rotation}deg) scale(${scale})`,
+                          transition: 'all 0.4s ease-out'
+                        }}
+                      >
+                        <img src={img} alt={`${event.title} ${imgIndex + 1}`} />
+                      </div>
+                    )
+                  })}
                 </div>
 
                 <div className="event-text">
