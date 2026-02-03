@@ -251,10 +251,6 @@ html::-webkit-scrollbar {
   will-change: transform, opacity;
 }
 
-/* Remove old discrete animation classes */
-.animate-on-scroll {
-  /* Remove old animation properties */
-}
 
 /* Active event emphasis */
 .timeline-event.active .event-content {
