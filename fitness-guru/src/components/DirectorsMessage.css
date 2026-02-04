@@ -76,6 +76,17 @@
   transform: translateY(0);
 }
 
+/* Ensure section is visible */
+.directors-message-section {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 30%, #0f0f0f 70%, #0a0a0a 100%);
+  position: relative;
+  overflow: hidden;
+  padding: 120px 0;
+  opacity: 1;
+  visibility: visible;
+}
+
 .directors-tag {
   display: inline-block;
   background: rgba(255, 107, 53, 0.1);
@@ -247,6 +258,8 @@
   color: #e0e0e0;
   margin-bottom: 3rem;
   text-align: justify;
+  opacity: 1;
+  visibility: visible;
 }
 
 .message-word {

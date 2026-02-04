@@ -20,8 +20,8 @@ const DirectorsMessage = () => {
         }
       },
       {
-        threshold: 0.3,
-        rootMargin: '-50px'
+        threshold: 0.1,
+        rootMargin: '0px'
       }
     )
 
@@ -38,6 +38,9 @@ const DirectorsMessage = () => {
 
   useEffect(() => {
     if (inView) {
+      // Reset word index when coming into view
+      setCurrentWordIndex(-1)
+      
       const timer = setTimeout(() => {
         const interval = setInterval(() => {
           setCurrentWordIndex(prev => {
@@ -51,7 +54,7 @@ const DirectorsMessage = () => {
         }, 150)
         
         return () => clearInterval(interval)
-      }, 1000)
+      }, 500)
       
       return () => clearTimeout(timer)
     }
