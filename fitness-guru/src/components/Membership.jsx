@@ -4,6 +4,7 @@ import './Membership.css'
 const Membership = () => {
   const [inView, setInView] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState('monthly')
+  const [isChangingPlan, setIsChangingPlan] = useState(false)
   const sectionRef = useRef(null)
 
   const pricingPlans = {
@@ -75,7 +76,16 @@ const Membership = () => {
   }, [])
 
   const handlePlanChange = (plan) => {
-    setSelectedPlan(plan)
+    if (plan === selectedPlan) return
+    
+    setIsChangingPlan(true)
+    
+    setTimeout(() => {
+      setSelectedPlan(plan)
+      setTimeout(() => {
+        setIsChangingPlan(false)
+      }, 50)
+    }, 150)
   }
 
   const formatPrice = (price) => {
@@ -129,7 +139,7 @@ const Membership = () => {
         </div>
 
         {/* Pricing Cards */}
-        <div className="pricing-cards">
+        <div className={`pricing-cards ${isChangingPlan ? 'plan-changing' : 'plan-changed'}`}>
           {/* Basic Plan */}
           <div className="pricing-card basic-card">
             <div className="card-header">
@@ -138,7 +148,7 @@ const Membership = () => {
                 <div className="savings-badge">Save {pricingPlans[selectedPlan].basic.savings}</div>
               )}
             </div>
-            <div className="price-section">
+            <div className={`price-section ${isChangingPlan ? 'price-changing' : 'price-changed'}`}>
               <span className="currency">₹</span>
               <span className="price">{formatPrice(pricingPlans[selectedPlan].basic.price)}</span>
               <span className="period">per {pricingPlans[selectedPlan].basic.period}</span>
@@ -165,7 +175,7 @@ const Membership = () => {
                 <div className="savings-badge">Save {pricingPlans[selectedPlan].premium.savings}</div>
               )}
             </div>
-            <div className="price-section">
+            <div className={`price-section ${isChangingPlan ? 'price-changing' : 'price-changed'}`}>
               <span className="currency">₹</span>
               <span className="price">{formatPrice(pricingPlans[selectedPlan].premium.price)}</span>
               <span className="period">per {pricingPlans[selectedPlan].premium.period}</span>
@@ -191,7 +201,7 @@ const Membership = () => {
                 <div className="savings-badge">Save {pricingPlans[selectedPlan].elite.savings}</div>
               )}
             </div>
-            <div className="price-section">
+            <div className={`price-section ${isChangingPlan ? 'price-changing' : 'price-changed'}`}>
               <span className="currency">₹</span>
               <span className="price">{formatPrice(pricingPlans[selectedPlan].elite.price)}</span>
               <span className="period">per {pricingPlans[selectedPlan].elite.period}</span>
