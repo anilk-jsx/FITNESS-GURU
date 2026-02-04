@@ -56,19 +56,62 @@ export default function About() {
   const svgRef = useRef(null)
   const [scrollProgress, setScrollProgress] = useState(0)
   const [activeEventIndex, setActiveEventIndex] = useState(0)
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth <= 768
+    }
+    return false
+  })
+  const [mobileScrollProgress, setMobileScrollProgress] = useState(0)
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
+    console.log('Setting up scroll handler, isMobile:', isMobile)
     const container = containerRef.current
     const track = trackRef.current
     const svg = svgRef.current
     
-    if (!container || !track || !svg) return
+    if (!container) {
+      console.log('No container found')
+      return
+    }
+    
+    // Only check for desktop refs when not on mobile
+    if (!isMobile && (!track || !svg)) {
+      console.log('Desktop mode but missing refs, track:', !!track, 'svg:', !!svg)
+      return
+    }
 
     function handleScroll() {
       const rect = container.getBoundingClientRect()
       const windowHeight = window.innerHeight
       
-      // Pin calculation: when container top reaches viewport top
+      // Mobile behavior: simple vertical scroll progress
+      if (isMobile) {
+        const containerTop = container.offsetTop
+        const containerHeight = container.offsetHeight
+        const scrollTop = window.pageYOffset
+        const scrollFromTop = scrollTop - containerTop
+        
+        // Only start showing images after scrolling into the section
+        const progress = Math.max(0, Math.min(1, scrollFromTop / (containerHeight - windowHeight)))
+        setMobileScrollProgress(progress)
+        
+        // Debug logging
+        console.log('Mobile scroll - Progress:', progress.toFixed(3), 'ScrollFromTop:', scrollFromTop, 'ContainerTop:', containerTop, 'ContainerHeight:', containerHeight)
+        return
+      }
+      
+      // Desktop behavior: Pin calculation when container top reaches viewport top
       if (rect.top <= 0 && rect.bottom >= windowHeight) {
         // Calculate scroll progress through the pinned section
         const totalScrollDistance = rect.height - windowHeight
@@ -110,12 +153,14 @@ export default function About() {
       }
     }
 
-    // Initialize SVG path
-    const path = svg.querySelector('.timeline-path')
-    if (path) {
-      const pathLength = path.getTotalLength()
-      path.style.strokeDasharray = pathLength
-      path.style.strokeDashoffset = pathLength
+    // Initialize SVG path (only for desktop)
+    if (!isMobile) {
+      const path = svg?.querySelector('.timeline-path')
+      if (path) {
+        const pathLength = path.getTotalLength()
+        path.style.strokeDasharray = pathLength
+        path.style.strokeDashoffset = pathLength
+      }
     }
 
     handleScroll()
@@ -126,12 +171,92 @@ export default function About() {
       window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('resize', handleScroll)
     }
-  }, [])
+  }, [isMobile]) // Always include isMobile as dependency
 
   return (
-    <section ref={containerRef} className="timeline-container">
-      {/* Layer 1: Viewport Pin */}
-      <div className="timeline-viewport">
+    <section id="about" ref={containerRef} className={`timeline-container ${isMobile ? 'mobile-layout' : ''}`}>
+      {isMobile ? (
+        // Mobile Layout: Static background with flowing images
+        <div className="mobile-timeline">
+          {/* Static Background Content */}
+          <div className="mobile-bg-content">
+            <div className="mobile-hero-text">
+              <h1>FITNESS GURU</h1>
+              <h2>THE JOURNEY SO FAR</h2>
+              <p>
+                FitnessGuru united 1,500+ registered users with
+                4,000+ community providers united through growth
+                and collaboration. In just 3 action-packed years we
+                built 1000+ groundbreaking industry
+                connections and pushed the boundaries. This
+                year, we're going even bigger and bolder than ever.
+                <br /><br />
+                <strong>FitnessGuru</strong>
+              </p>
+            </div>
+          </div>
+          
+          {/* Flowing Images Container */}
+          <div className="mobile-images-flow">
+            {TIMELINE_EVENTS.flatMap((event, eventIndex) => 
+              event.images.map((img, imgIndex) => {
+                const imageIndex = eventIndex * 3 + imgIndex
+                
+                // Much simpler reveal logic - start showing immediately
+                const revealThreshold = 0.05 + (imageIndex * 0.05) // Very low thresholds
+                const isRevealed = mobileScrollProgress > revealThreshold
+                
+                // Position in two columns
+                const isLeftColumn = imageIndex % 2 === 0
+                const rowIndex = Math.floor(imageIndex / 2)
+                
+                // Simpler positioning: start from bottom and move up
+                const startY = 600 + (rowIndex * 120) // Closer starting position
+                const scrollOffset = mobileScrollProgress * 800 // Less movement needed
+                const finalY = startY - scrollOffset
+                
+                // Always show if revealed for debugging
+                const shouldShow = isRevealed && mobileScrollProgress > 0.01
+                
+                return (
+                  <div 
+                    key={`${eventIndex}-${imgIndex}`}
+                    className="mobile-flow-image"
+                    style={{
+                      transform: `translateY(${finalY}px)`,
+                      left: isLeftColumn ? '5%' : '55%',
+                      opacity: shouldShow ? 0.9 : 0,
+                      transition: 'opacity 0.3s ease',
+                      zIndex: 10 + imageIndex,
+                      backgroundColor: 'rgba(255, 255, 0, 0.3)', // Yellow debug background
+                      border: '2px solid red' // Red border for visibility
+                    }}
+                  >
+                    <img src={img} alt={`${event.title} ${imgIndex + 1}`} />
+                    <div style={{ 
+                      position: 'absolute', 
+                      top: 0, 
+                      left: 0, 
+                      color: 'white', 
+                      fontSize: '10px', 
+                      background: 'rgba(255,0,0,0.8)', 
+                      padding: '4px',
+                      borderRadius: '3px',
+                      zIndex: 1000
+                    }}>
+                      IMG{imageIndex}: Y={Math.round(finalY)} P={Math.round(mobileScrollProgress * 100)}% R={isRevealed ? 'Y' : 'N'}
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+      ) : (
+        // Desktop Layout: Original timeline behavior
+        <>
+          {/* Layer 1: Viewport Pin */}
+          <div className="timeline-viewport">
         
         {/* Layer 3: SVG Thread */}
         <svg ref={svgRef} className="timeline-svg" viewBox="0 0 4000 100">
@@ -299,7 +424,9 @@ export default function About() {
             </div>
           ))}
         </div>
-      </div>
+          </div>
+        </>
+      )}
     </section>
   )
 }
