@@ -75,21 +75,14 @@ export default function About() {
   }, [])
 
   useEffect(() => {
-    console.log('Setting up scroll handler, isMobile:', isMobile)
     const container = containerRef.current
     const track = trackRef.current
     const svg = svgRef.current
     
-    if (!container) {
-      console.log('No container found')
-      return
-    }
+    if (!container) return
     
     // Only check for desktop refs when not on mobile
-    if (!isMobile && (!track || !svg)) {
-      console.log('Desktop mode but missing refs, track:', !!track, 'svg:', !!svg)
-      return
-    }
+    if (!isMobile && (!track || !svg)) return
 
     function handleScroll() {
       const rect = container.getBoundingClientRect()
@@ -105,9 +98,6 @@ export default function About() {
         // Only start showing images after scrolling into the section
         const progress = Math.max(0, Math.min(1, scrollFromTop / (containerHeight - windowHeight)))
         setMobileScrollProgress(progress)
-        
-        // Debug logging
-        console.log('Mobile scroll - Progress:', progress.toFixed(3), 'ScrollFromTop:', scrollFromTop, 'ContainerTop:', containerTop, 'ContainerHeight:', containerHeight)
         return
       }
       
@@ -202,21 +192,52 @@ export default function About() {
               event.images.map((img, imgIndex) => {
                 const imageIndex = eventIndex * 3 + imgIndex
                 
-                // Much simpler reveal logic - start showing immediately
-                const revealThreshold = 0.05 + (imageIndex * 0.05) // Very low thresholds
-                const isRevealed = mobileScrollProgress > revealThreshold
-                
-                // Position in two columns
+                // Position in two columns with varied positioning for each row
                 const isLeftColumn = imageIndex % 2 === 0
                 const rowIndex = Math.floor(imageIndex / 2)
                 
-                // Simpler positioning: start from bottom and move up
-                const startY = 600 + (rowIndex * 120) // Closer starting position
-                const scrollOffset = mobileScrollProgress * 800 // Less movement needed
+                // Different speed multipliers for varied movement (declare early)
+                const speedVariations = [1.2, 0.8, 1.5, 0.6, 1.0, 0.9, 1.3, 0.7, 1.1, 1.4, 0.5, 1.6]
+                const speedMultiplier = speedVariations[imageIndex % speedVariations.length]
+                
+                // Different horizontal positions for each row to create varied layout
+                const rowPositions = [
+                  { left: '10%', right: '60%' },  // Row 0 - contained within bounds
+                  { left: '15%', right: '55%' },  // Row 1 - safer positioning
+                  { left: '12%', right: '58%' },  // Row 2 - moderate
+                  { left: '18%', right: '52%' },  // Row 3 - more centered
+                  { left: '14%', right: '56%' },  // Row 4 - balanced
+                  { left: '16%', right: '54%' }   // Row 5 - contained
+                ]
+                
+                const currentRowPos = rowPositions[rowIndex % rowPositions.length]
+                
+                // Reduce horizontal offset to keep images within bounds
+                const speedOffset = (speedMultiplier - 1) * 2 // Smaller offset to stay in bounds
+                const baseLeft = isLeftColumn ? currentRowPos.left : currentRowPos.right
+                
+                // Ensure position stays within 5% to 75% of screen width
+                const rawLeftPercent = parseFloat(baseLeft.replace('%', '')) + speedOffset
+                const constrainedLeftPercent = Math.max(5, Math.min(75, rawLeftPercent))
+                const leftPosition = `${constrainedLeftPercent}%`
+                
+                // Continuous movement: images start from below viewport and move up
+                // More spacing between images to prevent overlap
+                const startY = 800 + (imageIndex * 200) + (Math.sin(imageIndex) * 100) // Varied starting positions
+                
+                const scrollOffset = mobileScrollProgress * 1200 * speedMultiplier
                 const finalY = startY - scrollOffset
                 
-                // Always show if revealed for debugging
-                const shouldShow = isRevealed && mobileScrollProgress > 0.01
+                // Always visible but only when in reasonable viewport range
+                const viewportWidth = window.innerWidth || 390 // Default mobile width
+                const imageWidth = 200 // Width of our images
+                
+                // Ensure images don't go outside screen boundaries
+                const maxLeftPosition = viewportWidth - imageWidth - 20 // 20px margin
+                const finalLeftPercent = Math.min(constrainedLeftPercent, (maxLeftPosition / viewportWidth) * 100)
+                
+                const isInViewport = finalY > -300 && finalY < window.innerHeight + 200
+                const imageOpacity = isInViewport ? 1 : 0
                 
                 return (
                   <div 
@@ -224,28 +245,14 @@ export default function About() {
                     className="mobile-flow-image"
                     style={{
                       transform: `translateY(${finalY}px)`,
-                      left: isLeftColumn ? '5%' : '55%',
-                      opacity: shouldShow ? 0.9 : 0,
-                      transition: 'opacity 0.3s ease',
-                      zIndex: 10 + imageIndex,
-                      backgroundColor: 'rgba(255, 255, 0, 0.3)', // Yellow debug background
-                      border: '2px solid red' // Red border for visibility
+                      left: `${finalLeftPercent}%`,
+                      opacity: imageOpacity,
+                      transition: 'opacity 0.3s ease-in-out, transform 0.1s ease-out',
+                      zIndex: Math.floor(10 + (finalY / -100)), // Dynamic z-index based on position
+                      willChange: 'transform, opacity'
                     }}
                   >
                     <img src={img} alt={`${event.title} ${imgIndex + 1}`} />
-                    <div style={{ 
-                      position: 'absolute', 
-                      top: 0, 
-                      left: 0, 
-                      color: 'white', 
-                      fontSize: '10px', 
-                      background: 'rgba(255,0,0,0.8)', 
-                      padding: '4px',
-                      borderRadius: '3px',
-                      zIndex: 1000
-                    }}>
-                      IMG{imageIndex}: Y={Math.round(finalY)} P={Math.round(mobileScrollProgress * 100)}% R={isRevealed ? 'Y' : 'N'}
-                    </div>
                   </div>
                 )
               })

@@ -371,19 +371,23 @@ html::-webkit-scrollbar {
 
 .mobile-flow-image {
   position: absolute;
-  width: 160px;
-  height: 130px;
+  width: 200px;
+  height: 160px;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-  transition: transform 0.1s ease-out, opacity 0.5s ease;
+  transition: transform 0.1s ease-out, opacity 0.3s ease-in-out;
   opacity: 0; /* Start hidden */
+  transform-origin: center;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
 }
 
 .mobile-flow-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: translateZ(0); /* Hardware acceleration */
 }
 
 /* Mobile responsive adjustments */
