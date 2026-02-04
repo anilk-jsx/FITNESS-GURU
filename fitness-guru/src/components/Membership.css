@@ -182,7 +182,7 @@
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  padding: 2.5rem 2rem;
+  padding: 2rem 1.5rem 2rem 1.5rem;
   position: relative;
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   overflow: hidden;
@@ -190,6 +190,9 @@
   animation-delay: var(--delay, 0s);
   transform: translateY(50px);
   opacity: 0;
+  display: flex;
+  flex-direction: column;
+  height: 620px;
 }
 
 .pricing-card:nth-child(1) { --delay: 0.6s; }
@@ -202,15 +205,31 @@
 
 @keyframes slideUp {
   to {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
 
 .pricing-card:hover {
-  transform: translateY(-10px);
-  border-color: rgba(255, 107, 53, 0.3);
-  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(0) scale(1.05) !important;
+  border-color: rgba(255, 107, 53, 0.6);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.8), rgba(231, 76, 60, 0.8));
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.pricing-card:hover .plan-name,
+.pricing-card:hover .price,
+.pricing-card:hover .feature-item,
+.pricing-card:hover .period {
+  color: #ffffff;
+}
+
+.pricing-card:hover .currency {
+  color: #ffffff;
+}
+
+.pricing-card:hover .check-icon {
+  color: #ffffff;
 }
 
 /* Popular Badge */
@@ -229,13 +248,28 @@
 }
 
 .premium-card {
-  border: 2px solid rgba(255, 107, 53, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 107, 53, 0.05);
-  transform: scale(1.05);
+  transform: scale(1.02);
+  z-index: 2;
 }
 
 .premium-card:hover {
-  transform: scale(1.05) translateY(-10px);
+  transform: translateY(0) scale(1.08) !important;
+  background: linear-gradient(135deg, #ff6b35, #e74c3c);
+  border-color: rgba(255, 107, 53, 0.8);
+}
+
+.premium-card:hover .plan-name,
+.premium-card:hover .price,
+.premium-card:hover .feature-item,
+.premium-card:hover .period,
+.premium-card:hover .currency {
+  color: #ffffff;
+}
+
+.premium-card:hover .check-icon {
+  color: #ffffff;
 }
 
 /* Card Header */
@@ -243,11 +277,12 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+  flex-shrink: 0;
 }
 
 .plan-name {
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 700;
   color: #ffffff;
   margin: 0;
@@ -266,18 +301,19 @@
 /* Price Section */
 .price-section {
   text-align: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem;
+  flex-shrink: 0;
 }
 
 .currency {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   color: #ff6b35;
   font-weight: 600;
   vertical-align: top;
 }
 
 .price {
-  font-size: 3.5rem;
+  font-size: 2.8rem;
   font-weight: 800;
   color: #ffffff;
   margin: 0 0.2rem;
@@ -285,25 +321,28 @@
 
 .period {
   color: #b0b0b0;
-  font-size: 1rem;
+  font-size: 0.9rem;
   display: block;
-  margin-top: 0.5rem;
+  margin-top: 0.3rem;
 }
 
 /* Features List */
 .features-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 2.5rem 0;
+  margin: 0 0 2rem 0;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
 }
 
 .feature-item {
   display: flex;
   align-items: center;
   gap: 0.8rem;
-  padding: 0.8rem 0;
+  padding: 0.7rem 0;
   color: #e0e0e0;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -321,15 +360,16 @@
 /* Plan Buttons */
 .plan-btn {
   width: 100%;
-  padding: 1.2rem 2rem;
+  padding: 1rem 1.5rem;
   border: none;
   border-radius: 50px;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   position: relative;
   overflow: hidden;
+  margin-top: 2rem;
 }
 
 .basic-btn {
@@ -371,6 +411,8 @@
   opacity: 0;
   transform: translateY(30px);
   transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 1s;
+  margin-top: 3rem;
+  padding-top: 2rem;
 }
 
 .membership-section.in-view .membership-footer {
@@ -441,11 +483,17 @@
   }
 
   .pricing-card {
-    padding: 2rem 1.5rem;
+    padding: 1.5rem 1.2rem 2rem 1.2rem;
+    height: auto;
+    min-height: 560px;
+  }
+
+  .features-list {
+    min-height: 200px;
   }
 
   .price {
-    font-size: 3rem;
+    font-size: 2.5rem;
   }
 
   .plan-toggle {
@@ -470,7 +518,13 @@
   }
 
   .pricing-card {
-    padding: 1.5rem 1rem;
+    padding: 1.5rem 1rem 2rem 1rem;
+    height: auto;
+    min-height: 520px;
+  }
+
+  .features-list {
+    min-height: 180px;
   }
 
   .plan-name {
@@ -478,12 +532,12 @@
   }
 
   .price {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
   }
 
   .plan-btn {
-    padding: 1rem 1.5rem;
-    font-size: 1rem;
+    padding: 0.9rem 1.2rem;
+    font-size: 0.95rem;
   }
 
   .footer-text {
