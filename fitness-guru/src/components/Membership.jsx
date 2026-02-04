@@ -94,6 +94,7 @@ const Membership = () => {
 
   return (
     <section 
+      id="membership"
       ref={sectionRef}
       className={`membership-section ${inView ? 'in-view' : ''}`}
     >

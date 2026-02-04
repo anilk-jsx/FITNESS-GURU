@@ -508,14 +508,13 @@
   }
 
   .plan-toggle {
-    flex-direction: column;
-    width: 200px;
+    width: 280px;
     padding: 0.3rem;
   }
 
   .toggle-btn {
-    padding: 0.8rem 1rem;
-    margin: 0.2rem 0;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
   }
 }
 
