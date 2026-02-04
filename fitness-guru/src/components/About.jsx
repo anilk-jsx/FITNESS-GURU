@@ -192,50 +192,23 @@ export default function About() {
               event.images.map((img, imgIndex) => {
                 const imageIndex = eventIndex * 3 + imgIndex
                 
-                // Position in two columns with varied positioning for each row
+                // Simple two-column layout without overlapping
                 const isLeftColumn = imageIndex % 2 === 0
-                const rowIndex = Math.floor(imageIndex / 2)
                 
-                // Different speed multipliers for varied movement (declare early)
-                const speedVariations = [1.2, 0.8, 1.5, 0.6, 1.0, 0.9, 1.3, 0.7, 1.1, 1.4, 0.5, 1.6]
-                const speedMultiplier = speedVariations[imageIndex % speedVariations.length]
+                // Fixed column positions - no complex calculations
+                const leftColumnPosition = '15%'
+                const rightColumnPosition = '60%'
+                const horizontalPosition = isLeftColumn ? leftColumnPosition : rightColumnPosition
                 
-                // Different horizontal positions for each row to create varied layout
-                const rowPositions = [
-                  { left: '10%', right: '60%' },  // Row 0 - contained within bounds
-                  { left: '15%', right: '55%' },  // Row 1 - safer positioning
-                  { left: '12%', right: '58%' },  // Row 2 - moderate
-                  { left: '18%', right: '52%' },  // Row 3 - more centered
-                  { left: '14%', right: '56%' },  // Row 4 - balanced
-                  { left: '16%', right: '54%' }   // Row 5 - contained
-                ]
+                // Sequential vertical positioning with adequate spacing to prevent overlap
+                const verticalSpacing = 250 // Increased spacing to prevent overlap
+                const startY = 800 + (imageIndex * verticalSpacing)
                 
-                const currentRowPos = rowPositions[rowIndex % rowPositions.length]
-                
-                // Reduce horizontal offset to keep images within bounds
-                const speedOffset = (speedMultiplier - 1) * 2 // Smaller offset to stay in bounds
-                const baseLeft = isLeftColumn ? currentRowPos.left : currentRowPos.right
-                
-                // Ensure position stays within 5% to 75% of screen width
-                const rawLeftPercent = parseFloat(baseLeft.replace('%', '')) + speedOffset
-                const constrainedLeftPercent = Math.max(5, Math.min(75, rawLeftPercent))
-                const leftPosition = `${constrainedLeftPercent}%`
-                
-                // Continuous movement: images start from below viewport and move up
-                // More spacing between images to prevent overlap
-                const startY = 800 + (imageIndex * 200) + (Math.sin(imageIndex) * 100) // Varied starting positions
-                
-                const scrollOffset = mobileScrollProgress * 1200 * speedMultiplier
+                // Consistent speed for all images
+                const scrollOffset = mobileScrollProgress * 1000
                 const finalY = startY - scrollOffset
                 
                 // Always visible but only when in reasonable viewport range
-                const viewportWidth = window.innerWidth || 390 // Default mobile width
-                const imageWidth = 200 // Width of our images
-                
-                // Ensure images don't go outside screen boundaries
-                const maxLeftPosition = viewportWidth - imageWidth - 20 // 20px margin
-                const finalLeftPercent = Math.min(constrainedLeftPercent, (maxLeftPosition / viewportWidth) * 100)
-                
                 const isInViewport = finalY > -300 && finalY < window.innerHeight + 200
                 const imageOpacity = isInViewport ? 1 : 0
                 
@@ -245,10 +218,10 @@ export default function About() {
                     className="mobile-flow-image"
                     style={{
                       transform: `translateY(${finalY}px)`,
-                      left: `${finalLeftPercent}%`,
+                      left: horizontalPosition,
                       opacity: imageOpacity,
                       transition: 'opacity 0.3s ease-in-out, transform 0.1s ease-out',
-                      zIndex: Math.floor(10 + (finalY / -100)), // Dynamic z-index based on position
+                      zIndex: Math.floor(10 + (finalY / -100)),
                       willChange: 'transform, opacity'
                     }}
                   >

@@ -371,8 +371,8 @@ html::-webkit-scrollbar {
 
 .mobile-flow-image {
   position: absolute;
-  width: 200px;
-  height: 160px;
+  width: 280px;
+  height: 220px;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0,0,0,0.6);
