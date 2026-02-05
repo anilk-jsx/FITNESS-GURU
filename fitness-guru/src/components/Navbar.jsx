@@ -44,6 +44,7 @@ const Navbar = () => {
             <li><a href="#home" onClick={(e) => { e.preventDefault(); handleNavLinkClick('home'); }}>Home</a></li>
             <li><a href="#about" onClick={(e) => { e.preventDefault(); handleNavLinkClick('about'); }}>About</a></li>
             <li><a href="#membership" onClick={(e) => { e.preventDefault(); handleNavLinkClick('membership'); }}>Membership</a></li>
+            <li><a href="#testimonials" onClick={(e) => { e.preventDefault(); handleNavLinkClick('testimonials'); }}>Testimonials</a></li>
             <li><a href="#contact" onClick={(e) => { e.preventDefault(); handleNavLinkClick('contact'); }}>Contact</a></li>
           </ul>
           <div className="nav-buttons">
@@ -83,6 +84,11 @@ const Navbar = () => {
           <li>
             <a href="#membership" onClick={(e) => { e.preventDefault(); handleNavLinkClick('membership'); }}>
               <i className="fas fa-credit-card"></i> Membership
+            </a>
+          </li>
+          <li>
+            <a href="#testimonials" onClick={(e) => { e.preventDefault(); handleNavLinkClick('testimonials'); }}>
+              <i className="fas fa-comment-dots"></i> Testimonials
             </a>
           </li>
           <li>
