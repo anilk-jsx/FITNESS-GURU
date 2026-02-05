@@ -8,8 +8,9 @@ import Membership from './components/Membership'
 import Contact from './components/Contact'
 import './App.css'
 
+import Trainers from './components/Trainers'
+
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
     <>
@@ -19,6 +20,7 @@ function App() {
       <Facilities />
       <DirectorsMessage />
       <Membership />
+      <Trainers />
       <Contact />
     </>
   )

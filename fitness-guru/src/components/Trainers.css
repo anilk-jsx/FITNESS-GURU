@@ -1,0 +1,168 @@
+/* Themed Trainers Section */
+.trainers-section {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+  color: #fff;
+  padding: 120px 0 80px 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.trainers-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  position: relative;
+  z-index: 2;
+}
+.trainers-header {
+  text-align: center;
+  margin-bottom: 4rem;
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 0.8s ease;
+  animation: fadeInUp 1s ease 0.1s forwards;
+}
+.section-tag {
+  display: inline-block;
+  background: rgba(255, 107, 53, 0.1);
+  color: #ff6b35;
+  padding: 0.5rem 1.5rem;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 107, 53, 0.3);
+}
+.trainers-title {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+.trainers-title .highlight {
+  background: linear-gradient(135deg, #ff6b35, #e74c3c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.trainers-subtitle {
+  font-size: 1.2rem;
+  color: #b0b0b0;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+.trainers-list {
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+/* Card entrance animation */
+.trainer-card {
+  background: transparent;
+  width: 260px;
+  height: 370px;
+  perspective: 1200px;
+  opacity: 0;
+  transform: translateY(40px);
+  animation: fadeInUp 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(40px);
+  animation: fadeInUp 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.7s cubic-bezier(0.4,0.2,0.2,1);
+  transform-style: preserve-3d;
+}
+.trainer-card:hover .card-inner {
+  transform: rotateY(180deg);
+}
+/* Card styling */
+.card-front, .card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 18px;
+  box-shadow: 0 6px 32px 0 rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2rem 1.2rem 1.2rem 1.2rem;
+}
+.card-front {
+  z-index: 2;
+  background: linear-gradient(135deg, #232526 0%, #414345 100%);
+}
+.card-back {
+  transform: rotateY(180deg);
+  background: linear-gradient(135deg, #232526 0%, #b3ff57 100%);
+  color: #232526;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  padding: 1.5em;
+}
+.trainer-img {
+  width: 90%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 1.2em;
+  border: 3px solid #ff6b35;
+  box-shadow: 0 4px 16px rgba(255,107,53,0.15);
+}
+.trainer-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.2em;
+  color: #fff;
+}
+.trainer-role {
+  font-size: 1rem;
+  color: #ff6b35;
+  margin-bottom: 1em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.trainer-socials {
+  display: flex;
+  gap: 1em;
+  justify-content: center;
+}
+.trainer-socials a {
+  color: #fff;
+  background: #232526;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(255,107,53,0.08);
+}
+.trainer-socials a:hover {
+  background: #ff6b35;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(255,107,53,0.18);
+}
