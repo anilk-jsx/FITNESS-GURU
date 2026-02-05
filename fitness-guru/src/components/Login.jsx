@@ -6,14 +6,25 @@ import { Link } from 'react-router-dom';
 import bgImg from "../assets/heroImg/home7.avif"; // Use your preferred background image
 
 
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Handle login logic here
+    console.log('Login submit fired', { email, password });
+    // Static credentials
+    if (email === "user@gmail.com" && password === "user@123") {
+      setError("");
+      console.log('Login success, navigating to /dashboard');
+      navigate("/dashboard");
+    } else {
+      setError("Invalid email or password.");
+      console.log('Login failed');
+    }
   };
 
   return (
@@ -24,6 +35,7 @@ export default function Login() {
           &times;
         </button>
         <form className="login-form" onSubmit={handleSubmit}>
+          {error && <div style={{ color: 'red', marginBottom: '1rem', fontWeight: 500 }}>{error}</div>}
           <img src={logo} alt="FG Logo" className="login-logo" />
           <h2 className="login-title">Welcome Back!</h2>
           <p className="login-subtitle">Sign in to your account.</p>

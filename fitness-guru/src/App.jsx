@@ -1,5 +1,5 @@
-import Signup from './components/Signup';
 
+import Signup from './components/Signup';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -12,7 +12,9 @@ import Testimonials from "./components/Testimonials";
 import Footer from "./components/Footer";
 import Trainers from './components/Trainers';
 import Login from './components/Login';
+import DashboardPage from './components/DashboardPage';
 import './App.css';
+
 
 
 function App() {
@@ -21,6 +23,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/*" element={
           <>
             <Navbar />
