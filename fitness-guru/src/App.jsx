@@ -7,6 +7,7 @@ import DirectorsMessage from './components/DirectorsMessage'
 import Membership from './components/Membership'
 import Contact from './components/Contact'
 import Testimonials from "./components/Testimonials";
+import Footer from "./components/Footer";
 import './App.css'
 
 import Trainers from './components/Trainers'
@@ -24,6 +25,7 @@ function App() {
       <Trainers />
       <Testimonials />
       <Contact />
+      <Footer />
     </>
   )
 }
