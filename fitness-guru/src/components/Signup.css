@@ -11,6 +11,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-x: auto;
 }
 .signup-overlay {
   position: absolute;
@@ -233,11 +234,30 @@
   color: #e74c3c;
 }
 @media (max-width: 600px) {
+  .signup-bg {
+    align-items: stretch;
+    justify-content: stretch;
+    overflow-x: hidden;
+  }
   .signup-container {
-    max-width: 98vw;
-    padding: 1.2rem 0.5rem 1.2rem 0.5rem;
+    min-width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    margin: 0;
+    border-radius: 0;
+    padding: 1.2rem 0.7rem 1.2rem 0.7rem;
+    box-sizing: border-box;
+    overflow-x: hidden;
   }
   .signup-title {
     font-size: 1.1rem;
+  }
+  .signup-member-modal-content {
+    min-width: 0;
+    max-width: 100vw;
+    width: 100vw;
+    border-radius: 0;
+    padding: 1.2rem 0.7rem 1.2rem 0.7rem;
+    box-sizing: border-box;
   }
 }
