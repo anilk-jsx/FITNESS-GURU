@@ -1,3 +1,21 @@
+/* Close (cross) button for login modal */
+.login-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #ff6b35;
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.2s, transform 0.15s;
+  line-height: 1;
+}
+.login-close-btn:hover {
+  color: #e74c3c;
+  transform: scale(1.15);
+}
 /* Fullscreen background with overlay */
 .login-bg {
   position: fixed;
@@ -39,6 +57,9 @@
 .login-logo {
   width: 70px;
   margin-bottom: 1.2rem;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
   animation: popIn 0.7s cubic-bezier(0.23, 1, 0.32, 1);
 }
 @keyframes popIn {
@@ -132,10 +153,14 @@
 }
 @media (max-width: 600px) {
   .login-container {
-    max-width: 98vw;
-    padding: 1.2rem 0.5rem 1.2rem 0.5rem;
+    max-width: 94vw;
+    min-width: 0;
+    padding: 1.2rem 0.7rem 1.2rem 0.7rem;
+    margin: 0 auto;
+    left: 0;
+    right: 0;
   }
   .login-title {
-    font-size: 1.3rem;
+    font-size: 1.15rem;
   }
 }
