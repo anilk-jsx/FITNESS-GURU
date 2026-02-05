@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import "./Login.css";
 import logo from "../assets/FGlogo.png";
+import { Link } from 'react-router-dom';
 import bgImg from "../assets/heroImg/home7.avif"; // Use your preferred background image
 
 
@@ -49,7 +50,7 @@ export default function Login() {
           </div>
           <button className="login-btn" type="submit">Login</button>
           <div className="login-signup">
-            Don't have an account? <a href="#" className="login-signup-link">Sign Up</a>
+            Don't have an account? <Link to="/signup" className="login-signup-link">Sign Up</Link>
           </div>
         </form>
       </div>
