@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -48,7 +49,7 @@ const Navbar = () => {
             <li><a href="#contact" onClick={(e) => { e.preventDefault(); handleNavLinkClick('contact'); }}>Contact</a></li>
           </ul>
           <div className="nav-buttons">
-            <a href="/login.html" className="login-button">Login</a>
+            <Link to="/login" className="login-button">Login</Link>
           </div>
           <button 
             className="mobile-menu" 
@@ -98,7 +99,7 @@ const Navbar = () => {
           </li>
         </ul>
         <div className="mobile-nav-buttons">
-          <a href="/login.html" className="mobile-login-btn">Login</a>
+          <Link to="/login" className="mobile-login-btn">Login</Link>
         </div>
       </div>
 
