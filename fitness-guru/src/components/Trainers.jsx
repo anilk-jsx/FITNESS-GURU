@@ -8,7 +8,7 @@ import hero4 from '../assets/heroImg/home7.avif';
 
 const trainers = [
   {
-    name: 'Albert Flores',
+    name: 'Chandan kumar Das',
     role: 'Fitness Instructor',
     img: hero1,
     socials: {
@@ -20,7 +20,7 @@ const trainers = [
     message: 'Let’s achieve your fitness goals together!'
   },
   {
-    name: 'Wade Warren',
+    name: 'Rohan Das',
     role: 'CrossFit Expert, Nutrition',
     img: hero2,
     socials: {
@@ -32,7 +32,7 @@ const trainers = [
     message: 'Push your limits, see the results!'
   },
   {
-    name: 'Esther Howard',
+    name: 'Leo Das',
     role: 'Nutrition Specialized',
     img: hero3,
     socials: {
@@ -44,7 +44,7 @@ const trainers = [
     message: 'Eat well, train hard, live better!'
   },
   {
-    name: 'Jacob Jones',
+    name: 'Jailer Das',
     role: 'Strength & Core',
     img: hero4,
     socials: {
@@ -71,17 +71,32 @@ function Trainers() {
         </div>
         <div className="trainers-list">
           {trainers.map((trainer, idx) => (
-            <div className="trainer-card fade-in-up" key={idx} style={{ animationDelay: `${0.2 + idx * 0.15}s` }}>
+            <div
+              className="trainer-card fade-in-up"
+              key={idx}
+              style={{ animationDelay: `${0.2 + idx * 0.15}s` }}
+            >
               <div className="card-inner">
                 <div className="card-front">
-                  <img src={trainer.img} alt={trainer.name} className="trainer-img" />
-                  <h4 className="trainer-name">{trainer.name}</h4>
-                  <p className="trainer-role">{trainer.role}</p>
-                  <div className="trainer-socials">
-                    <a href={trainer.socials.facebook} target="_blank" rel="noopener noreferrer"><i className="fab fa-facebook-f"></i></a>
-                    <a href={trainer.socials.twitter} target="_blank" rel="noopener noreferrer"><i className="fab fa-twitter"></i></a>
-                    <a href={trainer.socials.instagram} target="_blank" rel="noopener noreferrer"><i className="fab fa-instagram"></i></a>
-                    <a href={trainer.socials.linkedin} target="_blank" rel="noopener noreferrer"><i className="fab fa-linkedin-in"></i></a>
+                  <div
+                    className="trainer-img-full"
+                    style={{ backgroundImage: `url(${trainer.img})` }}
+                    onMouseEnter={e => {
+                      e.currentTarget.closest('.trainer-card').classList.add('flipped');
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.closest('.trainer-card').classList.remove('flipped');
+                    }}
+                  ></div>
+                  <div className="trainer-info">
+                    <h4 className="trainer-name">{trainer.name}</h4>
+                    <p className="trainer-role">{trainer.role}</p>
+                    <div className="trainer-socials">
+                      <a href={trainer.socials.facebook} target="_blank" rel="noopener noreferrer"><i className="fab fa-facebook-f"></i></a>
+                      <a href={trainer.socials.twitter} target="_blank" rel="noopener noreferrer"><i className="fab fa-twitter"></i></a>
+                      <a href={trainer.socials.instagram} target="_blank" rel="noopener noreferrer"><i className="fab fa-instagram"></i></a>
+                      <a href={trainer.socials.linkedin} target="_blank" rel="noopener noreferrer"><i className="fab fa-linkedin-in"></i></a>
+                    </div>
                   </div>
                 </div>
                 <div className="card-back">
