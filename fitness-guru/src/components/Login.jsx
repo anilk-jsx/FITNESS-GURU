@@ -15,8 +15,6 @@ export default function Login() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Login submit fired', { email, password });
-    // Static credentials
     if (email === "user@gmail.com" && password === "user@123") {
       setError("");
       console.log('Login success, navigating to /dashboard');
