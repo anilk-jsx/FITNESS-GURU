@@ -5,6 +5,7 @@ import './Subscriptions.css';
 
 const Subscriptions = () => {
   const [currentPricing, setCurrentPricing] = useState('quarterly');
+  const [showUpgradePlans, setShowUpgradePlans] = useState(false);
   
   const userData = {
     name: 'John Doe',
@@ -154,6 +155,13 @@ const Subscriptions = () => {
             </div>
           </div>
           <div className="plan-actions">
+            <button 
+              className="btn-upgrade-main" 
+              onClick={() => setShowUpgradePlans(!showUpgradePlans)}
+            >
+              <i className={`fas ${showUpgradePlans ? 'fa-times' : 'fa-arrow-up'}`}></i>
+              {showUpgradePlans ? 'Close Plans' : 'Upgrade Plan'}
+            </button>
             <button className="btn-manage" onClick={() => alert('Manage subscription features coming soon!')}>
               <i className="fas fa-cog"></i>
               Manage Subscription
@@ -170,7 +178,8 @@ const Subscriptions = () => {
         </div>
       </div>
 
-      {/* Pricing Toggle */}
+      {/* Pricing Toggle - Only show when upgrade is clicked */}
+      {showUpgradePlans && (
       <div className="pricing-toggle-section">
         <div className="pricing-toggle">
           <div className={`toggle-container ${currentPricing}`}>
@@ -204,8 +213,10 @@ const Subscriptions = () => {
           🎉 Save up to 20% with annual billing - Best Value!
         </div>
       </div>
+      )}
 
-      {/* Membership Plans */}
+      {/* Membership Plans - Only show when upgrade is clicked */}
+      {showUpgradePlans && (
       <div className="membership-plans">
         {/* Basic Plan */}
         <div className="membership-card">
@@ -305,6 +316,7 @@ const Subscriptions = () => {
           </button>
         </div>
       </div>
+      )}
     </DashboardLayout>
   );
 };

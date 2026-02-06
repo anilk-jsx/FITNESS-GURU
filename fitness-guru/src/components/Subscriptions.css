@@ -118,7 +118,8 @@
 }
 
 .btn-manage,
-.btn-cancel {
+.btn-cancel,
+.btn-upgrade-main {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -130,6 +131,22 @@
     cursor: pointer;
     transition: all 0.3s ease;
     text-decoration: none;
+}
+
+.btn-upgrade-main {
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.5);
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-upgrade-main:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(255, 107, 53, 0.7);
+    background: linear-gradient(135deg, #f7931e, #ff6b35);
 }
 
 .btn-manage {
@@ -161,6 +178,18 @@
     padding: 2rem 0;
     text-align: center;
     position: relative;
+    animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .pricing-toggle-section::before,
@@ -265,6 +294,7 @@
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 2rem;
     margin-bottom: 3rem;
+    animation: slideDown 0.5s ease-out;
 }
 
 .membership-card {
@@ -472,6 +502,13 @@
 
     .plan-actions {
         align-items: center;
+    }
+
+    .btn-upgrade-main,
+    .btn-manage,
+    .btn-cancel {
+        width: 100%;
+        justify-content: center;
     }
 
     .toggle-container {
