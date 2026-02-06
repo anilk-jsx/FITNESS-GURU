@@ -9,19 +9,23 @@ import bgImg from "../assets/heroImg/home7.avif"; // Use your preferred backgrou
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-
-  function handleSubmit(e) {
+  const handleSubmit = (e) => {
     e.preventDefault();
+<<<<<<< HEAD
     if (email === "user@gmail.com" && password === "user@123") {
       setError("");
+      console.log('Login success, navigating to /dashboard');
       navigate("/dashboard");
     } else {
       setError("Invalid email or password.");
+      console.log('Login failed');
     }
-  }
+=======
+    // Handle login logic here
+>>>>>>> parent of 99ed3fb (adding default credentials redirect to the dashboard page)
+  };
 
   return (
     <div className="login-bg" style={{ backgroundImage: `url(${bgImg})` }}>
@@ -34,7 +38,6 @@ export default function Login() {
           <img src={logo} alt="FG Logo" className="login-logo" />
           <h2 className="login-title">Welcome Back!</h2>
           <p className="login-subtitle">Sign in to your account.</p>
-          {error && <div style={{ color: "#ff6b35", marginBottom: 10, fontWeight: 600 }}>{error}</div>}
           <label className="login-label">Email</label>
           <input
             type="email"
