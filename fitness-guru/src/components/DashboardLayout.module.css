@@ -1,0 +1,27 @@
+.layoutBg {
+  display: flex;
+  min-height: 100vh;
+  background: #181818;
+}
+.mainContent {
+  margin-left: 350px;
+  padding: 2rem;
+  flex: 1;
+  position: relative;
+}
+.dashboardMain {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+@media (max-width: 900px) {
+  .mainContent {
+    margin-left: 220px;
+    padding: 1rem;
+  }
+}
+@media (max-width: 600px) {
+  .mainContent {
+    margin-left: 0;
+    padding: 1rem;
+  }
+}
