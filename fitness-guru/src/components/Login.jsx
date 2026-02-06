@@ -9,11 +9,11 @@ import bgImg from "../assets/heroImg/home7.avif"; // Use your preferred backgrou
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-<<<<<<< HEAD
     if (email === "user@gmail.com" && password === "user@123") {
       setError("");
       console.log('Login success, navigating to /dashboard');
@@ -56,6 +56,7 @@ export default function Login() {
           <div className="login-options">
             <a href="#" className="login-forgot">Forgot password?</a>
           </div>
+          {error && <div className="login-error" style={{ color: 'red', textAlign: 'center', marginBottom: '1rem' }}>{error}</div>}
           <button className="login-btn" type="submit">Login</button>
           <div className="login-signup">
             Don't have an account? <Link to="/signup" className="login-signup-link">Sign Up</Link>
