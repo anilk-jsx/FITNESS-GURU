@@ -13,7 +13,7 @@ const Subscriptions = () => {
 
   const currentPlan = {
     name: 'Premium Membership',
-    price: 6749,
+    price: 6499,
     period: 'quarterly',
     status: 'Active',
     expiryDate: 'Nov 30, 2026'
@@ -23,45 +23,45 @@ const Subscriptions = () => {
     basic: {
       name: 'Basic Membership',
       monthly: 1499,
-      quarterly: 4047, // 10% off monthly
-      annual: 15112, // 16% off monthly
+      quarterly: 3999, // 10% off monthly
+      annual: 14999, // 17% off monthly
+      savings: { quarterly: '10%', annual: '17%' },
       features: [
-        'Access to gym equipment',
-        'Locker facility',
+        'Full gym access',
+        'Locker room facilities',
         'Basic fitness assessment',
-        'Standard operating hours',
-        'Emergency support'
+        'Mobile app access',
+        'Community support'
       ]
     },
     premium: {
       name: 'Premium Membership',
       monthly: 2499,
-      quarterly: 6749, // 10% off monthly
-      annual: 25191, // 16% off monthly
+      quarterly: 6499, // 13% off monthly
+      annual: 23999, // 20% off monthly
+      savings: { quarterly: '13%', annual: '20%' },
       features: [
-        'All Basic features',
-        'Personal trainer consultation',
+        'Everything in Basic',
         'Group fitness classes',
-        'Nutrition guidance',
-        'Extended operating hours',
-        'Priority support',
-        'Guest pass (2 per month)'
+        'Personal training session',
+        'Wellness center access',
+        'Nutrition consultation',
+        'Guest passes (2/month)'
       ]
     },
     elite: {
       name: 'Elite Membership',
       monthly: 3999,
-      quarterly: 10798, // 10% off monthly
-      annual: 40309, // 16% off monthly
+      quarterly: 10499, // 12% off monthly
+      annual: 38999, // 19% off monthly
+      savings: { quarterly: '12%', annual: '19%' },
       features: [
-        'All Premium features',
-        'Dedicated personal trainer',
-        'Customized meal plans',
-        'Biometric assessments',
-        '24/7 gym access',
-        'VIP locker room',
-        'Unlimited guest passes',
-        'Priority class booking'
+        'Everything in Premium',
+        'Unlimited personal training',
+        'Priority class booking',
+        'Massage therapy sessions',
+        'Custom meal planning',
+        'VIP locker room access'
       ]
     }
   };
@@ -88,8 +88,9 @@ const Subscriptions = () => {
   };
 
   const getSavingsText = (planKey) => {
-    if (currentPricing === 'quarterly') return 'Save 10% vs monthly';
-    if (currentPricing === 'annual') return 'Save 16% vs monthly - Best Value!';
+    const plan = plans[planKey];
+    if (currentPricing === 'quarterly') return `Save ${plan.savings.quarterly} vs monthly`;
+    if (currentPricing === 'annual') return `Save ${plan.savings.annual} vs monthly - Best Value!`;
     return '';
   };
 
@@ -197,10 +198,10 @@ const Subscriptions = () => {
         
         {/* Discount Messages */}
         <div className={`discount-message ${currentPricing === 'quarterly' ? 'show' : ''}`}>
-          💰 Save 10% with quarterly billing!
+          💰 Save up to 13% with quarterly billing!
         </div>
         <div className={`discount-message ${currentPricing === 'annual' ? 'show' : ''}`}>
-          🎉 Save 16% with annual billing - Best Value!
+          🎉 Save up to 20% with annual billing - Best Value!
         </div>
       </div>
 
