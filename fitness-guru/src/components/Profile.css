@@ -6,6 +6,7 @@
   max-width: 100%;
   padding: 0;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 /* Page Header */
@@ -74,6 +75,9 @@
   transition: all 0.3s ease;
   flex: 1;
   justify-content: center;
+  -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+  touch-action: manipulation; /* Improve touch responsiveness */
+  min-height: 44px; /* Minimum touch target size */
 }
 
 .tab-button:hover {
@@ -279,8 +283,31 @@
 /* Profile Details Grid */
 .profile-details-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
   gap: 2rem;
+  margin-top: 2rem;
+}
+
+/* First row cards - Personal and Physical Information */
+.profile-details-grid .info-card:nth-child(1),
+.profile-details-grid .info-card:nth-child(2) {
+  /* Personal Information and Physical Information cards */
+}
+
+/* Second row card - Contact & Emergency spans full width */
+.profile-details-grid .info-card:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+/* Third row card - Profile Information spans full width */
+.profile-details-grid .info-card:nth-child(4) {
+  grid-column: 1 / -1;
+}
+
+/* Fourth card - Biometric Access positioned on left */
+.profile-details-grid .info-card:nth-child(5) {
+  grid-column: 1;
 }
 
 /* Info Cards */
@@ -288,12 +315,16 @@
   background: rgba(15, 15, 35, 0.8);
   backdrop-filter: blur(25px);
   border-radius: 20px;
-  padding: 2rem;
+  padding: 2.5rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  height: fit-content;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
 }
 
 .info-card::before {
@@ -322,6 +353,28 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
+  align-items: start;
+}
+
+/* Two-column layout for Personal and Physical Information cards */
+.info-card:nth-child(1) .info-grid,
+.info-card:nth-child(2) .info-grid {
+  grid-template-columns: 1fr;
+  gap: 1.2rem;
+}
+
+/* Special layout for Contact & Emergency card */
+.info-card:nth-child(3) .info-grid {
+  grid-template-columns: 2fr 1fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+/* Three-column layout for Profile Information card */
+.info-card:nth-child(4) .info-grid {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  align-items: center;
 }
 
 .info-item {
@@ -837,47 +890,240 @@
   font-weight: 500;
 }
 
+/* Utility Classes for Responsive */
+.mobile-stacked {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .show-on-mobile-only {
+    display: none !important;
+  }
+}
+
 /* Mobile Responsiveness */
-@media (max-width: 1024px) {
+@media (max-width: 1400px) {
+  /* Large tablets and small desktops */
+  .profile-details-grid .info-card:nth-child(3) .info-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  /* Tablets landscape */
   .profile-details-grid {
     grid-template-columns: 1fr;
+  }
+  
+  /* Reset all cards to single column */
+  .profile-details-grid .info-card:nth-child(1),
+  .profile-details-grid .info-card:nth-child(2),
+  .profile-details-grid .info-card:nth-child(3),
+  .profile-details-grid .info-card:nth-child(4),
+  .profile-details-grid .info-card:nth-child(5) {
+    grid-column: 1;
+  }
+
+  .info-card:nth-child(3) .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .info-card:nth-child(4) .info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  /* Tablets portrait */
+  .profile-details-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
   
   .profile-header-card {
     grid-template-columns: 1fr;
     text-align: center;
-    gap: 1.5rem;
+    gap: 2rem;
+    padding: 2rem;
+  }
+
+  .profile-photo {
+    margin: 0 auto;
+  }
+
+  .profile-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .quick-stats {
-    justify-content: center;
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 400px;
+    margin: 0 auto;
+    gap: 1.5rem;
+  }
+
+  .profile-actions {
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+  }
+
+  .info-card {
+    padding: 2rem;
+  }
+
+  .info-card:nth-child(1) .info-grid,
+  .info-card:nth-child(2) .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .info-card:nth-child(4) .info-grid {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 768px) {
-  .tab-navigation {
-    margin-bottom: 1.5rem;
-  }
-
-  .tab-button {
-    padding: 0.75rem 1rem;
-    font-size: 0.9rem;
+  /* Mobile landscape */
+  .page-header {
+    margin-top: 3rem;
   }
 
   .page-title {
     font-size: 2rem;
   }
 
+  .page-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .tab-navigation {
+    margin-bottom: 1.5rem;
+    padding: 0.4rem;
+    gap: 0.5rem;
+  }
+
+  .tab-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .tab-button i {
+    font-size: 1rem;
+  }
+
+  .profile-header-card {
+    padding: 1.5rem;
+    gap: 1.5rem;
+  }
+
+  .profile-photo {
+    width: 100px;
+    height: 100px;
+  }
+
+  .profile-summary h2 {
+    font-size: 1.5rem;
+  }
+
+  .member-id,
+  .profile-id {
+    font-size: 0.8rem;
+  }
+
+  .quick-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    max-width: 100%;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .info-card {
+    padding: 1.5rem;
+  }
+
+  .info-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .info-item label {
+    font-size: 0.8rem;
+  }
+
+  .info-value {
+    font-size: 0.9rem;
+  }
+
+  .edit-input,
+  .edit-select,
+  .edit-textarea {
+    font-size: 0.85rem;
+    padding: 0.65rem;
+  }
+
+  /* Attendance Section */
   .checkin-cards {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .checkin-card {
+    padding: 1.5rem;
+  }
+
+  .checkin-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.3rem;
+  }
+
+  .checkin-info h3 {
+    font-size: 1rem;
+  }
+
+  .checkin-info p {
+    font-size: 0.85rem;
   }
 
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-number {
+    font-size: 1.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
   }
 
   .attendance-filters {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .date-range {
@@ -892,50 +1138,250 @@
   .attendance-table th,
   .attendance-table td {
     padding: 0.75rem 0.5rem;
-  }
-
-  .info-card {
-    padding: 1.5rem;
-  }
-
-  .profile-header-card {
-    padding: 1.5rem;
-  }
-
-  .quick-stats {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: center;
-  }
-
-  .stat-item {
-    text-align: center;
+    font-size: 0.8rem;
   }
 }
 
 @media (max-width: 480px) {
+  /* Mobile portrait */
+  .profile-container {
+    padding: 0;
+  }
+
+  .page-header {
+    margin-top: 4rem;
+    margin-bottom: 1.5rem;
+  }
+
   .page-title {
-    font-size: 1.8rem;
+    font-size: 1.75rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .back-button {
+    font-size: 0.85rem;
+  }
+
+  .tab-navigation {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   .tab-button {
-    padding: 0.6rem 0.8rem;
+    padding: 0.6rem;
     font-size: 0.8rem;
+    width: 100%;
+  }
+
+  .profile-header-card {
+    padding: 1.25rem;
+    gap: 1.25rem;
+  }
+
+  .profile-photo {
+    width: 80px;
+    height: 80px;
+  }
+
+  .photo-edit-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+
+  .profile-summary h2 {
+    font-size: 1.3rem;
+  }
+
+  .member-id,
+  .profile-id {
+    font-size: 0.75rem;
+  }
+
+  .quick-stats {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .stat-item {
+    width: 100%;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+  }
+
+  .stat-value {
+    font-size: 0.95rem;
+  }
+
+  .stat-value small {
+    font-size: 0.7rem;
+  }
+
+  .btn-edit,
+  .btn-save,
+  .btn-cancel {
+    padding: 0.65rem 1.25rem;
+    font-size: 0.85rem;
+  }
+
+  .edit-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .edit-actions button {
+    width: 100%;
+  }
+
+  .info-card {
+    padding: 1.25rem;
+    min-height: auto;
+  }
+
+  .info-card h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .info-item {
+    gap: 0.5rem;
+  }
+
+  .info-item label {
+    font-size: 0.75rem;
+  }
+
+  .info-value {
+    font-size: 0.85rem;
+  }
+
+  .edit-input,
+  .edit-select,
+  .edit-textarea {
+    font-size: 0.8rem;
+    padding: 0.6rem;
+  }
+
+  .btn-enroll {
+    padding: 0.65rem 1.25rem;
+    font-size: 0.85rem;
+    width: 100%;
+  }
+
+  /* Attendance Section */
+  .checkin-card {
+    padding: 1.25rem;
+  }
+
+  .checkin-icon {
+    width: 45px;
+    height: 45px;
+    font-size: 1.2rem;
+  }
+
+  .checkin-info h3 {
+    font-size: 0.95rem;
+  }
+
+  .checkin-info p {
+    font-size: 0.8rem;
+  }
+
+  .btn-checkin,
+  .btn-qr {
+    padding: 0.65rem 1.25rem;
+    font-size: 0.85rem;
+    width: 100%;
+  }
+
+  .sync-status {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .attendance-stats {
+    padding: 1.25rem;
+  }
+
+  .attendance-stats h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
   }
 
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-number {
+    font-size: 1.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+  }
+
+  .attendance-history {
+    padding: 1.25rem;
+  }
+
+  .attendance-history h3 {
+    font-size: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .filter-group label {
+    font-size: 0.8rem;
+  }
+
+  .filter-input,
+  .filter-select {
+    padding: 0.65rem;
+    font-size: 0.8rem;
+  }
+
+  .btn-apply-filters {
+    padding: 0.65rem 1.25rem;
+    font-size: 0.85rem;
+  }
+
+  .attendance-table {
+    font-size: 0.7rem;
   }
 
   .attendance-table th,
   .attendance-table td {
-    padding: 0.5rem 0.25rem;
-    font-size: 0.75rem;
+    padding: 0.5rem 0.3rem;
+    font-size: 0.7rem;
   }
 
   .method-badge,
   .status-badge {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .no-data {
+    padding: 2rem 1rem;
+  }
+
+  .no-data i {
+    font-size: 2rem;
+  }
+
+  .no-data p {
+    font-size: 0.9rem;
   }
 }
