@@ -22,9 +22,6 @@ export default function Login() {
       setError("Invalid email or password.");
       console.log('Login failed');
     }
-=======
-    // Handle login logic here
->>>>>>> parent of 99ed3fb (adding default credentials redirect to the dashboard page)
   };
 
   return (
