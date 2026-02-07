@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from './AdminSidebar';
+import MemberManagement from './MemberManagement';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -205,18 +206,10 @@ const AdminDashboard = () => {
                     </div>
                 )}
 
-                {/* Placeholder sections for other menu items */}
+                {/* Member Management Section */}
                 {activeSection === 'members' && (
                     <div className="admin-section-content active">
-                        <div className="admin-page-header">
-                            <h1 className="admin-page-title">Members Management</h1>
-                            <p className="admin-page-subtitle">Manage gym members and their information</p>
-                        </div>
-                        <div className="admin-coming-soon">
-                            <i className="fas fa-users"></i>
-                            <h3>Members Management</h3>
-                            <p>This section is under development and will be available soon!</p>
-                        </div>
+                        <MemberManagement />
                     </div>
                 )}
 
