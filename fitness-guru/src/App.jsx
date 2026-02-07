@@ -6,6 +6,7 @@ import AdminDashboard from './components/AdminDashboard';
 import MemberManagement from './components/MemberManagement';
 import SubscriptionManagement from './components/SubscriptionManagement';
 import AttendanceManagement from './components/AttendanceManagement';
+import StaffManagement from './components/StaffManagement';
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
@@ -102,20 +103,6 @@ const AdminDashboardHome = () => (
   </div>
 );
 
-const AdminStaff = () => (
-  <div className="admin-section-content active">
-    <div className="admin-page-header">
-      <h1 className="admin-page-title">Staff Management</h1>
-      <p className="admin-page-subtitle">Manage gym staff and trainers</p>
-    </div>
-    <div className="admin-coming-soon">
-      <i className="fas fa-user-tie"></i>
-      <h3>Staff Management</h3>
-      <p>This section is under development and will be available soon!</p>
-    </div>
-  </div>
-);
-
 const AdminBranches = () => (
   <div className="admin-section-content active">
     <div className="admin-page-header">
@@ -143,7 +130,7 @@ function App() {
           <Route path="members" element={<MemberManagement />} />
           <Route path="subscriptions" element={<SubscriptionManagement />} />
           <Route path="attendance" element={<AttendanceManagement />} />
-          <Route path="staff" element={<AdminStaff />} />
+          <Route path="staff" element={<StaffManagement />} />
           <Route path="branches" element={<AdminBranches />} />
         </Route>
         <Route path="/subscriptions" element={<Subscriptions />} />
