@@ -5,6 +5,7 @@ import Profile from './components/Profile';
 import AdminDashboard from './components/AdminDashboard';
 import MemberManagement from './components/MemberManagement';
 import SubscriptionManagement from './components/SubscriptionManagement';
+import AttendanceManagement from './components/AttendanceManagement';
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
@@ -101,20 +102,6 @@ const AdminDashboardHome = () => (
   </div>
 );
 
-const AdminAttendance = () => (
-  <div className="admin-section-content active">
-    <div className="admin-page-header">
-      <h1 className="admin-page-title">Attendance Management</h1>
-      <p className="admin-page-subtitle">Track and manage member attendance</p>
-    </div>
-    <div className="admin-coming-soon">
-      <i className="fas fa-calendar-check"></i>
-      <h3>Attendance Management</h3>
-      <p>This section is under development and will be available soon!</p>
-    </div>
-  </div>
-);
-
 const AdminStaff = () => (
   <div className="admin-section-content active">
     <div className="admin-page-header">
@@ -155,7 +142,7 @@ function App() {
           <Route path="dashboard" element={<AdminDashboardHome />} />
           <Route path="members" element={<MemberManagement />} />
           <Route path="subscriptions" element={<SubscriptionManagement />} />
-          <Route path="attendance" element={<AdminAttendance />} />
+          <Route path="attendance" element={<AttendanceManagement />} />
           <Route path="staff" element={<AdminStaff />} />
           <Route path="branches" element={<AdminBranches />} />
         </Route>
