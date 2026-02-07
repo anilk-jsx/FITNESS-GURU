@@ -3,7 +3,7 @@ name: Deploy Frontend to Hostinger
 on:
   push:
     branches:
-      - main
+      - up-react
 
 jobs:
   build-and-deploy:
