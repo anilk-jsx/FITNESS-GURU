@@ -1,13 +1,17 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import './AdminSidebar.css';
 
 const AdminSidebar = ({ 
-    activeSection, 
-    showSection, 
     handleLogout, 
     isMobileMenuOpen, 
     setIsMobileMenuOpen 
 }) => {
+    const handleNavClick = () => {
+        if (window.innerWidth <= 768) {
+            setIsMobileMenuOpen(false);
+        }
+    };
     return (
         <div className={`admin-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`} id="sidebar">
             <div className="logo-section">
@@ -19,58 +23,64 @@ const AdminSidebar = ({
 
             <div className="nav-menu">
                 <div className="nav-item">
-                    <button 
-                        className={`nav-link ${activeSection === 'dashboard' ? 'active' : ''}`}
-                        onClick={() => showSection('dashboard')}
+                    <NavLink 
+                        to="/admin-dashboard/dashboard"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
                     >
                         <i className="fas fa-home"></i>
                         Dashboard
-                    </button>
+                    </NavLink>
                 </div>
                 <div className="nav-item">
-                    <button 
-                        className={`nav-link ${activeSection === 'members' ? 'active' : ''}`}
-                        onClick={() => showSection('members')}
+                    <NavLink 
+                        to="/admin-dashboard/members"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
                     >
                         <i className="fas fa-users"></i>
                         Members Management
-                    </button>
+                    </NavLink>
                 </div>
                 <div className="nav-item">
-                    <button 
-                        className={`nav-link ${activeSection === 'subscriptions' ? 'active' : ''}`}
-                        onClick={() => showSection('subscriptions')}
+                    <NavLink 
+                        to="/admin-dashboard/subscriptions"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
                     >
                         <i className="fas fa-credit-card"></i>
                         Subscription Management
-                    </button>
+                    </NavLink>
                 </div>
                 <div className="nav-item">
-                    <button 
-                        className={`nav-link ${activeSection === 'attendance' ? 'active' : ''}`}
-                        onClick={() => showSection('attendance')}
+                    <NavLink 
+                        to="/admin-dashboard/attendance"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
                     >
                         <i className="fas fa-calendar-check"></i>
                         Attendance Management
-                    </button>
+                    </NavLink>
                 </div>
                 <div className="nav-item">
-                    <button 
-                        className={`nav-link ${activeSection === 'staff' ? 'active' : ''}`}
-                        onClick={() => showSection('staff')}
+                    <NavLink 
+                        to="/admin-dashboard/staff"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
                     >
                         <i className="fas fa-user-tie"></i>
                         Staff Management
-                    </button>
+                    </NavLink>
                 </div>
                 <div className="nav-item">
-                    <button 
-                        className={`nav-link ${activeSection === 'branches' ? 'active' : ''}`}
-                        onClick={() => showSection('branches')}
+                    <NavLink 
+                        to="/admin-dashboard/branches"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
                     >
                         <i className="fas fa-building"></i>
                         Branch Management
-                    </button>
+                    </NavLink>
                 </div>
             </div>
 
