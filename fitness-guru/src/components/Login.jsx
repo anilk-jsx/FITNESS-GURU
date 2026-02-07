@@ -14,11 +14,20 @@ export default function Login() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (email === "user@gmail.com" && password === "user@123") {
+    
+    // Admin login validation
+    if (email === "admin@fg.com" && password === "admin@123") {
       setError("");
-      console.log('Login success, navigating to /dashboard');
+      console.log('Admin login success, navigating to /admin-dashboard');
+      navigate("/admin-dashboard");
+    }
+    // User login validation
+    else if (email === "user@gmail.com" && password === "user@123") {
+      setError("");
+      console.log('User login success, navigating to /dashboard');
       navigate("/dashboard");
-    } else {
+    } 
+    else {
       setError("Invalid email or password.");
       console.log('Login failed');
     }
