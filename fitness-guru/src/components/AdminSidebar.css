@@ -34,9 +34,10 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     text-align: center;
     line-height: 1.2;
+    white-space: nowrap;
 }
 
 .logo span {
