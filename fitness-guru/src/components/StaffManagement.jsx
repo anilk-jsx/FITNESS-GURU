@@ -243,29 +243,40 @@ const StaffManagement = () => {
 
     // Form data for trainers
     const [trainerFormData, setTrainerFormData] = useState({
+        // User fields
         name: '',
         email: '',
         phone: '',
-        branch_name: 'Bangalore Main',
+        password: '',
+        role: 'TRAINER',
+        gym_id: 1,
+        branch_id: 1,
+        // Trainer fields
         specialization: '',
         experience_years: '',
         certifications: '',
         bio: '',
-        shift_name: 'Morning Shift',
+        shift_id: 1,
         availability_status: 'AVAILABLE',
+        profile_photo_url: '',
         joining_date: new Date().toISOString().split('T')[0],
         status: 'ACTIVE'
     });
 
     // Form data for staff
     const [staffFormData, setStaffFormData] = useState({
+        // User fields
         name: '',
         email: '',
         phone: '',
-        branch_name: 'Bangalore Main',
+        password: '',
+        role: 'STAFF',
+        gym_id: 1,
+        branch_id: 1,
+        // Staff fields
         designation: '',
         department: '',
-        shift_name: 'Morning Shift',
+        shift_id: 1,
         salary_monthly: '',
         salary_type: 'FULL_TIME',
         joining_date: new Date().toISOString().split('T')[0],
@@ -324,28 +335,39 @@ const StaffManagement = () => {
     const handleAddNew = () => {
         if (activeTab === 'trainers') {
             setTrainerFormData({
+                // User fields
                 name: '',
                 email: '',
                 phone: '',
-                branch_name: 'Bangalore Main',
+                password: '',
+                role: 'TRAINER',
+                gym_id: 1,
+                branch_id: 1,
+                // Trainer fields
                 specialization: '',
                 experience_years: '',
                 certifications: '',
                 bio: '',
-                shift_name: 'Morning Shift',
+                shift_id: 1,
                 availability_status: 'AVAILABLE',
+                profile_photo_url: '',
                 joining_date: new Date().toISOString().split('T')[0],
                 status: 'ACTIVE'
             });
         } else {
             setStaffFormData({
+                // User fields
                 name: '',
                 email: '',
                 phone: '',
-                branch_name: 'Bangalore Main',
+                password: '',
+                role: 'STAFF',
+                gym_id: 1,
+                branch_id: 1,
+                // Staff fields
                 designation: '',
                 department: '',
-                shift_name: 'Morning Shift',
+                shift_id: 1,
                 salary_monthly: '',
                 salary_type: 'FULL_TIME',
                 joining_date: new Date().toISOString().split('T')[0],
@@ -360,28 +382,39 @@ const StaffManagement = () => {
         setSelectedItem(item);
         if (activeTab === 'trainers') {
             setTrainerFormData({
+                // User fields
                 name: item.name,
                 email: item.email,
                 phone: item.phone,
-                branch_name: item.branch_name,
+                password: '', // Don't prefill password for security
+                role: 'TRAINER',
+                gym_id: item.gym_id || 1,
+                branch_id: item.branch_id || 1,
+                // Trainer fields
                 specialization: item.specialization,
                 experience_years: item.experience_years,
                 certifications: item.certifications,
                 bio: item.bio,
-                shift_name: item.shift_name,
+                shift_id: item.shift_id || 1,
                 availability_status: item.availability_status,
+                profile_photo_url: item.profile_photo_url || '',
                 joining_date: item.joining_date,
                 status: item.status
             });
         } else {
             setStaffFormData({
+                // User fields
                 name: item.name,
                 email: item.email,
                 phone: item.phone,
-                branch_name: item.branch_name,
+                password: '', // Don't prefill password for security
+                role: 'STAFF',
+                gym_id: item.gym_id || 1,
+                branch_id: item.branch_id || 1,
+                // Staff fields
                 designation: item.designation,
                 department: item.department,
-                shift_name: item.shift_name,
+                shift_id: item.shift_id || 1,
                 salary_monthly: item.salary_monthly,
                 salary_type: item.salary_type,
                 joining_date: item.joining_date,
@@ -939,9 +972,9 @@ const StaffManagement = () => {
                             </button>
                         </div>
                         <form onSubmit={showAddModal ? handleAddSubmit : handleEditSubmit} className="staff-modal-body">
-                            {/* Personal Information */}
+                            {/* Personal Information - User Table Fields */}
                             <div className="staff-form-section">
-                                <h3>Personal Information</h3>
+                                <h3>Personal Information (User Account)</h3>
                                 <div className="staff-form-grid">
                                     <div className="staff-form-group">
                                         <label>Full Name *</label>
@@ -981,31 +1014,56 @@ const StaffManagement = () => {
                                         />
                                     </div>
                                     <div className="staff-form-group">
-                                        <label>Branch *</label>
-                                        <select
-                                            value={activeTab === 'trainers' ? trainerFormData.branch_name : staffFormData.branch_name}
+                                        <label>{showAddModal ? 'Password *' : 'Password (leave blank to keep current)'}</label>
+                                        <input
+                                            type="password"
+                                            value={activeTab === 'trainers' ? trainerFormData.password : staffFormData.password}
                                             onChange={(e) => activeTab === 'trainers'
-                                                ? setTrainerFormData({ ...trainerFormData, branch_name: e.target.value })
-                                                : setStaffFormData({ ...staffFormData, branch_name: e.target.value })}
+                                                ? setTrainerFormData({ ...trainerFormData, password: e.target.value })
+                                                : setStaffFormData({ ...staffFormData, password: e.target.value })}
+                                            placeholder="Enter password"
+                                            required={showAddModal}
+                                        />
+                                    </div>
+                                    <div className="staff-form-group">
+                                        <label>Gym ID *</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={activeTab === 'trainers' ? trainerFormData.gym_id : staffFormData.gym_id}
+                                            onChange={(e) => activeTab === 'trainers'
+                                                ? setTrainerFormData({ ...trainerFormData, gym_id: parseInt(e.target.value) })
+                                                : setStaffFormData({ ...staffFormData, gym_id: parseInt(e.target.value) })}
+                                            placeholder="Gym ID"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="staff-form-group">
+                                        <label>Branch ID *</label>
+                                        <select
+                                            value={activeTab === 'trainers' ? trainerFormData.branch_id : staffFormData.branch_id}
+                                            onChange={(e) => activeTab === 'trainers'
+                                                ? setTrainerFormData({ ...trainerFormData, branch_id: parseInt(e.target.value) })
+                                                : setStaffFormData({ ...staffFormData, branch_id: parseInt(e.target.value) })}
                                             required
                                         >
-                                            <option value="Bangalore Main">Bangalore Main</option>
-                                            <option value="Whitefield Branch">Whitefield Branch</option>
-                                            <option value="Koramangala Branch">Koramangala Branch</option>
+                                            <option value="1">1 - Bangalore Main</option>
+                                            <option value="2">2 - Whitefield Branch</option>
+                                            <option value="3">3 - Koramangala Branch</option>
                                         </select>
                                     </div>
                                     <div className="staff-form-group">
-                                        <label>Shift *</label>
+                                        <label>Shift ID *</label>
                                         <select
-                                            value={activeTab === 'trainers' ? trainerFormData.shift_name : staffFormData.shift_name}
+                                            value={activeTab === 'trainers' ? trainerFormData.shift_id : staffFormData.shift_id}
                                             onChange={(e) => activeTab === 'trainers'
-                                                ? setTrainerFormData({ ...trainerFormData, shift_name: e.target.value })
-                                                : setStaffFormData({ ...staffFormData, shift_name: e.target.value })}
+                                                ? setTrainerFormData({ ...trainerFormData, shift_id: parseInt(e.target.value) })
+                                                : setStaffFormData({ ...staffFormData, shift_id: parseInt(e.target.value) })}
                                             required
                                         >
-                                            <option value="Morning Shift">Morning Shift</option>
-                                            <option value="Evening Shift">Evening Shift</option>
-                                            <option value="Full Day">Full Day</option>
+                                            <option value="1">1 - Morning Shift</option>
+                                            <option value="2">2 - Evening Shift</option>
+                                            <option value="3">3 - Full Day</option>
                                         </select>
                                     </div>
                                     <div className="staff-form-group">
@@ -1081,6 +1139,15 @@ const StaffManagement = () => {
                                                     rows="3"
                                                     placeholder="Brief professional bio..."
                                                     required
+                                                />
+                                            </div>
+                                            <div className="staff-form-group staff-full-width">
+                                                <label>Profile Photo URL</label>
+                                                <input
+                                                    type="text"
+                                                    value={trainerFormData.profile_photo_url}
+                                                    onChange={(e) => setTrainerFormData({ ...trainerFormData, profile_photo_url: e.target.value })}
+                                                    placeholder="https://example.com/photo.jpg"
                                                 />
                                             </div>
                                         </div>
