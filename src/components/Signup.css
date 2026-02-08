@@ -104,6 +104,38 @@
   border: 1.5px solid #ff6b35;
   outline: none;
 }
+.signup-password-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+.signup-password-wrapper .signup-input {
+  padding-right: 2.8rem;
+  margin-bottom: 0;
+}
+.signup-password-toggle {
+  position: absolute;
+  right: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+  line-height: 1;
+  color: #888;
+}
+.signup-password-toggle:hover {
+  opacity: 0.7;
+}
+.signup-password-toggle svg {
+  display: block;
+}
 .signup-password-rules {
   color: #ff6b35;
   font-size: 0.98rem;
@@ -267,11 +299,18 @@
     font-size: 0.95rem;
     margin-top: 0.6rem;
   }
-  .signup-input, 
+  .signup-input,
   .signup-input select {
     padding: 0.75rem;
     font-size: 0.95rem;
     margin-bottom: 0.4rem;
+  }
+  .signup-password-wrapper .signup-input {
+    padding-right: 2.5rem;
+  }
+  .signup-password-toggle {
+    font-size: 1.1rem;
+    right: 0.6rem;
   }
   .signup-password-rules {
     font-size: 0.85rem;
