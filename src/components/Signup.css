@@ -7,6 +7,7 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-attachment: fixed;
   z-index: 0;
   display: flex;
   align-items: center;
@@ -15,10 +16,11 @@
   overflow-x: hidden;
 }
 .signup-overlay {
-  position: absolute;
+  position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(10, 10, 10, 0.7);
   z-index: 1;
+  pointer-events: none;
 }
 .signup-container {
   position: relative;
