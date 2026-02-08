@@ -12,13 +12,17 @@ export default function Signup() {
     password: "",
     confirmPassword: "",
     agree: false,
-    // Gym member details
-    age: "",
+    branch: "",
+    // Gym member profile details
+    dob: "",
     gender: "",
-    phone: "",
-    address: "",
-    goals: "",
-    medical: ""
+    blood_group: "",
+    height_cm: "",
+    weight_kg: "",
+    fitness_level: "",
+    goal_focus: "",
+    emergency_contact: "",
+    address: ""
   });
   const navigate = useNavigate();
 
@@ -88,6 +92,21 @@ export default function Signup() {
             onChange={handleChange}
             required
           />
+          <label className="signup-label">Branch</label>
+          <select 
+            className="signup-input" 
+            name="branch" 
+            value={form.branch} 
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select Branch</option>
+            <option value="downtown">Downtown Branch</option>
+            <option value="north">North Branch</option>
+            <option value="south">South Branch</option>
+            <option value="east">East Branch</option>
+            <option value="west">West Branch</option>
+          </select>
           <button
             type="button"
             className="signup-member-btn"
@@ -102,33 +121,67 @@ export default function Signup() {
                 <h3 className="signup-member-title">Gym Member Details</h3>
                 <div className="signup-member-grid">
                   <div>
-                    <label className="signup-label">Age</label>
-                    <input type="number" className="signup-input" name="age" min="12" max="100" value={form.age} onChange={handleChange} />
+                    <label className="signup-label">Date of Birth</label>
+                    <input type="date" className="signup-input" name="dob" value={form.dob} onChange={handleChange} />
                   </div>
                   <div>
                     <label className="signup-label">Gender</label>
                     <select className="signup-input" name="gender" value={form.gender} onChange={handleChange}>
                       <option value="">Select</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
                     </select>
                   </div>
                   <div>
-                    <label className="signup-label">Phone</label>
-                    <input type="tel" className="signup-input" name="phone" placeholder="1234567890" value={form.phone} onChange={handleChange} />
+                    <label className="signup-label">Blood Group</label>
+                    <select className="signup-input" name="blood_group" value={form.blood_group} onChange={handleChange}>
+                      <option value="">Select</option>
+                      <option value="A+">A+</option>
+                      <option value="A-">A-</option>
+                      <option value="B+">B+</option>
+                      <option value="B-">B-</option>
+                      <option value="O+">O+</option>
+                      <option value="O-">O-</option>
+                      <option value="AB+">AB+</option>
+                      <option value="AB-">AB-</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="signup-label">Height (cm)</label>
+                    <input type="number" className="signup-input" name="height_cm" placeholder="170" step="0.01" min="50" max="300" value={form.height_cm} onChange={handleChange} />
+                  </div>
+                  <div>
+                    <label className="signup-label">Weight (kg)</label>
+                    <input type="number" className="signup-input" name="weight_kg" placeholder="70" step="0.01" min="20" max="300" value={form.weight_kg} onChange={handleChange} />
+                  </div>
+                  <div>
+                    <label className="signup-label">Fitness Level</label>
+                    <select className="signup-input" name="fitness_level" value={form.fitness_level} onChange={handleChange}>
+                      <option value="">Select</option>
+                      <option value="BEGINNER">Beginner</option>
+                      <option value="INTERMEDIATE">Intermediate</option>
+                      <option value="ADVANCED">Advanced</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="signup-label">Goal Focus</label>
+                    <select className="signup-input" name="goal_focus" value={form.goal_focus} onChange={handleChange}>
+                      <option value="">Select</option>
+                      <option value="WEIGHT_LOSS">Weight Loss</option>
+                      <option value="MUSCLE_GAIN">Muscle Gain</option>
+                      <option value="STRENGTH">Strength</option>
+                      <option value="ENDURANCE">Endurance</option>
+                      <option value="GENERAL">General Fitness</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="signup-label">Emergency Contact</label>
+                    <input type="tel" className="signup-input" name="emergency_contact" placeholder="1234567890" value={form.emergency_contact} onChange={handleChange} />
                   </div>
                   <div>
                     <label className="signup-label">Address</label>
-                    <input type="text" className="signup-input" name="address" placeholder="Address" value={form.address} onChange={handleChange} />
-                  </div>
-                  <div>
-                    <label className="signup-label">Fitness Goals</label>
-                    <input type="text" className="signup-input" name="goals" placeholder="Your goals" value={form.goals} onChange={handleChange} />
-                  </div>
-                  <div>
-                    <label className="signup-label">Medical Conditions</label>
-                    <input type="text" className="signup-input" name="medical" placeholder="Any medical conditions" value={form.medical} onChange={handleChange} />
+                    <textarea className="signup-input" name="address" placeholder="Enter your address" rows="2" value={form.address} onChange={handleChange} />
                   </div>
                 </div>
               </div>
