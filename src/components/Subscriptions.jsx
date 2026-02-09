@@ -6,6 +6,13 @@ import './Subscriptions.css';
 const Subscriptions = () => {
   const [currentPricing, setCurrentPricing] = useState('quarterly');
   const [showUpgradePlans, setShowUpgradePlans] = useState(false);
+  const [showFreezeModal, setShowFreezeModal] = useState(false);
+  const [freezeFormData, setFreezeFormData] = useState({
+    reason: '',
+    requested_days: '',
+    start_date: ''
+  });
+  const [submittedFreezeData, setSubmittedFreezeData] = useState(null);
   
   const userData = {
     name: 'John Doe',
@@ -108,6 +115,69 @@ const Subscriptions = () => {
     }
   };
 
+  // Freeze subscription handlers
+  const handleFreezeInputChange = (e) => {
+    const { name, value } = e.target;
+    setFreezeFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFreezeSubmit = (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!freezeFormData.reason.trim()) {
+      alert('Please provide a reason for freezing the subscription.');
+      return;
+    }
+    if (!freezeFormData.requested_days || freezeFormData.requested_days <= 0) {
+      alert('Please enter a valid number of days.');
+      return;
+    }
+    if (!freezeFormData.start_date) {
+      alert('Please select a start date.');
+      return;
+    }
+
+    // Calculate end date
+    const startDate = new Date(freezeFormData.start_date);
+    const endDate = new Date(startDate.getTime() + (parseInt(freezeFormData.requested_days) * 24 * 60 * 60 * 1000));
+    
+    const freezeData = {
+      ...freezeFormData,
+      end_date: endDate.toISOString().split('T')[0],
+      subscription_id: currentPlan.id || 1, // In real app, get from current plan
+      member_id: userData.id || 1, // In real app, get from user data
+      gym_id: 1, // In real app, get from user's gym
+      branch_id: 1, // In real app, get from user's branch
+      freeze_status: 'REQUESTED',
+      requested_days: parseInt(freezeFormData.requested_days)
+    };
+
+    setSubmittedFreezeData(freezeData);
+    setShowFreezeModal(false);
+    
+    // Reset form
+    setFreezeFormData({
+      reason: '',
+      requested_days: '',
+      start_date: ''
+    });
+    
+    alert('Freeze request submitted successfully! Your request is pending approval.');
+  };
+
+  const closeFreezeModal = () => {
+    setShowFreezeModal(false);
+    setFreezeFormData({
+      reason: '',
+      requested_days: '',
+      start_date: ''
+    });
+  };
+
   useEffect(() => {
     // Add animation to cards on mount
     const cards = document.querySelectorAll('.membership-card, .current-subscription');
@@ -162,9 +232,9 @@ const Subscriptions = () => {
               <i className={`fas ${showUpgradePlans ? 'fa-times' : 'fa-arrow-up'}`}></i>
               {showUpgradePlans ? 'Close Plans' : 'Upgrade Plan'}
             </button>
-            <button className="btn-manage" onClick={() => alert('Manage subscription features coming soon!')}>
-              <i className="fas fa-cog"></i>
-              Manage Subscription
+            <button className="btn-manage" onClick={() => setShowFreezeModal(true)}>
+              <i className="fas fa-snowflake"></i>
+              Freeze Subscription
             </button>
             <button className="btn-cancel" onClick={() => {
               if (window.confirm('Are you sure you want to cancel your subscription?')) {
@@ -316,6 +386,179 @@ const Subscriptions = () => {
           </button>
         </div>
       </div>
+      )}
+
+      {/* Freeze Subscription Modal */}
+      {showFreezeModal && (
+        <div className="freeze-modal-overlay" onClick={closeFreezeModal}>
+          <div className="freeze-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="freeze-modal-header">
+              <h3>
+                <i className="fas fa-snowflake"></i>
+                Freeze Subscription
+              </h3>
+              <button className="close-modal" onClick={closeFreezeModal}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <form onSubmit={handleFreezeSubmit} className="freeze-form">
+              <div className="form-group">
+                <label htmlFor="reason">Reason for Freezing *</label>
+                <textarea
+                  id="reason"
+                  name="reason"
+                  value={freezeFormData.reason}
+                  onChange={handleFreezeInputChange}
+                  placeholder="Please explain why you need to freeze your subscription..."
+                  required
+                  rows="4"
+                />
+              </div>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="requested_days">Number of Days *</label>
+                  <input
+                    type="number"
+                    id="requested_days"
+                    name="requested_days"
+                    value={freezeFormData.requested_days}
+                    onChange={handleFreezeInputChange}
+                    placeholder="e.g., 30"
+                    min="1"
+                    max="90"
+                    required
+                  />
+                  <small>Maximum 90 days allowed</small>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="start_date">Start Date *</label>
+                  <input
+                    type="date"
+                    id="start_date"
+                    name="start_date"
+                    value={freezeFormData.start_date}
+                    onChange={handleFreezeInputChange}
+                    min={new Date().toISOString().split('T')[0]}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="freeze-info">
+                {freezeFormData.start_date && freezeFormData.requested_days && (
+                  <div className="calculated-info">
+                    <i className="fas fa-info-circle"></i>
+                    <span>
+                      Freeze period: {freezeFormData.start_date} to {
+                        new Date(
+                          new Date(freezeFormData.start_date).getTime() + 
+                          (parseInt(freezeFormData.requested_days || 0) * 24 * 60 * 60 * 1000)
+                        ).toISOString().split('T')[0]
+                      }
+                    </span>
+                  </div>
+                )}
+                <div className="freeze-terms">
+                  <p><i className="fas fa-exclamation-triangle"></i> Please note:</p>
+                  <ul>
+                    <li>Your subscription will be paused for the requested period</li>
+                    <li>Gym access will be suspended during the freeze period</li>
+                    <li>Your subscription end date will be extended accordingly</li>
+                    <li>Freeze requests require admin approval</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="form-actions">
+                <button type="button" className="btn-cancel-form" onClick={closeFreezeModal}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-submit-freeze">
+                  <i className="fas fa-paper-plane"></i>
+                  Submit Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Submitted Freeze Request Details */}
+      {submittedFreezeData && (
+        <div className="freeze-request-section">
+          <div className="freeze-request-header">
+            <div className="freeze-success-indicator">
+              <i className="fas fa-check-circle"></i>
+              <div>
+                <h3>Freeze Request Submitted</h3>
+                <p>Your subscription freeze request is pending approval</p>
+              </div>
+            </div>
+            <button 
+              className="btn-dismiss-request" 
+              onClick={() => setSubmittedFreezeData(null)}
+              title="Dismiss notification"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+          
+          <div className="freeze-request-content">
+            <div className="freeze-request-details">
+              <h4>
+                <i className="fas fa-snowflake"></i>
+                Request Details
+              </h4>
+              
+              <div className="request-details-grid">
+                <div className="detail-row">
+                  <div className="detail-label">Reason</div>
+                  <div className="detail-value">{submittedFreezeData.reason}</div>
+                </div>
+                
+                <div className="detail-row">
+                  <div className="detail-label">Duration</div>
+                  <div className="detail-value">{submittedFreezeData.requested_days} days</div>
+                </div>
+                
+                <div className="detail-row">
+                  <div className="detail-label">Start Date</div>
+                  <div className="detail-value">{submittedFreezeData.start_date}</div>
+                </div>
+                
+                <div className="detail-row">
+                  <div className="detail-label">End Date</div>
+                  <div className="detail-value">{submittedFreezeData.end_date}</div>
+                </div>
+                
+                <div className="detail-row">
+                  <div className="detail-label">Status</div>
+                  <div className="detail-value">
+                    <span className="status-badge requested">{submittedFreezeData.freeze_status}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="freeze-request-info">
+              <div className="info-card">
+                <h4>
+                  <i className="fas fa-info-circle"></i>
+                  What happens next?
+                </h4>
+                <ul>
+                  <li>Your request has been sent to gym administration</li>
+                  <li>You'll receive an email notification once reviewed</li>
+                  <li>If approved, freeze will activate on the start date</li>
+                  <li>Subscription end date will be extended accordingly</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </DashboardLayout>
   );
