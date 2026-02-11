@@ -8,13 +8,16 @@ export default function Signup() {
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
     agree: false,
-    branch: "",
+    branch: "1",
     // Gym member profile details
     dob: "",
     gender: "",
@@ -36,9 +39,87 @@ export default function Signup() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const validatePassword = (password) => {
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const isLengthValid = password.length >= 8;
+
+    if (!isLengthValid) {
+      return "Password must be at least 8 characters long";
+    }
+    if (!hasUpperCase || !hasLowerCase) {
+      return "Password must contain both uppercase and lowercase letters";
+    }
+    if (!hasNumber) {
+      return "Password must contain at least one number";
+    }
+    return null;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Signup logic here
+    setError("");
+
+    // Validate passwords match
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    // Validate password strength
+    const passwordError = validatePassword(form.password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
+    // Validate phone number (basic validation)
+    if (form.phone.length < 10) {
+      setError("Please enter a valid phone number");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('action', 'register');
+      formData.append('gym_id', '1');
+      formData.append('branch_id', form.branch);
+      formData.append('name', form.name);
+      formData.append('email', form.email);
+      formData.append('phone', form.phone);
+      formData.append('password', form.password);
+      formData.append('role', 'MEMBER');
+
+      const response = await fetch(import.meta.env.VITE_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        // Store tokens and user data
+        localStorage.setItem("access_token", data.tokens.access_token);
+        localStorage.setItem("refresh_token", data.tokens.refresh_token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        // Navigate to dashboard
+        navigate("/dashboard");
+      } else {
+        setError(data.message || "Registration failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("Signup error:", err);
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -68,6 +149,18 @@ export default function Signup() {
             value={form.email}
             onChange={handleChange}
             required
+          />
+          <label className="signup-label">Phone Number</label>
+          <input
+            type="tel"
+            className="signup-input"
+            name="phone"
+            placeholder="9876543210"
+            value={form.phone}
+            onChange={handleChange}
+            required
+            pattern="[0-9]{10,15}"
+            title="Please enter a valid phone number (10-15 digits)"
           />
           <label className="signup-label">Password</label>
           <div className="signup-password-wrapper">
@@ -142,12 +235,11 @@ export default function Signup() {
             onChange={handleChange}
             required
           >
-            <option value="">Select Branch</option>
-            <option value="downtown">Downtown Branch</option>
-            <option value="north">North Branch</option>
-            <option value="south">South Branch</option>
-            <option value="east">East Branch</option>
-            <option value="west">West Branch</option>
+            <option value="1">Branch 1</option>
+            <option value="2">Branch 2</option>
+            <option value="3">Branch 3</option>
+            <option value="4">Branch 4</option>
+            <option value="5">Branch 5</option>
           </select>
           <button
             type="button"
@@ -233,7 +325,10 @@ export default function Signup() {
             <input type="checkbox" name="agree" checked={form.agree} onChange={handleChange} required />
             <span>I agree to the <a href="#" className="signup-link">Terms of Service</a> and <a href="#" className="signup-link">Privacy Policy</a></span>
           </div>
-          <button className="signup-btn" type="submit">Create Account</button>
+          {error && <div className="signup-error" style={{ color: 'red', textAlign: 'center', marginBottom: '1rem', padding: '0.5rem', backgroundColor: 'rgba(255, 0, 0, 0.1)', borderRadius: '4px' }}>{error}</div>}
+          <button className="signup-btn" type="submit" disabled={loading}>
+            {loading ? "Creating Account..." : "Create Account"}
+          </button>
           <div className="signup-login">
             Already have an account? <Link to="/login" className="signup-login-link">Login</Link>
           </div>
