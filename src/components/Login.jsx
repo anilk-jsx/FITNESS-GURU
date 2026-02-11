@@ -11,26 +11,47 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Admin login validation
-    if (email === "admin@fg.com" && password === "admin@123") {
-      setError("");
-      console.log('Admin login success, navigating to /admin-dashboard');
-      navigate("/admin-dashboard");
-    }
-    // User login validation
-    else if (email === "user@gmail.com" && password === "user@123") {
-      setError("");
-      console.log('User login success, navigating to /dashboard');
-      navigate("/dashboard");
-    } 
-    else {
-      setError("Invalid email or password.");
-      console.log('Login failed');
+    setError("");
+    setLoading(true);
+
+    try {
+      const formData = new URLSearchParams();
+      formData.append('action', 'login');
+      formData.append('email', email);
+      formData.append('password', password);
+
+      const response = await fetch(import.meta.env.VITE_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        localStorage.setItem("access_token", data.tokens.access_token);
+        localStorage.setItem("refresh_token", data.tokens.refresh_token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        if (data.user.role === "ADMIN" || data.user.role === "OWNER") {
+          navigate("/admin-dashboard");
+        } else {
+          navigate("/dashboard");
+        }
+      } else {
+        setError(data.message || "Invalid email or password");
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -87,7 +108,9 @@ export default function Login() {
             <a href="#" className="login-forgot">Forgot password?</a>
           </div>
           {error && <div className="login-error" style={{ color: 'red', textAlign: 'center', marginBottom: '1rem' }}>{error}</div>}
-          <button className="login-btn" type="submit">Login</button>
+          <button className="login-btn" type="submit" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
+          </button>
           <div className="login-signup">
             Don't have an account? <Link to="/signup" className="login-signup-link">Sign Up</Link>
           </div>
