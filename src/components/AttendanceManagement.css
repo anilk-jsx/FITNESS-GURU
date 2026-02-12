@@ -1,7 +1,7 @@
 /* Attendance Management Styles */
 
 .attendance-management {
-    padding: 2rem;
+    padding: clamp(1rem, 3vw, 2rem);
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
 }
@@ -11,11 +11,13 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: clamp(1.5rem, 3vw, 2rem);
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .att-title {
-    font-size: 2rem;
+    font-size: clamp(1.5rem, 4vw, 2rem);
     color: white;
     margin-bottom: 0.5rem;
     font-weight: 700;
@@ -23,16 +25,16 @@
 
 .att-subtitle {
     color: rgba(255, 255, 255, 0.9);
-    font-size: 1rem;
+    font-size: clamp(0.85rem, 2vw, 1rem);
 }
 
 .att-manual-btn {
-    padding: 1rem 2rem;
+    padding: clamp(0.75rem, 2vw, 1rem) clamp(1.25rem, 3vw, 2rem);
     background: linear-gradient(135deg, #ff6b35, #f7931e);
     color: white;
     border: none;
     border-radius: 12px;
-    font-size: 1rem;
+    font-size: clamp(0.9rem, 2vw, 1rem);
     font-weight: 600;
     cursor: pointer;
     display: flex;
@@ -40,6 +42,7 @@
     gap: 0.5rem;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+    white-space: nowrap;
 }
 
 .att-manual-btn:hover {
@@ -50,18 +53,18 @@
 /* Statistics Bar */
 .att-stats-bar {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+    gap: clamp(1rem, 2.5vw, 1.5rem);
+    margin-bottom: clamp(1.5rem, 3vw, 2rem);
 }
 
 .att-stat-item {
     background: white;
-    padding: 1.5rem;
+    padding: clamp(1rem, 2.5vw, 1.5rem);
     border-radius: 12px;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: clamp(0.75rem, 2vw, 1rem);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -72,23 +75,25 @@
 }
 
 .att-stat-item i {
-    font-size: 2rem;
+    font-size: clamp(1.5rem, 4vw, 2rem);
     color: #ff6b35;
+    flex-shrink: 0;
 }
 
 .att-stat-item > div {
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .att-stat-label {
-    font-size: 0.85rem;
+    font-size: clamp(0.75rem, 1.8vw, 0.85rem);
     color: #7f8c8d;
     margin-bottom: 0.25rem;
 }
 
 .att-stat-value {
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 3vw, 1.5rem);
     font-weight: 700;
     color: #2c3e50;
 }
@@ -118,10 +123,10 @@
 
 .att-search-bar input {
     width: 100%;
-    padding: 1rem 1rem 1rem 3.5rem;
+    padding: clamp(0.75rem, 2vw, 1rem) clamp(0.75rem, 2vw, 1rem) clamp(0.75rem, 2vw, 1rem) clamp(2.5rem, 6vw, 3.5rem);
     border: none;
     border-radius: 12px;
-    font-size: 1rem;
+    font-size: clamp(0.9rem, 2vw, 1rem);
     background: white;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
@@ -143,14 +148,15 @@
 }
 
 .att-filter {
-    padding: 1rem 1.5rem;
+    padding: clamp(0.75rem, 2vw, 1rem) clamp(1rem, 2.5vw, 1.5rem);
     border: none;
     border-radius: 12px;
-    font-size: 1rem;
+    font-size: clamp(0.9rem, 2vw, 1rem);
     background: white;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     cursor: pointer;
     font-family: inherit;
+    min-width: 120px;
 }
 
 .att-filter:focus {
@@ -195,13 +201,14 @@
 }
 
 .att-table th {
-    padding: 1.25rem 1rem;
+    padding: clamp(1rem, 2.5vw, 1.25rem) clamp(0.75rem, 2vw, 1rem);
     text-align: left;
     color: white;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: clamp(0.75rem, 1.8vw, 0.9rem);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
 .att-table tbody tr {
@@ -214,9 +221,9 @@
 }
 
 .att-table td {
-    padding: 1.25rem 1rem;
+    padding: clamp(1rem, 2.5vw, 1.25rem) clamp(0.75rem, 2vw, 1rem);
     color: #2c3e50;
-    font-size: 0.95rem;
+    font-size: clamp(0.85rem, 2vw, 0.95rem);
 }
 
 /* User Info in Table */
@@ -365,6 +372,16 @@
 
 .att-action-btn.view:hover {
     background: #2196f3;
+    color: white;
+}
+
+.att-action-btn.mark {
+    background: #e8f5e9;
+    color: #4caf50;
+}
+
+.att-action-btn.mark:hover {
+    background: #4caf50;
     color: white;
 }
 
@@ -771,53 +788,90 @@
 }
 
 /* Responsive Design */
-@media (max-width: 1024px) {
-    .att-stats-bar {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    }
 
-    .att-detail-grid {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    }
-}
-
-@media (max-width: 768px) {
+/* Extra Small Devices (Portrait Phones, less than 480px) */
+@media (max-width: 479px) {
     .attendance-management {
-        padding: 1rem;
-    }
-
-    .att-title {
-        font-size: 1.5rem;
+        padding: 0.75rem;
     }
 
     .att-header {
         flex-direction: column;
-        gap: 1rem;
         align-items: stretch;
+    }
+
+    .att-manual-btn {
+        justify-content: center;
+        width: 100%;
     }
 
     .att-stats-bar {
         grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .att-stat-item {
+        padding: 1rem;
     }
 
     .att-filters {
         flex-direction: column;
+        gap: 0.75rem;
     }
 
     .att-search-bar {
         min-width: 100%;
     }
 
+    .att-filter,
+    .att-clear-filters {
+        width: 100%;
+    }
+
+    /* Mobile Table - Keep table layout with scroll */
     .att-table-container {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
 
     .att-table {
-        min-width: 1000px;
+        min-width: 900px;
+    }
+
+    .att-table th {
+        font-size: 0.75rem;
+        padding: 0.75rem 0.5rem;
+        white-space: nowrap;
+    }
+
+    .att-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .att-modal {
+        max-width: 100%;
+        margin: 0;
+        border-radius: 12px;
+        max-height: 95vh;
+    }
+
+    .att-modal-header {
+        padding: 1rem;
+    }
+
+    .att-modal-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .att-modal-body {
+        padding: 1rem;
     }
 
     .att-detail-grid {
         grid-template-columns: 1fr;
+        gap: 1rem;
     }
 
     .att-form-row {
@@ -826,22 +880,17 @@
 
     .att-session-times {
         flex-direction: column;
-        gap: 1rem;
+        align-items: flex-start;
+        gap: 0.75rem;
     }
 
     .att-time-separator {
-        transform: rotate(90deg);
-    }
-
-    .att-modal {
-        max-width: 100%;
-        margin: 0;
-        border-radius: 0;
-        max-height: 100vh;
+        display: none;
     }
 
     .att-modal-actions {
         flex-direction: column;
+        gap: 0.75rem;
     }
 
     .att-btn-primary,
@@ -850,8 +899,212 @@
     }
 }
 
-@media (max-width: 480px) {
-    .att-action-buttons {
+/* Small Devices (Landscape Phones, 480px - 639px) */
+@media (min-width: 480px) and (max-width: 639px) {
+    .att-header {
         flex-direction: column;
+        align-items: stretch;
     }
+
+    .att-manual-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .att-stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .att-filters {
+        flex-wrap: wrap;
+    }
+
+    .att-search-bar {
+        flex: 1 1 100%;
+    }
+
+    .att-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .att-table {
+        min-width: 900px;
+    }
+
+    .att-modal {
+        max-width: 95%;
+    }
+
+    .att-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .att-session-times {
+        flex-wrap: wrap;
+    }
+}
+
+/* Medium Devices (Tablets, 640px - 768px) */
+@media (min-width: 640px) and (max-width: 768px) {
+    .att-stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .att-filters {
+        flex-wrap: wrap;
+    }
+
+    .att-search-bar {
+        flex: 1 1 100%;
+    }
+
+    .att-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .att-table {
+        min-width: 1000px;
+    }
+
+    .att-detail-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .att-form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Large Tablets (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .att-stats-bar {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .att-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .att-detail-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Desktop (1025px - 1399px) */
+@media (min-width: 1025px) and (max-width: 1399px) {
+    .att-stats-bar {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Large Desktop (1400px and above) */
+@media (min-width: 1400px) {
+    .att-stats-bar {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .attendance-management {
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .att-stat-item:hover {
+        transform: none;
+    }
+
+    .att-action-btn,
+    .att-manual-btn,
+    .att-clear-filters,
+    .att-btn-primary,
+    .att-btn-secondary {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .att-filter,
+    .att-search-bar input {
+        min-height: 44px;
+    }
+}
+
+/* Landscape Orientation */
+@media (max-width: 768px) and (orientation: landscape) {
+    .att-stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .att-modal {
+        max-height: 90vh;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .att-stat-item,
+    .att-action-btn,
+    .att-manual-btn,
+    .att-btn-primary,
+    .att-btn-secondary {
+        transition: none;
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+/* Horizontal Scroll Indicator for Tables */
+@media (max-width: 1024px) {
+    .att-table-container {
+        position: relative;
+    }
+
+    .att-table-container::after {
+        content: '← Scroll to see more →';
+        display: block;
+        text-align: center;
+        padding: 0.75rem;
+        color: #7f8c8d;
+        font-size: 0.8rem;
+        font-style: italic;
+        background: rgba(255, 255, 255, 0.95);
+        border-top: 1px solid #ecf0f1;
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+}
+
+/* Custom Scrollbar for All Sizes */
+.att-table-container::-webkit-scrollbar {
+    height: 10px;
+}
+
+.att-table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.att-table-container::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 10px;
+}
+
+.att-table-container::-webkit-scrollbar-thumb:hover {
+    background: #764ba2;
 }

@@ -399,10 +399,6 @@ const AttendanceManagement = () => {
                     <h1 className="att-title">Attendance Management</h1>
                     <p className="att-subtitle">Track and manage member, trainer, and staff attendance</p>
                 </div>
-                <button className="att-manual-btn" onClick={handleManualEntry}>
-                    <i className="fas fa-plus"></i>
-                    Manual Entry
-                </button>
             </div>
 
             {/* Statistics Cards */}
@@ -537,38 +533,38 @@ const AttendanceManagement = () => {
                         ) : (
                             filteredLogs.map((log) => (
                                 <tr key={log.attendance_id}>
-                                    <td>#{log.attendance_id}</td>
-                                    <td>
+                                    <td data-label="ID">#{log.attendance_id}</td>
+                                    <td data-label="User Details">
                                         <div className="att-user-info">
                                             <strong>{log.user_name}</strong>
                                             <span>{log.email}</span>
                                             <span>{log.phone}</span>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="Role">
                                         <span className={`att-role-badge ${getRoleBadgeClass(log.role_type)}`}>
                                             {log.role_type}
                                         </span>
                                     </td>
-                                    <td>
+                                    <td data-label="Branch">
                                         <span className="att-branch-tag">{log.branch_name}</span>
                                         {log.shift_name && (
                                             <span className="att-shift-tag">{log.shift_name}</span>
                                         )}
                                     </td>
-                                    <td>{log.attendance_date}</td>
-                                    <td>
+                                    <td data-label="Date">{log.attendance_date}</td>
+                                    <td data-label="Sessions">
                                         <span className="att-session-count">{log.total_sessions}</span>
                                     </td>
-                                    <td>
+                                    <td data-label="Duration">
                                         <span className="att-duration">{formatDuration(log.total_duration_min)}</span>
                                     </td>
-                                    <td>
+                                    <td data-label="Status">
                                         <span className={`att-status-badge ${getStatusBadgeClass(log.status)}`}>
                                             {log.status.replace('_', ' ')}
                                         </span>
                                     </td>
-                                    <td>
+                                    <td data-label="Actions">
                                         <div className="att-action-buttons">
                                             <button
                                                 className="att-action-btn view"
@@ -576,6 +572,13 @@ const AttendanceManagement = () => {
                                                 title="View Sessions"
                                             >
                                                 <i className="fas fa-eye"></i>
+                                            </button>
+                                            <button
+                                                className="att-action-btn mark"
+                                                onClick={() => alert(`Mark attendance feature for ${log.user_name} coming soon!`)}
+                                                title="Mark Attendance"
+                                            >
+                                                <i className="fas fa-user-check"></i>
                                             </button>
                                             {log.status === 'MANUAL_ENTRY' && (
                                                 <button
