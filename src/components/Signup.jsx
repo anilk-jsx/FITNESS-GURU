@@ -83,22 +83,20 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      const formData = new URLSearchParams();
-      formData.append('action', 'register');
-      formData.append('gym_id', '1');
-      formData.append('branch_id', form.branch);
-      formData.append('name', form.name);
-      formData.append('email', form.email);
-      formData.append('phone', form.phone);
-      formData.append('password', form.password);
-      formData.append('role', 'MEMBER');
-
-      const response = await fetch(import.meta.env.VITE_API_URL, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
+          "Content-Type": "application/json"
         },
-        body: formData
+        body: JSON.stringify({
+          gym_id: 1,
+          branch_id: 1,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          password: form.password,
+          role: "MEMBER"
+        })
       });
 
       const data = await response.json();

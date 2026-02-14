@@ -5,11 +5,33 @@ import './TopAvatar.css';
 const TopAvatar = ({ userData = { name: 'John Doe', email: 'john.doe@example.com' } }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (window.confirm('Are you sure you want to logout?')) {
-      setTimeout(() => {
+      try {
+        const accessToken = localStorage.getItem('access_token');
+        const refreshToken = localStorage.getItem('refresh_token');
+
+        if (accessToken && refreshToken) {
+          await fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+              refresh_token: refreshToken
+            })
+          });
+        }
+      } catch (err) {
+        console.error('Logout error:', err);
+      } finally {
+        // Clear local storage and redirect regardless of API result
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
         window.location.href = '/';
-      }, 1000);
+      }
     }
   };
 

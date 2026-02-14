@@ -20,17 +20,15 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const formData = new URLSearchParams();
-      formData.append('action', 'login');
-      formData.append('email', email);
-      formData.append('password', password);
-
-      const response = await fetch(import.meta.env.VITE_API_URL, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
+          "Content-Type": "application/json"
         },
-        body: formData
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
       });
 
       const data = await response.json();
