@@ -5,13 +5,9 @@ import './Profile.css';
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('profile');
-  const [isEditing, setIsEditing] = useState(false);
-  const [attendanceFilters, setAttendanceFilters] = useState({
-    startDate: '',
-    endDate: '',
-    classType: '',
-    location: ''
-  });
+  const [isEditingPhysical, setIsEditingPhysical] = useState(false);
+  const [attendanceView, setAttendanceView] = useState('monthly'); // daily, weekly, monthly
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [filteredAttendance, setFilteredAttendance] = useState([]);
 
   const [profileData, setProfileData] = useState({
@@ -37,14 +33,65 @@ const Profile = () => {
     email: profileData.email
   };
 
-  // Sample attendance data
+  // Physical information history
+  const physicalHistory = [
+    { date: '2026-02-01', weight: 72.5, height: 175.5, bmi: 23.5 },
+    { date: '2026-01-01', weight: 73.8, height: 175.5, bmi: 23.9 },
+    { date: '2025-12-01', weight: 75.2, height: 175.5, bmi: 24.4 },
+    { date: '2025-11-01', weight: 76.5, height: 175.5, bmi: 24.8 }
+  ];
+
+  // Attendance data from database (attendance_logs + attendance_sessions)
   const attendanceData = [
-    { id: 1, date: '2026-02-06', time: '08:30 AM', class: 'Morning Yoga', location: 'Studio A', status: 'Attended', checkInTime: '08:28 AM', method: 'QR Code' },
-    { id: 2, date: '2026-02-05', time: '06:00 PM', class: 'Weightlifting', location: 'Main Hall', status: 'Attended', checkInTime: '05:58 PM', method: 'Biometric' },
-    { id: 3, date: '2026-02-04', time: '07:30 AM', class: 'Zumba Dance', location: 'Studio B', status: 'Missed', checkInTime: null, method: null },
-    { id: 4, date: '2026-02-03', time: '05:00 PM', class: 'Spin Class', location: 'Cycle Room', status: 'Attended', checkInTime: '04:55 PM', method: 'QR Code' },
-    { id: 5, date: '2026-02-02', time: '09:00 AM', class: 'Cardio Blast', location: 'Main Hall', status: 'Attended', checkInTime: '08:59 AM', method: 'Biometric' },
-    { id: 6, date: '2026-02-01', time: '07:00 PM', class: 'Morning Yoga', location: 'Studio A', status: 'Attended', checkInTime: '06:58 PM', method: 'Manual' }
+    {
+      attendance_id: 1,
+      attendance_date: '2026-02-14',
+      total_sessions: 2,
+      total_duration_min: 155,
+      status: 'PRESENT',
+      sessions: [
+        { session_id: 1, check_in_time: '2026-02-14T06:30:00', check_out_time: '2026-02-14T07:45:00', duration_min: 75, source: 'DEVICE' },
+        { session_id: 2, check_in_time: '2026-02-14T18:00:00', check_out_time: '2026-02-14T19:20:00', duration_min: 80, source: 'DEVICE' }
+      ]
+    },
+    {
+      attendance_id: 2,
+      attendance_date: '2026-02-13',
+      total_sessions: 1,
+      total_duration_min: 75,
+      status: 'PRESENT',
+      sessions: [
+        { session_id: 3, check_in_time: '2026-02-13T07:00:00', check_out_time: '2026-02-13T08:15:00', duration_min: 75, source: 'MOBILE' }
+      ]
+    },
+    {
+      attendance_id: 3,
+      attendance_date: '2026-02-12',
+      total_sessions: 1,
+      total_duration_min: 90,
+      status: 'PRESENT',
+      sessions: [
+        { session_id: 4, check_in_time: '2026-02-12T06:00:00', check_out_time: '2026-02-12T07:30:00', duration_min: 90, source: 'DEVICE' }
+      ]
+    },
+    {
+      attendance_id: 4,
+      attendance_date: '2026-02-11',
+      total_sessions: 1,
+      total_duration_min: 90,
+      status: 'PRESENT',
+      sessions: [
+        { session_id: 5, check_in_time: '2026-02-11T06:30:00', check_out_time: '2026-02-11T08:00:00', duration_min: 90, source: 'DEVICE' }
+      ]
+    },
+    {
+      attendance_id: 5,
+      attendance_date: '2026-02-10',
+      total_sessions: 0,
+      total_duration_min: 0,
+      status: 'ABSENT',
+      sessions: []
+    }
   ];
 
   const fitnessLevels = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
@@ -53,90 +100,93 @@ const Profile = () => {
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
   useEffect(() => {
-    // Initialize with current month
-    const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    filterAttendanceByView();
+  }, [attendanceView, selectedDate]);
 
-    setAttendanceFilters({
-      ...attendanceFilters,
-      startDate: firstDay.toISOString().split('T')[0],
-      endDate: lastDay.toISOString().split('T')[0]
-    });
+  const filterAttendanceByView = () => {
+    const selected = new Date(selectedDate);
+    let filtered = [];
 
-    setFilteredAttendance(attendanceData);
-  }, []);
+    if (attendanceView === 'daily') {
+      filtered = attendanceData.filter(log => log.attendance_date === selectedDate);
+    } else if (attendanceView === 'weekly') {
+      const weekStart = new Date(selected);
+      weekStart.setDate(selected.getDate() - selected.getDay());
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      
+      filtered = attendanceData.filter(log => {
+        const logDate = new Date(log.attendance_date);
+        return logDate >= weekStart && logDate <= weekEnd;
+      });
+    } else if (attendanceView === 'monthly') {
+      filtered = attendanceData.filter(log => {
+        const logDate = new Date(log.attendance_date);
+        return logDate.getMonth() === selected.getMonth() && logDate.getFullYear() === selected.getFullYear();
+      });
+    }
 
-  const handleProfileUpdate = (field, value) => {
+    setFilteredAttendance(filtered);
+  };
+
+  const handlePhysicalUpdate = (field, value) => {
     setProfileData(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
-  const saveProfile = () => {
+  const savePhysicalInfo = () => {
     // Here you would send the data to your backend API
-    setIsEditing(false);
-    alert('Profile updated successfully! 🎉');
-    console.log('Profile data to save:', profileData);
-  };
-
-  const handleBiometricEnrollment = () => {
-    if (profileData.biometricEnrolled) {
-      alert('You are already enrolled in biometric system! ✅');
-      return;
-    }
-    
-    if (confirm('Do you want to start biometric enrollment? Please visit the front desk to complete the process.')) {
-      // Simulate enrollment process
-      setTimeout(() => {
-        setProfileData(prev => ({ ...prev, biometricEnrolled: true }));
-        alert('Biometric enrollment initiated! Please complete the process at the front desk. 📱');
-      }, 1000);
-    }
-  };
-
-  const handleDailyCheckIn = () => {
-    const now = new Date();
-    const currentTime = now.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true 
-    });
-    
-    // Simulate check-in process
-    alert(`✅ Check-in successful!\n\nTime: ${currentTime}\nDate: ${now.toLocaleDateString()}\nMethod: QR Code`);
-    
-    // Here you would send check-in data to backend
-    console.log('Check-in data:', {
-      memberId: profileData.memberId,
-      checkInTime: now.toISOString(),
-      method: 'manual'
+    setIsEditingPhysical(false);
+    alert('Physical information updated successfully! 🎉');
+    console.log('Physical data to save:', {
+      weight: profileData.weight,
+      height: profileData.height,
+      fitnessLevel: profileData.fitnessLevel,
+      goalFocus: profileData.goalFocus
     });
   };
 
-  const handleQRScan = () => {
-    alert('📱 QR Scanner will be opened here.\n\nIn the actual app, this would:\n• Open camera for QR scanning\n• Validate QR code\n• Record attendance automatically');
+  const getAttendanceStats = () => {
+    const present = filteredAttendance.filter(log => log.status === 'PRESENT').length;
+    const absent = filteredAttendance.filter(log => log.status === 'ABSENT').length;
+    const total = filteredAttendance.length;
+    const totalSessions = filteredAttendance.reduce((sum, log) => sum + log.total_sessions, 0);
+    const totalDuration = filteredAttendance.reduce((sum, log) => sum + log.total_duration_min, 0);
+    const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+
+    return { present, absent, total, totalSessions, totalDuration, percentage };
   };
 
-  const applyAttendanceFilters = () => {
-    let filtered = [...attendanceData];
-
-    if (attendanceFilters.startDate && attendanceFilters.endDate) {
-      filtered = filtered.filter(record => {
-        return record.date >= attendanceFilters.startDate && record.date <= attendanceFilters.endDate;
-      });
+  const navigateDate = (direction) => {
+    const current = new Date(selectedDate);
+    
+    if (attendanceView === 'daily') {
+      current.setDate(current.getDate() + direction);
+    } else if (attendanceView === 'weekly') {
+      current.setDate(current.getDate() + (direction * 7));
+    } else if (attendanceView === 'monthly') {
+      current.setMonth(current.getMonth() + direction);
     }
+    
+    setSelectedDate(current.toISOString().split('T')[0]);
+  };
 
-    if (attendanceFilters.classType) {
-      filtered = filtered.filter(record => record.class === attendanceFilters.classType);
+  const getDateRangeDisplay = () => {
+    const selected = new Date(selectedDate);
+    
+    if (attendanceView === 'daily') {
+      return selected.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    } else if (attendanceView === 'weekly') {
+      const weekStart = new Date(selected);
+      weekStart.setDate(selected.getDate() - selected.getDay());
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      return `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    } else {
+      return selected.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
     }
-
-    if (attendanceFilters.location) {
-      filtered = filtered.filter(record => record.location === attendanceFilters.location);
-    }
-
-    setFilteredAttendance(filtered);
   };
 
   const formatHeight = (cm) => {
@@ -149,13 +199,17 @@ const Profile = () => {
     return goal.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  const getAttendanceStats = () => {
-    const total = filteredAttendance.length;
-    const attended = filteredAttendance.filter(r => r.status === 'Attended').length;
-    const missed = total - attended;
-    const percentage = total > 0 ? Math.round((attended / total) * 100) : 0;
+  const formatDuration = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+  };
 
-    return { total, attended, missed, percentage };
+  const calculateBMI = (weight, height) => {
+    return (weight / ((height / 100) ** 2)).toFixed(1);
   };
 
   return (
@@ -182,14 +236,14 @@ const Profile = () => {
             onClick={() => setActiveTab('profile')}
           >
             <i className="fas fa-user"></i>
-            Profile Management
+            <span>Profile Management</span>
           </button>
           <button 
             className={`tab-button ${activeTab === 'attendance' ? 'active' : ''}`}
             onClick={() => setActiveTab('attendance')}
           >
             <i className="fas fa-calendar-check"></i>
-            Attendance & Check-in
+            <span>Attendance & Check-in</span>
           </button>
         </div>
 
@@ -233,241 +287,203 @@ const Profile = () => {
                 </div>
               </div>
               <div className="profile-actions">
-                {!isEditing ? (
-                  <button className="btn-edit" onClick={() => setIsEditing(true)}>
-                    <i className="fas fa-edit"></i>
-                    Edit Profile
-                  </button>
-                ) : (
-                  <div className="edit-actions">
-                    <button className="btn-save" onClick={saveProfile}>
-                      <i className="fas fa-save"></i>
-                      Save Changes
-                    </button>
-                    <button className="btn-cancel" onClick={() => setIsEditing(false)}>
-                      <i className="fas fa-times"></i>
-                      Cancel
-                    </button>
-                  </div>
-                )}
+                <div className="info-badge">
+                  <i className="fas fa-info-circle"></i>
+                  <span>Contact admin to update personal info</span>
+                </div>
               </div>
             </div>
 
             {/* Profile Details */}
-            <div className="profile-details-grid">
-              {/* Personal Information */}
-              <div className="info-card">
-                <h3>Personal Information</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <label>Full Name</label>
-                    {isEditing ? (
-                      <input 
-                        type="text" 
-                        value={profileData.name}
-                        onChange={(e) => handleProfileUpdate('name', e.target.value)}
-                        className="edit-input"
-                      />
-                    ) : (
+            <div className="profile-details-layout">
+              {/* Left Column - Personal Information */}
+              <div className="profile-left-column">
+                <div className="info-card">
+                  <h3>Personal Information</h3>
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <label>Full Name</label>
                       <span className="info-value">{profileData.name}</span>
-                    )}
-                  </div>
-                  <div className="info-item">
-                    <label>Email</label>
-                    {isEditing ? (
-                      <input 
-                        type="email" 
-                        value={profileData.email}
-                        onChange={(e) => handleProfileUpdate('email', e.target.value)}
-                        className="edit-input"
-                      />
-                    ) : (
+                    </div>
+                    <div className="info-item">
+                      <label>Email</label>
                       <span className="info-value">{profileData.email}</span>
-                    )}
-                  </div>
-                  <div className="info-item">
-                    <label>Phone Number</label>
-                    {isEditing ? (
-                      <input 
-                        type="tel" 
-                        value={profileData.phone}
-                        onChange={(e) => handleProfileUpdate('phone', e.target.value)}
-                        className="edit-input"
-                      />
-                    ) : (
+                    </div>
+                    <div className="info-item">
+                      <label>Phone Number</label>
                       <span className="info-value">{profileData.phone}</span>
-                    )}
-                  </div>
-                  <div className="info-item">
-                    <label>Date of Birth</label>
-                    {isEditing ? (
-                      <input 
-                        type="date" 
-                        value={profileData.dob}
-                        onChange={(e) => handleProfileUpdate('dob', e.target.value)}
-                        className="edit-input"
-                      />
-                    ) : (
+                    </div>
+                    <div className="info-item">
+                      <label>Date of Birth</label>
                       <span className="info-value">{new Date(profileData.dob).toLocaleDateString()}</span>
-                    )}
-                  </div>
-                  <div className="info-item">
-                    <label>Gender</label>
-                    {isEditing ? (
-                      <select 
-                        value={profileData.gender}
-                        onChange={(e) => handleProfileUpdate('gender', e.target.value)}
-                        className="edit-select"
-                      >
-                        {genderOptions.map(option => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    ) : (
+                    </div>
+                    <div className="info-item">
+                      <label>Gender</label>
                       <span className="info-value">{profileData.gender}</span>
-                    )}
-                  </div>
-                  <div className="info-item">
-                    <label>Blood Group</label>
-                    {isEditing ? (
-                      <select 
-                        value={profileData.bloodGroup}
-                        onChange={(e) => handleProfileUpdate('bloodGroup', e.target.value)}
-                        className="edit-select"
-                      >
-                        {bloodGroups.map(group => (
-                          <option key={group} value={group}>{group}</option>
-                        ))}
-                      </select>
-                    ) : (
+                    </div>
+                    <div className="info-item">
+                      <label>Blood Group</label>
                       <span className="info-value">{profileData.bloodGroup}</span>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Physical Information */}
-              <div className="info-card">
-                <h3>Physical Information</h3>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <label>Height (cm)</label>
-                    {isEditing ? (
-                      <input 
-                        type="number" 
-                        step="0.1"
-                        value={profileData.height}
-                        onChange={(e) => handleProfileUpdate('height', parseFloat(e.target.value))}
-                        className="edit-input"
-                      />
-                    ) : (
-                      <span className="info-value">{formatHeight(profileData.height)}</span>
-                    )}
-                  </div>
-                  <div className="info-item">
-                    <label>Weight (kg)</label>
-                    {isEditing ? (
-                      <input 
-                        type="number" 
-                        step="0.1"
-                        value={profileData.weight}
-                        onChange={(e) => handleProfileUpdate('weight', parseFloat(e.target.value))}
-                        className="edit-input"
-                      />
-                    ) : (
-                      <span className="info-value">{profileData.weight} kg</span>
-                    )}
-                  </div>
-                  <div className="info-item">
-                    <label>Fitness Level</label>
-                    {isEditing ? (
-                      <select 
-                        value={profileData.fitnessLevel}
-                        onChange={(e) => handleProfileUpdate('fitnessLevel', e.target.value)}
-                        className="edit-select"
-                      >
-                        {fitnessLevels.map(level => (
-                          <option key={level} value={level}>{level}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span className="info-value">{profileData.fitnessLevel}</span>
-                    )}
-                  </div>
-                  <div className="info-item">
-                    <label>Goal Focus</label>
-                    {isEditing ? (
-                      <select 
-                        value={profileData.goalFocus}
-                        onChange={(e) => handleProfileUpdate('goalFocus', e.target.value)}
-                        className="edit-select"
-                      >
-                        {goalOptions.map(goal => (
-                          <option key={goal} value={goal}>{formatGoal(goal)}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span className="info-value">{formatGoal(profileData.goalFocus)}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Contact Information */}
-              <div className="info-card">
-                <h3>Contact & Emergency</h3>
-                <div className="info-grid">
-                  <div className="info-item full-width">
-                    <label>Address</label>
-                    {isEditing ? (
-                      <textarea 
-                        value={profileData.address}
-                        onChange={(e) => handleProfileUpdate('address', e.target.value)}
-                        className="edit-textarea"
-                        rows="3"
-                      />
-                    ) : (
+                {/* Contact Information */}
+                <div className="info-card">
+                  <h3>Contact & Emergency</h3>
+                  <div className="info-grid">
+                    <div className="info-item full-width">
+                      <label>Address</label>
                       <span className="info-value">{profileData.address}</span>
-                    )}
-                  </div>
-                  <div className="info-item">
-                    <label>Emergency Contact</label>
-                    {isEditing ? (
-                      <input 
-                        type="tel" 
-                        value={profileData.emergencyContact}
-                        onChange={(e) => handleProfileUpdate('emergencyContact', e.target.value)}
-                        className="edit-input"
-                      />
-                    ) : (
+                    </div>
+                    <div className="info-item">
+                      <label>Emergency Contact</label>
                       <span className="info-value">{profileData.emergencyContact}</span>
-                    )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Biometric Enrollment */}
+                <div className="info-card biometric-card">
+                  <h3>Biometric Access</h3>
+                  <div className="biometric-status">
+                    <div className="status-indicator">
+                      <div className={`status-dot ${profileData.biometricEnrolled ? 'enrolled' : 'pending'}`}></div>
+                      <span className="status-text">
+                        {profileData.biometricEnrolled ? 'Enrolled & Active' : 'Not Enrolled'}
+                      </span>
+                    </div>
+                    <p className="biometric-description">
+                      {profileData.biometricEnrolled 
+                        ? 'Your biometric data is enrolled. Attendance is tracked automatically via biometric devices.'
+                        : 'Contact front desk to enroll your biometric data for automatic attendance tracking.'
+                      }
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Biometric Enrollment */}
-              <div className="info-card biometric-card">
-                <h3>Biometric Access</h3>
-                <div className="biometric-status">
-                  <div className="status-indicator">
-                    <div className={`status-dot ${profileData.biometricEnrolled ? 'enrolled' : 'pending'}`}></div>
-                    <span className="status-text">
-                      {profileData.biometricEnrolled ? 'Enrolled' : 'Not Enrolled'}
-                    </span>
+              {/* Right Column - Physical Information with History */}
+              <div className="profile-right-column">
+                <div className="info-card physical-card">
+                  <div className="card-header-with-action">
+                    <h3>Physical Information</h3>
+                    {!isEditingPhysical ? (
+                      <button className="btn-edit-small" onClick={() => setIsEditingPhysical(true)}>
+                        <i className="fas fa-edit"></i> Edit
+                      </button>
+                    ) : (
+                      <div className="edit-actions-inline">
+                        <button className="btn-save-small" onClick={savePhysicalInfo}>
+                          <i className="fas fa-check"></i> Save
+                        </button>
+                        <button className="btn-cancel-small" onClick={() => setIsEditingPhysical(false)}>
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <p className="biometric-description">
-                    {profileData.biometricEnrolled 
-                      ? 'You can use biometric scanning for quick gym access and attendance tracking.'
-                      : 'Enroll your biometric data for seamless gym access and automatic attendance tracking.'
-                    }
-                  </p>
-                  {!profileData.biometricEnrolled && (
-                    <button className="btn-enroll" onClick={handleBiometricEnrollment}>
-                      <i className="fas fa-fingerprint"></i>
-                      Enroll Biometric
-                    </button>
-                  )}
+                  
+                  <div className="physical-current">
+                    <div className="physical-stats">
+                      <div className="stat-box">
+                        <label>Height</label>
+                        {isEditingPhysical ? (
+                          <input 
+                            type="number" 
+                            step="0.1"
+                            value={profileData.height}
+                            onChange={(e) => handlePhysicalUpdate('height', parseFloat(e.target.value))}
+                            className="edit-input-small"
+                          />
+                        ) : (
+                          <span className="stat-value-large">{profileData.height} <small>cm</small></span>
+                        )}
+                      </div>
+                      <div className="stat-box">
+                        <label>Weight</label>
+                        {isEditingPhysical ? (
+                          <input 
+                            type="number" 
+                            step="0.1"
+                            value={profileData.weight}
+                            onChange={(e) => handlePhysicalUpdate('weight', parseFloat(e.target.value))}
+                            className="edit-input-small"
+                          />
+                        ) : (
+                          <span className="stat-value-large">{profileData.weight} <small>kg</small></span>
+                        )}
+                      </div>
+                      <div className="stat-box">
+                        <label>BMI</label>
+                        <span className="stat-value-large">{calculateBMI(profileData.weight, profileData.height)}</span>
+                      </div>
+                    </div>
+
+                    <div className="physical-goals">
+                      <div className="goal-item">
+                        <label>Fitness Level</label>
+                        {isEditingPhysical ? (
+                          <select 
+                            value={profileData.fitnessLevel}
+                            onChange={(e) => handlePhysicalUpdate('fitnessLevel', e.target.value)}
+                            className="edit-select"
+                          >
+                            {fitnessLevels.map(level => (
+                              <option key={level} value={level}>{level}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="info-value">{profileData.fitnessLevel}</span>
+                        )}
+                      </div>
+                      <div className="goal-item">
+                        <label>Goal Focus</label>
+                        {isEditingPhysical ? (
+                          <select 
+                            value={profileData.goalFocus}
+                            onChange={(e) => handlePhysicalUpdate('goalFocus', e.target.value)}
+                            className="edit-select"
+                          >
+                            {goalOptions.map(goal => (
+                              <option key={goal} value={goal}>{formatGoal(goal)}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="info-value">{formatGoal(profileData.goalFocus)}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="physical-history">
+                    <h4>Progress History</h4>
+                    <div className="history-list">
+                      {physicalHistory.map((record, index) => (
+                        <div key={index} className="history-item">
+                          <div className="history-date">
+                            {new Date(record.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                          </div>
+                          <div className="history-stats">
+                            <div className="history-stat">
+                              <span className="history-label">Weight</span>
+                              <span className="history-value">{record.weight} kg</span>
+                              {index < physicalHistory.length - 1 && (
+                                <span className={`history-change ${record.weight < physicalHistory[index + 1].weight ? 'down' : 'up'}`}>
+                                  {record.weight < physicalHistory[index + 1].weight ? '-' : '+'}
+                                  {Math.abs(record.weight - physicalHistory[index + 1].weight).toFixed(1)} kg
+                                </span>
+                              )}
+                            </div>
+                            <div className="history-stat">
+                              <span className="history-label">BMI</span>
+                              <span className="history-value">{record.bmi}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -477,184 +493,182 @@ const Profile = () => {
         {/* Attendance Tab */}
         {activeTab === 'attendance' && (
           <div className="attendance-content">
-            {/* Check-in Section */}
-            <div className="checkin-section">
-              <div className="checkin-cards">
-                <div className="checkin-card daily-checkin">
-                  <div className="checkin-icon">
-                    <i className="fas fa-clock"></i>
-                  </div>
-                  <div className="checkin-info">
-                    <h3>Daily Check-in</h3>
-                    <p>Mark your arrival at the gym</p>
-                  </div>
-                  <button className="btn-checkin" onClick={handleDailyCheckIn}>
-                    <i className="fas fa-check"></i>
-                    Check In
-                  </button>
-                </div>
-
-                <div className="checkin-card qr-scan">
-                  <div className="checkin-icon">
-                    <i className="fas fa-qrcode"></i>
-                  </div>
-                  <div className="checkin-info">
-                    <h3>QR Code Scanner</h3>
-                    <p>Scan QR code for quick access</p>
-                  </div>
-                  <button className="btn-qr" onClick={handleQRScan}>
-                    <i className="fas fa-camera"></i>
-                    Scan QR
-                  </button>
-                </div>
-
-                <div className="checkin-card biometric-sync">
-                  <div className="checkin-icon">
-                    <i className="fas fa-fingerprint"></i>
-                  </div>
-                  <div className="checkin-info">
-                    <h3>Biometric Sync</h3>
-                    <p>Automatic attendance tracking</p>
-                  </div>
-                  <div className={`sync-status ${profileData.biometricEnrolled ? 'active' : 'inactive'}`}>
-                    {profileData.biometricEnrolled ? (
-                      <span><i className="fas fa-check-circle"></i> Active</span>
-                    ) : (
-                      <span><i className="fas fa-exclamation-circle"></i> Setup Required</span>
-                    )}
-                  </div>
-                </div>
+            {/* Attendance View Controls */}
+            <div className="attendance-controls">
+              <div className="view-selector">
+                <button 
+                  className={`view-btn ${attendanceView === 'daily' ? 'active' : ''}`}
+                  onClick={() => setAttendanceView('daily')}
+                >
+                  <i className="fas fa-calendar-day"></i>
+                  <span>Daily</span>
+                </button>
+                <button 
+                  className={`view-btn ${attendanceView === 'weekly' ? 'active' : ''}`}
+                  onClick={() => setAttendanceView('weekly')}
+                >
+                  <i className="fas fa-calendar-week"></i>
+                  <span>Weekly</span>
+                </button>
+                <button 
+                  className={`view-btn ${attendanceView === 'monthly' ? 'active' : ''}`}
+                  onClick={() => setAttendanceView('monthly')}
+                >
+                  <i className="fas fa-calendar-alt"></i>
+                  <span>Monthly</span>
+                </button>
               </div>
 
-              {/* Attendance Stats */}
-              <div className="attendance-stats">
-                <h3>This Month's Statistics</h3>
-                <div className="stats-grid">
-                  <div className="stat-card">
-                    <div className="stat-number">{getAttendanceStats().total}</div>
-                    <div className="stat-label">Total Sessions</div>
-                  </div>
-                  <div className="stat-card attended">
-                    <div className="stat-number">{getAttendanceStats().attended}</div>
-                    <div className="stat-label">Attended</div>
-                  </div>
-                  <div className="stat-card missed">
-                    <div className="stat-number">{getAttendanceStats().missed}</div>
-                    <div className="stat-label">Missed</div>
-                  </div>
-                  <div className="stat-card percentage">
-                    <div className="stat-number">{getAttendanceStats().percentage}%</div>
-                    <div className="stat-label">Attendance Rate</div>
-                  </div>
+              <div className="date-navigator">
+                <button className="nav-btn" onClick={() => navigateDate(-1)}>
+                  <i className="fas fa-chevron-left"></i>
+                </button>
+                <div className="date-display">{getDateRangeDisplay()}</div>
+                <button className="nav-btn" onClick={() => navigateDate(1)}>
+                  <i className="fas fa-chevron-right"></i>
+                </button>
+                <button className="today-btn" onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}>
+                  <i className="fas fa-calendar-check"></i>
+                  <span>Today</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Attendance Stats */}
+            <div className="attendance-stats-summary">
+              <div className="stat-summary-card">
+                <div className="stat-icon-circle present">
+                  <i className="fas fa-check"></i>
+                </div>
+                <div className="stat-info">
+                  <div className="stat-number">{getAttendanceStats().present}</div>
+                  <div className="stat-label">Days Present</div>
+                </div>
+              </div>
+              <div className="stat-summary-card">
+                <div className="stat-icon-circle absent">
+                  <i className="fas fa-times"></i>
+                </div>
+                <div className="stat-info">
+                  <div className="stat-number">{getAttendanceStats().absent}</div>
+                  <div className="stat-label">Days Absent</div>
+                </div>
+              </div>
+              <div className="stat-summary-card">
+                <div className="stat-icon-circle sessions">
+                  <i className="fas fa-dumbbell"></i>
+                </div>
+                <div className="stat-info">
+                  <div className="stat-number">{getAttendanceStats().totalSessions}</div>
+                  <div className="stat-label">Total Sessions</div>
+                </div>
+              </div>
+              <div className="stat-summary-card">
+                <div className="stat-icon-circle duration">
+                  <i className="fas fa-clock"></i>
+                </div>
+                <div className="stat-info">
+                  <div className="stat-number">{formatDuration(getAttendanceStats().totalDuration)}</div>
+                  <div className="stat-label">Total Duration</div>
+                </div>
+              </div>
+              <div className="stat-summary-card">
+                <div className="stat-icon-circle percentage">
+                  <i className="fas fa-percentage"></i>
+                </div>
+                <div className="stat-info">
+                  <div className="stat-number">{getAttendanceStats().percentage}%</div>
+                  <div className="stat-label">Attendance Rate</div>
                 </div>
               </div>
             </div>
 
-            {/* Attendance History */}
-            <div className="attendance-history">
-              <h3>Attendance History</h3>
+            {/* Attendance Records */}
+            <div className="attendance-records">
+              <h3>Attendance Records</h3>
               
-              {/* Filters */}
-              <div className="attendance-filters">
-                <div className="filter-group">
-                  <label>Date Range</label>
-                  <div className="date-range">
-                    <input 
-                      type="date" 
-                      value={attendanceFilters.startDate}
-                      onChange={(e) => setAttendanceFilters(prev => ({...prev, startDate: e.target.value}))}
-                      className="filter-input"
-                    />
-                    <span>to</span>
-                    <input 
-                      type="date" 
-                      value={attendanceFilters.endDate}
-                      onChange={(e) => setAttendanceFilters(prev => ({...prev, endDate: e.target.value}))}
-                      className="filter-input"
-                    />
-                  </div>
-                </div>
-                <div className="filter-group">
-                  <label>Class Type</label>
-                  <select 
-                    value={attendanceFilters.classType}
-                    onChange={(e) => setAttendanceFilters(prev => ({...prev, classType: e.target.value}))}
-                    className="filter-select"
-                  >
-                    <option value="">All Classes</option>
-                    <option value="Morning Yoga">Morning Yoga</option>
-                    <option value="Weightlifting">Weightlifting</option>
-                    <option value="Zumba Dance">Zumba Dance</option>
-                    <option value="Spin Class">Spin Class</option>
-                    <option value="Cardio Blast">Cardio Blast</option>
-                  </select>
-                </div>
-                <div className="filter-group">
-                  <label>Location</label>
-                  <select 
-                    value={attendanceFilters.location}
-                    onChange={(e) => setAttendanceFilters(prev => ({...prev, location: e.target.value}))}
-                    className="filter-select"
-                  >
-                    <option value="">All Locations</option>
-                    <option value="Studio A">Studio A</option>
-                    <option value="Studio B">Studio B</option>
-                    <option value="Main Hall">Main Hall</option>
-                    <option value="Cycle Room">Cycle Room</option>
-                  </select>
-                </div>
-                <button className="btn-apply-filters" onClick={applyAttendanceFilters}>
-                  <i className="fas fa-filter"></i>
-                  Apply Filters
-                </button>
-              </div>
+              {filteredAttendance.length > 0 ? (
+                <div className="attendance-list-detailed">
+                  {filteredAttendance.map((log) => (
+                    <div key={log.attendance_id} className={`attendance-log-card ${log.status.toLowerCase()}`}>
+                      <div className="log-header">
+                        <div className="log-date-info">
+                          <div className="log-date">
+                            {new Date(log.attendance_date).toLocaleDateString('en-US', { 
+                              weekday: 'short', 
+                              month: 'short', 
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </div>
+                          <div className={`log-status-badge ${log.status.toLowerCase()}`}>
+                            {log.status === 'PRESENT' ? (
+                              <><i className="fas fa-check-circle"></i> Present</>
+                            ) : (
+                              <><i className="fas fa-times-circle"></i> Absent</>
+                            )}
+                          </div>
+                        </div>
+                        <div className="log-summary">
+                          <div className="summary-item">
+                            <i className="fas fa-dumbbell"></i>
+                            <span>{log.total_sessions} session{log.total_sessions !== 1 ? 's' : ''}</span>
+                          </div>
+                          <div className="summary-item">
+                            <i className="fas fa-clock"></i>
+                            <span>{formatDuration(log.total_duration_min)}</span>
+                          </div>
+                        </div>
+                      </div>
 
-              {/* Attendance Table */}
-              <div className="table-wrapper">
-                <table className="attendance-table">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Time</th>
-                      <th>Class</th>
-                      <th>Location</th>
-                      <th>Check-in</th>
-                      <th>Method</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAttendance.map(record => (
-                      <tr key={record.id}>
-                        <td>{new Date(record.date).toLocaleDateString()}</td>
-                        <td>{record.time}</td>
-                        <td>{record.class}</td>
-                        <td>{record.location}</td>
-                        <td>{record.checkInTime || '-'}</td>
-                        <td>
-                          {record.method && (
-                            <span className={`method-badge ${record.method.toLowerCase().replace(' ', '-')}`}>
-                              {record.method}
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          <span className={`status-badge ${record.status.toLowerCase()}`}>
-                            {record.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                
-                {filteredAttendance.length === 0 && (
-                  <div className="no-data">
-                    <i className="fas fa-calendar-times"></i>
-                    <p>No attendance records found for the selected filters.</p>
-                  </div>
-                )}
-              </div>
+                      {log.sessions.length > 0 && (
+                        <div className="log-sessions">
+                          {log.sessions.map((session, index) => (
+                            <div key={session.session_id} className="session-detail-item">
+                              <div className="session-number-badge">#{index + 1}</div>
+                              <div className="session-time-info">
+                                <div className="session-time">
+                                  <i className="fas fa-sign-in-alt"></i>
+                                  {new Date(session.check_in_time).toLocaleTimeString('en-US', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit'
+                                  })}
+                                </div>
+                                {session.check_out_time && (
+                                  <>
+                                    <span className="time-separator">→</span>
+                                    <div className="session-time">
+                                      <i className="fas fa-sign-out-alt"></i>
+                                      {new Date(session.check_out_time).toLocaleTimeString('en-US', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit'
+                                      })}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                              <div className="session-meta-info">
+                                <span className="session-duration">
+                                  <i className="fas fa-stopwatch"></i>
+                                  {session.duration_min} min
+                                </span>
+                                <span className={`session-source-badge ${session.source.toLowerCase()}`}>
+                                  {session.source}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-data">
+                  <i className="fas fa-calendar-times"></i>
+                  <p>No attendance records found for the selected period.</p>
+                </div>
+              )}
             </div>
           </div>
         )}

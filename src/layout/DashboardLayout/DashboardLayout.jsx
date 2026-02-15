@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import Sidebar from '../Sidebar/Sidebar';
-import TopAvatar from '../TopAvatar/TopAvatar';
+import React from 'react';
+import Navbar from '../Navbar/Navbar';
 import './DashboardLayout.css';
 
 /**
@@ -14,49 +13,13 @@ import './DashboardLayout.css';
  */
 
 const DashboardLayout = ({ children, userData }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-  };
-
-  // Close mobile menu when clicking outside
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      closeMobileMenu();
-    }
-  };
-
   return (
     <div className="dashboard-layout">
-      {/* Mobile Menu Toggle - only show when sidebar is closed */}
-      {!isMobileMenuOpen && (
-        <button 
-          className="mobile-menu-toggle" 
-          onClick={toggleMobileMenu}
-        >
-          <i className="fas fa-bars"></i>
-        </button>
-      )}
-
-      {/* Sidebar */}
-      <Sidebar 
-        isOpen={isMobileMenuOpen} 
-        onClose={closeMobileMenu}
-      />
-
-      {/* Mobile Overlay */}
-      {isMobileMenuOpen && (
-        <div className="mobile-overlay" onClick={handleOverlayClick}></div>
-      )}
+      {/* Navbar */}
+      <Navbar userData={userData} />
 
       {/* Main Content */}
       <div className="main-content">
-        <TopAvatar userData={userData} />
         {children}
       </div>
     </div>

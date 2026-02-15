@@ -4,168 +4,290 @@ import DashboardLayout from '../layout/DashboardLayout';
 import './Dashboard.css';
 
 /**
- * Dashboard Component - User Dashboard Page
+ * Dashboard Component - Member Dashboard Page
  * 
  * Backend Integration Notes:
- * - userData: Will be fetched from user context/authentication service
- * - dashboardData: Should be fetched from API endpoints:
- *   - GET /api/user/subscription - for subscription status
- *   - GET /api/user/attendance - for attendance data
- *   - GET /api/user/profile - for profile completion
- *   - GET /api/classes/upcoming - for upcoming classes
- * - All mock data should be replaced with actual API calls
- * - Add loading states and error handling for API calls
- * - Implement proper user authentication check before rendering
+ * - Fetch user data from authentication context
+ * - API Endpoints needed:
+ *   - GET /api/member/profile - Member profile and subscription info
+ *   - GET /api/member/attendance/stats - Attendance statistics
+ *   - GET /api/member/attendance/recent - Recent attendance sessions
+ *   - GET /api/member/subscription - Current subscription details
+ * - Add loading states and error handling
+ * - Implement real-time data refresh
  */
 
 // Dashboard Components
-const DashboardHeader = ({ userName }) => (
+const DashboardHeader = ({ userName, memberSince }) => (
   <div className="dashboard-header">
-    <h1 className="dashboard-title">Dashboard</h1>
-    <p className="dashboard-subtitle">
-      Welcome back, {userName}! Here's a quick overview of your FITNESS GURU activities.
-    </p>
+    <div className="header-content">
+      <div>
+        <h1 className="dashboard-title">Welcome back, {userName}! 👋</h1>
+        <p className="dashboard-subtitle">
+          Member since {memberSince}
+        </p>
+      </div>
+    </div>
   </div>
 );
 
-const UserProfile = ({ userData }) => (
-  <Link to="/profile" style={{ textDecoration: 'none', color: 'inherit' }}>
-    <div 
-      className="user-profile" 
-      style={{ cursor: 'pointer', transition: 'transform 0.3s ease' }}
-      onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-      onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-    >
-      <div className="user-avatar-img">
-        <img src="/avatar.png" alt={userData.name} />
-      </div>
-      <div className="user-info">
-        <h3>{userData.name}</h3>
-        <p>{userData.membershipType} • Joined {userData.joinDate}</p>
-      </div>
-      <div style={{ marginLeft: 'auto', color: '#ff6b35' }}>
-        <i className="fas fa-arrow-right"></i>
-      </div>
-    </div>
-  </Link>
-);
-
-const StatCard = ({ icon, iconClass, title, value, subtitle, actionText, onAction }) => (
-  <div className="stat-card">
-    <div className="stat-header">
+const StatCard = ({ icon, iconClass, title, value, subtitle, linkTo }) => (
+  <div className={`stat-card ${iconClass}`}>
+    <div className="stat-icon-wrapper">
       <div className={`stat-icon ${iconClass}`}>
         <i className={icon}></i>
       </div>
-      <div>
-        <div className="stat-title">{title}</div>
+    </div>
+    <div className="stat-content">
+      <div className="stat-title">{title}</div>
+      <div className="stat-value">{value}</div>
+      {subtitle && <div className="stat-subtitle">{subtitle}</div>}
+    </div>
+    {linkTo && (
+      <div className="stat-action">
+        <Link to={linkTo} className="stat-btn">
+          <i className="fas fa-arrow-right"></i>
+        </Link>
+      </div>
+    )}
+  </div>
+);
+
+const AttendanceChart = ({ recentSessions }) => {
+  // Group sessions by date
+  const groupedSessions = recentSessions.reduce((acc, session) => {
+    const date = new Date(session.check_in_time).toISOString().split('T')[0];
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(session);
+    return acc;
+  }, {});
+
+  return (
+    <div className="attendance-chart-card">
+      <div className="card-header">
+        <h3 className="card-title">Recent Attendance</h3>
+        <Link to="/profile" className="card-link">
+          View All <i className="fas fa-arrow-right"></i>
+        </Link>
+      </div>
+      <div className="chart-container">
+        {Object.keys(groupedSessions).length > 0 ? (
+          <div className="attendance-list">
+            {Object.entries(groupedSessions).map(([date, sessions], index) => (
+              <div key={index} className="attendance-day-group">
+                <div className="attendance-date-header">
+                  <div className="date-badge">
+                    <div className="date-day">{new Date(date).getDate()}</div>
+                    <div className="date-month">
+                      {new Date(date).toLocaleDateString('en-US', { month: 'short' })}
+                    </div>
+                  </div>
+                  <div className="date-info">
+                    <div className="date-weekday">
+                      {new Date(date).toLocaleDateString('en-US', { weekday: 'long' })}
+                    </div>
+                    <div className="session-count">
+                      {sessions.length} session{sessions.length > 1 ? 's' : ''}
+                    </div>
+                  </div>
+                </div>
+                <div className="sessions-list">
+                  {sessions.map((session, sessionIndex) => (
+                    <div key={sessionIndex} className="session-item">
+                      <div className="session-number">#{sessionIndex + 1}</div>
+                      <div className="session-details">
+                        <div className="session-time">
+                          {new Date(session.check_in_time).toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                          {session.check_out_time && ` - ${new Date(session.check_out_time).toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}`}
+                        </div>
+                        <div className="session-meta">
+                          {session.duration_min && <span>{session.duration_min} mins</span>}
+                          <span className="separator">•</span>
+                          <span className={`source-badge ${session.source?.toLowerCase()}`}>
+                            {session.source}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="session-status">
+                        <i className="fas fa-check-circle"></i>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <i className="fas fa-calendar-times"></i>
+            <p>No recent attendance records</p>
+            <p className="empty-subtitle">Start your fitness journey today!</p>
+          </div>
+        )}
       </div>
     </div>
-    <div className="stat-value">{value}</div>
-    <div className="stat-subtitle">{subtitle}</div>
-    <div className="stat-actions">
-      <button className="btn-sm btn-outline" onClick={onAction}>
-        {actionText}
-      </button>
-    </div>
-  </div>
-);
+  );
+};
 
-const ClassItem = ({ className, instructor, time }) => (
-  <div className="class-item">
-    <div className="class-info">
-      <h4>{className}</h4>
-      <p>Instructor: {instructor}</p>
+const QuickActionsCard = ({ actions }) => (
+  <div className="quick-actions-card">
+    <h3 className="card-title">Quick Actions</h3>
+    <div className="actions-grid">
+      {actions.map((action, index) => (
+        <Link key={index} to={action.link} className="action-item">
+          <div className={`action-icon ${action.color}`}>
+            <i className={action.icon}></i>
+          </div>
+          <div className="action-text">
+            <div className="action-title">{action.title}</div>
+            <div className="action-subtitle">{action.subtitle}</div>
+          </div>
+        </Link>
+      ))}
     </div>
-    <div className="class-time">{time}</div>
-  </div>
-);
-
-const ActionCard = ({ icon, iconClass, title, description, buttonText, buttonClass, linkTo }) => (
-  <div className="action-card">
-    <div className={`action-icon ${iconClass}`}>
-      <i className={icon}></i>
-    </div>
-    <h3>{title}</h3>
-    <p>{description}</p>
-    <Link to={linkTo} className={`btn-full ${buttonClass}`}>
-      {buttonText}
-    </Link>
   </div>
 );
 
 const Dashboard = () => {
-  // Mock user data - this will come from backend/context in the future
+  // Mock user data - Replace with actual API calls
   const [userData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
-    initials: 'JD',
-    membershipType: 'Premium Member',
-    joinDate: 'March 2023'
+    member_id: 1001,
+    gym_name: 'FITNESS GURU',
+    branch_name: 'Downtown Branch'
   });
 
-  // Mock dashboard data - this will come from API calls in the future
+  // Mock dashboard data - Replace with API calls
   const [dashboardData] = useState({
+    member: {
+      join_date: '2024-03-15',
+      status: 'ACTIVE'
+    },
     subscription: {
-      status: 'Active',
-      expiryDate: 'Nov 30, 2026'
+      plan_name: 'Premium Plan',
+      status: 'ACTIVE',
+      start_date: '2024-03-15',
+      end_date: '2026-03-15',
+      days_remaining: 380,
+      freeze_status: 'NONE',
+      freeze_days: 0
     },
     attendance: {
-      recentWorkouts: 5,
-      lastWorkout: '2023-10-26'
+      total_sessions_this_month: 18,
+      total_duration_this_month: 1320, // minutes
+      current_streak: 5, // consecutive days
+      last_check_in: '2026-02-14T18:30:00',
+      avg_duration: 73 // minutes
     },
     profile: {
-      completion: 85
+      completion: 85,
+      missing_fields: ['emergency_contact', 'fitness_level']
     },
-    upcomingClasses: [
+    recent_sessions: [
       {
-        id: 1,
-        name: 'Morning Yoga',
-        instructor: 'Sarah J.',
-        time: 'Mon, Oct 30 at 7:00 AM'
+        session_id: 1,
+        check_in_time: '2026-02-14T06:30:00',
+        check_out_time: '2026-02-14T07:45:00',
+        duration_min: 75,
+        source: 'DEVICE'
       },
       {
-        id: 2,
-        name: 'HIIT Express',
-        instructor: 'Mike R.',
-        time: 'Tue, Oct 31 at 5:30 PM'
+        session_id: 2,
+        check_in_time: '2026-02-14T18:00:00',
+        check_out_time: '2026-02-14T19:20:00',
+        duration_min: 80,
+        source: 'DEVICE'
       },
       {
-        id: 3,
-        name: 'Strength Training',
-        instructor: 'David L.',
-        time: 'Wed, Nov 1 at 5:30 PM'
+        session_id: 3,
+        check_in_time: '2026-02-13T07:00:00',
+        check_out_time: '2026-02-13T08:15:00',
+        duration_min: 75,
+        source: 'MOBILE'
       },
       {
-        id: 4,
-        name: 'Fitness Core',
-        instructor: 'Emma K.',
-        time: 'Fri, Nov 3 at 9:00 AM'
+        session_id: 4,
+        check_in_time: '2026-02-13T17:30:00',
+        check_out_time: '2026-02-13T19:00:00',
+        duration_min: 90,
+        source: 'WEB'
+      },
+      {
+        session_id: 5,
+        check_in_time: '2026-02-12T06:00:00',
+        check_out_time: '2026-02-12T07:30:00',
+        duration_min: 90,
+        source: 'DEVICE'
+      },
+      {
+        session_id: 6,
+        check_in_time: '2026-02-11T06:30:00',
+        check_out_time: '2026-02-11T08:00:00',
+        duration_min: 90,
+        source: 'DEVICE'
       }
     ]
   });
 
-  const showComingSoon = (feature) => {
-    alert(`${feature} feature is coming soon! 🚀\n\nThis feature is currently under development and will be available in a future update.`);
+  const quickActions = [
+    {
+      icon: 'fas fa-qrcode',
+      color: 'orange',
+      title: 'Check In',
+      subtitle: 'Scan QR or manual entry',
+      link: '/profile?tab=attendance'
+    },
+    {
+      icon: 'fas fa-user-edit',
+      color: 'blue',
+      title: 'Update Profile',
+      subtitle: 'Complete your information',
+      link: '/profile'
+    },
+    {
+      icon: 'fas fa-crown',
+      color: 'purple',
+      title: 'Manage Plan',
+      subtitle: 'View & renew subscription',
+      link: '/subscriptions'
+    },
+    {
+      icon: 'fas fa-clock',
+      color: 'green',
+      title: 'Freeze Request',
+      subtitle: 'Pause your membership',
+      link: '/subscriptions?action=freeze'
+    }
+  ];
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short'
+    });
   };
 
-  // Add loading states to buttons
-  const handleButtonClick = (originalText, button, callback) => {
-    const originalTextContent = button.textContent;
-    button.style.opacity = '0.7';
-    button.style.cursor = 'not-allowed';
-    button.textContent = 'Loading...';
-    
-    setTimeout(() => {
-      button.style.opacity = '1';
-      button.style.cursor = 'pointer';
-      button.textContent = originalTextContent;
-      if (callback) callback();
-    }, 2000);
+  const formatDuration = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
   };
 
   useEffect(() => {
-    // Add fade-in animation to cards
-    const cards = document.querySelectorAll('.stat-card, .action-card, .upcoming-classes');
+    // Add fade-in animation
+    const cards = document.querySelectorAll('.stat-card, .attendance-chart-card, .quick-actions-card');
     cards.forEach((card, index) => {
       card.style.opacity = '0';
       card.style.transform = 'translateY(20px)';
@@ -180,88 +302,54 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout userData={userData}>
-      <DashboardHeader userName={userData.name} />
-      
-      <UserProfile userData={userData} />
+      <DashboardHeader 
+        userName={userData.name} 
+        memberSince={formatDate(dashboardData.member.join_date)}
+      />
 
       {/* Stats Grid */}
       <div className="stats-grid">
         <StatCard
           icon="fas fa-crown"
           iconClass="subscription"
-          title="Subscription Status"
-          value={dashboardData.subscription.status}
-          subtitle={`Your current plan is valid until ${dashboardData.subscription.expiryDate}`}
-          actionText="View History"
-          onAction={() => showComingSoon('View History')}
+          title="Subscription"
+          value={dashboardData.subscription.plan_name}
+          subtitle={`Expires ${formatDate(dashboardData.subscription.end_date)}`}
+          linkTo="/subscriptions"
         />
 
         <StatCard
-          icon="fas fa-chart-line"
-          iconClass="attendance"
-          title="Recent Attendance"
-          value={`${dashboardData.attendance.recentWorkouts} Workouts`}
-          subtitle={`Last was on ${dashboardData.attendance.lastWorkout}`}
-          actionText="View History"
-          onAction={() => showComingSoon('View History')}
+          icon="fas fa-dumbbell"
+          iconClass="workouts"
+          title="This Month"
+          value={`${dashboardData.attendance.total_sessions_this_month} Sessions`}
+          subtitle={formatDuration(dashboardData.attendance.total_duration_this_month)}
+          linkTo="/profile?tab=attendance"
+        />
+
+        <StatCard
+          icon="fas fa-fire"
+          iconClass="streak"
+          title="Current Streak"
+          value={`${dashboardData.attendance.current_streak} Days`}
+          subtitle={null}
+          linkTo="/profile?tab=attendance"
         />
 
         <StatCard
           icon="fas fa-user-check"
           iconClass="profile"
-          title="Profile Completion"
+          title="Profile"
           value={`${dashboardData.profile.completion}%`}
-          subtitle="Complete your profile to unlock all features"
-          actionText="Update Profile"
-          onAction={() => window.location.href = '/profile'}
-        />
-      </div>
-
-      {/* Upcoming Classes */}
-      <div className="upcoming-classes">
-        <div className="section-header">
-          <h2 className="section-title">Upcoming Classes</h2>
-          <button 
-            className="btn-primary" 
-            onClick={() => showComingSoon('Book New Class')}
-          >
-            Book New Class
-          </button>
-        </div>
-        
-        <div className="classes-list">
-          {dashboardData.upcomingClasses.map((classItem) => (
-            <ClassItem
-              key={classItem.id}
-              className={classItem.name}
-              instructor={classItem.instructor}
-              time={classItem.time}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Action Cards */}
-      <div className="action-cards">
-        <ActionCard
-          icon="fas fa-credit-card"
-          iconClass="subscriptions"
-          title="Manage Subscriptions"
-          description="Review your current plan, upgrade, or manage billing details."
-          buttonText="Go To Subscriptions"
-          buttonClass="btn-purple"
-          linkTo="/subscriptions"
-        />
-
-        <ActionCard
-          icon="fas fa-user-cog"
-          iconClass="profile"
-          title="View Profile & Attendance"
-          description="Update personal information, check biometric status, and track your workout history."
-          buttonText="Go To Profile"
-          buttonClass="btn-green"
+          subtitle={dashboardData.profile.completion === 100 ? 'Complete' : 'Incomplete'}
           linkTo="/profile"
         />
+      </div>
+
+      {/* Recent Attendance and Quick Actions */}
+      <div className="dashboard-grid">
+        <AttendanceChart recentSessions={dashboardData.recent_sessions} />
+        <QuickActionsCard actions={quickActions} />
       </div>
     </DashboardLayout>
   );
