@@ -1,10 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
 const Navbar = ({ userData = { name: 'John Doe', email: 'john.doe@example.com' } }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const navigate = useNavigate();
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   const handleLogout = async () => {
     if (window.confirm('Are you sure you want to logout?')) {
@@ -55,11 +77,12 @@ const Navbar = ({ userData = { name: 'John Doe', email: 'john.doe@example.com' }
 
         {/* User Info & Dropdown */}
         <div 
+          ref={dropdownRef}
           className="navbar-user"
           onMouseEnter={() => setIsDropdownOpen(true)}
           onMouseLeave={() => setIsDropdownOpen(false)}
         >
-          <div className="user-display">
+          <div className="user-display" onClick={toggleDropdown}>
             <div className="user-avatar">
               <img src="/avatar.png" alt={userData.name} className="avatar-image" />
             </div>
