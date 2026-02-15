@@ -7,14 +7,14 @@ import './Dashboard.css';
  * Dashboard Component - Member Dashboard Page
  * 
  * Backend Integration Notes:
- * - Fetch user data from authentication context
- * - API Endpoints needed:
- *   - GET /api/member/profile - Member profile and subscription info
+ * - ✅ User profile data fetched from GET /api/users/profile
+ * - API Endpoints still needed:
  *   - GET /api/member/attendance/stats - Attendance statistics
  *   - GET /api/member/attendance/recent - Recent attendance sessions
  *   - GET /api/member/subscription - Current subscription details
- * - Add loading states and error handling
- * - Implement real-time data refresh
+ * - ✅ Loading states and error handling implemented
+ * - ✅ Token validation and redirect on 401
+ * - TODO: Implement real-time data refresh
  */
 
 // Dashboard Components
@@ -157,14 +157,9 @@ const QuickActionsCard = ({ actions }) => (
 );
 
 const Dashboard = () => {
-  // Mock user data - Replace with actual API calls
-  const [userData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    member_id: 1001,
-    gym_name: 'FITNESS GURU',
-    branch_name: 'Downtown Branch'
-  });
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Mock dashboard data - Replace with API calls
   const [dashboardData] = useState({
@@ -285,6 +280,52 @@ const Dashboard = () => {
     return `${mins}m`;
   };
 
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('access_token');
+        
+        if (!token) {
+          setError('No authentication token found');
+          return;
+        }
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/profile`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+        console.log('Profile data:', data);
+        if (response.ok && data.status === 'success') {
+          setUserData(data.user);
+          setError(null);
+        } else {
+          setError(data.message || 'Failed to fetch profile');
+          // If token is invalid, redirect to login
+          if (response.status === 401) {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+          }
+        }
+      } catch (err) {
+        setError('Network error. Please try again.');
+        console.error('Profile fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
   useEffect(() => {
     // Add fade-in animation
     const cards = document.querySelectorAll('.stat-card, .attendance-chart-card, .quick-actions-card');
@@ -298,14 +339,36 @@ const Dashboard = () => {
         card.style.transform = 'translateY(0)';
       }, index * 100);
     });
-  }, []);
+  }, [userData]);
 
   return (
-    <DashboardLayout userData={userData}>
-      <DashboardHeader 
-        userName={userData.name} 
-        memberSince={formatDate(dashboardData.member.join_date)}
-      />
+    <>
+      {loading ? (
+        <div className="dashboard-loading">
+          <div className="loading-spinner"></div>
+          <p>Loading your dashboard...</p>
+        </div>
+      ) : error ? (
+        <div className="dashboard-error">
+          <i className="fas fa-exclamation-circle"></i>
+          <h3>Error Loading Dashboard</h3>
+          <p>{error}</p>
+          <button onClick={() => window.location.reload()} className="retry-btn">
+            Retry
+          </button>
+        </div>
+      ) : !userData ? (
+        <div className="dashboard-error">
+          <i className="fas fa-user-slash"></i>
+          <h3>No User Data</h3>
+          <p>Unable to load user information</p>
+        </div>
+      ) : (
+        <DashboardLayout userData={userData}>
+          <DashboardHeader 
+            userName={userData.name} 
+            memberSince={formatDate(dashboardData.member.join_date)}
+          />
 
       {/* Stats Grid */}
       <div className="stats-grid">
@@ -351,7 +414,9 @@ const Dashboard = () => {
         <AttendanceChart recentSessions={dashboardData.recent_sessions} />
         <QuickActionsCard actions={quickActions} />
       </div>
-    </DashboardLayout>
+        </DashboardLayout>
+      )}
+    </>
   );
 };
 

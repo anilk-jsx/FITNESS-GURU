@@ -9,29 +9,27 @@ const Profile = () => {
   const [attendanceView, setAttendanceView] = useState('monthly'); // daily, weekly, monthly
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [filteredAttendance, setFilteredAttendance] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [userData, setUserData] = useState(null);
 
   const [profileData, setProfileData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 (555) 987-6543',
-    memberId: 'GMFLW-2023-4567',
-    dob: '1990-05-15',
+    name: '',
+    email: '',
+    phone: '',
+    memberId: '',
+    dob: '12-12-2012',
     gender: 'MALE',
     bloodGroup: 'O+',
     height: 175.5,
     weight: 72.5,
     fitnessLevel: 'INTERMEDIATE',
     goalFocus: 'MUSCLE_GAIN',
-    emergencyContact: '+1 (555) 123-4567',
-    address: '123 Main Street, City, State 12345',
+    emergencyContact: '1929283746',
+    address: 'bhubaneswar, odisha',
     profilePhoto: null,
     biometricEnrolled: false
   });
-
-  const userData = {
-    name: profileData.name,
-    email: profileData.email
-  };
 
   // Physical information history
   const physicalHistory = [
@@ -98,6 +96,64 @@ const Profile = () => {
   const goalOptions = ['WEIGHT_LOSS', 'MUSCLE_GAIN', 'STRENGTH', 'ENDURANCE', 'GENERAL'];
   const genderOptions = ['MALE', 'FEMALE', 'OTHER'];
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('access_token');
+        
+        if (!token) {
+          setError('No authentication token found');
+          window.location.href = '/login';
+          return;
+        }
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/profile`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.status === 'success') {
+          setUserData(data.user);
+          
+          // Update profile data with fetched user data
+          setProfileData(prev => ({
+            ...prev,
+            name: data.user.name || '',
+            email: data.user.email || '',
+            phone: data.user.phone || '',
+            memberId: `FG-${data.user.user_id}` || '',
+            // Other fields will be populated when backend provides them
+            // For now, keeping default values from state
+          }));
+          
+          setError(null);
+        } else {
+          setError(data.message || 'Failed to fetch profile');
+          if (response.status === 401) {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+          }
+        }
+      } catch (err) {
+        setError('Network error. Please try again.');
+        console.error('Profile fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   useEffect(() => {
     filterAttendanceByView();
@@ -213,7 +269,29 @@ const Profile = () => {
   };
 
   return (
-    <DashboardLayout userData={userData}>
+    <>
+      {loading ? (
+        <div className="profile-loading">
+          <div className="loading-spinner"></div>
+          <p>Loading your profile...</p>
+        </div>
+      ) : error ? (
+        <div className="profile-error">
+          <i className="fas fa-exclamation-circle"></i>
+          <h3>Error Loading Profile</h3>
+          <p>{error}</p>
+          <button onClick={() => window.location.reload()} className="retry-btn">
+            Retry
+          </button>
+        </div>
+      ) : !userData ? (
+        <div className="profile-error">
+          <i className="fas fa-user-slash"></i>
+          <h3>No User Data</h3>
+          <p>Unable to load user information</p>
+        </div>
+      ) : (
+        <DashboardLayout userData={userData}>
       <div className="profile-container">
         {/* Page Header */}
         <div className="page-header">
@@ -673,7 +751,9 @@ const Profile = () => {
           </div>
         )}
       </div>
-    </DashboardLayout>
+        </DashboardLayout>
+      )}
+    </>
   );
 };
 
