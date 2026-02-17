@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import Signup from './components/Signup';
 import Dashboard from './components/Dashboard';
 import Subscriptions from './components/Subscriptions';
@@ -25,7 +26,70 @@ import ProtectedRoute from './utils/ProtectedRoute';
 import './App.css';
 
 // Admin Dashboard Child Components
-const AdminDashboardHome = () => (
+const AdminDashboardHome = () => {
+  const [stats, setStats] = useState({
+    totalMembers: 0,
+    loading: true,
+    error: null
+  });
+
+  // API Configuration
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
+  
+  // Get access token from localStorage
+  const getAccessToken = () => {
+    return localStorage.getItem('access_token') || '';
+  };
+  
+  // Fetch total members count from API
+  const fetchMemberStats = async () => {
+    try {
+      setStats(prev => ({ ...prev, loading: true, error: null }));
+      
+      const response = await fetch(`${API_BASE_URL}/api/users/list?role=MEMBER&page=1&limit=1`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${getAccessToken()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.status === 'success') {
+        setStats(prev => ({
+          ...prev,
+          totalMembers: data.meta?.total || 0,
+          loading: false
+        }));
+      } else {
+        throw new Error(data.message || 'Failed to fetch member stats');
+      }
+    } catch (err) {
+      console.error('Error fetching member stats:', err);
+      setStats(prev => ({
+        ...prev,
+        error: err.message,
+        loading: false
+      }));
+    }
+  };
+  
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchMemberStats();
+  }, []);
+  
+  // Format number with commas
+  const formatNumber = (num) => {
+    return new Intl.NumberFormat('en-IN').format(num);
+  };
+
+  return (
   <div className="admin-section-content active">
     <div className="admin-page-header">
       <h1 className="admin-page-title">Dashboard</h1>
@@ -39,10 +103,40 @@ const AdminDashboardHome = () => (
           </div>
           <div>
             <h3 className="admin-stat-title">Total Members</h3>
-            <p className="admin-stat-value">1,245</p>
+            <p className="admin-stat-value">
+              {stats.loading ? (
+                <i className="fas fa-spinner fa-spin"></i>
+              ) : stats.error ? (
+                <span style={{color: '#e74c3c', fontSize: '0.8rem'}}>Error</span>
+              ) : (
+                formatNumber(stats.totalMembers)
+              )}
+            </p>
           </div>
         </div>
-        <p className="admin-stat-subtitle">+12% from last month</p>
+        <p className="admin-stat-subtitle">
+          {stats.error ? (
+            <span style={{color: '#e74c3c'}}>
+              Failed to load data
+              <button 
+                onClick={fetchMemberStats}
+                style={{
+                  marginLeft: '8px',
+                  padding: '2px 8px',
+                  fontSize: '0.7rem',
+                  backgroundColor: '#e74c3c',
+                  color: 'white',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                Retry
+              </button>
+            </span>
+          ) : (
+            'Live member count'
+          )}
+        </p>
       </div>
       <div className="admin-stat-card">
         <div className="admin-stat-header">
@@ -103,7 +197,8 @@ const AdminDashboardHome = () => (
       </div>
     </div>
   </div>
-);
+  );
+};
 
 function App() {
   return (
