@@ -21,6 +21,7 @@ import Testimonials from "./components/Testimonials";
 import Footer from "./components/Footer";
 import Trainers from './components/Trainers';
 import Login from './components/Login';
+import ProtectedRoute from './utils/ProtectedRoute';
 import './App.css';
 
 // Admin Dashboard Child Components
@@ -110,8 +111,8 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />}>
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/admin-dashboard" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboardHome />} />
           <Route path="members" element={<MemberManagement />} />
@@ -120,8 +121,8 @@ function App() {
           <Route path="staff" element={<StaffManagement />} />
           <Route path="branches" element={<BranchManagement />} />
         </Route>
-        <Route path="/subscriptions" element={<Subscriptions />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/*" element={
           <>
             <Navbar />
