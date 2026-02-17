@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './MemberManagement.css';
 
 const MemberManagement = () => {
@@ -8,6 +8,24 @@ const MemberManagement = () => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editFormData, setEditFormData] = useState(null);
+    
+    // API state management
+    const [members, setMembers] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: 10,
+        total: 0
+    });
+    
+    // Filter states
+    const [filters, setFilters] = useState({
+        role: 'MEMBER', // Default to MEMBER role for member management
+        status: '', // All statuses
+        gym_id: '',
+        branch_id: ''
+    });
     const [addFormData, setAddFormData] = useState({
         // User fields
         name: '',
@@ -90,162 +108,100 @@ const MemberManagement = () => {
         { plan_id: 7, gym_id: 1, branch_id: null, plan_name: 'Student Monthly', duration_days: 30, price: 1200.00, description: 'Discounted monthly plan for students', is_active: true }
     ]);
 
-    // Sample members data (would come from database/API in production)
-    const [members, setMembers] = useState([
-        {
-            member_id: 1001,
-            user_id: 501,
-            name: 'Rajesh Kumar',
-            email: 'rajesh.kumar@gmail.com',
-            phone: '+91 98765 43210',
-            join_date: '2024-01-15',
-            status: 'ACTIVE',
-            branch_name: 'Main Branch',
-            plan_name: 'Quarterly Standard',
-            plan_duration: 90,
-            plan_price: 4000.00,
-            profile: {
-                dob: '1995-06-20',
-                gender: 'MALE',
-                blood_group: 'O+',
-                height_cm: 175.5,
-                weight_kg: 72.3,
-                fitness_level: 'INTERMEDIATE',
-                goal_focus: 'MUSCLE_GAIN',
-                emergency_contact: '+91 98765 11111',
-                address: '123, MG Road, Bangalore, Karnataka - 560001'
+    // API Configuration
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
+    
+    // Get access token from localStorage or context
+    const getAccessToken = () => {
+        return localStorage.getItem('access_token') || '';
+    };
+    
+    // Fetch members from API
+    const fetchMembers = async () => {
+        setLoading(true);
+        setError(null);
+        
+        try {
+            const queryParams = new URLSearchParams({
+                role: filters.role,
+                page: pagination.page.toString(),
+                limit: pagination.limit.toString()
+            });
+            
+            // Add optional filters if they exist
+            if (filters.status) queryParams.append('status', filters.status);
+            if (filters.gym_id) queryParams.append('gym_id', filters.gym_id);
+            if (filters.branch_id) queryParams.append('branch_id', filters.branch_id);
+            
+            const response = await fetch(`${API_BASE_URL}/api/users/list?${queryParams}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${getAccessToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        },
-        {
-            member_id: 1002,
-            user_id: 502,
-            name: 'Priya Sharma',
-            email: 'priya.sharma@gmail.com',
-            phone: '+91 98765 43211',
-            join_date: '2024-02-10',
-            status: 'ACTIVE',
-            branch_name: 'Main Branch',
-            plan_name: 'Monthly Basic',
-            plan_duration: 30,
-            plan_price: 1500.00,
-            profile: {
-                dob: '1998-03-15',
-                gender: 'FEMALE',
-                blood_group: 'A+',
-                height_cm: 162.0,
-                weight_kg: 58.5,
-                fitness_level: 'BEGINNER',
-                goal_focus: 'WEIGHT_LOSS',
-                emergency_contact: '+91 98765 22222',
-                address: '456, Brigade Road, Bangalore, Karnataka - 560025'
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                setMembers(data.users || []);
+                setPagination(prev => ({
+                    ...prev,
+                    total: data.meta?.total || 0
+                }));
+            } else {
+                throw new Error(data.message || 'Failed to fetch members');
             }
-        },
-        {
-            member_id: 1003,
-            user_id: 503,
-            name: 'Amit Patel',
-            email: 'amit.patel@gmail.com',
-            phone: '+91 98765 43212',
-            join_date: '2023-11-20',
-            status: 'ACTIVE',
-            branch_name: 'North Branch',
-            plan_name: 'Annual Elite',
-            plan_duration: 365,
-            plan_price: 14000.00,
-            profile: {
-                dob: '1992-08-10',
-                gender: 'MALE',
-                blood_group: 'B+',
-                height_cm: 180.0,
-                weight_kg: 85.0,
-                fitness_level: 'ADVANCED',
-                goal_focus: 'STRENGTH',
-                emergency_contact: '+91 98765 33333',
-                address: '789, Whitefield, Bangalore, Karnataka - 560066'
-            }
-        },
-        {
-            member_id: 1004,
-            user_id: 504,
-            name: 'Sneha Reddy',
-            email: 'sneha.reddy@gmail.com',
-            phone: '+91 98765 43213',
-            join_date: '2024-03-05',
-            status: 'INACTIVE',
-            branch_name: 'Main Branch',
-            plan_name: 'Half-Yearly Premium',
-            plan_duration: 180,
-            plan_price: 7500.00,
-            profile: {
-                dob: '1996-12-25',
-                gender: 'FEMALE',
-                blood_group: 'AB+',
-                height_cm: 168.0,
-                weight_kg: 62.0,
-                fitness_level: 'INTERMEDIATE',
-                goal_focus: 'ENDURANCE',
-                emergency_contact: '+91 98765 44444',
-                address: '321, Koramangala, Bangalore, Karnataka - 560034'
-            }
-        },
-        {
-            member_id: 1005,
-            user_id: 505,
-            name: 'Vikram Singh',
-            email: 'vikram.singh@gmail.com',
-            phone: '+91 98765 43214',
-            join_date: '2024-01-28',
-            status: 'SUSPENDED',
-            branch_name: 'South Branch',
-            plan_name: 'Quarterly Standard',
-            plan_duration: 90,
-            plan_price: 4000.00,
-            profile: {
-                dob: '1990-04-18',
-                gender: 'MALE',
-                blood_group: 'O-',
-                height_cm: 178.0,
-                weight_kg: 90.0,
-                fitness_level: 'ADVANCED',
-                goal_focus: 'GENERAL',
-                emergency_contact: '+91 98765 55555',
-                address: '654, Jayanagar, Bangalore, Karnataka - 560041'
-            }
-        },
-        {
-            member_id: 1006,
-            user_id: 506,
-            name: 'Ananya Iyer',
-            email: 'ananya.iyer@gmail.com',
-            phone: '+91 98765 43215',
-            join_date: '2024-02-20',
-            status: 'ACTIVE',
-            branch_name: 'North Branch',
-            plan_name: 'Student Monthly',
-            plan_duration: 30,
-            plan_price: 1200.00,
-            profile: {
-                dob: '1999-07-30',
-                gender: 'FEMALE',
-                blood_group: 'A-',
-                height_cm: 165.0,
-                weight_kg: 55.0,
-                fitness_level: 'BEGINNER',
-                goal_focus: 'GENERAL',
-                emergency_contact: '+91 98765 66666',
-                address: '987, Indiranagar, Bangalore, Karnataka - 560038'
-            }
+        } catch (err) {
+            setError(err.message);
+            console.error('Error fetching members:', err);
+        } finally {
+            setLoading(false);
         }
-    ]);
+    };
+    
+    // Effect to fetch members on component mount and when filters/pagination change
+    useEffect(() => {
+        fetchMembers();
+    }, [filters, pagination.page, pagination.limit]);
+    
+    // Handle filter changes
+    const handleFilterChange = (filterName, value) => {
+        setFilters(prev => ({
+            ...prev,
+            [filterName]: value
+        }));
+        // Reset to first page when filters change
+        setPagination(prev => ({ ...prev, page: 1 }));
+    };
+    
+    // Handle pagination changes
+    const handlePageChange = (newPage) => {
+        setPagination(prev => ({ ...prev, page: newPage }));
+    };
+    
+    // Handle limit changes
+    const handleLimitChange = (newLimit) => {
+        setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
+    };
 
-    // Filter members based on search query
-    const filteredMembers = members.filter(member => 
-        member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        member.phone.includes(searchQuery) ||
-        member.member_id.toString().includes(searchQuery) ||
-        member.branch_name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Filter members based on search query (client-side filtering for current page)
+    const filteredMembers = members.filter(member => {
+        const query = searchQuery.toLowerCase();
+        return (
+            member.name?.toLowerCase().includes(query) ||
+            member.email?.toLowerCase().includes(query) ||
+            member.phone?.includes(searchQuery) ||
+            member.user_id?.toString().includes(searchQuery)
+        );
+    });
+    
+    // Calculate total pages
+    const totalPages = Math.ceil(pagination.total / pagination.limit);
 
     const handleViewProfile = (member) => {
         setSelectedMember(member);
@@ -517,7 +473,7 @@ const MemberManagement = () => {
                     <input
                         type="text"
                         className="member-search-input"
-                        placeholder="Search by name, email, phone, ID, or branch..."
+                        placeholder="Search by name, email, phone, or ID..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -530,6 +486,43 @@ const MemberManagement = () => {
                         </button>
                     )}
                 </div>
+                
+                {/* Filter Controls */}
+                <div className="member-filters">
+                    <select
+                        className="member-filter-select"
+                        value={filters.status}
+                        onChange={(e) => handleFilterChange('status', e.target.value)}
+                    >
+                        <option value="">All Status</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="INACTIVE">Inactive</option>
+                        <option value="SUSPENDED">Suspended</option>
+                    </select>
+                    
+                    <select
+                        className="member-filter-select"
+                        value={filters.branch_id}
+                        onChange={(e) => handleFilterChange('branch_id', e.target.value)}
+                    >
+                        <option value="">All Branches</option>
+                        {branches.map(branch => (
+                            <option key={branch.branch_id} value={branch.branch_id}>
+                                {branch.branch_name}
+                            </option>
+                        ))}
+                    </select>
+                    
+                    <button 
+                        className="member-refresh-btn" 
+                        onClick={() => fetchMembers()}
+                        disabled={loading}
+                    >
+                        <i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`}></i>
+                        Refresh
+                    </button>
+                </div>
+                
                 <button className="member-add-btn" onClick={openAddModal}>
                     <i className="fas fa-user-plus"></i>
                     Add New Member
@@ -540,7 +533,7 @@ const MemberManagement = () => {
             <div className="member-stats-bar">
                 <div className="member-stat-item">
                     <i className="fas fa-users"></i>
-                    <span>Total: <strong>{members.length}</strong></span>
+                    <span>Total: <strong>{pagination.total}</strong></span>
                 </div>
                 <div className="member-stat-item">
                     <i className="fas fa-search"></i>
@@ -550,76 +543,170 @@ const MemberManagement = () => {
                     <i className="fas fa-check-circle"></i>
                     <span>Active: <strong>{members.filter(m => m.status === 'ACTIVE').length}</strong></span>
                 </div>
+                {loading && (
+                    <div className="member-stat-item loading">
+                        <i className="fas fa-spinner fa-spin"></i>
+                        <span>Loading...</span>
+                    </div>
+                )}
             </div>
+
+            {/* Error Display */}
+            {error && (
+                <div className="member-error-banner">
+                    <i className="fas fa-exclamation-triangle"></i>
+                    <span>Error: {error}</span>
+                    <button onClick={() => fetchMembers()}>
+                        <i className="fas fa-retry"></i>
+                        Retry
+                    </button>
+                </div>
+            )}
 
             {/* Members Table */}
             <div className="member-table-container">
-                {filteredMembers.length > 0 ? (
-                    <table className="member-table">
-                        <thead>
-                            <tr>
-                                <th>Member ID</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Phone</th>
-                                <th>Join Date</th>
-                                <th>Branch</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredMembers.map((member) => (
-                                <tr key={member.member_id}>
-                                    <td className="member-id-cell">#{member.member_id}</td>
-                                    <td className="member-name-cell">
-                                        <i className="fas fa-user-circle"></i>
-                                        {member.name}
-                                    </td>
-                                    <td>{member.email}</td>
-                                    <td>{member.phone}</td>
-                                    <td>{formatDate(member.join_date)}</td>
-                                    <td>{member.branch_name}</td>
-                                    <td>
-                                        <span className={`member-status-badge ${getStatusBadgeClass(member.status)}`}>
-                                            {member.status}
-                                        </span>
-                                    </td>
-                                    <td className="member-actions-cell">
-                                        <button 
-                                            className="member-action-icon member-view-btn"
-                                            onClick={() => handleViewProfile(member)}
-                                            title="View Profile"
-                                        >
-                                            <i className="fas fa-eye"></i>
-                                        </button>
-                                        <button 
-                                            className="member-action-icon member-edit-btn"
-                                            onClick={() => handleEditMember(member)}
-                                            title="Edit Member"
-                                        >
-                                            <i className="fas fa-edit"></i>
-                                        </button>
-                                        <button 
-                                            className="member-action-icon member-delete-btn"
-                                            onClick={() => handleDeleteMember(member)}
-                                            title="Delete Member"
-                                        >
-                                            <i className="fas fa-trash-alt"></i>
-                                        </button>
-                                    </td>
+                {loading ? (
+                    <div className="member-loading-state">
+                        <i className="fas fa-spinner fa-spin"></i>
+                        <p>Loading members...</p>
+                    </div>
+                ) : filteredMembers.length > 0 ? (
+                    <>
+                        <table className="member-table">
+                            <thead>
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Join Date</th>
+                                    <th>Branch ID</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {filteredMembers.map((member) => (
+                                    <tr key={member.user_id}>
+                                        <td className="member-id-cell">#{member.user_id}</td>
+                                        <td className="member-name-cell">
+                                            <i className="fas fa-user-circle"></i>
+                                            {member.name}
+                                        </td>
+                                        <td>{member.email}</td>
+                                        <td>{member.phone}</td>
+                                        <td>{formatDate(member.createdDate)}</td>
+                                        <td>{member.branch_id || 'N/A'}</td>
+                                        <td>
+                                            <span className={`member-status-badge ${getStatusBadgeClass(member.status)}`}>
+                                                {member.status}
+                                            </span>
+                                        </td>
+                                        <td className="member-actions-cell">
+                                            <button 
+                                                className="member-action-icon member-view-btn"
+                                                onClick={() => handleViewProfile(member)}
+                                                title="View Profile"
+                                            >
+                                                <i className="fas fa-eye"></i>
+                                            </button>
+                                            <button 
+                                                className="member-action-icon member-edit-btn"
+                                                onClick={() => handleEditMember(member)}
+                                                title="Edit Member"
+                                            >
+                                                <i className="fas fa-edit"></i>
+                                            </button>
+                                            <button 
+                                                className="member-action-icon member-delete-btn"
+                                                onClick={() => handleDeleteMember(member)}
+                                                title="Delete Member"
+                                            >
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        
+                        {/* Pagination Controls */}
+                        <div className="member-pagination">
+                            <div className="member-pagination-info">
+                                <span>
+                                    Showing {filteredMembers.length} of {pagination.total} members 
+                                    (Page {pagination.page} of {totalPages})
+                                </span>
+                            </div>
+                            
+                            <div className="member-pagination-controls">
+                                <select
+                                    className="member-pagination-limit"
+                                    value={pagination.limit}
+                                    onChange={(e) => handleLimitChange(parseInt(e.target.value))}
+                                >
+                                    <option value={5}>5 per page</option>
+                                    <option value={10}>10 per page</option>
+                                    <option value={20}>20 per page</option>
+                                    <option value={50}>50 per page</option>
+                                </select>
+                                
+                                <button
+                                    className="member-pagination-btn"
+                                    onClick={() => handlePageChange(1)}
+                                    disabled={pagination.page === 1}
+                                >
+                                    <i className="fas fa-angle-double-left"></i>
+                                </button>
+                                
+                                <button
+                                    className="member-pagination-btn"
+                                    onClick={() => handlePageChange(pagination.page - 1)}
+                                    disabled={pagination.page === 1}
+                                >
+                                    <i className="fas fa-angle-left"></i>
+                                </button>
+                                
+                                <span className="member-pagination-current">
+                                    Page {pagination.page}
+                                </span>
+                                
+                                <button
+                                    className="member-pagination-btn"
+                                    onClick={() => handlePageChange(pagination.page + 1)}
+                                    disabled={pagination.page >= totalPages}
+                                >
+                                    <i className="fas fa-angle-right"></i>
+                                </button>
+                                
+                                <button
+                                    className="member-pagination-btn"
+                                    onClick={() => handlePageChange(totalPages)}
+                                    disabled={pagination.page >= totalPages}
+                                >
+                                    <i className="fas fa-angle-double-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </>
                 ) : (
-                    <div className="member-no-results">
-                        <i className="fas fa-search"></i>
+                    <div className="member-empty-state">
+                        <i className="fas fa-users-slash"></i>
                         <h3>No Members Found</h3>
-                        <p>No members match your search criteria "{searchQuery}"</p>
-                        <button className="member-clear-search-btn" onClick={() => setSearchQuery('')}>
-                            Clear Search
-                        </button>
+                        <p>
+                            {searchQuery 
+                                ? `No members match your search "${searchQuery}"` 
+                                : 'No members available with current filters'
+                            }
+                        </p>
+                        {searchQuery && (
+                            <button 
+                                className="member-clear-search-btn"
+                                onClick={() => setSearchQuery('')}
+                            >
+                                Clear Search
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
@@ -651,8 +738,8 @@ const MemberManagement = () => {
                                         <span>{selectedMember.name}</span>
                                     </div>
                                     <div className="member-profile-item">
-                                        <label>Member ID</label>
-                                        <span>#{selectedMember.member_id}</span>
+                                        <label>User ID</label>
+                                        <span>#{selectedMember.user_id}</span>
                                     </div>
                                     <div className="member-profile-item">
                                         <label>Email</label>
@@ -660,77 +747,11 @@ const MemberManagement = () => {
                                     </div>
                                     <div className="member-profile-item">
                                         <label>Phone</label>
-                                        <span>{selectedMember.phone}</span>
+                                        <span>{selectedMember.phone || 'Not provided'}</span>
                                     </div>
                                     <div className="member-profile-item">
-                                        <label>Date of Birth</label>
-                                        <span>{formatDate(selectedMember.profile.dob)}</span>
-                                    </div>
-                                    <div className="member-profile-item">
-                                        <label>Gender</label>
-                                        <span>{selectedMember.profile.gender}</span>
-                                    </div>
-                                    <div className="member-profile-item">
-                                        <label>Blood Group</label>
-                                        <span>{selectedMember.profile.blood_group}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Physical Information */}
-                            <div className="member-profile-section">
-                                <h3 className="member-profile-section-title">
-                                    <i className="fas fa-weight"></i>
-                                    Physical Information
-                                </h3>
-                                <div className="member-profile-grid">
-                                    <div className="member-profile-item">
-                                        <label>Height</label>
-                                        <span>{selectedMember.profile.height_cm} cm</span>
-                                    </div>
-                                    <div className="member-profile-item">
-                                        <label>Weight</label>
-                                        <span>{selectedMember.profile.weight_kg} kg</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Fitness Information */}
-                            <div className="member-profile-section">
-                                <h3 className="member-profile-section-title">
-                                    <i className="fas fa-dumbbell"></i>
-                                    Fitness Information
-                                </h3>
-                                <div className="member-profile-grid">
-                                    <div className="member-profile-item">
-                                        <label>Fitness Level</label>
-                                        <span className="member-fitness-badge">
-                                            {selectedMember.profile.fitness_level}
-                                        </span>
-                                    </div>
-                                    <div className="member-profile-item">
-                                        <label>Goal Focus</label>
-                                        <span className="member-goal-badge">
-                                            {selectedMember.profile.goal_focus.replace('_', ' ')}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Membership Information */}
-                            <div className="member-profile-section">
-                                <h3 className="member-profile-section-title">
-                                    <i className="fas fa-id-card"></i>
-                                    Membership Information
-                                </h3>
-                                <div className="member-profile-grid">
-                                    <div className="member-profile-item">
-                                        <label>Join Date</label>
-                                        <span>{formatDate(selectedMember.join_date)}</span>
-                                    </div>
-                                    <div className="member-profile-item">
-                                        <label>Branch</label>
-                                        <span>{selectedMember.branch_name}</span>
+                                        <label>Role</label>
+                                        <span>{selectedMember.role}</span>
                                     </div>
                                     <div className="member-profile-item">
                                         <label>Status</label>
@@ -738,40 +759,43 @@ const MemberManagement = () => {
                                             {selectedMember.status}
                                         </span>
                                     </div>
-                                    {selectedMember.plan_name && (
-                                        <>
-                                            <div className="member-profile-item">
-                                                <label>Membership Plan</label>
-                                                <span className="member-goal-badge">{selectedMember.plan_name}</span>
-                                            </div>
-                                            <div className="member-profile-item">
-                                                <label>Plan Duration</label>
-                                                <span>{selectedMember.plan_duration} days</span>
-                                            </div>
-                                            <div className="member-profile-item">
-                                                <label>Plan Price</label>
-                                                <span style={{ color: '#27ae60', fontWeight: '600' }}>₹{selectedMember.plan_price}</span>
-                                            </div>
-                                        </>
-                                    )}
+                                    <div className="member-profile-item">
+                                        <label>Join Date</label>
+                                        <span>{formatDate(selectedMember.createdDate)}</span>
+                                    </div>
+                                    <div className="member-profile-item">
+                                        <label>Gym ID</label>
+                                        <span>{selectedMember.gym_id || 'Not assigned'}</span>
+                                    </div>
+                                    <div className="member-profile-item">
+                                        <label>Branch ID</label>
+                                        <span>{selectedMember.branch_id || 'Not assigned'}</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Contact Information */}
+                            {/* Profile Details Notice */}
                             <div className="member-profile-section">
                                 <h3 className="member-profile-section-title">
-                                    <i className="fas fa-phone"></i>
-                                    Emergency Contact
+                                    <i className="fas fa-info-circle"></i>
+                                    Additional Profile Information
                                 </h3>
-                                <div className="member-profile-grid">
-                                    <div className="member-profile-item">
-                                        <label>Emergency Phone</label>
-                                        <span>{selectedMember.profile.emergency_contact}</span>
-                                    </div>
-                                    <div className="member-profile-item member-full-width">
-                                        <label>Address</label>
-                                        <span>{selectedMember.profile.address}</span>
-                                    </div>
+                                <div className="member-profile-notice">
+                                    <p>
+                                        <i className="fas fa-exclamation-circle"></i>
+                                        Detailed profile information (physical stats, goals, etc.) requires 
+                                        additional API integration for member profiles.
+                                    </p>
+                                    <button 
+                                        className="member-profile-edit-btn"
+                                        onClick={() => {
+                                            closeMemberProfile();
+                                            handleEditMember(selectedMember);
+                                        }}
+                                    >
+                                        <i className="fas fa-edit"></i>
+                                        Edit Member Details
+                                    </button>
                                 </div>
                             </div>
                         </div>
