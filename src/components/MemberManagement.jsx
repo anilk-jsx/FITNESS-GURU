@@ -74,19 +74,12 @@ const MemberManagement = () => {
         states: false,
         districts: false,
         cities: false,
-        branches: false
+        branches: false,
+        membershipPlans: false
     });
 
-    // Membership plans (in production, fetch from API)
-    const [membershipPlans] = useState([
-        { plan_id: 1, gym_id: 1, branch_id: null, plan_name: 'Monthly Basic', duration_days: 30, price: 1500.00, description: 'Basic gym access for 1 month', is_active: true },
-        { plan_id: 2, gym_id: 1, branch_id: null, plan_name: 'Quarterly Standard', duration_days: 90, price: 4000.00, description: 'Standard gym access for 3 months with 10% discount', is_active: true },
-        { plan_id: 3, gym_id: 1, branch_id: null, plan_name: 'Half-Yearly Premium', duration_days: 180, price: 7500.00, description: 'Premium gym access for 6 months with personal trainer', is_active: true },
-        { plan_id: 4, gym_id: 1, branch_id: null, plan_name: 'Annual Elite', duration_days: 365, price: 14000.00, description: 'Elite gym access for 1 year with diet plan and personal trainer', is_active: true },
-        { plan_id: 5, gym_id: 1, branch_id: 1, plan_name: 'Main Branch Special', duration_days: 90, price: 3500.00, description: 'Special quarterly plan for Main Branch only', is_active: true },
-        { plan_id: 6, gym_id: 1, branch_id: 2, plan_name: 'North Branch Weekend', duration_days: 30, price: 1200.00, description: 'Weekend only access for North Branch', is_active: true },
-        { plan_id: 7, gym_id: 1, branch_id: null, plan_name: 'Student Monthly', duration_days: 30, price: 1200.00, description: 'Discounted monthly plan for students', is_active: true }
-    ]);
+    // Membership plans - fetch from API
+    const [membershipPlans, setMembershipPlans] = useState([]);
 
     // API Configuration
     const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
@@ -134,10 +127,15 @@ const MemberManagement = () => {
     };
     
     // Fetch states from API
-    const fetchStates = async () => {
+    const fetchStates = async (countryId) => {
+        if (!countryId) {
+            setStates([]);
+            return;
+        }
+
         setDropdownLoading(prev => ({ ...prev, states: true }));
         try {
-            const apiUrl = buildApiUrl('stateList');
+            const apiUrl = buildApiUrl(`stateList?country_id=${countryId}`);
             const response = await tokenManager.apiCall(apiUrl, {
                 method: 'GET',
                 headers: {
@@ -152,30 +150,29 @@ const MemberManagement = () => {
             const data = await response.json();
             
             if (data.status === 'success' && data.data) {
-                setStates(data.data); // API returns data.data, not data.states
+                setStates(data.data);
                 console.log('States loaded:', data.data.length, 'items');
             } else {
                 throw new Error('Invalid API response structure');
             }
         } catch (err) {
             console.error('Error fetching states:', err.message);
-            // Fallback to default data
-            setStates([
-                { state_id: 1, state_name: 'Karnataka', country_id: 1 },
-                { state_id: 2, state_name: 'Maharashtra', country_id: 1 },
-                { state_id: 3, state_name: 'Tamil Nadu', country_id: 1 },
-                { state_id: 4, state_name: 'Delhi', country_id: 1 }
-            ]);
+            setStates([]);
         } finally {
             setDropdownLoading(prev => ({ ...prev, states: false }));
         }
     };
     
     // Fetch districts from API
-    const fetchDistricts = async () => {
+    const fetchDistricts = async (stateId) => {
+        if (!stateId) {
+            setDistricts([]);
+            return;
+        }
+
         setDropdownLoading(prev => ({ ...prev, districts: true }));
         try {
-            const apiUrl = buildApiUrl('districtList');
+            const apiUrl = buildApiUrl(`districtList?state_id=${stateId}`);
             const response = await tokenManager.apiCall(apiUrl, {
                 method: 'GET',
                 headers: {
@@ -190,32 +187,24 @@ const MemberManagement = () => {
             const data = await response.json();
             
             if (data.status === 'success' && data.data) {
-                setDistricts(data.data); // API returns data.data, not data.districts
+                setDistricts(data.data);
                 console.log('Districts loaded:', data.data.length, 'items');
             } else {
                 throw new Error('Invalid API response structure');
             }
         } catch (err) {
             console.error('Error fetching districts:', err.message);
-            // Fallback to default data
-            setDistricts([
-                { district_id: 1, district_name: 'Bangalore Urban', state_id: 1, country_id: 1 },
-                { district_id: 2, district_name: 'Bangalore Rural', state_id: 1, country_id: 1 },
-                { district_id: 3, district_name: 'Mumbai', state_id: 2, country_id: 1 },
-                { district_id: 4, district_name: 'Pune', state_id: 2, country_id: 1 },
-                { district_id: 5, district_name: 'Chennai', state_id: 3, country_id: 1 },
-                { district_id: 6, district_name: 'Central Delhi', state_id: 4, country_id: 1 }
-            ]);
+            setDistricts([]);
         } finally {
             setDropdownLoading(prev => ({ ...prev, districts: false }));
         }
     };
     
     // Fetch gym branches from API
-    const fetchBranches = async () => {
+    const fetchBranches = async (gymId = 1) => {
         setDropdownLoading(prev => ({ ...prev, branches: true }));
         try {
-            const apiUrl = buildApiUrl('gymBranchList');
+            const apiUrl = buildApiUrl(`gymBranchList?gym_id=${gymId}`);
             const response = await tokenManager.apiCall(apiUrl, {
                 method: 'GET',
                 headers: {
@@ -230,22 +219,93 @@ const MemberManagement = () => {
             const data = await response.json();
             
             if (data.status === 'success' && data.data) {
-                setBranches(data.data); // API returns data.data, not data.branches
+                setBranches(data.data);
                 console.log('Branches loaded:', data.data.length, 'items');
             } else {
                 throw new Error('Invalid API response structure');
             }
         } catch (err) {
             console.error('Error fetching branches:', err.message);
-            console.warn('Using fallback branch data due to backend API issue');
-            // Fallback to default data - Backend API has issues
-            setBranches([
-                { branch_id: 1, branch_name: 'Main Branch', city_id: 1, city_name: 'Bangalore', address: 'MG Road' },
-                { branch_id: 2, branch_name: 'North Branch', city_id: 2, city_name: 'Whitefield', address: 'ITPL Main Road' },
-                { branch_id: 3, branch_name: 'South Branch', city_id: 3, city_name: 'Koramangala', address: '5th Block' }
-            ]);
+            setBranches([]);
         } finally {
             setDropdownLoading(prev => ({ ...prev, branches: false }));
+        }
+    };
+    
+    // Fetch membership plans from API
+    const fetchMembershipPlans = async (gymId = 1, branchId) => {
+        // Both gymId and branchId are required for this API
+        if (!gymId || !branchId) {
+            console.log('Both gym_id and branch_id are required for membershipPlan API');
+            setMembershipPlans([]);
+            return;
+        }
+
+        setDropdownLoading(prev => ({ ...prev, membershipPlans: true }));
+        try {
+            const url = buildApiUrl(`membershipPlan?gym_id=${gymId}&branch_id=${branchId}`);
+
+            const response = await tokenManager.apiCall(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (result.status === 'success') {
+                setMembershipPlans(result.data || []);
+                console.log('Membership plans loaded:', result.data?.length || 0, 'items');
+            } else {
+                throw new Error(result.message || 'Failed to fetch membership plans');
+            }
+        } catch (error) {
+            console.error('Error fetching membership plans:', error);
+            setMembershipPlans([]);
+        } finally {
+            setDropdownLoading(prev => ({ ...prev, membershipPlans: false }));
+        }
+    };
+
+    // Fetch cities from API
+    const fetchCities = async (districtId) => {
+        if (!districtId) {
+            setCities([]);
+            return;
+        }
+
+        setDropdownLoading(prev => ({ ...prev, cities: true }));
+        try {
+            const response = await tokenManager.apiCall(
+                buildApiUrl(`cityList?district_id=${districtId}`),
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (result.status === 'success') {
+                setCities(result.data || []);
+                console.log('Cities loaded:', result.data?.length || 0, 'items');
+            } else {
+                throw new Error(result.message || 'Failed to fetch cities');
+            }
+        } catch (error) {
+            console.error('Error fetching cities:', error);
+            setCities([]);
+        } finally {
+            setDropdownLoading(prev => ({ ...prev, cities: false }));
         }
     };
     
@@ -304,10 +364,8 @@ const MemberManagement = () => {
     // Effect to fetch dropdown data on component mount
     useEffect(() => {
         fetchCountries();
-        fetchStates();
-        fetchDistricts();
-        fetchBranches();
-        initializeMockCities(); // Initialize cities with mock data since no API endpoint
+        fetchBranches(1); // Fetch branches for gym_id = 1
+        // Note: membershipPlans will be fetched when user selects a branch
         
         // Clean debug function - available in console as window.testAPI()
         if (typeof window !== 'undefined') {
@@ -318,9 +376,60 @@ const MemberManagement = () => {
                 console.log('Districts:', districts);
                 console.log('Branches:', branches);
                 console.log('Cities:', cities);
+                console.log('Membership Plans:', membershipPlans);
             };
         }
     }, []);
+
+    // Effect to fetch states when country changes in add form
+    useEffect(() => {
+        if (addFormData.country_id) {
+            fetchStates(addFormData.country_id);
+        }
+    }, [addFormData.country_id]);
+
+    // Effect to fetch districts when state changes in add form
+    useEffect(() => {
+        if (addFormData.state_id) {
+            fetchDistricts(addFormData.state_id);
+        }
+    }, [addFormData.state_id]);
+
+    // Effect to fetch states when country changes in edit form
+    useEffect(() => {
+        if (editFormData?.country) {
+            fetchStates(editFormData.country);
+        }
+    }, [editFormData?.country]);
+
+    // Effect to fetch districts when state changes in edit form
+    useEffect(() => {
+        if (editFormData?.state) {
+            fetchDistricts(editFormData.state);
+        }
+    }, [editFormData?.state]);
+
+    // Effect to fetch cities when district changes in add form
+    useEffect(() => {
+        if (addFormData.district_id) {
+            fetchCities(addFormData.district_id);
+        }
+    }, [addFormData.district_id]);
+
+    // Effect to fetch cities when district changes in edit form
+    useEffect(() => {
+        if (editFormData?.district_id) {
+            fetchCities(editFormData.district_id);
+        }
+    }, [editFormData?.district_id]);
+
+    // Effect to fetch membership plans when branch changes
+    useEffect(() => {
+        if (addFormData.branch_id || editFormData?.branch_id) {
+            const branchId = addFormData.branch_id || editFormData?.branch_id;
+            fetchMembershipPlans(1, branchId);
+        }
+    }, [addFormData.branch_id, editFormData?.branch_id]);
     
     // Handle filter changes
     const handleFilterChange = (filterName, value) => {
@@ -538,6 +647,12 @@ const MemberManagement = () => {
             } else if (name === 'branch_id') {
                 // Reset plan selection when branch changes
                 updated.membership_plan = '';
+                // Fetch membership plans for the selected branch
+                if (value) {
+                    fetchMembershipPlans(1, value);
+                } else {
+                    fetchMembershipPlans(1); // Fetch gym-wide plans
+                }
             }
             
             return updated;
@@ -754,10 +869,11 @@ const MemberManagement = () => {
     };
 
     // Get filtered cities based on selected district
-    // Note: There's no cityList API endpoint, using mock data for now
-    // TODO: Add cityList API endpoint or handle cities differently
     const getFilteredCities = () => {
-        return cities.filter(city => city.district_id === parseInt(addFormData.district_id));
+        return cities.filter(city => 
+            city.district_id === parseInt(addFormData.district_id) &&
+            city.status === 'ACTIVE'
+        );
     };
 
     // Helper functions for edit form dropdowns
@@ -770,30 +886,19 @@ const MemberManagement = () => {
     };
 
     const getEditFilteredCities = () => {
-        return cities.filter(city => city.district_id === parseInt(editFormData.district));
+        return cities.filter(city => 
+            city.district_id === parseInt(editFormData.district) &&
+            city.status === 'ACTIVE'
+        );
     };
-    
-    // Initialize cities with mock data since no API endpoint exists
-    const initializeMockCities = () => {
-        setCities([
-            { city_id: 1, city_name: 'Bangalore', district_id: 1, state_id: 1, country_id: 1 },
-            { city_id: 2, city_name: 'Mysore', district_id: 2, state_id: 1, country_id: 1 },
-            { city_id: 3, city_name: 'Mumbai', district_id: 3, state_id: 2, country_id: 1 },
-            { city_id: 4, city_name: 'Pune', district_id: 4, state_id: 2, country_id: 1 },
-            { city_id: 5, city_name: 'Chennai', district_id: 5, state_id: 3, country_id: 1 },
-            { city_id: 6, city_name: 'Delhi', district_id: 6, state_id: 4, country_id: 1 }
-        ]);
-    };
+
 
     // Get available plans based on selected branch (gym-wide plans + branch-specific plans)
     const getAvailablePlans = () => {
-        if (!addFormData.branch_id) return [];
-        
+        const selectedBranchId = addFormData.branch_id || editFormData?.branch_id;
         return membershipPlans.filter(plan => 
-            plan.is_active && (
-                plan.branch_id === null || // Gym-wide plans
-                plan.branch_id === parseInt(addFormData.branch_id) // Branch-specific plans
-            )
+            plan.status === 'ACTIVE' && 
+            (plan.branch_id == selectedBranchId || plan.branch_id === null)
         );
     };
 
@@ -822,6 +927,13 @@ const MemberManagement = () => {
             } else if (name === 'branch_id') {
                 // Reset plan selection when branch changes
                 updated.plan_id = '';
+                // Fetch membership plans for the selected branch
+                if (value) {
+                    fetchMembershipPlans(1, value);
+                } else {
+                    // Clear membership plans if no branch selected
+                    setMembershipPlans([]);
+                }
             }
             
             return updated;
@@ -830,37 +942,95 @@ const MemberManagement = () => {
 
     const handleAddMember = async (e) => {
         e.preventDefault();
+        
+        // Validate required fields
+        const requiredFields = ['name', 'email', 'phone', 'password', 'branch_id', 'plan_id', 'dob'];
+        const missingFields = [];
+        
+        requiredFields.forEach(field => {
+            if (!addFormData[field] || addFormData[field].toString().trim() === '') {
+                missingFields.push(field);
+            }
+        });
+        
+        if (missingFields.length > 0) {
+            alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+            return;
+        }
+        
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(addFormData.email)) {
+            alert('Please enter a valid email address');
+            return;
+        }
+        
+        // Validate phone format
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(addFormData.phone)) {
+            alert('Please enter a valid 10-digit phone number');
+            return;
+        }
+        
         setLoading(true);
         
         try {
-            // Prepare member data for API call
-            const memberData = {
-                name: addFormData.name,
-                email: addFormData.email,
-                phone: addFormData.phone,
-                password: addFormData.password,
-                gym_id: 1, // Default gym_id - you may want to make this dynamic
-                branch_id: parseInt(addFormData.branch_id),
-                status: addFormData.status === 'ACTIVE' ? 1 : 0,
-                join_date: addFormData.join_date,
-                membership_plan: parseInt(addFormData.plan_id),
-                dob: addFormData.dob,
-                gender: addFormData.gender,
-                blood_group: addFormData.blood_group,
-                height: parseFloat(addFormData.height_cm) || 0,
-                weight: parseFloat(addFormData.weight_kg) || 0,
-                fitness_level: addFormData.fitness_level,
-                goal_focus: addFormData.goal_focus,
-                country: parseInt(addFormData.country_id),
-                state: parseInt(addFormData.state_id),
-                district: parseInt(addFormData.district_id),
-                city: parseInt(addFormData.city_id),
-                address_line1: addFormData.address_line1,
-                address_line2: addFormData.address_line2,
-                emergency_contact: addFormData.emergency_contact
+            // Transform values to match API expectations
+            const transformGender = (gender) => {
+                return gender === 'MALE' ? 'Male' : gender === 'FEMALE' ? 'Female' : gender;
             };
             
-            const response = await tokenManager.apiCall(buildApiUrl('addMember'), {
+            const transformFitnessLevel = (level) => {
+                switch(level) {
+                    case 'BEGINNER': return 'Beginner';
+                    case 'INTERMEDIATE': return 'Intermediate';
+                    case 'ADVANCED': return 'Advanced';
+                    default: return level;
+                }
+            };
+            
+            const transformGoalFocus = (goal) => {
+                switch(goal) {
+                    case 'GENERAL': return 'General Fitness';
+                    case 'WEIGHT_LOSS': return 'Weight Loss';
+                    case 'MUSCLE_GAIN': return 'Muscle Gain';
+                    case 'STRENGTH': return 'Strength';
+                    case 'ENDURANCE': return 'Endurance';
+                    default: return goal;
+                }
+            };
+            
+            // Prepare member data for API call
+            const memberData = {
+                name: addFormData.name || '',
+                email: addFormData.email || '',
+                phone: addFormData.phone || '',
+                password: addFormData.password || '',
+                gym_id: 1, // Default gym_id - you may want to make this dynamic
+                branch_id: parseInt(addFormData.branch_id) || 1,
+                status: addFormData.status === 'ACTIVE' ? 1 : 0,
+                join_date: addFormData.join_date || new Date().toISOString().split('T')[0],
+                membership_plan: parseInt(addFormData.plan_id) || 1,
+                dob: addFormData.dob || '',
+                gender: transformGender(addFormData.gender) || 'Male',
+                blood_group: addFormData.blood_group || 'O+',
+                height: parseFloat(addFormData.height_cm) || 0,
+                weight: parseFloat(addFormData.weight_kg) || 0,
+                fitness_level: transformFitnessLevel(addFormData.fitness_level) || 'Beginner',
+                goal_focus: transformGoalFocus(addFormData.goal_focus) || 'General Fitness',
+                country: parseInt(addFormData.country_id) || 1,
+                state: parseInt(addFormData.state_id) || 1,
+                district: parseInt(addFormData.district_id) || 1,
+                city: parseInt(addFormData.city_id) || 1,
+                address_line1: addFormData.address_line1 || '',
+                address_line2: addFormData.address_line2 || '',
+                emergency_contact: addFormData.emergency_contact || ''
+            };
+
+            // Log the data being sent for debugging
+            console.log('Sending member data:', memberData);
+            
+            const response = await tokenManager.apiCall(buildApiUrl('members/addMember'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -869,6 +1039,9 @@ const MemberManagement = () => {
             });
             
             if (!response.ok) {
+                console.error('API Response:', response.status, response.statusText);
+                const errorText = await response.text();
+                console.error('API Error Details:', errorText);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
@@ -919,6 +1092,32 @@ const MemberManagement = () => {
     };
 
     const openAddModal = () => {
+        // Reset form data with current date
+        setAddFormData({
+            name: '',
+            email: '',
+            phone: '',
+            password: '',
+            role: 'MEMBER',
+            branch_id: '',
+            join_date: new Date().toISOString().split('T')[0], // Current date
+            status: 'ACTIVE',
+            plan_id: '',
+            dob: '',
+            gender: 'MALE',
+            blood_group: 'O+',
+            height_cm: '',
+            weight_kg: '',
+            fitness_level: 'BEGINNER',
+            goal_focus: 'GENERAL',
+            emergency_contact: '',
+            address_line1: '',
+            address_line2: '',
+            country_id: '1',
+            state_id: '',
+            district_id: '',
+            city_id: ''
+        });
         setShowAddModal(true);
     };
 
@@ -1499,9 +1698,9 @@ const MemberManagement = () => {
                                                 value={editFormData.gender}
                                                 onChange={handleFormChange}
                                             >
-                                                <option value="MALE">Male</option>
-                                                <option value="FEMALE">Female</option>
-                                                <option value="OTHER">Other</option>
+                                                <option key="MALE-edit" value="MALE">Male</option>
+                                                <option key="FEMALE-edit" value="FEMALE">Female</option>
+                                                <option key="OTHER-edit" value="OTHER">Other</option>
                                             </select>
                                         </div>
                                         <div className="member-form-group">
@@ -1511,14 +1710,14 @@ const MemberManagement = () => {
                                                 value={editFormData.blood_group}
                                                 onChange={handleFormChange}
                                             >
-                                                <option value="A+">A+</option>
-                                                <option value="A-">A-</option>
-                                                <option value="B+">B+</option>
-                                                <option value="B-">B-</option>
-                                                <option value="O+">O+</option>
-                                                <option value="O-">O-</option>
-                                                <option value="AB+">AB+</option>
-                                                <option value="AB-">AB-</option>
+                                                <option key="A+-edit" value="A+">A+</option>
+                                                <option key="A--edit" value="A-">A-</option>
+                                                <option key="B+-edit" value="B+">B+</option>
+                                                <option key="B--edit" value="B-">B-</option>
+                                                <option key="O+-edit" value="O+">O+</option>
+                                                <option key="O--edit" value="O-">O-</option>
+                                                <option key="AB+-edit" value="AB+">AB+</option>
+                                                <option key="AB--edit" value="AB-">AB-</option>
                                             </select>
                                         </div>
                                     </div>
@@ -1570,9 +1769,9 @@ const MemberManagement = () => {
                                                 value={editFormData.fitness_level}
                                                 onChange={handleFormChange}
                                             >
-                                                <option value="BEGINNER">Beginner</option>
-                                                <option value="INTERMEDIATE">Intermediate</option>
-                                                <option value="ADVANCED">Advanced</option>
+                                                <option key="BEGINNER-edit" value="BEGINNER">Beginner</option>
+                                                <option key="INTERMEDIATE-edit" value="INTERMEDIATE">Intermediate</option>
+                                                <option key="ADVANCED-edit" value="ADVANCED">Advanced</option>
                                             </select>
                                         </div>
                                         <div className="member-form-group">
@@ -1582,11 +1781,11 @@ const MemberManagement = () => {
                                                 value={editFormData.goal_focus}
                                                 onChange={handleFormChange}
                                             >
-                                                <option value="WEIGHT_LOSS">Weight Loss</option>
-                                                <option value="MUSCLE_GAIN">Muscle Gain</option>
-                                                <option value="STRENGTH">Strength</option>
-                                                <option value="ENDURANCE">Endurance</option>
-                                                <option value="GENERAL">General Fitness</option>
+                                                <option key="WEIGHT_LOSS-edit" value="WEIGHT_LOSS">Weight Loss</option>
+                                                <option key="MUSCLE_GAIN-edit" value="MUSCLE_GAIN">Muscle Gain</option>
+                                                <option key="STRENGTH-edit" value="STRENGTH">Strength</option>
+                                                <option key="ENDURANCE-edit" value="ENDURANCE">Endurance</option>
+                                                <option key="GENERAL-edit" value="GENERAL">General Fitness</option>
                                             </select>
                                         </div>
                                     </div>
@@ -1609,10 +1808,10 @@ const MemberManagement = () => {
                                                 required
                                             >
                                                 {dropdownLoading.branches ? (
-                                                    <option value="">Loading branches...</option>
+                                                    <option key="loading-branches-edit" value="">Loading branches...</option>
                                                 ) : (
                                                     <>
-                                                        <option value="">Select Branch</option>
+                                                        <option key="select-branch-edit" value="">Select Branch</option>
                                                         {branches.map(branch => (
                                                             <option key={branch.branch_id} value={branch.branch_id}>
                                                                 {branch.branch_name} - {branch.city_name || branch.address}
@@ -1640,14 +1839,14 @@ const MemberManagement = () => {
                                                 onChange={handleFormChange}
                                                 disabled={!editFormData.branch_id}
                                             >
-                                                <option value="">Select Plan</option>
+                                                <option key="select-plan-edit" value="">Select Plan</option>
                                                 {membershipPlans.filter(plan => 
                                                     plan.is_active && (
                                                         plan.branch_id === null || // Gym-wide plans
                                                         plan.branch_id === parseInt(editFormData.branch_id) // Branch-specific plans
                                                     )
-                                                ).map(plan => (
-                                                    <option key={plan.plan_id} value={plan.plan_id}>
+                                                ).map((plan, index) => (
+                                                    <option key={`edit-plan-${plan.plan_id}-${index}`} value={plan.plan_id}>
                                                         {plan.plan_name} - ₹{plan.price} ({plan.duration_days} days)
                                                     </option>
                                                 ))}
@@ -1660,9 +1859,9 @@ const MemberManagement = () => {
                                                 value={editFormData.status}
                                                 onChange={handleFormChange}
                                             >
-                                                <option value="ACTIVE">Active</option>
-                                                <option value="INACTIVE">Inactive</option>
-                                                <option value="SUSPENDED">Suspended</option>
+                                                <option key="ACTIVE-edit-status" value="ACTIVE">Active</option>
+                                                <option key="INACTIVE-edit-status" value="INACTIVE">Inactive</option>
+                                                <option key="SUSPENDED-edit-status" value="SUSPENDED">Suspended</option>
                                             </select>
                                         </div>
                                     </div>
@@ -1694,10 +1893,10 @@ const MemberManagement = () => {
                                                 disabled={dropdownLoading.countries}
                                             >
                                                 {dropdownLoading.countries ? (
-                                                    <option value="">Loading countries...</option>
+                                                    <option key="loading-countries-edit" value="">Loading countries...</option>
                                                 ) : (
                                                     <>
-                                                        <option value="">Select Country</option>
+                                                        <option key="select-country-edit" value="">Select Country</option>
                                                         {countries.map(country => (
                                                             <option key={country.country_id} value={country.country_id}>
                                                                 {country.country_name}
@@ -1716,10 +1915,10 @@ const MemberManagement = () => {
                                                 disabled={!editFormData.country_id || dropdownLoading.states}
                                             >
                                                 {dropdownLoading.states ? (
-                                                    <option value="">Loading states...</option>
+                                                    <option key="loading-states-edit" value="">Loading states...</option>
                                                 ) : (
                                                     <>
-                                                        <option value="">Select State</option>
+                                                        <option key="select-state-edit" value="">Select State</option>
                                                         {getEditFilteredStates().map(state => (
                                                             <option key={state.state_id} value={state.state_id}>
                                                                 {state.state_name}
@@ -1738,10 +1937,10 @@ const MemberManagement = () => {
                                                 disabled={!editFormData.state_id || dropdownLoading.districts}
                                             >
                                                 {dropdownLoading.districts ? (
-                                                    <option value="">Loading districts...</option>
+                                                    <option key="loading-districts-edit" value="">Loading districts...</option>
                                                 ) : (
                                                     <>
-                                                        <option value="">Select District</option>
+                                                        <option key="select-district-edit" value="">Select District</option>
                                                         {getEditFilteredDistricts().map(district => (
                                                             <option key={district.district_id} value={district.district_id}>
                                                                 {district.district_name}
@@ -1759,7 +1958,7 @@ const MemberManagement = () => {
                                                 onChange={handleFormChange}
                                                 disabled={!editFormData.district_id}
                                             >
-                                                <option value="">Select City</option>
+                                                <option key="select-city" value="">Select City</option>
                                                 {getEditFilteredCities().map(city => (
                                                     <option key={city.city_id} value={city.city_id}>
                                                         {city.city_name}
@@ -1992,9 +2191,9 @@ const MemberManagement = () => {
                                                 required
                                                 disabled={!addFormData.branch_id}
                                             >
-                                                <option value="">Select Membership Plan</option>
-                                                {getAvailablePlans().map(plan => (
-                                                    <option key={plan.plan_id} value={plan.plan_id}>
+                                                <option key="select-plan" value="">Select Membership Plan</option>
+                                                {getAvailablePlans().map((plan, index) => (
+                                                    <option key={`plan-${plan.plan_id}-${index}`} value={plan.plan_id}>
                                                         {plan.plan_name} - ₹{plan.price} ({plan.duration_days} days)
                                                         {plan.branch_id && ' - Branch Exclusive'}
                                                     </option>
@@ -2032,9 +2231,9 @@ const MemberManagement = () => {
                                                 value={addFormData.gender}
                                                 onChange={handleAddFormChange}
                                             >
-                                                <option value="MALE">Male</option>
-                                                <option value="FEMALE">Female</option>
-                                                <option value="OTHER">Other</option>
+                                                <option key="MALE" value="MALE">Male</option>
+                                                <option key="FEMALE" value="FEMALE">Female</option>
+                                                <option key="OTHER" value="OTHER">Other</option>
                                             </select>
                                         </div>
                                         <div className="member-form-group">
@@ -2044,14 +2243,14 @@ const MemberManagement = () => {
                                                 value={addFormData.blood_group}
                                                 onChange={handleAddFormChange}
                                             >
-                                                <option value="A+">A+</option>
-                                                <option value="A-">A-</option>
-                                                <option value="B+">B+</option>
-                                                <option value="B-">B-</option>
-                                                <option value="O+">O+</option>
-                                                <option value="O-">O-</option>
-                                                <option value="AB+">AB+</option>
-                                                <option value="AB-">AB-</option>
+                                                <option key="A+" value="A+">A+</option>
+                                                <option key="A-" value="A-">A-</option>
+                                                <option key="B+" value="B+">B+</option>
+                                                <option key="B-" value="B-">B-</option>
+                                                <option key="O+" value="O+">O+</option>
+                                                <option key="O-" value="O-">O-</option>
+                                                <option key="AB+" value="AB+">AB+</option>
+                                                <option key="AB-" value="AB-">AB-</option>
                                             </select>
                                         </div>
                                     </div>
@@ -2103,9 +2302,9 @@ const MemberManagement = () => {
                                                 value={addFormData.fitness_level}
                                                 onChange={handleAddFormChange}
                                             >
-                                                <option value="BEGINNER">Beginner</option>
-                                                <option value="INTERMEDIATE">Intermediate</option>
-                                                <option value="ADVANCED">Advanced</option>
+                                                <option key="BEGINNER" value="BEGINNER">Beginner</option>
+                                                <option key="INTERMEDIATE" value="INTERMEDIATE">Intermediate</option>
+                                                <option key="ADVANCED" value="ADVANCED">Advanced</option>
                                             </select>
                                         </div>
                                         <div className="member-form-group">
@@ -2115,11 +2314,11 @@ const MemberManagement = () => {
                                                 value={addFormData.goal_focus}
                                                 onChange={handleAddFormChange}
                                             >
-                                                <option value="WEIGHT_LOSS">Weight Loss</option>
-                                                <option value="MUSCLE_GAIN">Muscle Gain</option>
-                                                <option value="STRENGTH">Strength</option>
-                                                <option value="ENDURANCE">Endurance</option>
-                                                <option value="GENERAL">General Fitness</option>
+                                                <option key="WEIGHT_LOSS" value="WEIGHT_LOSS">Weight Loss</option>
+                                                <option key="MUSCLE_GAIN" value="MUSCLE_GAIN">Muscle Gain</option>
+                                                <option key="STRENGTH" value="STRENGTH">Strength</option>
+                                                <option key="ENDURANCE" value="ENDURANCE">Endurance</option>
+                                                <option key="GENERAL" value="GENERAL">General Fitness</option>
                                             </select>
                                         </div>
                                     </div>
@@ -2210,7 +2409,7 @@ const MemberManagement = () => {
                                                 required
                                                 disabled={!addFormData.district_id}
                                             >
-                                                <option value="">Select City</option>
+                                                <option key="select-city" value="">Select City</option>
                                                 {getFilteredCities().map(city => (
                                                     <option key={city.city_id} value={city.city_id}>
                                                         {city.city_name}
