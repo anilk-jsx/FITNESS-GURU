@@ -435,43 +435,79 @@ const MemberManagement = () => {
         return status === 1 ? 'Active' : 'Inactive';
     };
 
-    const handleEditMember = (member) => {
-        // Populate form with member data, handling cases where profile might not exist
-        const profile = member.profile || {};
+    const handleEditMember = async (member) => {
+        // If we have detailed member data from the profile view, use it
+        let detailedMember = member;
         
+        // If we don't have detailed data or we're coming from the table view, fetch it
+        if (!memberDetails || memberDetails.user_id !== member.user_id) {
+            try {
+                setLoading(true);
+                const response = await tokenManager.apiCall(
+                    `${API_BASE_URL}/api/members/view?user_id=${member.user_id}`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        detailedMember = data.data;
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching member details for edit:', error);
+                // Continue with basic member data if detailed fetch fails
+            } finally {
+                setLoading(false);
+            }
+        } else {
+            // Use existing memberDetails
+            detailedMember = memberDetails;
+        }
+        
+        // Populate form with detailed member data
         setEditFormData({
-            member_id: member.member_id,
-            user_id: member.user_id,
-            name: member.name || '',
-            email: member.email || '',
-            phone: member.phone || '',
-            role: member.role || 'MEMBER',
-            status: member.status || 'ACTIVE',
-            branch_id: member.branch_id || '',
-            branch_name: member.branch_name || '',
-            join_date: member.join_date || profile.join_date || '',
-            plan_id: member.plan_id || profile.plan_id || '',
-            // Profile information
-            dob: profile.dob || '',
-            gender: profile.gender || 'MALE',
-            blood_group: profile.blood_group || 'O+',
-            height_cm: profile.height_cm || '',
-            weight_kg: profile.weight_kg || '',
-            fitness_level: profile.fitness_level || 'BEGINNER',
-            goal_focus: profile.goal_focus || 'GENERAL',
-            emergency_contact: profile.emergency_contact || '',
-            address_line1: profile.address_line1 || '',
-            address_line2: profile.address_line2 || '',
-            address: profile.address || '',
-            // Location data
-            country_id: profile.country_id || member.country_id || '1',
-            state_id: profile.state_id || member.state_id || '',
-            district_id: profile.district_id || member.district_id || '',
-            city_id: profile.city_id || member.city_id || '',
-            // Password fields (for optional password change)
+            user_id: detailedMember.user_id,
+            name: detailedMember.name || '',
+            email: detailedMember.email || '',
+            phone: detailedMember.phone || '',
+            status: detailedMember.status || 1,
+            
+            // Profile information  
+            dob: detailedMember.date_of_birth || '',
+            gender: detailedMember.gender || 'Male',
+            blood_group: detailedMember.blood_group || 'O+',
+            
+            // Physical stats
+            height: parseFloat(detailedMember.height_cm) || '',
+            weight: parseFloat(detailedMember.weight_kg) || '',
+            fitness_level: detailedMember.fitness_level || '',
+            goal_focus: detailedMember.goal_focus || '',
+            
+            // Gym and membership
+            branch_id: detailedMember.branch_id || '',
+            membership_plan: detailedMember.membership_plan || '',
+            join_date: detailedMember.date_of_joining || '',
+            
+            // Contact and address
+            emergency_contact: detailedMember.emergency_contact || '',
+            country: detailedMember.country_id || 1,
+            state: detailedMember.state_id || '',
+            district: detailedMember.district_id || '',
+            city: detailedMember.city_id || '',
+            address_line1: detailedMember.address_line1 || '',
+            address_line2: detailedMember.address_line2 || '',
+            
+            // Password fields (optional)
             new_password: '',
             confirm_password: ''
         });
+        
         setShowEditModal(true);
         setShowMemberProfile(false);
     };
@@ -490,18 +526,18 @@ const MemberManagement = () => {
             const updated = { ...prev, [name]: value };
             
             // Reset dependent fields when parent changes (for location dropdowns)
-            if (name === 'country_id') {
-                updated.state_id = '';
-                updated.district_id = '';
-                updated.city_id = '';
-            } else if (name === 'state_id') {
-                updated.district_id = '';
-                updated.city_id = '';
-            } else if (name === 'district_id') {
-                updated.city_id = '';
+            if (name === 'country') {
+                updated.state = '';
+                updated.district = '';
+                updated.city = '';
+            } else if (name === 'state') {
+                updated.district = '';
+                updated.city = '';
+            } else if (name === 'district') {
+                updated.city = '';
             } else if (name === 'branch_id') {
                 // Reset plan selection when branch changes
-                updated.plan_id = '';
+                updated.membership_plan = '';
             }
             
             return updated;
@@ -542,60 +578,133 @@ const MemberManagement = () => {
         setLoading(true);
         
         try {
-            // Prepare update data
+            // Prepare update data matching the API structure
             const updateData = {
+                user_id: editFormData.user_id,
+                
+                // Basic user information
                 name: editFormData.name.trim(),
                 email: editFormData.email.trim(),
                 phone: editFormData.phone.trim(),
-                role: editFormData.role,
-                status: editFormData.status === 'ACTIVE' ? 1 : 0,
-                branch_id: parseInt(editFormData.branch_id) || null,
-                join_date: editFormData.join_date,
-                membership_plan: parseInt(editFormData.plan_id) || null,
-                // Profile data
+                status: editFormData.status,
+                
+                // Profile information
                 dob: editFormData.dob,
                 gender: editFormData.gender,
                 blood_group: editFormData.blood_group,
-                height: parseFloat(editFormData.height_cm) || 0,
-                weight: parseFloat(editFormData.weight_kg) || 0,
+                
+                // Physical stats
+                height: parseFloat(editFormData.height) || null,
+                weight: parseFloat(editFormData.weight) || null,
                 fitness_level: editFormData.fitness_level,
                 goal_focus: editFormData.goal_focus,
+                
+                // Gym and membership
+                branch_id: parseInt(editFormData.branch_id) || null,
+                membership_plan: parseInt(editFormData.membership_plan) || null,
+                join_date: editFormData.join_date,
+                
+                // Contact and address
                 emergency_contact: editFormData.emergency_contact,
-                // Address data
+                country: parseInt(editFormData.country) || 1,
+                state: parseInt(editFormData.state) || null,
+                district: parseInt(editFormData.district) || null,
+                city: parseInt(editFormData.city) || null,
                 address_line1: editFormData.address_line1,
                 address_line2: editFormData.address_line2,
-                country: parseInt(editFormData.country_id) || 1,
-                state: parseInt(editFormData.state_id) || null,
-                district: parseInt(editFormData.district_id) || null,
-                city: parseInt(editFormData.city_id) || null
+                
+                // Password fields (optional)
+                new_password: editFormData.new_password || '',
+                confirm_password: editFormData.confirm_password || ''
             };
             
-            // Add password if provided
-            if (editFormData.new_password) {
-                updateData.password = editFormData.new_password;
-            }
-            
-            // Remove null/undefined values
+            // Remove empty/null values to avoid sending unnecessary data
             Object.keys(updateData).forEach(key => {
                 if (updateData[key] === null || updateData[key] === undefined || updateData[key] === '') {
-                    delete updateData[key];
+                    if (key !== 'new_password' && key !== 'confirm_password') {
+                        delete updateData[key];
+                    }
                 }
             });
             
-            const response = await tokenManager.apiCall(buildApiUrl(`users/update`), {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(updateData)
-            });
+            // Debug log to verify data structure
+            console.log('Updating member with data:', updateData);
             
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            // Try both API endpoint patterns for compatibility
+            let apiUrl;
+            let response;
+            
+            // First try the direct API path (as per your API documentation)
+            try {
+                apiUrl = `${API_BASE_URL}/api/members/updateMember`;
+                console.log('Trying direct API URL:', apiUrl);
+                
+                response = await tokenManager.apiCall(apiUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+            } catch (directError) {
+                console.log('Direct API call failed, trying buildApiUrl pattern:', directError.message);
+                
+                // Fallback to buildApiUrl pattern used by other endpoints
+                try {
+                    apiUrl = buildApiUrl('members/updateMember');
+                    console.log('Trying buildApiUrl pattern:', apiUrl);
+                    
+                    response = await tokenManager.apiCall(apiUrl, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(updateData)
+                    });
+                } catch (buildError) {
+                    console.error('Both API patterns failed:', { directError, buildError });
+                    throw new Error(`API endpoint not found. Tried: ${API_BASE_URL}/api/members/updateMember and ${buildApiUrl('members/updateMember')}`);
+                }
             }
             
-            const data = await response.json();
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            
+            if (!response.ok) {
+                // Try to get error details from response
+                let errorMessage = `HTTP error! status: ${response.status}`;
+                try {
+                    const errorText = await response.text();
+                    console.log('Error response body:', errorText);
+                    
+                    // Try to parse as JSON first
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        errorMessage = errorData.message || errorMessage;
+                    } catch (parseError) {
+                        // If it's not JSON, it might be HTML error page
+                        if (errorText.includes('<html>') || errorText.includes('<!DOCTYPE')) {
+                            errorMessage = 'Server returned an error page. Please check if the API endpoint exists.';
+                        } else {
+                            errorMessage = `Server error: ${errorText.substring(0, 200)}...`;
+                        }
+                    }
+                } catch (textError) {
+                    console.error('Could not read error response:', textError);
+                }
+                throw new Error(errorMessage);
+            }
+            
+            // Parse response with better error handling
+            let data;
+            try {
+                const responseText = await response.text();
+                console.log('Success response body:', responseText);
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Failed to parse response as JSON:', parseError);
+                throw new Error('Server returned invalid JSON response');
+            }
             
             if (data.status === 'success') {
                 const updateMessage = editFormData.new_password ? 
@@ -607,6 +716,11 @@ const MemberManagement = () => {
                 
                 // Refresh the members list to show updated data
                 fetchMembers();
+                
+                // If we're viewing member details, refresh those too
+                if (memberDetails && memberDetails.user_id === updateData.user_id) {
+                    fetchMemberDetails(updateData.user_id);
+                }
             } else {
                 throw new Error(data.message || 'Failed to update member');
             }
@@ -663,15 +777,15 @@ const MemberManagement = () => {
 
     // Helper functions for edit form dropdowns
     const getEditFilteredStates = () => {
-        return states.filter(state => state.country_id === parseInt(editFormData.country_id));
+        return states.filter(state => state.country_id === parseInt(editFormData.country));
     };
 
     const getEditFilteredDistricts = () => {
-        return districts.filter(district => district.state_id === parseInt(editFormData.state_id));
+        return districts.filter(district => district.state_id === parseInt(editFormData.state));
     };
 
     const getEditFilteredCities = () => {
-        return cities.filter(city => city.district_id === parseInt(editFormData.district_id));
+        return cities.filter(city => city.district_id === parseInt(editFormData.district));
     };
     
     // Initialize cities with mock data since no API endpoint exists
@@ -1437,8 +1551,8 @@ const MemberManagement = () => {
                                             <input
                                                 type="number"
                                                 step="0.01"
-                                                name="height_cm"
-                                                value={editFormData.height_cm}
+                                                name="height"
+                                                value={editFormData.height}
                                                 onChange={handleFormChange}
                                                 placeholder="175.5"
                                             />
@@ -1448,8 +1562,8 @@ const MemberManagement = () => {
                                             <input
                                                 type="number"
                                                 step="0.01"
-                                                name="weight_kg"
-                                                value={editFormData.weight_kg}
+                                                name="weight"
+                                                value={editFormData.weight}
                                                 onChange={handleFormChange}
                                                 placeholder="70.5"
                                             />
