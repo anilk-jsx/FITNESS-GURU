@@ -1132,3 +1132,180 @@
     border-color: #80bdff;
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
+
+/* ===========================
+   ERROR STATE STYLES
+   =========================== */
+
+.member-error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.member-error-icon {
+    font-size: 3rem;
+    color: #e74c3c;
+    margin-bottom: 1rem;
+}
+
+.member-error-state h4 {
+    color: #e74c3c;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.member-error-state p {
+    color: #666;
+    margin: 0 0 1.5rem 0;
+    max-width: 400px;
+    line-height: 1.5;
+}
+
+.member-retry-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.member-retry-btn:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+/* ===========================
+   ENHANCED PROFILE MODAL
+   =========================== */
+
+.member-profile-modal {
+    max-width: 900px !important;
+    width: 90vw !important;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.member-profile-modal .member-modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.member-profile-section {
+    margin-bottom: 2rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border-left: 4px solid #3498db;
+}
+
+.member-profile-section:last-child {
+    margin-bottom: 0;
+}
+
+.member-profile-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.member-profile-section-title i {
+    color: #3498db;
+    font-size: 1.25rem;
+}
+
+.member-profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.25rem;
+}
+
+.member-profile-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.member-profile-item label {
+    font-weight: 600;
+    color: #555;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.member-profile-item span {
+    color: #2c3e50;
+    font-weight: 500;
+    font-size: 1rem;
+    padding: 0.5rem 0;
+}
+
+/* ===========================
+   LOADING STATE ENHANCEMENT
+   =========================== */
+
+.member-loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.member-loading-spinner {
+    font-size: 2.5rem;
+    color: #3498db;
+    margin-bottom: 1rem;
+}
+
+.member-loading-state p {
+    color: #666;
+    font-size: 1rem;
+    margin: 0;
+}
+
+/* ===========================
+   RESPONSIVE DESIGN
+   =========================== */
+
+@media (max-width: 768px) {
+    .member-profile-modal {
+        width: 95vw !important;
+        max-width: none !important;
+        margin: 1rem;
+    }
+    
+    .member-profile-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .member-profile-section {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .member-profile-section-title {
+        font-size: 1.1rem;
+    }
+}

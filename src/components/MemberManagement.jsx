@@ -5,7 +5,10 @@ import tokenManager from '../utils/tokenManager';
 const MemberManagement = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedMember, setSelectedMember] = useState(null);
+    const [memberDetails, setMemberDetails] = useState(null);
     const [showMemberProfile, setShowMemberProfile] = useState(false);
+    const [memberDetailsLoading, setMemberDetailsLoading] = useState(false);
+    const [memberDetailsError, setMemberDetailsError] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editFormData, setEditFormData] = useState(null);
@@ -353,9 +356,83 @@ const MemberManagement = () => {
     // Calculate total pages
     const totalPages = Math.ceil(pagination.total / pagination.limit);
 
+    // Fetch detailed member information
+    const fetchMemberDetails = async (userId) => {
+        setMemberDetailsLoading(true);
+        setMemberDetailsError(null);
+        
+        try {
+            const response = await tokenManager.apiCall(
+                `${API_BASE_URL}/api/members/view?user_id=${userId}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                setMemberDetails(data.data);
+            } else {
+                throw new Error(data.message || 'Failed to fetch member details');
+            }
+        } catch (err) {
+            console.error('Error fetching member details:', err);
+            setMemberDetailsError(err.message);
+        } finally {
+            setMemberDetailsLoading(false);
+        }
+    };
+
     const handleViewProfile = (member) => {
         setSelectedMember(member);
+        setMemberDetails(null); // Clear previous details
         setShowMemberProfile(true);
+        fetchMemberDetails(member.user_id);
+    };
+
+    // Helper functions for formatting
+    const formatDate = (dateString) => {
+        if (!dateString) return 'Not provided';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-IN', {
+            year: 'numeric',
+            month: 'long',  
+            day: 'numeric'
+        });
+    };
+
+    const formatHeight = (heightCm) => {
+        if (!heightCm) return 'Not provided';
+        const feet = Math.floor(heightCm / 30.48);
+        const inches = Math.round((heightCm % 30.48) / 2.54);
+        return `${heightCm} cm (${feet}'${inches}")`;
+    };
+
+    const formatWeight = (weightKg) => {
+        if (!weightKg) return 'Not provided';
+        return `${weightKg} kg`;
+    };
+
+    const getStatusBadgeClass = (status) => {
+        switch(status) {
+            case 1:
+            case 'ACTIVE': return 'status-active';
+            case 0:
+            case 'INACTIVE': return 'status-inactive';
+            default: return 'status-default';
+        }
+    };
+
+    const formatSubscriptionStatus = (status) => {
+        return status === 1 ? 'Active' : 'Inactive';
     };
 
     const handleEditMember = (member) => {
@@ -554,29 +631,13 @@ const MemberManagement = () => {
     const closeMemberProfile = () => {
         setShowMemberProfile(false);
         setSelectedMember(null);
+        setMemberDetails(null);
+        setMemberDetailsError(null);
     };
 
     const closeEditModal = () => {
         setShowEditModal(false);
         setEditFormData(null);
-    };
-
-    const getStatusBadgeClass = (status) => {
-        switch(status) {
-            case 'ACTIVE': return 'status-active';
-            case 'INACTIVE': return 'status-inactive';
-            case 'SUSPENDED': return 'status-suspended';
-            default: return '';
-        }
-    };
-
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-IN', { 
-            day: '2-digit', 
-            month: 'short', 
-            year: 'numeric' 
-        });
     };
 
     const showComingSoon = (feature) => {
@@ -1021,11 +1082,11 @@ const MemberManagement = () => {
             {/* Member Profile Modal */}
             {showMemberProfile && selectedMember && (
                 <div className="member-modal-overlay" onClick={closeMemberProfile}>
-                    <div className="member-modal-content" onClick={(e) => e.stopPropagation()}>
+                    <div className="member-modal-content member-profile-modal" onClick={(e) => e.stopPropagation()}>
                         <div className="member-modal-header">
                             <h2>
                                 <i className="fas fa-user-circle"></i>
-                                Member Profile
+                                Member Profile - {selectedMember.name}
                             </h2>
                             <button className="member-modal-close" onClick={closeMemberProfile}>
                                 <i className="fas fa-times"></i>
@@ -1033,85 +1094,218 @@ const MemberManagement = () => {
                         </div>
                         
                         <div className="member-modal-body">
-                            {/* Basic Information */}
-                            <div className="member-profile-section">
-                                <h3 className="member-profile-section-title">
-                                    <i className="fas fa-info-circle"></i>
-                                    Basic Information
-                                </h3>
-                                <div className="member-profile-grid">
-                                    <div className="member-profile-item">
-                                        <label>Full Name</label>
-                                        <span>{selectedMember.name}</span>
+                            {memberDetailsLoading && (
+                                <div className="member-loading-state">
+                                    <div className="member-loading-spinner">
+                                        <i className="fas fa-spinner fa-spin"></i>
                                     </div>
-                                    <div className="member-profile-item">
-                                        <label>User ID</label>
-                                        <span>#{selectedMember.user_id}</span>
-                                    </div>
-                                    <div className="member-profile-item">
-                                        <label>Email</label>
-                                        <span>{selectedMember.email}</span>
-                                    </div>
-                                    <div className="member-profile-item">
-                                        <label>Phone</label>
-                                        <span>{selectedMember.phone || 'Not provided'}</span>
-                                    </div>
-                                    <div className="member-profile-item">
-                                        <label>Role</label>
-                                        <span>{selectedMember.role}</span>
-                                    </div>
-                                    <div className="member-profile-item">
-                                        <label>Status</label>
-                                        <span className={`member-status-badge ${getStatusBadgeClass(selectedMember.status)}`}>
-                                            {selectedMember.status}
-                                        </span>
-                                    </div>
-                                    <div className="member-profile-item">
-                                        <label>Join Date</label>
-                                        <span>{formatDate(selectedMember.createdDate)}</span>
-                                    </div>
-                                    <div className="member-profile-item">
-                                        <label>Gym ID</label>
-                                        <span>{selectedMember.gym_id || 'Not assigned'}</span>
-                                    </div>
-                                    <div className="member-profile-item">
-                                        <label>Branch ID</label>
-                                        <span>{selectedMember.branch_id || 'Not assigned'}</span>
-                                    </div>
+                                    <p>Loading member details...</p>
                                 </div>
-                            </div>
+                            )}
 
-                            {/* Profile Details Notice */}
-                            <div className="member-profile-section">
-                                <h3 className="member-profile-section-title">
-                                    <i className="fas fa-info-circle"></i>
-                                    Additional Profile Information
-                                </h3>
-                                <div className="member-profile-notice">
-                                    <p>
-                                        <i className="fas fa-exclamation-circle"></i>
-                                        Detailed profile information (physical stats, goals, etc.) requires 
-                                        additional API integration for member profiles.
-                                    </p>
+                            {memberDetailsError && (
+                                <div className="member-error-state">
+                                    <div className="member-error-icon">
+                                        <i className="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <h4>Error Loading Member Details</h4>
+                                    <p>{memberDetailsError}</p>
                                     <button 
-                                        className="member-profile-edit-btn"
-                                        onClick={() => {
-                                            closeMemberProfile();
-                                            handleEditMember(selectedMember);
-                                        }}
+                                        className="member-retry-btn"
+                                        onClick={() => fetchMemberDetails(selectedMember.user_id)}
                                     >
-                                        <i className="fas fa-edit"></i>
-                                        Edit Member Details
+                                        <i className="fas fa-redo"></i>
+                                        Retry
                                     </button>
                                 </div>
-                            </div>
+                            )}
+
+                            {memberDetails && !memberDetailsLoading && (
+                                <>
+                                    {/* Basic Information */}
+                                    <div className="member-profile-section">
+                                        <h3 className="member-profile-section-title">
+                                            <i className="fas fa-info-circle"></i>
+                                            Basic Information
+                                        </h3>
+                                        <div className="member-profile-grid">
+                                            <div className="member-profile-item">
+                                                <label>Full Name</label>
+                                                <span>{memberDetails.name}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>User ID</label>
+                                                <span>#{memberDetails.user_id}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Email</label>
+                                                <span>{memberDetails.email}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Phone</label>
+                                                <span>{memberDetails.phone || 'Not provided'}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Gender</label>
+                                                <span>{memberDetails.gender || 'Not provided'}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Date of Birth</label>
+                                                <span>{formatDate(memberDetails.date_of_birth)}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Blood Group</label>
+                                                <span>{memberDetails.blood_group || 'Not provided'}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Status</label>
+                                                <span className={`member-status-badge ${getStatusBadgeClass(memberDetails.status)}`}>
+                                                    {memberDetails.status === 1 ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Physical Stats */}
+                                    <div className="member-profile-section">
+                                        <h3 className="member-profile-section-title">
+                                            <i className="fas fa-dumbbell"></i>
+                                            Physical Stats & Fitness
+                                        </h3>
+                                        <div className="member-profile-grid">
+                                            <div className="member-profile-item">
+                                                <label>Height</label>
+                                                <span>{formatHeight(memberDetails.height_cm)}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Weight</label>
+                                                <span>{formatWeight(memberDetails.weight_kg)}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Fitness Level</label>
+                                                <span>{memberDetails.fitness_level || 'Not specified'}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Goal Focus</label>
+                                                <span>{memberDetails.goal_focus || 'Not specified'}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Emergency Contact</label>
+                                                <span>{memberDetails.emergency_contact || 'Not provided'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Gym & Membership */}
+                                    <div className="member-profile-section">
+                                        <h3 className="member-profile-section-title">
+                                            <i className="fas fa-building"></i>
+                                            Gym & Membership
+                                        </h3>
+                                        <div className="member-profile-grid">
+                                            <div className="member-profile-item">
+                                                <label>Gym</label>
+                                                <span>{memberDetails.gym_name}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Branch</label>
+                                                <span>{memberDetails.branch_name}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Date of Joining</label>
+                                                <span>{formatDate(memberDetails.date_of_joining)}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Membership Plan</label>
+                                                <span>{memberDetails.plan_name || 'Not assigned'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Subscription Details */}
+                                    {memberDetails.subscription_id && (
+                                        <div className="member-profile-section">
+                                            <h3 className="member-profile-section-title">
+                                                <i className="fas fa-credit-card"></i>
+                                                Current Subscription
+                                            </h3>
+                                            <div className="member-profile-grid">
+                                                <div className="member-profile-item">
+                                                    <label>Subscription ID</label>
+                                                    <span>#{memberDetails.subscription_id}</span>
+                                                </div>
+                                                <div className="member-profile-item">
+                                                    <label>Plan Name</label>
+                                                    <span>{memberDetails.plan_name}</span>
+                                                </div>
+                                                <div className="member-profile-item">
+                                                    <label>Duration</label>
+                                                    <span>{memberDetails.duration_months} month(s)</span>
+                                                </div>
+                                                <div className="member-profile-item">
+                                                    <label>Start Date</label>
+                                                    <span>{formatDate(memberDetails.start_date)}</span>
+                                                </div>
+                                                <div className="member-profile-item">
+                                                    <label>End Date</label>
+                                                    <span>{formatDate(memberDetails.end_date)}</span>
+                                                </div>
+                                                <div className="member-profile-item">
+                                                    <label>Subscription Status</label>
+                                                    <span className={`member-status-badge ${getStatusBadgeClass(memberDetails.subscription_status)}`}>
+                                                        {formatSubscriptionStatus(memberDetails.subscription_status)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Address Information */}
+                                    <div className="member-profile-section">
+                                        <h3 className="member-profile-section-title">
+                                            <i className="fas fa-map-marker-alt"></i>
+                                            Address Information
+                                        </h3>
+                                        <div className="member-profile-grid">
+                                            <div className="member-profile-item">
+                                                <label>Address Line 1</label>
+                                                <span>{memberDetails.address_line1 || 'Not provided'}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Address Line 2</label>
+                                                <span>{memberDetails.address_line2 || 'Not provided'}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>City</label>
+                                                <span>{memberDetails.city_name || 'Not provided'}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>District</label>
+                                                <span>{memberDetails.district_name || 'Not provided'}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>State</label>
+                                                <span>{memberDetails.state_name || 'Not provided'}</span>
+                                            </div>
+                                            <div className="member-profile-item">
+                                                <label>Country</label>
+                                                <span>{memberDetails.country_name || 'Not provided'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         <div className="member-modal-footer">
-                            <button className="member-modal-btn member-edit" onClick={() => {
-                                closeMemberProfile();
-                                handleEditMember(selectedMember);
-                            }}>
+                            <button 
+                                className="member-modal-btn member-edit" 
+                                onClick={() => {
+                                    closeMemberProfile();
+                                    handleEditMember(selectedMember);
+                                }}
+                                disabled={memberDetailsLoading}
+                            >
                                 <i className="fas fa-edit"></i>
                                 Edit Member
                             </button>
