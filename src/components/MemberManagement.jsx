@@ -57,45 +57,21 @@ const MemberManagement = () => {
         city_id: ''
     });
 
-    // Location data (in production, fetch from API)
-    const [countries] = useState([
-        { country_id: 1, country_name: 'India' }
-    ]);
-
-    const [states] = useState([
-        { state_id: 1, state_name: 'Karnataka', country_id: 1 },
-        { state_id: 2, state_name: 'Maharashtra', country_id: 1 },
-        { state_id: 3, state_name: 'Tamil Nadu', country_id: 1 },
-        { state_id: 4, state_name: 'Delhi', country_id: 1 }
-    ]);
-
-    const [districts] = useState([
-        { district_id: 1, district_name: 'Bangalore Urban', state_id: 1, country_id: 1 },
-        { district_id: 2, district_name: 'Bangalore Rural', state_id: 1, country_id: 1 },
-        { district_id: 3, district_name: 'Mumbai', state_id: 2, country_id: 1 },
-        { district_id: 4, district_name: 'Pune', state_id: 2, country_id: 1 },
-        { district_id: 5, district_name: 'Chennai', state_id: 3, country_id: 1 },
-        { district_id: 6, district_name: 'Central Delhi', state_id: 4, country_id: 1 }
-    ]);
-
-    const [cities] = useState([
-        { city_id: 1, city_name: 'Bangalore', district_id: 1, state_id: 1, country_id: 1 },
-        { city_id: 2, city_name: 'Whitefield', district_id: 1, state_id: 1, country_id: 1 },
-        { city_id: 3, city_name: 'Koramangala', district_id: 1, state_id: 1, country_id: 1 },
-        { city_id: 4, city_name: 'Mumbai', district_id: 3, state_id: 2, country_id: 1 },
-        { city_id: 5, city_name: 'Pune', district_id: 4, state_id: 2, country_id: 1 },
-        { city_id: 6, city_name: 'Chennai', district_id: 5, state_id: 3, country_id: 1 },
-        { city_id: 7, city_name: 'Delhi', district_id: 6, state_id: 4, country_id: 1 }
-    ]);
-
-    // Gym branches (in production, fetch from API)
-    const [branches] = useState([
-        { branch_id: 1, branch_name: 'Main Branch', city_id: 1, city_name: 'Bangalore', address: 'MG Road' },
-        { branch_id: 2, branch_name: 'North Branch', city_id: 2, city_name: 'Whitefield', address: 'ITPL Main Road' },
-        { branch_id: 3, branch_name: 'South Branch', city_id: 3, city_name: 'Koramangala', address: '5th Block' },
-        { branch_id: 4, branch_name: 'Mumbai Branch', city_id: 4, city_name: 'Mumbai', address: 'Andheri West' },
-        { branch_id: 5, branch_name: 'Pune Branch', city_id: 5, city_name: 'Pune', address: 'Koregaon Park' }
-    ]);
+    // Location and branch data - state management
+    const [countries, setCountries] = useState([]);
+    const [states, setStates] = useState([]);
+    const [districts, setDistricts] = useState([]);
+    const [cities, setCities] = useState([]);
+    const [branches, setBranches] = useState([]);
+    
+    // Loading states for dropdowns
+    const [dropdownLoading, setDropdownLoading] = useState({
+        countries: false,
+        states: false,
+        districts: false,
+        cities: false,
+        branches: false
+    });
 
     // Membership plans (in production, fetch from API)
     const [membershipPlans] = useState([
@@ -109,11 +85,173 @@ const MemberManagement = () => {
     ]);
 
     // API Configuration
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
+    const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
+    
+    // Build full paths - check if they match your server structure
+    const buildApiUrl = (endpoint) => {
+        // If using the production URL, endpoints might be directly under /api/
+        // If using localhost, they might be under /fitness-guru/api/
+        const isLocalhost = API_BASE_URL.includes('localhost');
+        const basePath = isLocalhost ? '/fitness-guru/api' : '/api';
+        return `${API_BASE_URL}${basePath}/${endpoint}`;
+    };
     
     // Get access token from localStorage or context
     const getAccessToken = () => {
         return localStorage.getItem('access_token') || '';
+    };
+    
+    // Fetch countries from API
+    const fetchCountries = async () => {
+        setDropdownLoading(prev => ({ ...prev, countries: true }));
+        try {
+            const apiUrl = buildApiUrl('countryList');
+            const response = await fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${getAccessToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.status === 'success' && data.data) {
+                setCountries(data.data); // API returns data.data, not data.countries
+                console.log('Countries loaded:', data.data.length, 'items');
+            } else {
+                throw new Error('Invalid API response structure');
+            }
+        } catch (err) {
+            console.error('Error fetching countries:', err.message);
+            // Fallback to default data
+            setCountries([{ country_id: 1, country_name: 'India' }]);
+        } finally {
+            setDropdownLoading(prev => ({ ...prev, countries: false }));
+        }
+    };
+    
+    // Fetch states from API
+    const fetchStates = async () => {
+        setDropdownLoading(prev => ({ ...prev, states: true }));
+        try {
+            const apiUrl = buildApiUrl('stateList');
+            const response = await fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${getAccessToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.status === 'success' && data.data) {
+                setStates(data.data); // API returns data.data, not data.states
+                console.log('States loaded:', data.data.length, 'items');
+            } else {
+                throw new Error('Invalid API response structure');
+            }
+        } catch (err) {
+            console.error('Error fetching states:', err.message);
+            // Fallback to default data
+            setStates([
+                { state_id: 1, state_name: 'Karnataka', country_id: 1 },
+                { state_id: 2, state_name: 'Maharashtra', country_id: 1 },
+                { state_id: 3, state_name: 'Tamil Nadu', country_id: 1 },
+                { state_id: 4, state_name: 'Delhi', country_id: 1 }
+            ]);
+        } finally {
+            setDropdownLoading(prev => ({ ...prev, states: false }));
+        }
+    };
+    
+    // Fetch districts from API
+    const fetchDistricts = async () => {
+        setDropdownLoading(prev => ({ ...prev, districts: true }));
+        try {
+            const apiUrl = buildApiUrl('districtList');
+            const response = await fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${getAccessToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.status === 'success' && data.data) {
+                setDistricts(data.data); // API returns data.data, not data.districts
+                console.log('Districts loaded:', data.data.length, 'items');
+            } else {
+                throw new Error('Invalid API response structure');
+            }
+        } catch (err) {
+            console.error('Error fetching districts:', err.message);
+            // Fallback to default data
+            setDistricts([
+                { district_id: 1, district_name: 'Bangalore Urban', state_id: 1, country_id: 1 },
+                { district_id: 2, district_name: 'Bangalore Rural', state_id: 1, country_id: 1 },
+                { district_id: 3, district_name: 'Mumbai', state_id: 2, country_id: 1 },
+                { district_id: 4, district_name: 'Pune', state_id: 2, country_id: 1 },
+                { district_id: 5, district_name: 'Chennai', state_id: 3, country_id: 1 },
+                { district_id: 6, district_name: 'Central Delhi', state_id: 4, country_id: 1 }
+            ]);
+        } finally {
+            setDropdownLoading(prev => ({ ...prev, districts: false }));
+        }
+    };
+    
+    // Fetch gym branches from API
+    const fetchBranches = async () => {
+        setDropdownLoading(prev => ({ ...prev, branches: true }));
+        try {
+            const apiUrl = buildApiUrl('gymBranchList');
+            const response = await fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${getAccessToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.status === 'success' && data.data) {
+                setBranches(data.data); // API returns data.data, not data.branches
+                console.log('Branches loaded:', data.data.length, 'items');
+            } else {
+                throw new Error('Invalid API response structure');
+            }
+        } catch (err) {
+            console.error('Error fetching branches:', err.message);
+            console.warn('Using fallback branch data due to backend API issue');
+            // Fallback to default data - Backend API has issues
+            setBranches([
+                { branch_id: 1, branch_name: 'Main Branch', city_id: 1, city_name: 'Bangalore', address: 'MG Road' },
+                { branch_id: 2, branch_name: 'North Branch', city_id: 2, city_name: 'Whitefield', address: 'ITPL Main Road' },
+                { branch_id: 3, branch_name: 'South Branch', city_id: 3, city_name: 'Koramangala', address: '5th Block' }
+            ]);
+        } finally {
+            setDropdownLoading(prev => ({ ...prev, branches: false }));
+        }
     };
     
     // Fetch members from API
@@ -133,7 +271,7 @@ const MemberManagement = () => {
             if (filters.gym_id) queryParams.append('gym_id', filters.gym_id);
             if (filters.branch_id) queryParams.append('branch_id', filters.branch_id);
             
-            const response = await fetch(`${API_BASE_URL}/api/users/list?${queryParams}`, {
+            const response = await fetch(buildApiUrl(`users/list?${queryParams}`), {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${getAccessToken()}`,
@@ -148,10 +286,10 @@ const MemberManagement = () => {
             const data = await response.json();
             
             if (data.status === 'success') {
-                setMembers(data.users || []);
+                setMembers(data.users || data.data || []);
                 setPagination(prev => ({
                     ...prev,
-                    total: data.meta?.total || 0
+                    total: data.meta?.total || data.total || 0
                 }));
             } else {
                 throw new Error(data.message || 'Failed to fetch members');
@@ -168,6 +306,27 @@ const MemberManagement = () => {
     useEffect(() => {
         fetchMembers();
     }, [filters, pagination.page, pagination.limit]);
+    
+    // Effect to fetch dropdown data on component mount
+    useEffect(() => {
+        fetchCountries();
+        fetchStates();
+        fetchDistricts();
+        fetchBranches();
+        initializeMockCities(); // Initialize cities with mock data since no API endpoint
+        
+        // Clean debug function - available in console as window.testAPI()
+        if (typeof window !== 'undefined') {
+            window.testAPI = () => {
+                console.log('=== API Test Results ===');
+                console.log('Countries:', countries);
+                console.log('States:', states);
+                console.log('Districts:', districts);
+                console.log('Branches:', branches);
+                console.log('Cities:', cities);
+            };
+        }
+    }, []);
     
     // Handle filter changes
     const handleFilterChange = (filterName, value) => {
@@ -323,8 +482,22 @@ const MemberManagement = () => {
     };
 
     // Get filtered cities based on selected district
+    // Note: There's no cityList API endpoint, using mock data for now
+    // TODO: Add cityList API endpoint or handle cities differently
     const getFilteredCities = () => {
         return cities.filter(city => city.district_id === parseInt(addFormData.district_id));
+    };
+    
+    // Initialize cities with mock data since no API endpoint exists
+    const initializeMockCities = () => {
+        setCities([
+            { city_id: 1, city_name: 'Bangalore', district_id: 1, state_id: 1, country_id: 1 },
+            { city_id: 2, city_name: 'Mysore', district_id: 2, state_id: 1, country_id: 1 },
+            { city_id: 3, city_name: 'Mumbai', district_id: 3, state_id: 2, country_id: 1 },
+            { city_id: 4, city_name: 'Pune', district_id: 4, state_id: 2, country_id: 1 },
+            { city_id: 5, city_name: 'Chennai', district_id: 5, state_id: 3, country_id: 1 },
+            { city_id: 6, city_name: 'Delhi', district_id: 6, state_id: 4, country_id: 1 }
+        ]);
     };
 
     // Get available plans based on selected branch (gym-wide plans + branch-specific plans)
@@ -363,92 +536,95 @@ const MemberManagement = () => {
         });
     };
 
-    const handleAddMember = (e) => {
+    const handleAddMember = async (e) => {
         e.preventDefault();
+        setLoading(true);
         
-        // Generate new IDs (in production, these come from backend)
-        const newMemberId = members.length > 0 ? Math.max(...members.map(m => m.member_id)) + 1 : 1001;
-        const newUserId = members.length > 0 ? Math.max(...members.map(m => m.user_id)) + 1 : 501;
-        
-        // Get branch details
-        const selectedBranch = branches.find(b => b.branch_id === parseInt(addFormData.branch_id));
-        
-        // Get plan details
-        const selectedPlan = membershipPlans.find(p => p.plan_id === parseInt(addFormData.plan_id));
-        
-        // Get location details
-        const selectedCity = cities.find(c => c.city_id === parseInt(addFormData.city_id));
-        const selectedDistrict = districts.find(d => d.district_id === parseInt(addFormData.district_id));
-        const selectedState = states.find(s => s.state_id === parseInt(addFormData.state_id));
-        
-        // Build full address
-        const fullAddress = [
-            addFormData.address_line1,
-            addFormData.address_line2,
-            selectedCity?.city_name,
-            selectedDistrict?.district_name,
-            selectedState?.state_name,
-            'India'
-        ].filter(Boolean).join(', ');
-        
-        // Create new member object
-        const newMember = {
-            member_id: newMemberId,
-            user_id: newUserId,
-            nlan_name: selectedPlan?.plan_name || 'No Plan',
-            plan_duration: selectedPlan?.duration_days || 0,
-            plan_price: selectedPlan?.price || 0,
-            pame: addFormData.name,
-            email: addFormData.email,
-            phone: addFormData.phone,
-            join_date: addFormData.join_date,
-            status: addFormData.status,
-            branch_name: selectedBranch?.branch_name || 'Unknown Branch',
-            profile: {
+        try {
+            // Prepare member data for API call
+            const memberData = {
+                name: addFormData.name,
+                email: addFormData.email,
+                phone: addFormData.phone,
+                password: addFormData.password,
+                gym_id: 1, // Default gym_id - you may want to make this dynamic
+                branch_id: parseInt(addFormData.branch_id),
+                status: addFormData.status === 'ACTIVE' ? 1 : 0,
+                join_date: addFormData.join_date,
+                membership_plan: parseInt(addFormData.plan_id),
                 dob: addFormData.dob,
                 gender: addFormData.gender,
                 blood_group: addFormData.blood_group,
-                height_cm: parseFloat(addFormData.height_cm) || 0,
-                weight_kg: parseFloat(addFormData.weight_kg) || 0,
+                height: parseFloat(addFormData.height_cm) || 0,
+                weight: parseFloat(addFormData.weight_kg) || 0,
                 fitness_level: addFormData.fitness_level,
                 goal_focus: addFormData.goal_focus,
-                emergency_contact: addFormData.emergency_contact,
-                address: fullAddress
+                country: parseInt(addFormData.country_id),
+                state: parseInt(addFormData.state_id),
+                district: parseInt(addFormData.district_id),
+                city: parseInt(addFormData.city_id),
+                address_line1: addFormData.address_line1,
+                address_line2: addFormData.address_line2,
+                emergency_contact: addFormData.emergency_contact
+            };
+            
+            const response = await fetch(buildApiUrl('addMember'), {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${getAccessToken()}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(memberData)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        };
-        
-        // Add to members list
-        setMembers([...members, newMember]);
-        
-        alert(`Member ${addFormData.name} has been added successfully! 🎉`);
-        
-        // Reset form and close modal
-        setShowAddModal(false);
-        setAddFormData({
-            name: '',
-            email: '',
-            plan_id: '',
-            phone: '',
-            password: '',
-            role: 'MEMBER',
-            branch_id: '',
-            join_date: new Date().toISOString().split('T')[0],
-            status: 'ACTIVE',
-            dob: '',
-            gender: 'MALE',
-            blood_group: 'O+',
-            height_cm: '',
-            weight_kg: '',
-            fitness_level: 'BEGINNER',
-            goal_focus: 'GENERAL',
-            emergency_contact: '',
-            address_line1: '',
-            address_line2: '',
-            country_id: '1',
-            state_id: '',
-            district_id: '',
-            city_id: ''
-        });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                alert(`Member ${addFormData.name} has been added successfully! 🎉`);
+                
+                // Reset form and close modal
+                setShowAddModal(false);
+                setAddFormData({
+                    name: '',
+                    email: '',
+                    phone: '',
+                    password: '',
+                    role: 'MEMBER',
+                    branch_id: '',
+                    join_date: new Date().toISOString().split('T')[0],
+                    status: 'ACTIVE',
+                    plan_id: '',
+                    dob: '',
+                    gender: 'MALE',
+                    blood_group: 'O+',
+                    height_cm: '',
+                    weight_kg: '',
+                    fitness_level: 'BEGINNER',
+                    goal_focus: 'GENERAL',
+                    emergency_contact: '',
+                    address_line1: '',
+                    address_line2: '',
+                    country_id: '1',
+                    state_id: '',
+                    district_id: '',
+                    city_id: ''
+                });
+                
+                // Refresh the members list
+                fetchMembers();
+            } else {
+                throw new Error(data.message || 'Failed to add member');
+            }
+        } catch (err) {
+            console.error('Error adding member:', err);
+            alert(`Failed to add member: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const openAddModal = () => {
@@ -504,13 +680,20 @@ const MemberManagement = () => {
                         className="member-filter-select"
                         value={filters.branch_id}
                         onChange={(e) => handleFilterChange('branch_id', e.target.value)}
+                        disabled={dropdownLoading.branches}
                     >
-                        <option value="">All Branches</option>
-                        {branches.map(branch => (
-                            <option key={branch.branch_id} value={branch.branch_id}>
-                                {branch.branch_name}
-                            </option>
-                        ))}
+                        {dropdownLoading.branches ? (
+                            <option value="">Loading branches...</option>
+                        ) : (
+                            <>
+                                <option value="">All Branches</option>
+                                {branches.map(branch => (
+                                    <option key={branch.branch_id} value={branch.branch_id}>
+                                        {branch.branch_name}
+                                    </option>
+                                ))}
+                            </>
+                        )}
                     </select>
                     
                     <button 
@@ -1145,13 +1328,20 @@ const MemberManagement = () => {
                                                 value={addFormData.branch_id}
                                                 onChange={handleAddFormChange}
                                                 required
+                                                disabled={dropdownLoading.branches}
                                             >
-                                                <option value="">Select Branch</option>
-                                                {branches.map(branch => (
-                                                    <option key={branch.branch_id} value={branch.branch_id}>
-                                                        {branch.branch_name} - {branch.city_name}
-                                                    </option>
-                                                ))}
+                                                {dropdownLoading.branches ? (
+                                                    <option value="">Loading branches...</option>
+                                                ) : (
+                                                    <>
+                                                        <option value="">Select Branch</option>
+                                                        {branches.map(branch => (
+                                                            <option key={branch.branch_id} value={branch.branch_id}>
+                                                                {branch.branch_name} - {branch.city_name}
+                                                            </option>
+                                                        ))}
+                                                    </>
+                                                )}
                                             </select>
                                         </div>
                                         <div className="member-form-group">
@@ -1332,13 +1522,20 @@ const MemberManagement = () => {
                                                 value={addFormData.country_id}
                                                 onChange={handleAddFormChange}
                                                 required
+                                                disabled={dropdownLoading.countries}
                                             >
-                                                <option value="">Select Country</option>
-                                                {countries.map(country => (
-                                                    <option key={country.country_id} value={country.country_id}>
-                                                        {country.country_name}
-                                                    </option>
-                                                ))}
+                                                {dropdownLoading.countries ? (
+                                                    <option value="">Loading countries...</option>
+                                                ) : (
+                                                    <>
+                                                        <option value="">Select Country</option>
+                                                        {countries.map(country => (
+                                                            <option key={country.country_id} value={country.country_id}>
+                                                                {country.country_name}
+                                                            </option>
+                                                        ))}
+                                                    </>
+                                                )}
                                             </select>
                                         </div>
                                         <div className="member-form-group">
@@ -1348,14 +1545,20 @@ const MemberManagement = () => {
                                                 value={addFormData.state_id}
                                                 onChange={handleAddFormChange}
                                                 required
-                                                disabled={!addFormData.country_id}
+                                                disabled={!addFormData.country_id || dropdownLoading.states}
                                             >
-                                                <option value="">Select State</option>
-                                                {getFilteredStates().map(state => (
-                                                    <option key={state.state_id} value={state.state_id}>
-                                                        {state.state_name}
-                                                    </option>
-                                                ))}
+                                                {dropdownLoading.states ? (
+                                                    <option value="">Loading states...</option>
+                                                ) : (
+                                                    <>
+                                                        <option value="">Select State</option>
+                                                        {getFilteredStates().map(state => (
+                                                            <option key={state.state_id} value={state.state_id}>
+                                                                {state.state_name}
+                                                            </option>
+                                                        ))}
+                                                    </>
+                                                )}
                                             </select>
                                         </div>
                                         <div className="member-form-group">
@@ -1365,14 +1568,20 @@ const MemberManagement = () => {
                                                 value={addFormData.district_id}
                                                 onChange={handleAddFormChange}
                                                 required
-                                                disabled={!addFormData.state_id}
+                                                disabled={!addFormData.state_id || dropdownLoading.districts}
                                             >
-                                                <option value="">Select District</option>
-                                                {getFilteredDistricts().map(district => (
-                                                    <option key={district.district_id} value={district.district_id}>
-                                                        {district.district_name}
-                                                    </option>
-                                                ))}
+                                                {dropdownLoading.districts ? (
+                                                    <option value="">Loading districts...</option>
+                                                ) : (
+                                                    <>
+                                                        <option value="">Select District</option>
+                                                        {getFilteredDistricts().map(district => (
+                                                            <option key={district.district_id} value={district.district_id}>
+                                                                {district.district_name}
+                                                            </option>
+                                                        ))}
+                                                    </>
+                                                )}
                                             </select>
                                         </div>
                                         <div className="member-form-group">
