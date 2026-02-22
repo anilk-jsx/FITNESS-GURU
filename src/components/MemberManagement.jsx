@@ -368,22 +368,41 @@ const MemberManagement = () => {
     };
 
     const handleEditMember = (member) => {
+        // Populate form with member data, handling cases where profile might not exist
+        const profile = member.profile || {};
+        
         setEditFormData({
             member_id: member.member_id,
-            name: member.name,
-            email: member.email,
-            phone: member.phone,
-            status: member.status,
-            branch_name: member.branch_name,
-            dob: member.profile.dob,
-            gender: member.profile.gender,
-            blood_group: member.profile.blood_group,
-            height_cm: member.profile.height_cm,
-            weight_kg: member.profile.weight_kg,
-            fitness_level: member.profile.fitness_level,
-            goal_focus: member.profile.goal_focus,
-            emergency_contact: member.profile.emergency_contact,
-            address: member.profile.address
+            user_id: member.user_id,
+            name: member.name || '',
+            email: member.email || '',
+            phone: member.phone || '',
+            role: member.role || 'MEMBER',
+            status: member.status || 'ACTIVE',
+            branch_id: member.branch_id || '',
+            branch_name: member.branch_name || '',
+            join_date: member.join_date || profile.join_date || '',
+            plan_id: member.plan_id || profile.plan_id || '',
+            // Profile information
+            dob: profile.dob || '',
+            gender: profile.gender || 'MALE',
+            blood_group: profile.blood_group || 'O+',
+            height_cm: profile.height_cm || '',
+            weight_kg: profile.weight_kg || '',
+            fitness_level: profile.fitness_level || 'BEGINNER',
+            goal_focus: profile.goal_focus || 'GENERAL',
+            emergency_contact: profile.emergency_contact || '',
+            address_line1: profile.address_line1 || '',
+            address_line2: profile.address_line2 || '',
+            address: profile.address || '',
+            // Location data
+            country_id: profile.country_id || member.country_id || '1',
+            state_id: profile.state_id || member.state_id || '',
+            district_id: profile.district_id || member.district_id || '',
+            city_id: profile.city_id || member.city_id || '',
+            // Password fields (for optional password change)
+            new_password: '',
+            confirm_password: ''
         });
         setShowEditModal(true);
         setShowMemberProfile(false);
@@ -396,47 +415,150 @@ const MemberManagement = () => {
         }
     };
 
+    // Enhanced form change handler for edit form
     const handleFormChange = (e) => {
         const { name, value } = e.target;
-        setEditFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setEditFormData(prev => {
+            const updated = { ...prev, [name]: value };
+            
+            // Reset dependent fields when parent changes (for location dropdowns)
+            if (name === 'country_id') {
+                updated.state_id = '';
+                updated.district_id = '';
+                updated.city_id = '';
+            } else if (name === 'state_id') {
+                updated.district_id = '';
+                updated.city_id = '';
+            } else if (name === 'district_id') {
+                updated.city_id = '';
+            } else if (name === 'branch_id') {
+                // Reset plan selection when branch changes
+                updated.plan_id = '';
+            }
+            
+            return updated;
+        });
     };
 
-    const handleSaveChanges = (e) => {
+    const handleSaveChanges = async (e) => {
         e.preventDefault();
         
-        // Update member in the list
-        setMembers(members.map(member => {
-            if (member.member_id === editFormData.member_id) {
-                return {
-                    ...member,
-                    name: editFormData.name,
-                    email: editFormData.email,
-                    phone: editFormData.phone,
-                    status: editFormData.status,
-                    branch_name: editFormData.branch_name,
-                    profile: {
-                        ...member.profile,
-                        dob: editFormData.dob,
-                        gender: editFormData.gender,
-                        blood_group: editFormData.blood_group,
-                        height_cm: parseFloat(editFormData.height_cm),
-                        weight_kg: parseFloat(editFormData.weight_kg),
-                        fitness_level: editFormData.fitness_level,
-                        goal_focus: editFormData.goal_focus,
-                        emergency_contact: editFormData.emergency_contact,
-                        address: editFormData.address
-                    }
-                };
+        // Basic validation
+        if (!editFormData.name.trim()) {
+            alert('Please enter a valid name');
+            return;
+        }
+        
+        if (!editFormData.email.trim()) {
+            alert('Please enter a valid email');
+            return;
+        }
+        
+        if (!editFormData.phone.trim()) {
+            alert('Please enter a valid phone number');
+            return;
+        }
+        
+        // Password validation if passwords are provided
+        if (editFormData.new_password || editFormData.confirm_password) {
+            if (editFormData.new_password !== editFormData.confirm_password) {
+                alert('New password and confirm password do not match');
+                return;
             }
-            return member;
-        }));
-
-        alert('Member information updated successfully!');
-        setShowEditModal(false);
-        setEditFormData(null);
+            if (editFormData.new_password.length < 6) {
+                alert('Password must be at least 6 characters long');
+                return;
+            }
+        }
+        
+        setLoading(true);
+        
+        try {
+            // Prepare update data
+            const updateData = {
+                name: editFormData.name.trim(),
+                email: editFormData.email.trim(),
+                phone: editFormData.phone.trim(),
+                role: editFormData.role,
+                status: editFormData.status === 'ACTIVE' ? 1 : 0,
+                branch_id: parseInt(editFormData.branch_id) || null,
+                join_date: editFormData.join_date,
+                membership_plan: parseInt(editFormData.plan_id) || null,
+                // Profile data
+                dob: editFormData.dob,
+                gender: editFormData.gender,
+                blood_group: editFormData.blood_group,
+                height: parseFloat(editFormData.height_cm) || 0,
+                weight: parseFloat(editFormData.weight_kg) || 0,
+                fitness_level: editFormData.fitness_level,
+                goal_focus: editFormData.goal_focus,
+                emergency_contact: editFormData.emergency_contact,
+                // Address data
+                address_line1: editFormData.address_line1,
+                address_line2: editFormData.address_line2,
+                country: parseInt(editFormData.country_id) || 1,
+                state: parseInt(editFormData.state_id) || null,
+                district: parseInt(editFormData.district_id) || null,
+                city: parseInt(editFormData.city_id) || null
+            };
+            
+            // Add password if provided
+            if (editFormData.new_password) {
+                updateData.password = editFormData.new_password;
+            }
+            
+            // Remove null/undefined values
+            Object.keys(updateData).forEach(key => {
+                if (updateData[key] === null || updateData[key] === undefined || updateData[key] === '') {
+                    delete updateData[key];
+                }
+            });
+            
+            const response = await fetch(buildApiUrl(`users/update`), {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${getAccessToken()}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                const updateMessage = editFormData.new_password ? 
+                    'Member information and password updated successfully! 🎉' : 
+                    'Member information updated successfully! 🎉';
+                alert(updateMessage);
+                setShowEditModal(false);
+                setEditFormData(null);
+                
+                // Refresh the members list to show updated data
+                fetchMembers();
+            } else {
+                throw new Error(data.message || 'Failed to update member');
+            }
+        } catch (err) {
+            console.error('Error updating member:', err);
+            let errorMessage = 'Failed to update member';
+            
+            if (err.message.includes('duplicate') || err.message.includes('unique')) {
+                errorMessage = 'Email or phone number already exists';
+            } else if (err.message.includes('validation')) {
+                errorMessage = 'Please check your input data';
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+            
+            alert(`Error: ${errorMessage}`);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const closeMemberProfile = () => {
@@ -486,6 +608,19 @@ const MemberManagement = () => {
     // TODO: Add cityList API endpoint or handle cities differently
     const getFilteredCities = () => {
         return cities.filter(city => city.district_id === parseInt(addFormData.district_id));
+    };
+
+    // Helper functions for edit form dropdowns
+    const getEditFilteredStates = () => {
+        return states.filter(state => state.country_id === parseInt(editFormData.country_id));
+    };
+
+    const getEditFilteredDistricts = () => {
+        return districts.filter(district => district.state_id === parseInt(editFormData.state_id));
+    };
+
+    const getEditFilteredCities = () => {
+        return cities.filter(city => city.district_id === parseInt(editFormData.district_id));
     };
     
     // Initialize cities with mock data since no API endpoint exists
@@ -1053,6 +1188,20 @@ const MemberManagement = () => {
                                             />
                                         </div>
                                         <div className="member-form-group">
+                                            <label>Role *</label>
+                                            <select
+                                                name="role"
+                                                value={editFormData.role}
+                                                onChange={handleFormChange}
+                                                required
+                                            >
+                                                <option value="MEMBER">Member</option>
+                                                <option value="TRAINER">Trainer</option>
+                                                <option value="STAFF">Staff</option>
+                                                <option value="ADMIN">Admin</option>
+                                            </select>
+                                        </div>
+                                        <div className="member-form-group">
                                             <label>Date of Birth</label>
                                             <input
                                                 type="date"
@@ -1169,17 +1318,57 @@ const MemberManagement = () => {
                                     </h3>
                                     <div className="member-form-grid">
                                         <div className="member-form-group">
-                                            <label>Branch</label>
+                                            <label>Branch *</label>
                                             <select
-                                                name="branch_name"
-                                                value={editFormData.branch_name}
+                                                name="branch_id"
+                                                value={editFormData.branch_id}
                                                 onChange={handleFormChange}
+                                                disabled={dropdownLoading.branches}
+                                                required
                                             >
-                                                <option value="Main Branch">Main Branch</option>
-                                                <option value="North Branch">North Branch</option>
-                                                <option value="South Branch">South Branch</option>
-                                                <option value="East Branch">East Branch</option>
-                                                <option value="West Branch">West Branch</option>
+                                                {dropdownLoading.branches ? (
+                                                    <option value="">Loading branches...</option>
+                                                ) : (
+                                                    <>
+                                                        <option value="">Select Branch</option>
+                                                        {branches.map(branch => (
+                                                            <option key={branch.branch_id} value={branch.branch_id}>
+                                                                {branch.branch_name} - {branch.city_name || branch.address}
+                                                            </option>
+                                                        ))}
+                                                    </>
+                                                )}
+                                            </select>
+                                        </div>
+                                        <div className="member-form-group">
+                                            <label>Join Date *</label>
+                                            <input
+                                                type="date"
+                                                name="join_date"
+                                                value={editFormData.join_date}
+                                                onChange={handleFormChange}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="member-form-group">
+                                            <label>Membership Plan</label>
+                                            <select
+                                                name="plan_id"
+                                                value={editFormData.plan_id}
+                                                onChange={handleFormChange}
+                                                disabled={!editFormData.branch_id}
+                                            >
+                                                <option value="">Select Plan</option>
+                                                {membershipPlans.filter(plan => 
+                                                    plan.is_active && (
+                                                        plan.branch_id === null || // Gym-wide plans
+                                                        plan.branch_id === parseInt(editFormData.branch_id) // Branch-specific plans
+                                                    )
+                                                ).map(plan => (
+                                                    <option key={plan.plan_id} value={plan.plan_id}>
+                                                        {plan.plan_name} - ₹{plan.price} ({plan.duration_days} days)
+                                                    </option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div className="member-form-group">
@@ -1197,11 +1386,11 @@ const MemberManagement = () => {
                                     </div>
                                 </div>
 
-                                {/* Contact Information */}
+                                {/* Contact & Address Information */}
                                 <div className="member-form-section">
                                     <h3 className="member-form-section-title">
-                                        <i className="fas fa-phone"></i>
-                                        Emergency Contact
+                                        <i className="fas fa-map-marker-alt"></i>
+                                        Contact & Address Information
                                     </h3>
                                     <div className="member-form-grid">
                                         <div className="member-form-group">
@@ -1214,26 +1403,172 @@ const MemberManagement = () => {
                                                 placeholder="+91 XXXXX XXXXX"
                                             />
                                         </div>
-                                        <div className="member-form-group member-full-width">
-                                            <label>Address</label>
-                                            <textarea
-                                                name="address"
-                                                value={editFormData.address}
+                                        <div className="member-form-group">
+                                            <label>Country</label>
+                                            <select
+                                                name="country_id"
+                                                value={editFormData.country_id}
                                                 onChange={handleFormChange}
-                                                rows="3"
-                                                placeholder="Enter full address"
+                                                disabled={dropdownLoading.countries}
+                                            >
+                                                {dropdownLoading.countries ? (
+                                                    <option value="">Loading countries...</option>
+                                                ) : (
+                                                    <>
+                                                        <option value="">Select Country</option>
+                                                        {countries.map(country => (
+                                                            <option key={country.country_id} value={country.country_id}>
+                                                                {country.country_name}
+                                                            </option>
+                                                        ))}
+                                                    </>
+                                                )}
+                                            </select>
+                                        </div>
+                                        <div className="member-form-group">
+                                            <label>State</label>
+                                            <select
+                                                name="state_id"
+                                                value={editFormData.state_id}
+                                                onChange={handleFormChange}
+                                                disabled={!editFormData.country_id || dropdownLoading.states}
+                                            >
+                                                {dropdownLoading.states ? (
+                                                    <option value="">Loading states...</option>
+                                                ) : (
+                                                    <>
+                                                        <option value="">Select State</option>
+                                                        {getEditFilteredStates().map(state => (
+                                                            <option key={state.state_id} value={state.state_id}>
+                                                                {state.state_name}
+                                                            </option>
+                                                        ))}
+                                                    </>
+                                                )}
+                                            </select>
+                                        </div>
+                                        <div className="member-form-group">
+                                            <label>District</label>
+                                            <select
+                                                name="district_id"
+                                                value={editFormData.district_id}
+                                                onChange={handleFormChange}
+                                                disabled={!editFormData.state_id || dropdownLoading.districts}
+                                            >
+                                                {dropdownLoading.districts ? (
+                                                    <option value="">Loading districts...</option>
+                                                ) : (
+                                                    <>
+                                                        <option value="">Select District</option>
+                                                        {getEditFilteredDistricts().map(district => (
+                                                            <option key={district.district_id} value={district.district_id}>
+                                                                {district.district_name}
+                                                            </option>
+                                                        ))}
+                                                    </>
+                                                )}
+                                            </select>
+                                        </div>
+                                        <div className="member-form-group">
+                                            <label>City</label>
+                                            <select
+                                                name="city_id"
+                                                value={editFormData.city_id}
+                                                onChange={handleFormChange}
+                                                disabled={!editFormData.district_id}
+                                            >
+                                                <option value="">Select City</option>
+                                                {getEditFilteredCities().map(city => (
+                                                    <option key={city.city_id} value={city.city_id}>
+                                                        {city.city_name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="member-form-group member-full-width">
+                                            <label>Address Line 1</label>
+                                            <input
+                                                type="text"
+                                                name="address_line1"
+                                                value={editFormData.address_line1}
+                                                onChange={handleFormChange}
+                                                placeholder="Building, Street Address"
                                             />
                                         </div>
+                                        <div className="member-form-group member-full-width">
+                                            <label>Address Line 2</label>
+                                            <input
+                                                type="text"
+                                                name="address_line2"
+                                                value={editFormData.address_line2}
+                                                onChange={handleFormChange}
+                                                placeholder="Landmark, Area (Optional)"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Password Change Section (Optional) */}
+                                <div className="member-form-section">
+                                    <h3 className="member-form-section-title">
+                                        <i className="fas fa-lock"></i>
+                                        Password Change (Optional)
+                                    </h3>
+                                    <div className="member-form-grid">
+                                        <div className="member-form-group">
+                                            <label>New Password</label>
+                                            <input
+                                                type="password"
+                                                name="new_password"
+                                                value={editFormData.new_password}
+                                                onChange={handleFormChange}
+                                                placeholder="Leave blank to keep current password"
+                                                minLength="6"
+                                            />
+                                        </div>
+                                        <div className="member-form-group">
+                                            <label>Confirm New Password</label>
+                                            <input
+                                                type="password"
+                                                name="confirm_password"
+                                                value={editFormData.confirm_password}
+                                                onChange={handleFormChange}
+                                                placeholder="Confirm new password"
+                                                minLength="6"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="member-form-note">
+                                        <i className="fas fa-info-circle"></i>
+                                        <span>Leave password fields blank to keep the current password unchanged.</span>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="member-modal-footer">
-                                <button type="submit" className="member-modal-btn member-save">
-                                    <i className="fas fa-save"></i>
-                                    Save Changes
+                                <button 
+                                    type="submit" 
+                                    className="member-modal-btn member-save"
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <>
+                                            <i className="fas fa-spinner fa-spin"></i>
+                                            Updating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <i className="fas fa-save"></i>
+                                            Save Changes
+                                        </>
+                                    )}
                                 </button>
-                                <button type="button" className="member-modal-btn member-cancel" onClick={closeEditModal}>
+                                <button 
+                                    type="button" 
+                                    className="member-modal-btn member-cancel" 
+                                    onClick={closeEditModal}
+                                    disabled={loading}
+                                >
                                     <i className="fas fa-times"></i>
                                     Cancel
                                 </button>

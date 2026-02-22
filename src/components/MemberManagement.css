@@ -20,7 +20,7 @@
 
 .member-page-subtitle {
     font-size: 1rem;
-    color: #7f8c8d;
+    color: white;
     margin: 0;
 }
 
@@ -1096,4 +1096,39 @@
         flex-wrap: wrap;
         justify-content: center;
     }
+}
+
+/* Form Note Styling */
+.member-form-note {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: #e8f4fd;
+    border: 1px solid #bee5eb;
+    border-radius: 6px;
+    color: #0c5460;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.member-form-note i {
+    color: #17a2b8;
+    font-size: 1rem;
+}
+
+.member-form-note span {
+    line-height: 1.4;
+}
+
+/* Enhanced password field styling */
+.member-form-section input[type="password"] {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.member-form-section input[type="password"]:focus {
+    background-color: #ffffff;
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
