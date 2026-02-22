@@ -797,6 +797,13 @@ const MemberManagement = () => {
         );
     };
 
+    // Get branch name from branch_id
+    const getBranchName = (branchId) => {
+        if (!branchId) return 'N/A';
+        const branch = branches.find(b => b.branch_id === branchId);
+        return branch ? branch.branch_name : `Branch ${branchId}`;
+    };
+
     const handleAddFormChange = (e) => {
         const { name, value } = e.target;
         setAddFormData(prev => {
@@ -1047,7 +1054,7 @@ const MemberManagement = () => {
                                     <th>Email</th>
                                     <th>Phone</th>
                                     <th>Join Date</th>
-                                    <th>Branch ID</th>
+                                    <th>Branch Name</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -1063,7 +1070,7 @@ const MemberManagement = () => {
                                         <td>{member.email}</td>
                                         <td>{member.phone}</td>
                                         <td>{formatDate(member.createdDate)}</td>
-                                        <td>{member.branch_id || 'N/A'}</td>
+                                        <td>{getBranchName(member.branch_id)}</td>
                                         <td>
                                             <span className={`member-status-badge ${getStatusBadgeClass(member.status)}`}>
                                                 {member.status}
@@ -1083,13 +1090,6 @@ const MemberManagement = () => {
                                                 title="Edit Member"
                                             >
                                                 <i className="fas fa-edit"></i>
-                                            </button>
-                                            <button 
-                                                className="member-action-icon member-delete-btn"
-                                                onClick={() => handleDeleteMember(member)}
-                                                title="Delete Member"
-                                            >
-                                                <i className="fas fa-trash"></i>
                                             </button>
                                         </td>
                                     </tr>
