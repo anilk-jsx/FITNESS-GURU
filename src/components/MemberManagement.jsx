@@ -566,6 +566,7 @@ const MemberManagement = () => {
                     const data = await response.json();
                     if (data.status === 'success') {
                         detailedMember = data.data;
+                        console.log('🔍 Raw API Response for member:', detailedMember);
                     }
                 }
             } catch (error) {
@@ -580,12 +581,21 @@ const MemberManagement = () => {
         }
         
         // Populate form with detailed member data
-        setEditFormData({
+        console.log('🔍 All fields in detailedMember:', Object.keys(detailedMember));
+        console.log('🔍 Membership-related fields:', {
+            membership_plan: detailedMember.membership_plan,
+            plan_id: detailedMember.plan_id,
+            membership_plan_id: detailedMember.membership_plan_id,
+            current_plan: detailedMember.current_plan,
+            branch_id: detailedMember.branch_id
+        });
+        
+        const formData = {
             user_id: detailedMember.user_id,
             name: detailedMember.name || '',
             email: detailedMember.email || '',
             phone: detailedMember.phone || '',
-            status: detailedMember.status || 1,
+            status: detailedMember.status === 1 ? 'ACTIVE' : detailedMember.status === 0 ? 'INACTIVE' : 'ACTIVE',
             
             // Profile information  
             dob: detailedMember.date_of_birth || '',
@@ -598,26 +608,80 @@ const MemberManagement = () => {
             fitness_level: detailedMember.fitness_level || '',
             goal_focus: detailedMember.goal_focus || '',
             
-            // Gym and membership
+            // Gym and membership - try multiple possible field names
             branch_id: detailedMember.branch_id || '',
-            membership_plan: detailedMember.membership_plan || '',
+            membership_plan: parseInt(detailedMember.membership_plan) || 
+                           parseInt(detailedMember.plan_id) || 
+                           parseInt(detailedMember.membership_plan_id) || 
+                           parseInt(detailedMember.current_plan) || '',
             join_date: detailedMember.date_of_joining || '',
             
-            // Contact and address
+            // Contact and address - using consistent property names
             emergency_contact: detailedMember.emergency_contact || '',
-            country: detailedMember.country_id || 1,
-            state: detailedMember.state_id || '',
-            district: detailedMember.district_id || '',
-            city: detailedMember.city_id || '',
+            country: parseInt(detailedMember.country_id) || 1,
+            state: parseInt(detailedMember.state_id) || '',
+            district_id: parseInt(detailedMember.district_id) || '',
+            city_id: parseInt(detailedMember.city_id) || '',
             address_line1: detailedMember.address_line1 || '',
             address_line2: detailedMember.address_line2 || '',
             
             // Password fields (optional)
             new_password: '',
             confirm_password: ''
-        });
+        };
         
-        setShowEditModal(true);
+        console.log('🎯 Final formData created:', formData);
+        console.log('🎯 membership_plan value to set:', formData.membership_plan);
+        
+// Load dropdown data in sequence FIRST, then set form data
+        const loadEditFormDropdowns = async () => {
+            try {
+                // Clear existing membership plans to avoid stale data
+                setMembershipPlans([]);
+                
+                // Always load branches first
+                await fetchBranches(1);
+                
+                // Load membership plans for the selected branch FIRST to ensure they're available
+                if (detailedMember.branch_id) {
+                    await fetchMembershipPlans(1, detailedMember.branch_id);
+                    console.log('🎯 Loaded membership plans for branch:', detailedMember.branch_id);
+                    console.log('🎯 Available membership plans after loading:', membershipPlans);
+                }
+                
+                // Load location data in sequence if we have the IDs
+                if (formData.country) {
+                    await fetchStates(formData.country);
+                }
+                if (formData.state) {
+                    await fetchDistricts(formData.state);
+                }
+                if (formData.district_id) {
+                    await fetchCities(formData.district_id);
+                }
+                
+                // Now set the form data AFTER all dropdowns are loaded
+                console.log('🎯 About to set form data:', formData);
+                setEditFormData(formData);
+                
+                // Add small delay to ensure state updates
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                console.log('🎯 Form data set, showing modal');
+                
+                // Show the modal only after everything is loaded
+                setShowEditModal(true);
+                
+            } catch (error) {
+                console.error('Error loading dropdown data for edit form:', error);
+                // Set form data and show modal even if there's an error loading dropdowns
+                setEditFormData(formData);
+                setShowEditModal(true);
+            }
+        };
+
+        // Load dropdown data first, then set form data and show modal
+        loadEditFormDropdowns();
         setShowMemberProfile(false);
     };
 
@@ -637,13 +701,13 @@ const MemberManagement = () => {
             // Reset dependent fields when parent changes (for location dropdowns)
             if (name === 'country') {
                 updated.state = '';
-                updated.district = '';
-                updated.city = '';
+                updated.district_id = '';
+                updated.city_id = '';
             } else if (name === 'state') {
-                updated.district = '';
-                updated.city = '';
-            } else if (name === 'district') {
-                updated.city = '';
+                updated.district_id = '';
+                updated.city_id = '';
+            } else if (name === 'district_id') {
+                updated.city_id = '';
             } else if (name === 'branch_id') {
                 // Reset plan selection when branch changes
                 updated.membership_plan = '';
@@ -887,7 +951,7 @@ const MemberManagement = () => {
 
     const getEditFilteredCities = () => {
         return cities.filter(city => 
-            city.district_id === parseInt(editFormData.district) &&
+            city.district_id === parseInt(editFormData.district_id) &&
             city.status === 'ACTIVE'
         );
     };
@@ -1834,8 +1898,8 @@ const MemberManagement = () => {
                                         <div className="member-form-group">
                                             <label>Membership Plan</label>
                                             <select
-                                                name="plan_id"
-                                                value={editFormData.plan_id}
+                                                name="membership_plan"
+                                                value={editFormData.membership_plan}
                                                 onChange={handleFormChange}
                                                 disabled={!editFormData.branch_id}
                                             >
@@ -1845,11 +1909,15 @@ const MemberManagement = () => {
                                                         plan.branch_id === null || // Gym-wide plans
                                                         plan.branch_id === parseInt(editFormData.branch_id) // Branch-specific plans
                                                     )
-                                                ).map((plan, index) => (
-                                                    <option key={`edit-plan-${plan.plan_id}-${index}`} value={plan.plan_id}>
-                                                        {plan.plan_name} - ₹{plan.price} ({plan.duration_days} days)
-                                                    </option>
-                                                ))}
+                                                ).map((plan, index) => {
+                                                    // Debug log to check plan values
+                                                    console.log(`Plan ${index}: ID=${plan.plan_id}, Name=${plan.plan_name}, Selected=${editFormData.membership_plan}`);
+                                                    return (
+                                                        <option key={`edit-plan-${plan.plan_id}-${index}`} value={plan.plan_id}>
+                                                            {plan.plan_name} - ₹{plan.price} ({plan.duration_days} days)
+                                                        </option>
+                                                    );
+                                                })}
                                             </select>
                                         </div>
                                         <div className="member-form-group">
@@ -1887,8 +1955,8 @@ const MemberManagement = () => {
                                         <div className="member-form-group">
                                             <label>Country</label>
                                             <select
-                                                name="country_id"
-                                                value={editFormData.country_id}
+                                                name="country"
+                                                value={editFormData.country}
                                                 onChange={handleFormChange}
                                                 disabled={dropdownLoading.countries}
                                             >
@@ -1909,10 +1977,10 @@ const MemberManagement = () => {
                                         <div className="member-form-group">
                                             <label>State</label>
                                             <select
-                                                name="state_id"
-                                                value={editFormData.state_id}
+                                                name="state"
+                                                value={editFormData.state}
                                                 onChange={handleFormChange}
-                                                disabled={!editFormData.country_id || dropdownLoading.states}
+                                                disabled={!editFormData.country || dropdownLoading.states}
                                             >
                                                 {dropdownLoading.states ? (
                                                     <option key="loading-states-edit" value="">Loading states...</option>
@@ -1934,7 +2002,7 @@ const MemberManagement = () => {
                                                 name="district_id"
                                                 value={editFormData.district_id}
                                                 onChange={handleFormChange}
-                                                disabled={!editFormData.state_id || dropdownLoading.districts}
+                                                disabled={!editFormData.state || dropdownLoading.districts}
                                             >
                                                 {dropdownLoading.districts ? (
                                                     <option key="loading-districts-edit" value="">Loading districts...</option>
