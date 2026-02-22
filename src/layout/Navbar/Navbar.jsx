@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import tokenManager from '../../utils/tokenManager';
 import './Navbar.css';
 
 const Navbar = ({ userData = { name: 'John Doe', email: 'john.doe@example.com' } }) => {
@@ -31,11 +32,12 @@ const Navbar = ({ userData = { name: 'John Doe', email: 'john.doe@example.com' }
   const handleLogout = async () => {
     if (window.confirm('Are you sure you want to logout?')) {
       try {
-        const accessToken = localStorage.getItem('access_token');
-        const refreshToken = localStorage.getItem('refresh_token');
+        const accessToken = tokenManager.getAccessToken();
+        const refreshToken = tokenManager.getRefreshToken();
 
         if (accessToken && refreshToken) {
-          await fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
+          await fetch(`${API_BASE_URL}/api/auth/logout`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -49,10 +51,8 @@ const Navbar = ({ userData = { name: 'John Doe', email: 'john.doe@example.com' }
       } catch (err) {
         console.error('Logout error:', err);
       } finally {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
-        window.location.href = '/';
+        // Use tokenManager logout method
+        tokenManager.logout();
       }
     }
   };

@@ -1,18 +1,15 @@
 import { Navigate } from 'react-router-dom';
+import tokenManager from './tokenManager';
 
 const ProtectedRoute = ({ children, adminOnly = false }) => {
-  const token = localStorage.getItem('access_token');
-  const user = localStorage.getItem('user');
-  
-  if (!token || !user) {
+  // Check if user is authenticated
+  if (!tokenManager.isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
   
-  if (adminOnly) {
-    const userData = JSON.parse(user);
-    if (userData.role !== 'ADMIN' && userData.role !== 'OWNER') {
-      return <Navigate to="/dashboard" replace />;
-    }
+  // Check admin access if required
+  if (adminOnly && !tokenManager.isAdmin()) {
+    return <Navigate to="/dashboard" replace />;
   }
   
   return children;

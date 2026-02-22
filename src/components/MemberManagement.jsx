@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './MemberManagement.css';
+import tokenManager from '../utils/tokenManager';
 
 const MemberManagement = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -96,20 +97,14 @@ const MemberManagement = () => {
         return `${API_BASE_URL}${basePath}/${endpoint}`;
     };
     
-    // Get access token from localStorage or context
-    const getAccessToken = () => {
-        return localStorage.getItem('access_token') || '';
-    };
-    
     // Fetch countries from API
     const fetchCountries = async () => {
         setDropdownLoading(prev => ({ ...prev, countries: true }));
         try {
             const apiUrl = buildApiUrl('countryList');
-            const response = await fetch(apiUrl, {
+            const response = await tokenManager.apiCall(apiUrl, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${getAccessToken()}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -140,10 +135,9 @@ const MemberManagement = () => {
         setDropdownLoading(prev => ({ ...prev, states: true }));
         try {
             const apiUrl = buildApiUrl('stateList');
-            const response = await fetch(apiUrl, {
+            const response = await tokenManager.apiCall(apiUrl, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${getAccessToken()}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -179,10 +173,9 @@ const MemberManagement = () => {
         setDropdownLoading(prev => ({ ...prev, districts: true }));
         try {
             const apiUrl = buildApiUrl('districtList');
-            const response = await fetch(apiUrl, {
+            const response = await tokenManager.apiCall(apiUrl, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${getAccessToken()}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -220,10 +213,9 @@ const MemberManagement = () => {
         setDropdownLoading(prev => ({ ...prev, branches: true }));
         try {
             const apiUrl = buildApiUrl('gymBranchList');
-            const response = await fetch(apiUrl, {
+            const response = await tokenManager.apiCall(apiUrl, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${getAccessToken()}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -271,10 +263,9 @@ const MemberManagement = () => {
             if (filters.gym_id) queryParams.append('gym_id', filters.gym_id);
             if (filters.branch_id) queryParams.append('branch_id', filters.branch_id);
             
-            const response = await fetch(buildApiUrl(`users/list?${queryParams}`), {
+            const response = await tokenManager.apiCall(buildApiUrl(`users/list?${queryParams}`), {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${getAccessToken()}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -514,10 +505,9 @@ const MemberManagement = () => {
                 }
             });
             
-            const response = await fetch(buildApiUrl(`users/update`), {
+            const response = await tokenManager.apiCall(buildApiUrl(`users/update`), {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${getAccessToken()}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(updateData)
@@ -703,10 +693,9 @@ const MemberManagement = () => {
                 emergency_contact: addFormData.emergency_contact
             };
             
-            const response = await fetch(buildApiUrl('addMember'), {
+            const response = await tokenManager.apiCall(buildApiUrl('addMember'), {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${getAccessToken()}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(memberData)

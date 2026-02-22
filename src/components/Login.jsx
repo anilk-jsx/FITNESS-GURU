@@ -4,6 +4,7 @@ import "./Login.css";
 import logo from "../assets/FGlogo.png";
 import { Link } from 'react-router-dom';
 import bgImg from "../assets/heroImg/home7.avif"; // Use your preferred background image
+import tokenManager from '../utils/tokenManager';
 
 
 export default function Login() {
@@ -20,7 +21,8 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -34,9 +36,9 @@ export default function Login() {
       const data = await response.json();
 
       if (data.status === "success") {
-        localStorage.setItem("access_token", data.tokens.access_token);
-        localStorage.setItem("refresh_token", data.tokens.refresh_token);
-        localStorage.setItem("user", JSON.stringify(data.user));
+        // Use tokenManager to store tokens and user data
+        tokenManager.setTokens(data.tokens.access_token, data.tokens.refresh_token);
+        tokenManager.setUserData(data.user);
 
         if (data.user.role === "ADMIN" || data.user.role === "OWNER") {
           navigate("/admin-dashboard");

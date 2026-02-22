@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../layout/DashboardLayout';
+import tokenManager from '../utils/tokenManager';
 import './Dashboard.css';
 
 /**
@@ -285,17 +286,16 @@ const Dashboard = () => {
     const fetchUserProfile = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('access_token');
         
-        if (!token) {
+        if (!tokenManager.isAuthenticated()) {
           setError('No authentication token found');
           return;
         }
 
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/profile`, {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
+        const response = await tokenManager.apiCall(`${API_BASE_URL}/api/users/profile`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
