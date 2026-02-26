@@ -96,7 +96,7 @@
   transform-style: preserve-3d;
   will-change: transform;
 }
-.trainer-card.flipped .card-inner {
+.trainer-card:hover .card-inner {
   transform: rotateY(180deg);
 }
 /* Card styling */

@@ -1,465 +1,432 @@
-/* Layer 1: Viewport Pin - The Stage */
-.timeline-container {
-  height: 400vh; /* Creates scroll distance for the effect */
+.timeline-section-container {
   position: relative;
-}
-
-.timeline-viewport {
-  position: sticky;
-  top: 0;
-  height: 100vh;
   overflow: hidden;
-  background: #000;
 }
 
-/* Hide scrollbar for all browsers */
-body {
-  /* Hide scrollbar for IE, Edge and Firefox */
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* Hide scrollbar for Chrome, Safari and Opera */
-body::-webkit-scrollbar {
-  display: none;
-}
-
-html {
-  /* Hide scrollbar for IE, Edge and Firefox */
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* Hide scrollbar for Chrome, Safari and Opera */
-html::-webkit-scrollbar {
-  display: none;
-}
-
-/* Layer 3: SVG Thread - The Connecting Line */
-.timeline-svg {
+.animated-bubbles {
   position: absolute;
-  top: 50%;
-  left: 0;
-  width: 100%;
-  height: 100px;
-  z-index: 5;
-  transform: translateY(-50%);
+  inset: 0;
+  z-index: 0;
   pointer-events: none;
 }
 
-.timeline-path {
-  transition: stroke-dashoffset 0.1s ease-out;
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(0px);
+  opacity: 0.07;
+  animation: floatBubble 18s infinite ease-in-out alternate;
 }
 
-/* Layer 2: Horizontal Track - The Slide Movement */
-.timeline-track {
-  display: flex;
-  height: 100%;
-  width: max-content;
-  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform;
-}
-
-.timeline-event {
-  width: 100vw;
-  height: 100vh;
-  flex-shrink: 0;
+.timeline-header,
+.vertical-timeline {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-/* Slide transition effects */
-.timeline-event.active {
-  transform: scale(1.01);
-  transition: transform 0.6s ease-out;
-}
-
-.timeline-event:not(.active) {
-  transform: scale(0.98);
-  transition: transform 0.6s ease-out;
-}
-
-/* Layer 4: Parallax Content - The "Morph" Depth */
-
-/* Background Layer - Slow parallax movement */
-.event-background {
-  position: absolute;
-  inset: 0;
-  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform;
-}
-
-.bg-image {
-  position: absolute;
-  width: 400px;
-  height: 300px;
-  object-fit: cover;
-  border-radius: 12px;
-  opacity: 0.15;
-  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.bg-image.animate-on-scroll {
-  transform: translateX(var(--initial-x, 0)) translateY(var(--initial-y, 0)) rotate(0deg) scale(0.5);
-  animation: slideIntoPosition 1.2s ease-out forwards;
-  animation-delay: var(--delay, 0s);
-}
-
-.bg-image-1 {
-  top: 10%;
-  left: 5%;
-}
-
-.bg-image-2 {
-  top: 60%;
-  right: 10%;
-}
-
-.bg-image-3 {
-  top: 30%;
-  left: 60%;
-}
-
-/* Foreground Content - Full speed */
-.event-content {
-  position: relative;
-  z-index: 10;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-}
-
-.event-year {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: clamp(3rem, 8vw, 6rem);
-  font-weight: 700;
-  color: #fff;
-  text-align: center;
-  z-index: 15;
-  text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
-  opacity: 0;
-  animation: fadeInScale 1s ease-out 0.5s forwards;
-}
-
-.event-images {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  z-index: 12;
-}
-
-.event-image-card {
-  position: absolute;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease;
-  transform-style: preserve-3d;
-}
-
-.event-image-card.animate-on-scroll {
-  transform: translateX(var(--initial-x, 0)) translateY(var(--initial-y, 0)) rotate(var(--initial-rotation, 0deg)) scale(var(--initial-scale, 0.3));
-  opacity: 0;
-  animation: slideAndFadeIn 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  animation-delay: var(--delay, 0s);
-}
-
-.event-image-card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Event image cards with continuous transitions */
-.event-image-card {
-  position: absolute;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-  transform-style: preserve-3d;
-}
-
-.event-image-card.continuous-transition {
-  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform, opacity;
-}
-
-.event-image-card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Different card sizes for variety */
-.card-1 {
-  width: 280px;
-  height: 200px;
-}
-
-.card-2 {
-  width: 320px;
-  height: 240px;
-}
-
-.card-3 {
-  width: 260px;
-  height: 180px;
-}
-
-.event-text {
-  position: absolute;
-  bottom: 8%;
-  left: 8%;
-  max-width: 500px;
-  background: rgba(0,0,0,0.85);
-  padding: 24px;
-  border-radius: 12px;
-  color: #fff;
-  z-index: 16;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.1);
-  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform, opacity;
-}
-
-.event-text h3 {
-  font-size: 1.8rem;
-  margin: 0 0 12px 0;
-  color: #ff6b35;
-}
-
-.event-text p {
-  font-size: 1rem;
-  line-height: 1.6;
-  margin: 0;
-  opacity: 0.9;
-  font-style: italic;
-}
-
-/* Continuous animation system - smooth transitions */
-.timeline-event .event-year {
-  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform, opacity;
-}
-
-
-/* Active event emphasis */
-.timeline-event.active .event-content {
-  transform: scale(1.01);
-}
-
-.timeline-event.active .event-text {
-  transform: translateY(0);
-  opacity: 1;
-}
-
-.timeline-event:not(.active) .event-text {
-  transform: translateY(20px);
-  opacity: 0.6;
-}
-
-/* Active event scaling and focus effects */
-.timeline-event.active .event-content {
-  transform: scale(1.02);
-}
-
-.timeline-event.active .event-year {
-  transform: translate(-50%, -50%) scale(1.1);
-  color: #ff6b35;
-}
-
-.timeline-event.active .event-text {
-  transform: translateY(0);
-  opacity: 1;
-}
-
-/* Non-active events fade slightly */
-.timeline-event:not(.active) .event-content {
-  opacity: 0.7;
-}
-
-.timeline-event:not(.active) .event-text {
-  transform: translateY(20px);
-  opacity: 0.6;
-}
-
-/* Mobile Layout Styles */
-.timeline-container.mobile-layout {
-  height: 400vh; /* Increase height for more scrolling space */
-  position: relative;
-  background: #000;
-}
-
-.mobile-timeline {
-  position: sticky;
-  top: 0;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
-}
-
-/* Static Background Content */
-.mobile-bg-content {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 30%, #0f0f0f 70%, #0a0a0a 100%);
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0 2rem;
-}
-
-.mobile-hero-text {
-  max-width: 90%;
-  color: white;
   z-index: 2;
 }
 
-.mobile-hero-text h1 {
+.bubble-1 {
+  width: 300px;
+  height: 300px;
+  background: #ff7a00;
+  top: 10%;
+  left: -5%;
+  animation-duration: 22s;
+}
+
+.bubble-2 {
+  width: 400px;
+  height: 400px;
+  background: #ff7a00;
+  bottom: 5%;
+  right: -10%;
+  animation-duration: 25s;
+}
+
+.bubble-3 {
+  width: 250px;
+  height: 250px;
+  background: #1e90ff;
+  top: 50%;
+  left: 60%;
+  animation-duration: 20s;
+}
+
+.bubble-4 {
+  width: 200px;
+  height: 200px;
+  background: #ff7a00;
+  bottom: 20%;
+  left: 30%;
+  animation-duration: 18s;
+}
+
+.bubble-5{
+  width: 200px;
+  height: 200px;
+  background: #1e90ff;
+  top: 20%;
+  right: 20%;
+  animation-duration: 24s;
+}
+
+/* Floating Animation */
+
+@keyframes floatBubble {
+  0% {
+    transform: translateY(0px) translateX(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-40px) translateX(20px) scale(1.1);
+  }
+  100% {
+    transform: translateY(30px) translateX(-20px) scale(0.95);
+  }
+}
+
+.timeline-section-container {
+  background: linear-gradient(135deg, #000000 0%, #3a2d1a 50%, #000000 100%);
+  color: white;
+  padding: 4rem 2rem;
+  min-height: 100%;
+}
+
+.timeline-header {
+  text-align: center;
+  margin-bottom: 5rem;
+}
+
+.timeline-header h2 {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #ff6b35;
-  margin: 0 0 0.5rem 0;
-  text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
-}
-
-.mobile-hero-text h2 {
-  font-size: 1.8rem;
-  font-weight: 600;
+  letter-spacing: 1px;
   color: #fff;
-  margin: 0 0 1.5rem 0;
-  text-shadow: 1px 1px 5px rgba(0,0,0,0.7);
-}
-
-.mobile-hero-text p {
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: #e0e0e0;
   margin: 0;
-  opacity: 0.9;
 }
 
-.mobile-hero-text strong {
-  color: #ff6b35;
-  font-weight: 600;
+.vertical-timeline {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 0;
 }
 
-/* Flowing Images */
-.mobile-images-flow {
+.timeline-spine {
   position: absolute;
+  left: 3%;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  z-index: 3;
-  pointer-events: none;
-  overflow: hidden;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, #d45c00 0%, #444 50%, #dc7500 100%);
+  box-shadow: 0 0 20px rgba(255, 122, 0, 0.4);
+  transform: translateX(-50%);
 }
 
-.mobile-flow-image {
+.timeline-item {
+  display: flex;
+  margin-bottom: 10rem;
+  opacity: 0.4;
+  transform: translateY(40px);
+  transition: all 0.3s ease;
+}
+
+.timeline-item.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.timeline-marker {
+  width: 60px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  position: relative;
+  padding-top: 20px;
+}
+
+.marker-dot {
+  width: 14px;
+  height: 14px;
+  background: #555;
+  border-radius: 50%;
+  transition: all 0.4s ease;
+}
+
+.timeline-item.active .marker-dot {
+  width: 22px;
+  height: 22px;
+  background: #ff7a00;
+  box-shadow: 0 0 25px rgba(255, 122, 0, 0.7);
+}
+
+.timeline-content {
+  flex: 1;
+  display: flex;
+  gap: 3rem;
+  align-items: flex-start;
+}
+
+.content-left {
+  flex: 0 0 35%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.year-range {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.year-label {
+  font-size: 1.5rem;
+  color: #d47500;
+  font-weight: 600;
+  transition: all 0.5s ease;
+}
+
+.timeline-item.active .year-label {
+  font-size: 1.8rem;
+  text-shadow: 0 0 20px rgba(212, 120, 0, 0.5);
+}
+
+.year-badge {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #666;
+  line-height: 1;
+  margin: 0;
+  transition: all 0.6s ease;
+  letter-spacing: -1px;
+  opacity: 0.5;
+}
+
+.timeline-item.active .year-badge {
+  color: #ff7a00;
+  opacity: 1;
+  transform: scale(1.1);
+  text-shadow: 0 0 30px rgba(255, 122, 0, 0.4);
+}
+
+.text-content h3 {
+  font-size: 1.2rem;
+  color: #fff;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.5s ease;
+}
+
+.timeline-item.active .text-content h3 {
+  color: #d48600;
+}
+
+.text-content p {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #aaa;
+  margin: 0;
+  transition: color 0.5s ease;
+}
+
+.timeline-item.active .text-content p {
+  color: #ccc;
+}
+
+.content-right {
+  flex: 1;
+  position: relative;
+  min-height: 400px;
+}
+
+.images-collage {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  margin-top: 30px;
+  transform-style: preserve-3d;
+}
+
+.collage-image {
   position: absolute;
-  width: 280px;
-  height: 220px;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-  transition: transform 0.1s ease-out, opacity 0.3s ease-in-out;
-  opacity: 0; /* Start hidden */
-  transform-origin: center;
-  backface-visibility: hidden;
-  will-change: transform, opacity;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+  transition: all 0.6s ease;
+  transform: scale(0.9) translateY(20px);
+  opacity: 0.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111;
 }
 
-.mobile-flow-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: translateZ(0); /* Hardware acceleration */
+.collage-image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
-/* Mobile responsive adjustments */
-@media (max-width: 480px) {
-  .mobile-hero-text h1 {
-    font-size: 2rem;
-  }
-  
-  .mobile-hero-text h2 {
-    font-size: 1.4rem;
-  }
-  
-  .mobile-hero-text p {
-    font-size: 0.85rem;
-  }
-  
-  .mobile-flow-image {
-    width: 120px;
-    height: 95px;
-  }
-  
-  .mobile-bg-content {
-    padding: 0 1rem;
-  }
+.timeline-item.active .collage-image {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  filter: blur(0);
 }
 
-/* Hide desktop timeline on mobile */
-@media (max-width: 768px) {
-  .timeline-container:not(.mobile-layout) .timeline-viewport {
-    display: none;
-  }
-  
-  .timeline-container.mobile-layout .timeline-viewport {
-    display: none;
-  }
+.timeline-item.active .collage-image img {
+  box-shadow: 0 0 40px rgba(255, 122, 0, 0.3);
 }
 
-/* Responsive adjustments for desktop */
-@media (min-width: 769px) {
-  .timeline-container.mobile-layout {
-    height: 400vh; /* Reset to desktop behavior */
-  }
-  
-  .mobile-timeline {
-    display: none;
-  }
-  
-  .timeline-viewport {
-    display: block !important;
-  }
+.collage-0 {
+  width: 240px; 
+  height: 160px;
+  top: 20px;
+  left: 0;
+  z-index: 3;
+  transition-delay: 0s;
 }
 
-/* Original responsive adjustments */
-@media (max-width: 768px) {
-  .event-year {
-    font-size: clamp(2rem, 12vw, 4rem);
+.timeline-item.active .collage-0 {
+  transform: scale(1) translateY(0) rotate(0deg);
+}
+
+.collage-1 {
+  width: 240px; 
+  height: 160px;
+  top: 0;
+  right: 80px;
+  z-index: 2;
+  transition-delay: 0.1s;
+}
+
+.timeline-item.active .collage-1 {
+  transform: scale(1) translateY(0) rotate(1deg);
+}
+
+.collage-2 {
+  width: 240px; 
+  height: 160px;
+  bottom: 20px;
+  right: 0;
+  z-index: 1;
+  transition-delay: 0.2s;
+}
+
+.timeline-item.active .collage-2 {
+  transform: scale(1) translateY(0) rotate(-1deg);
+}
+
+@media (max-width: 1024px) {
+  .year-badge {
+    font-size: 3.5rem;
   }
-  
-  .card-1, .card-2, .card-3 {
+
+  .timeline-item.active .year-badge {
+    font-size: 4rem;
+  }
+
+  .content-right {
+    min-height: 320px;
+  }
+
+  .images-collage {
+    height: 320px;
+  }
+
+  .collage-0 {
+    width: 160px;
+    height: 160px;
+  }
+
+  .collage-1 {
+    width: 180px;
+    height: 140px;
+  }
+
+  .collage-2 {
     width: 200px;
-    height: 150px;
+    height: 140px;
   }
-  
-  .event-text {
-    max-width: 300px;
-    padding: 16px;
-    bottom: 5%;
-    left: 5%;
+}
+
+@media (max-width: 768px) {
+  .timeline-section-container {
+    padding: 2rem 1rem;
   }
-  
-  .bg-image {
-    width: 250px;
-    height: 180px;
+
+  .timeline-header h2 {
+    font-size: 1.8rem;
+  }
+
+  .vertical-timeline {
+    padding: 2rem 0;
+  }
+
+  .timeline-spine {
+    left: 15px;
+  }
+
+  .timeline-item {
+    flex-direction: column;
+    gap: 2rem;
+    margin-bottom: 4rem;
+  }
+
+  .timeline-marker {
+    width: 40px;
+  }
+
+  .timeline-content {
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+  }
+
+  .content-left {
+    flex: 1;
+  }
+
+  .content-right {
+    flex: 1;
+    width: 100%;
+    min-height: 300px;
+  }
+
+  .images-collage {
+    height: 300px;
+  }
+
+  .year-badge {
+    font-size: 2.5rem;
+  }
+
+  .timeline-item.active .year-badge {
+    font-size: 3rem;
+  }
+
+  .collage-0 {
+    width: 120px;
+    height: 120px;
+  }
+
+  .collage-1 {
+    width: 140px;
+    height: 110px;
+  }
+
+  .collage-2 {
+    width: 150px;
+    height: 110px;
+  }
+
+  .marker-dot {
+    width: 14px;
+    height: 14px;
+  }
+
+  .timeline-item.active .marker-dot {
+    width: 20px;
+    height: 20px;
   }
 }
