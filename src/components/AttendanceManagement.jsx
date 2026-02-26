@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './AttendanceManagement.css';
+import { tokenManager } from '../utils/tokenManager';
 
 const AttendanceManagement = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -8,233 +9,13 @@ const AttendanceManagement = () => {
     const [filterDate, setFilterDate] = useState('');
     const [filterBranch, setFilterBranch] = useState('ALL');
 
-    // Attendance logs state with sample data
-    const [attendanceLogs, setAttendanceLogs] = useState([
-        {
-            attendance_id: 1,
-            user_id: 1001,
-            user_name: 'Rajesh Kumar',
-            email: 'rajesh.kumar@email.com',
-            phone: '9876543210',
-            role_type: 'MEMBER',
-            branch_name: 'Koramangala Branch',
-            shift_name: 'Morning Shift',
-            attendance_date: '2024-12-15',
-            total_sessions: 1,
-            total_duration_min: 90,
-            status: 'ON_TIME',
-            sessions: [
-                {
-                    session_id: 1,
-                    session_no: 1,
-                    check_in_time: '2024-12-15 06:30:00',
-                    check_out_time: '2024-12-15 08:00:00',
-                    duration_min: 90,
-                    source: 'DEVICE',
-                    remarks: null
-                }
-            ]
-        },
-        {
-            attendance_id: 2,
-            user_id: 1002,
-            user_name: 'Priya Sharma',
-            email: 'priya.sharma@email.com',
-            phone: '9876543211',
-            role_type: 'MEMBER',
-            branch_name: 'Whitefield Branch',
-            shift_name: 'Evening Shift',
-            attendance_date: '2024-12-15',
-            total_sessions: 2,
-            total_duration_min: 120,
-            status: 'ON_TIME',
-            sessions: [
-                {
-                    session_id: 2,
-                    session_no: 1,
-                    check_in_time: '2024-12-15 10:00:00',
-                    check_out_time: '2024-12-15 11:00:00',
-                    duration_min: 60,
-                    source: 'DEVICE',
-                    remarks: null
-                },
-                {
-                    session_id: 3,
-                    session_no: 2,
-                    check_in_time: '2024-12-15 18:00:00',
-                    check_out_time: '2024-12-15 19:00:00',
-                    duration_min: 60,
-                    source: 'WEB',
-                    remarks: 'Manual check-in'
-                }
-            ]
-        },
-        {
-            attendance_id: 3,
-            user_id: 2001,
-            user_name: 'Amit Sharma',
-            email: 'amit.sharma@email.com',
-            phone: '9876543220',
-            role_type: 'TRAINER',
-            branch_name: 'Koramangala Branch',
-            shift_name: 'Morning Shift',
-            attendance_date: '2024-12-15',
-            total_sessions: 1,
-            total_duration_min: 480,
-            status: 'ON_TIME',
-            sessions: [
-                {
-                    session_id: 4,
-                    session_no: 1,
-                    check_in_time: '2024-12-15 06:00:00',
-                    check_out_time: '2024-12-15 14:00:00',
-                    duration_min: 480,
-                    source: 'DEVICE',
-                    remarks: null
-                }
-            ]
-        },
-        {
-            attendance_id: 4,
-            user_id: 1003,
-            user_name: 'Amit Verma',
-            email: 'amit.verma@email.com',
-            phone: '9876543212',
-            role_type: 'MEMBER',
-            branch_name: 'Bangalore Main',
-            shift_name: 'Morning Shift',
-            attendance_date: '2024-12-15',
-            total_sessions: 1,
-            total_duration_min: 45,
-            status: 'EARLY_OUT',
-            sessions: [
-                {
-                    session_id: 5,
-                    session_no: 1,
-                    check_in_time: '2024-12-15 07:00:00',
-                    check_out_time: '2024-12-15 07:45:00',
-                    duration_min: 45,
-                    source: 'DEVICE',
-                    remarks: 'Left early due to emergency'
-                }
-            ]
-        },
-        {
-            attendance_id: 5,
-            user_id: 1004,
-            user_name: 'Sneha Patel',
-            email: 'sneha.patel@email.com',
-            phone: '9876543213',
-            role_type: 'MEMBER',
-            branch_name: 'Koramangala Branch',
-            shift_name: 'Evening Shift',
-            attendance_date: '2024-12-15',
-            total_sessions: 1,
-            total_duration_min: 75,
-            status: 'LATE',
-            sessions: [
-                {
-                    session_id: 6,
-                    session_no: 1,
-                    check_in_time: '2024-12-15 19:30:00',
-                    check_out_time: '2024-12-15 20:45:00',
-                    duration_min: 75,
-                    source: 'DEVICE',
-                    remarks: 'Arrived 30 minutes late'
-                }
-            ]
-        },
-        {
-            attendance_id: 6,
-            user_id: 3001,
-            user_name: 'Vikram Singh',
-            email: 'vikram.singh@email.com',
-            phone: '9876543230',
-            role_type: 'STAFF',
-            branch_name: 'Bangalore Main',
-            shift_name: 'Full Day',
-            attendance_date: '2024-12-15',
-            total_sessions: 1,
-            total_duration_min: 540,
-            status: 'ON_TIME',
-            sessions: [
-                {
-                    session_id: 7,
-                    session_no: 1,
-                    check_in_time: '2024-12-15 08:00:00',
-                    check_out_time: '2024-12-15 17:00:00',
-                    duration_min: 540,
-                    source: 'DEVICE',
-                    remarks: null
-                }
-            ]
-        },
-        {
-            attendance_id: 7,
-            user_id: 1005,
-            user_name: 'Rahul Mehta',
-            email: 'rahul.mehta@email.com',
-            phone: '9876543214',
-            role_type: 'MEMBER',
-            branch_name: 'Whitefield Branch',
-            shift_name: 'Morning Shift',
-            attendance_date: '2024-12-14',
-            total_sessions: 1,
-            total_duration_min: 60,
-            status: 'PARTIAL',
-            sessions: [
-                {
-                    session_id: 8,
-                    session_no: 1,
-                    check_in_time: '2024-12-14 06:30:00',
-                    check_out_time: '2024-12-14 07:30:00',
-                    duration_min: 60,
-                    source: 'DEVICE',
-                    remarks: 'Partial attendance'
-                }
-            ]
-        },
-        {
-            attendance_id: 8,
-            user_id: 1006,
-            user_name: 'Kavita Singh',
-            email: 'kavita.singh@email.com',
-            phone: '9876543215',
-            role_type: 'MEMBER',
-            branch_name: 'Bangalore Main',
-            shift_name: 'Evening Shift',
-            attendance_date: '2024-12-14',
-            total_sessions: 0,
-            total_duration_min: 0,
-            status: 'ABSENT',
-            sessions: []
-        },
-        {
-            attendance_id: 9,
-            user_id: 1007,
-            user_name: 'Deepak Kumar',
-            email: 'deepak.kumar@email.com',
-            phone: '9876543216',
-            role_type: 'MEMBER',
-            branch_name: 'Koramangala Branch',
-            shift_name: null,
-            attendance_date: '2024-12-14',
-            total_sessions: 1,
-            total_duration_min: 120,
-            status: 'MANUAL_ENTRY',
-            sessions: [
-                {
-                    session_id: 9,
-                    session_no: 1,
-                    check_in_time: '2024-12-14 10:00:00',
-                    check_out_time: '2024-12-14 12:00:00',
-                    duration_min: 120,
-                    source: 'ADMIN_ENTRY',
-                    remarks: 'Manually added by admin - device malfunction'
-                }
-            ]
-        }
-    ]);
+    // API data states
+    const [attendanceLogs, setAttendanceLogs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [pagination, setPagination] = useState({ page: 1, limit: 10 });
+    const [sessionsLoading, setSessionsLoading] = useState(false);
+    const [sessionsData, setSessionsData] = useState(null);
 
     // Modal states
     const [showSessionsModal, setShowSessionsModal] = useState(false);
@@ -252,15 +33,84 @@ const AttendanceManagement = () => {
         remarks: ''
     });
 
+    // API Functions
+    const fetchAttendanceLogs = async () => {
+        try {
+            setLoading(true);
+            setError('');
+            
+            const queryParams = new URLSearchParams();
+            if (filterDate) {
+                queryParams.append('from_date', filterDate);
+                queryParams.append('to_date', filterDate);
+            }
+            queryParams.append('page', pagination.page.toString());
+            queryParams.append('limit', pagination.limit.toString());
+            
+            const url = `${tokenManager.API_BASE_URL}/api/attendance/viewAttendanceList?${queryParams.toString()}`;
+            
+            const response = await tokenManager.apiCall(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                setAttendanceLogs(data.data || []);
+            } else {
+                setError(data.message || 'Failed to fetch attendance logs');
+            }
+        } catch (error) {
+            console.error('Error fetching attendance logs:', error);
+            setError('Failed to fetch attendance logs. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchUserSessions = async (userId, date) => {
+        try {
+            setSessionsLoading(true);
+            
+            const url = `${tokenManager.API_BASE_URL}/api/attendance/userSessions?user_id=${userId}&date=${date}`;
+            
+            const response = await tokenManager.apiCall(url, {
+                method: 'GET'
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                setSessionsData(data.data);
+            } else {
+                setError(data.message || 'Failed to fetch user sessions');
+                setSessionsData(null);
+            }
+        } catch (error) {
+            console.error('Error fetching user sessions:', error);
+            setError('Failed to fetch user sessions. Please try again.');
+            setSessionsData(null);
+        } finally {
+            setSessionsLoading(false);
+        }
+    };
+
+    // useEffect to fetch data on component mount and filter changes
+    useEffect(() => {
+        fetchAttendanceLogs();
+    }, [pagination.page, pagination.limit, filterDate]);
+
     // Filter attendance logs
     const filteredLogs = attendanceLogs.filter(log => {
         const matchesSearch = 
             log.user_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            log.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
             log.phone.includes(searchQuery) ||
             log.branch_name.toLowerCase().includes(searchQuery.toLowerCase());
         
-        const matchesRole = filterRole === 'ALL' || log.role_type === filterRole;
+        const matchesRole = filterRole === 'ALL' || log.role === filterRole;
         const matchesStatus = filterStatus === 'ALL' || log.status === filterStatus;
         const matchesDate = !filterDate || log.attendance_date === filterDate;
         const matchesBranch = filterBranch === 'ALL' || log.branch_name === filterBranch;
@@ -291,9 +141,24 @@ const AttendanceManagement = () => {
     const stats = getStats();
 
     // Handlers
-    const handleViewSessions = (attendance) => {
+    const handleViewSessions = async (attendance) => {
         setSelectedAttendance(attendance);
         setShowSessionsModal(true);
+        setSessionsData(null); // Clear previous data
+        // Fetch sessions for this user and date
+        await fetchUserSessions(attendance.user_id, attendance.attendance_date);
+    };
+
+    const handleDateFilterChange = (date) => {
+        setFilterDate(date);
+        // The useEffect will automatically refetch when filterDate changes
+    };
+
+    const handleCloseSessionsModal = () => {
+        setShowSessionsModal(false);
+        setSelectedAttendance(null);
+        setSessionsData(null);
+        setError(''); // Clear any error messages
     };
 
     const handleManualEntry = () => {
@@ -399,6 +264,17 @@ const AttendanceManagement = () => {
                     <h1 className="att-title">Attendance Management</h1>
                     <p className="att-subtitle">Track and manage member, trainer, and staff attendance</p>
                 </div>
+                <div className="att-header-actions">
+                    <button 
+                        onClick={fetchAttendanceLogs} 
+                        className="att-btn-secondary"
+                        disabled={loading}
+                        title="Refresh Data"
+                    >
+                        <i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`}></i>
+                        Refresh
+                    </button>
+                </div>
             </div>
 
             {/* Statistics Cards */}
@@ -487,7 +363,7 @@ const AttendanceManagement = () => {
                 <input
                     type="date"
                     value={filterDate}
-                    onChange={(e) => setFilterDate(e.target.value)}
+                    onChange={(e) => handleDateFilterChange(e.target.value)}
                     className="att-filter"
                 />
                 {(filterDate || filterRole !== 'ALL' || filterStatus !== 'ALL' || filterBranch !== 'ALL') && (
@@ -498,7 +374,10 @@ const AttendanceManagement = () => {
                             setFilterStatus('ALL');
                             setFilterDate('');
                             setFilterBranch('ALL');
+                            setSearchQuery('');
+                            // Data will be refetched automatically by useEffect
                         }}
+                        title="Clear all filters"
                     >
                         <i className="fas fa-times"></i>
                         Clear Filters
@@ -523,31 +402,52 @@ const AttendanceManagement = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredLogs.length === 0 ? (
+                        {error && (
+                            <tr>
+                                <td colSpan="9" className="att-error">
+                                    <i className="fas fa-exclamation-triangle"></i>
+                                    <p>{error}</p>
+                                    <button onClick={fetchAttendanceLogs} className="att-btn-primary att-btn-sm">
+                                        <i className="fas fa-redo"></i> Retry
+                                    </button>
+                                </td>
+                            </tr>
+                        )}
+                        {loading ? (
+                            <tr>
+                                <td colSpan="9" className="att-loading">
+                                    <i className="fas fa-spinner fa-spin"></i>
+                                    <p>Loading attendance records...</p>
+                                </td>
+                            </tr>
+                        ) : !error && filteredLogs.length === 0 ? (
                             <tr>
                                 <td colSpan="9" className="att-no-data">
                                     <i className="fas fa-inbox"></i>
                                     <p>No attendance records found</p>
                                 </td>
                             </tr>
-                        ) : (
+                        ) : !error && (
                             filteredLogs.map((log) => (
                                 <tr key={log.attendance_id}>
                                     <td data-label="ID">#{log.attendance_id}</td>
                                     <td data-label="User Details">
                                         <div className="att-user-info">
                                             <strong>{log.user_name}</strong>
-                                            <span>{log.email}</span>
                                             <span>{log.phone}</span>
+                                            <span>{log.gender} - {log.date_of_birth}</span>
                                         </div>
                                     </td>
                                     <td data-label="Role">
-                                        <span className={`att-role-badge ${getRoleBadgeClass(log.role_type)}`}>
-                                            {log.role_type}
+                                        <span className={`att-role-badge ${getRoleBadgeClass(log.role)}`}>
+                                            {log.role}
                                         </span>
                                     </td>
                                     <td data-label="Branch">
                                         <span className="att-branch-tag">{log.branch_name}</span>
+                                        <div className="att-location-info">
+                                            <small>{log.district_name}, {log.state_name}</small>
+                                        </div>
                                         {log.shift_name && (
                                             <span className="att-shift-tag">{log.shift_name}</span>
                                         )}
@@ -600,121 +500,129 @@ const AttendanceManagement = () => {
 
             {/* Sessions Modal */}
             {showSessionsModal && selectedAttendance && (
-                <div className="att-modal-overlay" onClick={() => setShowSessionsModal(false)}>
+                <div className="att-modal-overlay" onClick={handleCloseSessionsModal}>
                     <div className="att-modal" onClick={(e) => e.stopPropagation()}>
                         <div className="att-modal-header">
                             <h2><i className="fas fa-list"></i> Attendance Sessions</h2>
-                            <button className="att-modal-close" onClick={() => setShowSessionsModal(false)}>
+                            <button className="att-modal-close" onClick={handleCloseSessionsModal}>
                                 <i className="fas fa-times"></i>
                             </button>
                         </div>
                         <div className="att-modal-body">
-                            {/* User Info */}
-                            <div className="att-detail-section">
-                                <h3><i className="fas fa-user"></i> User Information</h3>
-                                <div className="att-detail-grid">
-                                    <div className="att-detail-item">
-                                        <label>Name</label>
-                                        <span>{selectedAttendance.user_name}</span>
-                                    </div>
-                                    <div className="att-detail-item">
-                                        <label>Email</label>
-                                        <span>{selectedAttendance.email}</span>
-                                    </div>
-                                    <div className="att-detail-item">
-                                        <label>Phone</label>
-                                        <span>{selectedAttendance.phone}</span>
-                                    </div>
-                                    <div className="att-detail-item">
-                                        <label>Role</label>
-                                        <span className={`att-role-badge ${getRoleBadgeClass(selectedAttendance.role_type)}`}>
-                                            {selectedAttendance.role_type}
-                                        </span>
-                                    </div>
-                                    <div className="att-detail-item">
-                                        <label>Branch</label>
-                                        <span>{selectedAttendance.branch_name}</span>
-                                    </div>
-                                    <div className="att-detail-item">
-                                        <label>Date</label>
-                                        <span>{selectedAttendance.attendance_date}</span>
-                                    </div>
+                            {sessionsLoading ? (
+                                <div className="att-loading">
+                                    <i className="fas fa-spinner fa-spin"></i>
+                                    <p>Loading sessions...</p>
                                 </div>
-                            </div>
-
-                            {/* Summary */}
-                            <div className="att-detail-section">
-                                <h3><i className="fas fa-chart-bar"></i> Attendance Summary</h3>
-                                <div className="att-detail-grid">
-                                    <div className="att-detail-item">
-                                        <label>Total Sessions</label>
-                                        <span>{selectedAttendance.total_sessions}</span>
-                                    </div>
-                                    <div className="att-detail-item">
-                                        <label>Total Duration</label>
-                                        <span>{formatDuration(selectedAttendance.total_duration_min)}</span>
-                                    </div>
-                                    <div className="att-detail-item">
-                                        <label>Status</label>
-                                        <span className={`att-status-badge ${getStatusBadgeClass(selectedAttendance.status)}`}>
-                                            {selectedAttendance.status.replace('_', ' ')}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Sessions List */}
-                            <div className="att-detail-section">
-                                <h3><i className="fas fa-clock"></i> Session Details</h3>
-                                {selectedAttendance.sessions.length === 0 ? (
-                                    <div className="att-no-sessions">
-                                        <i className="fas fa-calendar-times"></i>
-                                        <p>No sessions recorded</p>
-                                    </div>
-                                ) : (
-                                    <div className="att-sessions-list">
-                                        {selectedAttendance.sessions.map((session) => (
-                                            <div key={session.session_id} className="att-session-card">
-                                                <div className="att-session-header">
-                                                    <span className="att-session-number">Session #{session.session_no}</span>
-                                                    <span className={`att-source-badge source-${session.source.toLowerCase()}`}>
-                                                        {session.source}
-                                                    </span>
-                                                </div>
-                                                <div className="att-session-times">
-                                                    <div className="att-time-item">
-                                                        <i className="fas fa-sign-in-alt"></i>
-                                                        <div>
-                                                            <label>Check In</label>
-                                                            <span>{formatDateTime(session.check_in_time)}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="att-time-separator">
-                                                        <i className="fas fa-arrow-right"></i>
-                                                    </div>
-                                                    <div className="att-time-item">
-                                                        <i className="fas fa-sign-out-alt"></i>
-                                                        <div>
-                                                            <label>Check Out</label>
-                                                            <span>{formatDateTime(session.check_out_time)}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="att-session-duration">
-                                                    <i className="fas fa-hourglass-half"></i>
-                                                    <span>Duration: {formatDuration(session.duration_min || 0)}</span>
-                                                </div>
-                                                {session.remarks && (
-                                                    <div className="att-session-remarks">
-                                                        <i className="fas fa-comment"></i>
-                                                        <span>{session.remarks}</span>
-                                                    </div>
-                                                )}
+                            ) : sessionsData ? (
+                                <>
+                                    {/* User Info */}
+                                    <div className="att-detail-section">
+                                        <h3><i className="fas fa-user"></i> User Information</h3>
+                                        <div className="att-detail-grid">
+                                            <div className="att-detail-item">
+                                                <label>Name</label>
+                                                <span>{sessionsData.user.name}</span>
                                             </div>
-                                        ))}
+                                            <div className="att-detail-item">
+                                                <label>Email</label>
+                                                <span>{sessionsData.user.email}</span>
+                                            </div>
+                                            <div className="att-detail-item">
+                                                <label>Phone</label>
+                                                <span>{sessionsData.user.phone}</span>
+                                            </div>
+                                            <div className="att-detail-item">
+                                                <label>Role</label>
+                                                <span className={`att-role-badge ${getRoleBadgeClass(sessionsData.user.role)}`}>
+                                                    {sessionsData.user.role}
+                                                </span>
+                                            </div>
+                                            <div className="att-detail-item">
+                                                <label>Branch</label>
+                                                <span>{sessionsData.user.branch}</span>
+                                            </div>
+                                            <div className="att-detail-item">
+                                                <label>Date</label>
+                                                <span>{sessionsData.user.date}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                )}
-                            </div>
+
+                                    {/* Summary */}
+                                    <div className="att-detail-section">
+                                        <h3><i className="fas fa-chart-bar"></i> Attendance Summary</h3>
+                                        <div className="att-detail-grid">
+                                            <div className="att-detail-item">
+                                                <label>Total Sessions</label>
+                                                <span>{sessionsData.attendance_summary.total_sessions}</span>
+                                            </div>
+                                            <div className="att-detail-item">
+                                                <label>Total Duration</label>
+                                                <span>{sessionsData.attendance_summary.total_duration} minutes</span>
+                                            </div>
+                                            <div className="att-detail-item">
+                                                <label>Status</label>
+                                                <span className={`att-status-badge ${getStatusBadgeClass(sessionsData.attendance_summary.status)}`}>
+                                                    {sessionsData.attendance_summary.status.replace('_', ' ')}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Sessions List */}
+                                    <div className="att-detail-section">
+                                        <h3><i className="fas fa-clock"></i> Session Details</h3>
+                                        {sessionsData.sessions.length === 0 ? (
+                                            <div className="att-no-sessions">
+                                                <i className="fas fa-calendar-times"></i>
+                                                <p>No sessions recorded</p>
+                                            </div>
+                                        ) : (
+                                            <div className="att-sessions-list">
+                                                {sessionsData.sessions.map((session, index) => (
+                                                    <div key={index} className="att-session-card">
+                                                        <div className="att-session-header">
+                                                            <span className="att-session-number">Session #{session.session_no}</span>
+                                                            <span className={`att-source-badge source-${session.device.toLowerCase()}`}>
+                                                                {session.device}
+                                                            </span>
+                                                        </div>
+                                                        <div className="att-session-times">
+                                                            <div className="att-time-item">
+                                                                <i className="fas fa-sign-in-alt"></i>
+                                                                <div>
+                                                                    <label>Check In</label>
+                                                                    <span>{session.check_in}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="att-time-separator">
+                                                                <i className="fas fa-arrow-right"></i>
+                                                            </div>
+                                                            <div className="att-time-item">
+                                                                <i className="fas fa-sign-out-alt"></i>
+                                                                <div>
+                                                                    <label>Check Out</label>
+                                                                    <span>{session.check_out}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="att-session-duration">
+                                                            <i className="fas fa-hourglass-half"></i>
+                                                            <span>Duration: {session.duration}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="att-no-data">
+                                    <i className="fas fa-exclamation-triangle"></i>
+                                    <p>Failed to load session data</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
