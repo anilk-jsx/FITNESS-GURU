@@ -6,7 +6,7 @@ const AttendanceManagement = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterRole, setFilterRole] = useState('ALL');
     const [filterStatus, setFilterStatus] = useState('ALL');
-    const [filterDate, setFilterDate] = useState('');
+    const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
     const [filterBranch, setFilterBranch] = useState('ALL');
 
     // API data states
@@ -16,6 +16,9 @@ const AttendanceManagement = () => {
     const [pagination, setPagination] = useState({ page: 1, limit: 10 });
     const [sessionsLoading, setSessionsLoading] = useState(false);
     const [sessionsData, setSessionsData] = useState(null);
+    const [branches, setBranches] = useState([]);
+    const [branchesLoading, setBranchesLoading] = useState(false);
+    const [gymId, setGymId] = useState(null);
 
     // Modal states
     const [showSessionsModal, setShowSessionsModal] = useState(false);
@@ -26,7 +29,7 @@ const AttendanceManagement = () => {
     const [manualEntryData, setManualEntryData] = useState({
         user_name: '',
         role_type: 'MEMBER',
-        branch_name: 'Bangalore Main',
+        branch_name: '',
         attendance_date: new Date().toISOString().split('T')[0],
         check_in_time: '',
         check_out_time: '',
@@ -34,16 +37,58 @@ const AttendanceManagement = () => {
     });
 
     // API Functions
+    const fetchGymBranches = async () => {
+        try {
+            setBranchesLoading(true);
+            const userData = tokenManager.getUserData();
+            
+            if (!userData || !userData.gym_id) {
+                console.error('No gym_id found in user data');
+                return;
+            }
+            
+            setGymId(userData.gym_id);
+            
+            const url = `${tokenManager.API_BASE_URL}/api/gymBranchList?gym_id=${userData.gym_id}`;
+            
+            const response = await tokenManager.apiCall(url, {
+                method: 'GET'
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                setBranches(data.data || []);
+            } else {
+                console.error('Failed to fetch gym branches:', data.message);
+            }
+        } catch (error) {
+            console.error('Error fetching gym branches:', error);
+        } finally {
+            setBranchesLoading(false);
+        }
+    };
+
     const fetchAttendanceLogs = async () => {
         try {
             setLoading(true);
             setError('');
             
             const queryParams = new URLSearchParams();
-            if (filterDate) {
-                queryParams.append('from_date', filterDate);
-                queryParams.append('to_date', filterDate);
+            
+            // Always pass from_date and to_date
+            const dateToUse = filterDate || new Date().toISOString().split('T')[0];
+            queryParams.append('from_date', dateToUse);
+            queryParams.append('to_date', dateToUse);
+            
+            // Add other filters if needed
+            if (filterBranch && filterBranch !== 'ALL') {
+                const selectedBranch = branches.find(branch => branch.branch_name === filterBranch);
+                if (selectedBranch) {
+                    queryParams.append('branch_id', selectedBranch.branch_id.toString());
+                }
             }
+            
             queryParams.append('page', pagination.page.toString());
             queryParams.append('limit', pagination.limit.toString());
             
@@ -100,8 +145,14 @@ const AttendanceManagement = () => {
 
     // useEffect to fetch data on component mount and filter changes
     useEffect(() => {
-        fetchAttendanceLogs();
-    }, [pagination.page, pagination.limit, filterDate]);
+        fetchGymBranches();
+    }, []);
+    
+    useEffect(() => {
+        if (branches.length > 0) {
+            fetchAttendanceLogs();
+        }
+    }, [pagination.page, pagination.limit, filterDate, filterBranch, branches]);
 
     // Filter attendance logs
     const filteredLogs = attendanceLogs.filter(log => {
@@ -165,7 +216,7 @@ const AttendanceManagement = () => {
         setManualEntryData({
             user_name: '',
             role_type: 'MEMBER',
-            branch_name: 'Bangalore Main',
+            branch_name: '',
             attendance_date: new Date().toISOString().split('T')[0],
             check_in_time: '',
             check_out_time: '',
@@ -266,6 +317,14 @@ const AttendanceManagement = () => {
                 </div>
                 <div className="att-header-actions">
                     <button 
+                        onClick={handleManualEntry}
+                        className="att-btn-primary"
+                        title="Add Manual Entry"
+                    >
+                        <i className="fas fa-plus"></i>
+                        Manual Entry
+                    </button>
+                    <button 
                         onClick={fetchAttendanceLogs} 
                         className="att-btn-secondary"
                         disabled={loading}
@@ -354,11 +413,13 @@ const AttendanceManagement = () => {
                     <option value="PARTIAL">Partial</option>
                     <option value="MANUAL_ENTRY">Manual Entry</option>
                 </select>
-                <select value={filterBranch} onChange={(e) => setFilterBranch(e.target.value)} className="att-filter">
-                    <option value="ALL">All Branches</option>
-                    <option value="Bangalore Main">Bangalore Main</option>
-                    <option value="Whitefield Branch">Whitefield Branch</option>
-                    <option value="Koramangala Branch">Koramangala Branch</option>
+                <select value={filterBranch} onChange={(e) => setFilterBranch(e.target.value)} className="att-filter" disabled={branchesLoading}>
+                    <option value="ALL">{branchesLoading ? 'Loading branches...' : 'All Branches'}</option>
+                    {branches.map((branch) => (
+                        <option key={branch.branch_id} value={branch.branch_name}>
+                            {branch.branch_name}
+                        </option>
+                    ))}
                 </select>
                 <input
                     type="date"
@@ -366,13 +427,13 @@ const AttendanceManagement = () => {
                     onChange={(e) => handleDateFilterChange(e.target.value)}
                     className="att-filter"
                 />
-                {(filterDate || filterRole !== 'ALL' || filterStatus !== 'ALL' || filterBranch !== 'ALL') && (
+                {(filterDate !== new Date().toISOString().split('T')[0] || filterRole !== 'ALL' || filterStatus !== 'ALL' || filterBranch !== 'ALL' || searchQuery) && (
                     <button 
                         className="att-clear-filters"
                         onClick={() => {
                             setFilterRole('ALL');
                             setFilterStatus('ALL');
-                            setFilterDate('');
+                            setFilterDate(new Date().toISOString().split('T')[0]);
                             setFilterBranch('ALL');
                             setSearchQuery('');
                             // Data will be refetched automatically by useEffect
@@ -668,10 +729,14 @@ const AttendanceManagement = () => {
                                         value={manualEntryData.branch_name}
                                         onChange={(e) => setManualEntryData({ ...manualEntryData, branch_name: e.target.value })}
                                         required
+                                        disabled={branchesLoading}
                                     >
-                                        <option value="Bangalore Main">Bangalore Main</option>
-                                        <option value="Whitefield Branch">Whitefield Branch</option>
-                                        <option value="Koramangala Branch">Koramangala Branch</option>
+                                        <option value="">{branchesLoading ? 'Loading branches...' : 'Select Branch'}</option>
+                                        {branches.map((branch) => (
+                                            <option key={branch.branch_id} value={branch.branch_name}>
+                                                {branch.branch_name}
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>
