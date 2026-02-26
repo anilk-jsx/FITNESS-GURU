@@ -245,6 +245,16 @@
   color: #ffffff;
 }
 
+.pricing-card:hover .plan-btn {
+  color: #ffffff;
+  border: 2px solid #ffffff;
+}
+
+.pricing-card:hover .popular-badge {
+  background: #ffffff;
+  color: #ff6b35;
+}
+
 /* Popular Badge */
 .popular-badge {
   position: absolute;
@@ -414,6 +424,7 @@
   background: rgba(255, 107, 53, 0.1);
   box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
   color: #ffffff;
+  border: 2px solid white;
 }
 
 /* Footer */

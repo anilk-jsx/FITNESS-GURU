@@ -400,7 +400,7 @@
   .tl-body {
     display: flex;
     flex-direction: column;
-    gap: 3rem;
+    gap: 10rem;
     min-height: auto !important;
   }
 
@@ -445,4 +445,5 @@
   .tl-float-img-1 { width: 38%; height: 75px; }
   .tl-float-img-2 { width: 40%; height: 80px; }
   .tl-textbox { padding: 1.2rem 1rem; border-radius: 14px; }
+  .tl-section { margin-top: 2rem 0.5rem; }
 }
