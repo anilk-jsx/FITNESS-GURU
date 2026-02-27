@@ -1,8 +1,9 @@
 /* Branch Management Container */
 .branch-management {
     padding: 0;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     min-height: calc(100vh - 60px);
+    animation: fadeInUp 0.5s ease;
+    margin-top: 20px;
 }
 
 /* Header */
@@ -12,26 +13,24 @@
     align-items: center;
     margin-bottom: 24px;
     padding: 24px 32px 16px;
-    background: white;
-    border-bottom: 2px solid #e0e0e0;
 }
 
 .branch-title {
     font-size: 28px;
     font-weight: 700;
-    color: #2d3748;
+    color: #ffffff;
     margin: 0;
 }
 
 .branch-subtitle {
     font-size: 14px;
-    color: #718096;
+    color: #ffffff;
     margin: 4px 0 0 0;
 }
 
 .branch-add-btn {
     padding: 12px 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
     color: white;
     border: none;
     border-radius: 8px;
@@ -56,8 +55,6 @@
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
     padding: 0 32px 24px;
-    background: white;
-    border-bottom: 2px solid #e0e0e0;
 }
 
 .branch-stat-item {
@@ -114,7 +111,6 @@
     display: flex;
     gap: 12px;
     padding: 20px 32px;
-    background: white;
     flex-wrap: wrap;
 }
 
@@ -210,7 +206,6 @@
     grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
     gap: 24px;
     padding: 24px 32px 32px;
-    background: white;
 }
 
 .branch-no-data {
