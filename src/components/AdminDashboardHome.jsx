@@ -127,7 +127,7 @@ const AdminDashboardHome = () => {
             </div>
             <div>
               <h3 className="admin-stat-title">Monthly Revenue</h3>
-              <p className="admin-stat-value">₹12,34,000</p>
+              <p className="admin-stat-value">₹12,3000</p>
             </div>
           </div>
           <p className="admin-stat-subtitle">This month's earnings</p>
