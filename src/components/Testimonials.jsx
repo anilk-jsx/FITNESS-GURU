@@ -47,6 +47,12 @@ export default function Testimonials() {
 
   return (
     <section className="testimonials-section" id="testimonials">
+
+      <div className="testimonials-bg-elements">
+        <div className="testimonial-circle testimonial-circle-1"></div>
+        <div className="testimonial-circle testimonial-circle-2"></div>
+      </div>
+
       <div className="testimonials-header">
         <span className="section-tag">Testimonials</span>
         <h2 className="testimonials-title">

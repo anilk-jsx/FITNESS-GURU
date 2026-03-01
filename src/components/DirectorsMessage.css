@@ -1,11 +1,3 @@
-.directors-message-section {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 30%, #0f0f0f 70%, #0a0a0a 100%);
-  position: relative;
-  overflow: hidden;
-  padding: 120px 0;
-}
-
 .directors-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -27,24 +19,32 @@
 .directors-circle {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 107, 53, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 107, 53, 0.2), transparent);
   animation: float 6s ease-in-out infinite;
 }
 
 .directors-circle-1 {
   width: 400px;
   height: 400px;
-  top: 10%;
+  top: 20%;
   right: -100px;
   animation-delay: 0s;
 }
 
 .directors-circle-2 {
-  width: 300px;
-  height: 300px;
+  width: 200px;
+  height: 200px;
   bottom: 20%;
   left: -80px;
   animation-delay: 3s;
+}
+
+.directors-circle-3 {
+  width: 100px;
+  height: 100px;
+  top: 25%;
+  left: 550px;
+  animation-delay: 6s;
 }
 
 .directors-gradient-overlay {
@@ -53,13 +53,6 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    45deg,
-    rgba(255, 107, 53, 0.03) 0%,
-    transparent 25%,
-    transparent 75%,
-    rgba(231, 76, 60, 0.03) 100%
-  );
 }
 
 /* Header Styles */
@@ -79,10 +72,10 @@
 /* Ensure section is visible */
 .directors-message-section {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 30%, #0f0f0f 70%, #0a0a0a 100%);
+  background: #1a1a1a;
   position: relative;
   overflow: hidden;
-  padding: 120px 0;
+  padding: 70px 0;
   opacity: 1;
   visibility: visible;
 }
@@ -104,13 +97,18 @@
 }
 
 .directors-tag::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 107, 53, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 107, 53, 0.2),
+    transparent
+  );
   transition: left 0.6s ease;
 }
 
@@ -190,11 +188,7 @@
   left: 4px;
   right: 4px;
   bottom: 4px;
-  background: linear-gradient(
-    135deg,
-    transparent 0%,
-    rgba(0, 0, 0, 0.3) 100%
-  );
+  background: linear-gradient(135deg, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
   border-radius: 16px;
   pointer-events: none;
 }
@@ -333,13 +327,18 @@
 }
 
 .directors-cta-btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
   transition: left 0.6s ease;
 }
 
@@ -365,7 +364,8 @@
 
 /* Animations */
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px) rotate(0deg);
   }
   50% {
