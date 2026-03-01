@@ -2,7 +2,7 @@
 
 .attendance-management {
     padding: clamp(1rem, 3vw, 2rem);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    animation: fadeInUp 0.5s ease;
     min-height: 100vh;
 }
 

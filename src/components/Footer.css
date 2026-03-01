@@ -5,13 +5,13 @@
     padding: 0 0.5rem;
   }
   .footer-col {
+    display: flex;
     max-width: 100%;
     min-width: 0;
     margin-bottom: 1.2rem;
     text-align: center;
-    justify-self: center;
+    justify-content: center;
     align-items: center;
-    display: flex;
     flex-direction: column;
   }
   .footer-socials {
@@ -128,8 +128,6 @@
 .footer-contact li,
 .footer-hours li {
   margin-bottom: 0.7rem;
-  display: flex;
-  align-items: flex-start;
   gap: 0.7rem;
 }
 .footer-contact i,
