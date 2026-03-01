@@ -136,7 +136,7 @@ export default function About() {
   }, [handleScroll]);
 
   return (
-    <section className="tl-section" ref={sectionRef}>
+    <section id="about" className="tl-section" ref={sectionRef}>
       <div className="tl-ambient">
         <span className="tl-blob tl-blob-1" />
         <span className="tl-blob tl-blob-2" />
