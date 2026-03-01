@@ -5,6 +5,7 @@
 .member-management {
     width: 100%;
     animation: fadeInUp 0.5s ease;
+    padding: clamp(1rem, 3vw, 2rem);
 }
 
 .member-page-header {
@@ -13,7 +14,7 @@
 
 .member-page-title {
     font-size: 2rem;
-    color: #2c3e50;
+    color: #ffffff;
     margin: 0 0 0.5rem 0;
     font-weight: 700;
 }
