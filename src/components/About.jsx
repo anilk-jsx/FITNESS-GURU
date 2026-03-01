@@ -259,6 +259,11 @@ export default function About() {
               } ${reached ? "tl-panel-visible" : ""}`}
               style={{ top: CHECKPOINTS[i].y }}
             >
+              {/* Mobile checkpoint dot (visible ≤768px) */}
+              <div className={`tl-mobile-dot ${reached ? "reached" : ""}`}>
+                <span className="tl-mobile-dot-year">{event.year}</span>
+              </div>
+
               {/* Floating images */}
               <div className="tl-gallery">
                 {event.images.map((img, j) => (
