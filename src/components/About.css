@@ -366,6 +366,11 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── Mobile timeline elements (hidden on desktop) ─── */
+.tl-mobile-dot {
+  display: none;
+}
+
 /* ═════════ RESPONSIVE ═════════ */
 
 @media (max-width: 1200px) {
@@ -394,18 +399,72 @@
 }
 
 @media (max-width: 768px) {
-  .tl-section { padding: 3rem 1rem; }
+  .tl-section { padding: 3rem 0.75rem 3rem 1rem; }
   .tl-title { font-size: 2rem; }
 
   .tl-body {
     display: flex;
     flex-direction: column;
+
     gap: 10rem;
     min-height: auto !important;
+    padding-left: 50px;
+    position: relative;
   }
 
   .tl-svg-wrap { display: none; }
 
+  /* ═══ PER-CARD VERTICAL TIMELINE ═══ */
+
+  /* Dull background line running beside each card */
+  .tl-panel::before {
+    content: '';
+    position: absolute;
+    left: -26.5px;
+    top: -1.25rem;
+    bottom: -2.5rem;
+    width: 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    z-index: 1;
+  }
+
+  /* Glowing illuminated overlay — fills downward per card */
+  .tl-panel::after {
+    content: '';
+    position: absolute;
+    left: -26.5px;
+    top: -1.25rem;
+    bottom: -2.5rem;
+    width: 3px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, #ff7a00, #ffb347);
+    box-shadow: 0 0 8px rgba(255, 122, 0, 0.5),
+                0 0 18px rgba(255, 122, 0, 0.15);
+    transform: scaleY(0);
+    transform-origin: top center;
+    transition: transform 0.9s 0.1s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 2;
+  }
+
+  /* First card: line starts at the dot, not above */
+  .tl-panel:first-child::before,
+  .tl-panel:first-child::after {
+    top: 4px;
+  }
+
+  /* Last card: line ends at card bottom, doesn't overshoot */
+  .tl-panel:last-child::before,
+  .tl-panel:last-child::after {
+    bottom: 0;
+  }
+
+  /* When reached, fill the line segment */
+  .tl-panel-visible::after {
+    transform: scaleY(1);
+  }
+
+  /* ── Panel layout on mobile ── */
   .tl-panel {
     position: relative;
     width: 100%;
@@ -414,8 +473,9 @@
     right: auto !important;
     flex-direction: column !important;
     opacity: 0;
-    transform: translateY(40px) !important;
+    transform: translateY(30px) !important;
     gap: 1rem;
+    padding-top: 4px;
   }
 
   .tl-panel-visible {
@@ -424,10 +484,69 @@
   }
 
   @keyframes tlMobileFade {
-    from { opacity: 0; transform: translateY(40px); }
+    from { opacity: 0; transform: translateY(30px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
+  /* ── Checkpoint dot (on the line) ── */
+  .tl-mobile-dot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    left: -40px;
+    top: -1px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #1a1a1a;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    z-index: 5;
+    transition: all 0.6s 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .tl-mobile-dot.reached {
+    background: #ff7a00;
+    border-color: rgba(255, 200, 100, 0.5);
+    box-shadow: 0 0 14px rgba(255, 122, 0, 0.6),
+                0 0 28px rgba(255, 122, 0, 0.2);
+    transform: scale(1.15);
+  }
+
+  .tl-mobile-dot-year {
+    font-size: 0.55rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #555;
+    transition: color 0.5s 0.2s ease;
+    user-select: none;
+  }
+
+  .tl-mobile-dot.reached .tl-mobile-dot-year {
+    color: #fff;
+  }
+
+  /* Horizontal connector from dot to card */
+  .tl-mobile-dot::after {
+    content: '';
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    width: 12px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-50%) scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.4s 0.35s ease, background 0.4s 0.35s ease;
+  }
+
+  .tl-mobile-dot.reached::after {
+    transform: translateY(-50%) scaleX(1);
+    background: rgba(255, 122, 0, 0.45);
+    box-shadow: 0 0 6px rgba(255, 122, 0, 0.3);
+  }
+
+  /* ── Gallery & text adjustments ── */
   .tl-gallery { width: 100%; height: 170px; }
   .tl-float-img-0 { width: 42%; height: 105px; top: 0; left: 2%; }
   .tl-float-img-1 { width: 36%; height: 90px; top: 20px; right: 2%; left: auto; }
