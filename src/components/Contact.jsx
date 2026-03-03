@@ -1,4 +1,3 @@
-
 import React from 'react'
 import './Contact.css'
 
@@ -12,7 +11,7 @@ const Contact = () => {
         </div>
         <div className="contact-content">
           <div className="contact-info">
-            <div className="info-card">
+            <div className="info-card-contact">
               <div className="info-icon">
                 <i className="fas fa-map-marker-alt"></i>
               </div>
@@ -20,12 +19,11 @@ const Contact = () => {
                 <h3>Address</h3>
                 <p>
                   Fitness Guru Gym<br />
-                  Sundarpada, Bhubaneswar, Odisha<br />
-                  India
+                  Sundarpada, Bhubaneswar, Odisha, India<br />
                 </p>
               </div>
             </div>
-            <div className="info-card">
+            <div className="info-card-contact">
               <div className="info-icon">
                 <i className="fas fa-phone"></i>
               </div>
@@ -37,7 +35,7 @@ const Contact = () => {
                 </p>
               </div>
             </div>
-            <div className="info-card">
+            <div className="info-card-contact">
               <div className="info-icon">
                 <i className="fas fa-envelope"></i>
               </div>
@@ -48,7 +46,7 @@ const Contact = () => {
                 </p>
               </div>
             </div>
-            <div className="info-card">
+            <div className="info-card-contact">
               <div className="info-icon">
                 <i className="fas fa-clock"></i>
               </div>
@@ -85,7 +83,7 @@ const Contact = () => {
                   </select>
                 </div>
                 <div className="form-group">
-                  <textarea rows="5" placeholder="Your Message" required></textarea>
+                  <textarea rows="6" placeholder="Your Message" required></textarea>
                 </div>
                 <button type="submit" className="submit-btn">Send Message</button>
               </form>

@@ -10,22 +10,25 @@
 /* ---------- Ambient blobs ---------- */
 .tl-ambient {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
 }
 
 .tl-blob {
   position: absolute;
+  background: radial-gradient(circle, rgba(255, 107, 53, 0.2), transparent);
   border-radius: 50%;
-  opacity: 0.05;
-  animation: tlFloat 20s ease-in-out infinite alternate;
+  animation: floatAround 20s ease-in-out infinite;
 }
 
-.tl-blob-1 { width: 500px; height: 500px; background: #ff7a00; top: 2%; left: -10%; animation-duration: 26s; }
-.tl-blob-2 { width: 400px; height: 400px; background: #ff7a00; bottom: 8%; right: -6%; animation-duration: 30s; }
-.tl-blob-3 { width: 300px; height: 300px; background: #d47500; top: 40%; left: 50%; animation-duration: 22s; }
-.tl-blob-4 { width: 250px; height: 250px; background: #ff7a00; top: 65%; right: 25%; animation-duration: 24s; }
+.tl-blob-1 { width: 500px; height: 500px; top: 2%; left: -10%; animation-duration: 26s; }
+.tl-blob-2 { width: 400px; height: 400px; bottom: 8%; right: -6%; animation-duration: 30s; }
+.tl-blob-3 { width: 300px; height: 300px; top: 40%; left: 50%; animation-duration: 22s; }
+.tl-blob-4 { width: 250px; height: 250px; top: 65%; left: 10%; animation-duration: 24s; }
 
 @keyframes tlFloat {
   0%   { transform: translateY(0) translateX(0) scale(1); }

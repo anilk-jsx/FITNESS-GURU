@@ -1,6 +1,7 @@
 .membership-section {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 30%, #0f0f0f 70%, #0a0a0a 100%);
+  /* background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 30%, #0f0f0f 70%, #0a0a0a 100%); */
+  background: #1a1a1a;
   position: relative;
   overflow: hidden;
   padding: 120px 0;
@@ -29,7 +30,7 @@
 .membership-circle {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 107, 53, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 107, 53, 0.2), transparent);
   animation: float 8s ease-in-out infinite;
 }
 
@@ -49,19 +50,20 @@
   animation-delay: 4s;
 }
 
+.membership-circle-3 {
+  width: 200px;
+  height: 200px;
+  top: 10%;
+  left: 200px;
+  animation-delay: 6s;
+}
+
 .membership-gradient-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    45deg,
-    rgba(255, 107, 53, 0.02) 0%,
-    transparent 30%,
-    transparent 70%,
-    rgba(231, 76, 60, 0.02) 100%
-  );
 }
 
 /* Header Styles */

@@ -136,163 +136,168 @@ export default function About() {
   }, [handleScroll]);
 
   return (
-    <section id="about" className="tl-section" ref={sectionRef}>
-      <div className="tl-ambient">
-        <span className="tl-blob tl-blob-1" />
-        <span className="tl-blob tl-blob-2" />
-        <span className="tl-blob tl-blob-3" />
-        <span className="tl-blob tl-blob-4" />
-      </div>
-
-      <div className="tl-header">
-        <p className="tl-subtitle">Milestones That Define Us</p>
-        <h2 className="tl-title">Our Journey</h2>
-      </div>
-
-      <div className="tl-body" style={{ minHeight: SVG_H }}>
-        {/* ── SVG snake path ── */}
-        <div className="tl-svg-wrap">
-          <svg
-            className="tl-svg"
-            viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-            preserveAspectRatio="xMidYMid meet"
-            fill="none"
-          >
-            <defs>
-              <filter id="pathGlow">
-                <feGaussianBlur stdDeviation="7" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-              <radialGradient id="cpGlow">
-                <stop offset="0%" stopColor="#ff7a00" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#ff7a00" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-
-            {/* thick dull background road */}
-            <path
-              d={PATH_D}
-              stroke="rgba(255,255,255,0.04)"
-              strokeWidth="28"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-            {/* thinner centre dull line */}
-            <path
-              d={PATH_D}
-              stroke="rgba(255,255,255,0.025)"
-              strokeWidth="6"
-              strokeLinecap="round"
-              strokeDasharray="12 24"
-              fill="none"
-            />
-            {/* illuminated glowing path */}
-            <path
-              ref={svgPathRef}
-              d={PATH_D}
-              className="tl-glow-path"
-              strokeWidth="8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-              filter="url(#pathGlow)"
-            />
-
-            {/* ── Checkpoint badges ON the path ── */}
-            {CHECKPOINTS.map((cp, i) => {
-              const reached = reachedCheckpoints.has(i);
-              return (
-                <g key={i} className={`tl-cp-group ${reached ? "tl-cp-reached" : ""}`}>
-                  {/* outer aura */}
-                  <circle
-                    cx={cp.x}
-                    cy={cp.y}
-                    r="50"
-                    fill="url(#cpGlow)"
-                    className="tl-cp-aura"
-                    style={{ opacity: reached ? 1 : 0 }}
-                  />
-                  {/* filled badge circle */}
-                  <circle
-                    cx={cp.x}
-                    cy={cp.y}
-                    r="32"
-                    className={`tl-cp-badge ${reached ? "reached" : ""}`}
-                  />
-                  {/* inner ring */}
-                  <circle
-                    cx={cp.x}
-                    cy={cp.y}
-                    r="26"
-                    className={`tl-cp-inner ${reached ? "reached" : ""}`}
-                  />
-                  {/* year text inside badge */}
-                  <text
-                    x={cp.x}
-                    y={cp.y + 6}
-                    textAnchor="middle"
-                    className={`tl-cp-year ${reached ? "reached" : ""}`}
-                  >
-                    {TIMELINE_EVENTS[i].year}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
+      <section id="about" className="tl-section" ref={sectionRef}>
+        <div className="tl-ambient">
+          <span className="tl-blob tl-blob-1" />
+          <span className="tl-blob tl-blob-2" />
+          <span className="tl-blob tl-blob-3" />
+          <span className="tl-blob tl-blob-4" />
         </div>
 
-        {/* ── Content panels ── */}
-        {TIMELINE_EVENTS.map((event, i) => {
-          const reached = reachedCheckpoints.has(i);
-          // even index → checkpoint on right → content on LEFT
-          // odd index  → checkpoint on left  → content on RIGHT
-          const isContentLeft = i % 2 === 0;
-          return (
-            <div
-              key={i}
-              className={`tl-panel ${
-                isContentLeft ? "tl-panel-left" : "tl-panel-right"
-              } ${reached ? "tl-panel-visible" : ""}`}
-              style={{ top: CHECKPOINTS[i].y }}
+        <div className="tl-header">
+          <p className="tl-subtitle">Milestones That Define Us</p>
+          <h2 className="tl-title">Our Journey</h2>
+        </div>
+
+        <div className="tl-body" style={{ minHeight: SVG_H }}>
+          {/* ── SVG snake path ── */}
+          <div className="tl-svg-wrap">
+            <svg
+              className="tl-svg"
+              viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+              preserveAspectRatio="xMidYMid meet"
+              fill="none"
             >
-              {/* Mobile checkpoint dot (visible ≤768px) */}
-              <div className={`tl-mobile-dot ${reached ? "reached" : ""}`}>
-                <span className="tl-mobile-dot-year">{event.year}</span>
-              </div>
+              <defs>
+                <filter id="pathGlow">
+                  <feGaussianBlur stdDeviation="7" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+                <radialGradient id="cpGlow">
+                  <stop offset="0%" stopColor="#ff7a00" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="#ff7a00" stopOpacity="0" />
+                </radialGradient>
+              </defs>
 
-              {/* Floating images */}
-              <div className="tl-gallery">
-                {event.images.map((img, j) => (
-                  <div
-                    key={j}
-                    className={`tl-float-img tl-float-img-${j} ${
-                      reached ? "tl-float-img-visible" : ""
-                    }`}
+              {/* thick dull background road */}
+              <path
+                d={PATH_D}
+                stroke="rgba(255,255,255,0.04)"
+                strokeWidth="28"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+              {/* thinner centre dull line */}
+              <path
+                d={PATH_D}
+                stroke="rgba(255,255,255,0.025)"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeDasharray="12 24"
+                fill="none"
+              />
+              {/* illuminated glowing path */}
+              <path
+                ref={svgPathRef}
+                d={PATH_D}
+                className="tl-glow-path"
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+                filter="url(#pathGlow)"
+              />
+
+              {/* ── Checkpoint badges ON the path ── */}
+              {CHECKPOINTS.map((cp, i) => {
+                const reached = reachedCheckpoints.has(i);
+                return (
+                  <g
+                    key={i}
+                    className={`tl-cp-group ${reached ? "tl-cp-reached" : ""}`}
                   >
-                    <img src={img} alt={`${event.title} ${j + 1}`} />
-                  </div>
-                ))}
-                <div
-                  className={`tl-gallery-glow ${reached ? "tl-gallery-glow-on" : ""}`}
-                />
-              </div>
+                    {/* outer aura */}
+                    <circle
+                      cx={cp.x}
+                      cy={cp.y}
+                      r="50"
+                      fill="url(#cpGlow)"
+                      className="tl-cp-aura"
+                      style={{ opacity: reached ? 1 : 0 }}
+                    />
+                    {/* filled badge circle */}
+                    <circle
+                      cx={cp.x}
+                      cy={cp.y}
+                      r="32"
+                      className={`tl-cp-badge ${reached ? "reached" : ""}`}
+                    />
+                    {/* inner ring */}
+                    <circle
+                      cx={cp.x}
+                      cy={cp.y}
+                      r="26"
+                      className={`tl-cp-inner ${reached ? "reached" : ""}`}
+                    />
+                    {/* year text inside badge */}
+                    <text
+                      x={cp.x}
+                      y={cp.y + 6}
+                      textAnchor="middle"
+                      className={`tl-cp-year ${reached ? "reached" : ""}`}
+                    >
+                      {TIMELINE_EVENTS[i].year}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
 
-              {/* Text box */}
-              <div className={`tl-textbox ${reached ? "tl-textbox-visible" : ""}`}>
-                <div className="tl-textbox-accent" />
-                <span className="tl-textbox-year">{event.year}</span>
-                <h3 className="tl-textbox-title">{event.title}</h3>
-                <p className="tl-textbox-desc">{event.description}</p>
-                <div className="tl-textbox-icon">{event.icon}</div>
+          {/* ── Content panels ── */}
+          {TIMELINE_EVENTS.map((event, i) => {
+            const reached = reachedCheckpoints.has(i);
+            // even index → checkpoint on right → content on LEFT
+            // odd index  → checkpoint on left  → content on RIGHT
+            const isContentLeft = i % 2 === 0;
+            return (
+              <div
+                key={i}
+                className={`tl-panel ${
+                  isContentLeft ? "tl-panel-left" : "tl-panel-right"
+                } ${reached ? "tl-panel-visible" : ""}`}
+                style={{ top: CHECKPOINTS[i].y }}
+              >
+                {/* Mobile checkpoint dot (visible ≤768px) */}
+                <div className={`tl-mobile-dot ${reached ? "reached" : ""}`}>
+                  <span className="tl-mobile-dot-year">{event.year}</span>
+                </div>
+
+                {/* Floating images */}
+                <div className="tl-gallery">
+                  {event.images.map((img, j) => (
+                    <div
+                      key={j}
+                      className={`tl-float-img tl-float-img-${j} ${
+                        reached ? "tl-float-img-visible" : ""
+                      }`}
+                    >
+                      <img src={img} alt={`${event.title} ${j + 1}`} />
+                    </div>
+                  ))}
+                  <div
+                    className={`tl-gallery-glow ${reached ? "tl-gallery-glow-on" : ""}`}
+                  />
+                </div>
+
+                {/* Text box */}
+                <div
+                  className={`tl-textbox ${reached ? "tl-textbox-visible" : ""}`}
+                >
+                  <div className="tl-textbox-accent" />
+                  <span className="tl-textbox-year">{event.year}</span>
+                  <h3 className="tl-textbox-title">{event.title}</h3>
+                  <p className="tl-textbox-desc">{event.description}</p>
+                  <div className="tl-textbox-icon">{event.icon}</div>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
-    </section>
+            );
+          })}
+        </div>
+      </section>
   );
 }
