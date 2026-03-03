@@ -1,127 +1,158 @@
-.section-divider {
+/* ═══════ Marquee Section Divider ═══════ */
+
+.sd-wrap {
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 2.5rem 0;
-  padding: 0 2rem;
   position: relative;
+  overflow: visible;
   background: transparent;
-}
-
-.divider-line {
-  flex: 1;
-  height: 2px;
-  border-radius: 2px;
-  position: relative;
-  overflow: hidden;
-  background: rgba(255, 122, 0, 0.15);
-}
-
-.divider-line::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, #ff7a00, #ffb347, transparent);
-  border-radius: 2px;
-  animation: shimmer 3s ease-in-out infinite;
-}
-
-.divider-line.right::after {
-  animation-delay: 1.5s;
-}
-
-.divider-line.left {
-  margin-right: 1.2rem;
-}
-.divider-line.right {
-  margin-left: 1.2rem;
-}
-
-.divider-center {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.12), rgba(247, 147, 30, 0.08));
-  border: 1px solid rgba(255, 122, 0, 0.3);
-  padding: 0.55rem 1.8rem;
-  border-radius: 50px;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 0 20px rgba(255, 107, 53, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  position: relative;
-}
-
-.divider-center::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: 50px;
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.4), rgba(247, 147, 30, 0.2), transparent);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  padding: 1px;
+  margin: 0;
+  padding: 0;
+  z-index: 10;
+  user-select: none;
   pointer-events: none;
 }
 
-.divider-center:hover {
-  transform: scale(1.07);
-  border-color: rgba(255, 122, 0, 0.55);
-  box-shadow: 0 0 35px rgba(255, 107, 53, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+/* ── Shared row ── */
+.sd-row {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
-.divider-icon {
-  font-size: 1.25rem;
-  filter: drop-shadow(0 0 8px rgba(255, 122, 0, 0.9));
-  animation: flamePulse 2s ease-in-out infinite;
+/* Row 1 — flat horizontal, covers the section boundary */
+.sd-row-hz {
+  background: rgba(0, 0, 0, 0.95); /* keep it dark but slightly transparent */
+  border-top: 2px solid rgba(255, 122, 0, 0.3);
+  border-bottom: 2px solid rgba(255, 122, 0, 0.3);
+  padding: 0.7rem 0;
+  position: relative;
+  z-index: 11;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
 }
 
-.divider-text {
+/* Row 2 — tilted, 3D floating overlay */
+.sd-row-tilt {
+  position: absolute;
+  top: 50%;                        /* cross the center of the straight banner */
+  left: -5%;
+  width: 110%;
+  transform: rotate(-6deg) scaleX(1.1); /* more tilt */
+  transform-origin: center;
+  background:linear-gradient(135deg, #ff7a00 0%, #e06800 50%, #ff7a00 100%);
+  padding: 0.8rem 0;
+  z-index: 12;
+  pointer-events: none;
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.45),
+    0 2px 8px rgba(0, 87, 255, 0.3),
+    0 12px 40px rgba(0, 87, 255, 0.15);
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+
+/* ── Scrolling track (flex row of items) ── */
+.sd-track {
+  display: inline-flex;
+  align-items: center;
+  will-change: transform;
+}
+
+.sd-track-left {
+  animation: sdScrollLeft 18s linear infinite;
+}
+
+.sd-track-right {
+  animation: sdScrollRight 22s linear infinite;
+}
+
+@keyframes sdScrollLeft {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes sdScrollRight {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+/* ── Individual item ── */
+.sd-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0 2.2rem;
+  flex-shrink: 0;
+}
+
+.sd-logo {
+  height: 1.4rem;           /* adjust as needed */
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 4px rgba(255, 122, 0, 0.5));
+  opacity: 0.9;
+  transform: translateY(1px); /* fine alignment */
+}
+
+/* For the tilted row version */
+.sd-row-tilt .sd-logo {
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
+}
+
+/* Icon (emoji or glyph) */
+.sd-icon {
+  font-size: 1.15rem;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 4px rgba(255, 122, 0, 0.5));
+}
+
+/* Label text */
+.sd-label {
+  font-size: 1rem;
   font-weight: 800;
-  text-transform: uppercase;
   letter-spacing: 3px;
-  font-size: 0.85rem;
-  background: linear-gradient(90deg, #ffb347, #ff7a00, #ffb347);
-  background-size: 200% auto;
+  text-transform: uppercase;
+  color: #fff;
+  font-family: inherit;
+}
+
+/* Row 1 text gets orange gradient */
+.sd-row-hz .sd-label {
+  background: linear-gradient(90deg, #ffb347, #ff7a00);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  color: transparent;
-  animation: textShine 4s linear infinite;
 }
 
-@keyframes shimmer {
-  0%   { left: -100%; opacity: 0; }
-  10%  { opacity: 1; }
-  90%  { opacity: 1; }
-  100% { left: 140%; opacity: 0; }
+.sd-row-hz .sd-icon {
+  filter: drop-shadow(0 0 6px rgba(255, 122, 0, 0.7));
 }
 
-@keyframes flamePulse {
-  0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 6px rgba(255, 122, 0, 0.8)); }
-  50%       { transform: scale(1.18); filter: drop-shadow(0 0 14px rgba(255, 170, 0, 1)); }
+/* Row 2 text stays white on orange bg */
+.sd-row-tilt .sd-label {
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
 }
 
-@keyframes textShine {
-  0%   { background-position: 0% center; }
-  100% { background-position: 200% center; }
+.sd-row-tilt .sd-icon {
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
 }
 
+/* ═══════ Responsive ═══════ */
 @media (max-width: 768px) {
-  .section-divider {
-    margin: 1.8rem 0;
-    padding: 0 1rem;
+  .sd-row-hz { padding: 0.45rem 0; }
+  .sd-row-tilt {
+    padding: 0.4rem 0;
+    transform: rotate(-2deg) scaleX(1.06);
+    margin-top: -0.4rem;
   }
-  .divider-text {
-    font-size: 0.75rem;
-    letter-spacing: 2px;
-  }
-  .divider-center {
-    padding: 0.4rem 1.1rem;
-  }
+  .sd-item { padding: 0 1.4rem; gap: 0.5rem; }
+  .sd-label { font-size: 0.82rem; letter-spacing: 2px; }
+  .sd-icon { font-size: 0.95rem; }
+}
+
+@media (max-width: 480px) {
+  .sd-item { padding: 0 1rem; gap: 0.4rem; }
+  .sd-label { font-size: 0.72rem; letter-spacing: 1.5px; }
+  .sd-icon { font-size: 0.85rem; }
 }

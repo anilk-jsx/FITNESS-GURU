@@ -53,17 +53,11 @@ function App() {
             <About />
             <SectionDivider />
             <Facilities />
-            <SectionDivider />
             <DirectorsMessage />
-            <SectionDivider />
             <Membership />
-            <SectionDivider />
             <Trainers />
-            <SectionDivider />
             <Testimonials />
-            <SectionDivider />
             <Contact />
-            <SectionDivider />
             <Footer />
           </>
         } />
