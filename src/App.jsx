@@ -10,6 +10,7 @@ import SubscriptionManagement from './components/SubscriptionManagement';
 import AttendanceManagement from './components/AttendanceManagement';
 import StaffManagement from './components/StaffManagement';
 import BranchManagement from './components/BranchManagement';
+import SectionDivider from './components/SectionDivider';
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
@@ -48,13 +49,21 @@ function App() {
           <>
             <Navbar />
             <Hero />
+            <SectionDivider />
             <About />
+            <SectionDivider />
             <Facilities />
+            <SectionDivider />
             <DirectorsMessage />
+            <SectionDivider />
             <Membership />
+            <SectionDivider />
             <Trainers />
+            <SectionDivider />
             <Testimonials />
+            <SectionDivider />
             <Contact />
+            <SectionDivider />
             <Footer />
           </>
         } />
