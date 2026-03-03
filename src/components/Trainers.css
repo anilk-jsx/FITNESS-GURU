@@ -1,12 +1,55 @@
 /* Themed Trainers Section */
 .trainers-section {
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+  /* background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%); */
+  background: #1a1a1a;
   color: #fff;
   padding: 120px 0 80px 0;
   text-align: center;
   position: relative;
   overflow: hidden;
 }
+
+/* Background Elements */
+.trainer-bg-elements {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.trainer-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 107, 53, 0.2), transparent);
+  animation: float 8s ease-in-out infinite;
+}
+
+.trainer-circle-1 {
+  width: 250px;
+  height: 250px;
+  bottom: 0%;
+  right: -150px;
+  animation-delay: 0s;
+}
+
+.trainer-circle-2 {
+  width: 200px;
+  height: 200px;
+  bottom: 40%;
+  left: 100px;
+  animation-delay: 4s;
+}
+
+.trainer-circle-3 {
+  width: 150px;
+  height: 150px;
+  top: 10%;
+  right: 100px;
+  animation-delay: 2s;
+}
+
 .trainers-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -96,7 +139,7 @@
   transform-style: preserve-3d;
   will-change: transform;
 }
-.trainer-card.flipped .card-inner {
+.trainer-card:hover .card-inner {
   transform: rotateY(180deg);
 }
 /* Card styling */

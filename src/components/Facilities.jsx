@@ -147,7 +147,8 @@ export default function Facilities() {
               onClick={() => handleCategoryClick(index)}
               style={{
                 '--accent-color': category.accent,
-                '--delay': `${index * 0.1}s`
+                '--shadow-color': `${category.accent}80`,
+                '--delay': `${index * 0.1}s`,
               }}
             >
               <span className="btn-text">{category.title}</span>
@@ -198,12 +199,6 @@ export default function Facilities() {
                   ))}
                 </div>
               </div>
-              
-              <div className="card-decorations">
-                <div className="decoration decoration-1" />
-                <div className="decoration decoration-2" />
-                <div className="decoration decoration-3" />
-              </div>
             </div>
           ))}
         </div>
@@ -234,6 +229,7 @@ export default function Facilities() {
         <div className="floating-element element-1" />
         <div className="floating-element element-2" />
         <div className="floating-element element-3" />
+        <div className="floating-element element-4" />
       </div>
     </section>
   )

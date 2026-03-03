@@ -69,6 +69,7 @@ const DirectorsMessage = () => {
       <div className="directors-bg-elements">
         <div className="directors-circle directors-circle-1"></div>
         <div className="directors-circle directors-circle-2"></div>
+        <div className="directors-circle directors-circle-3"></div>
         <div className="directors-gradient-overlay"></div>
       </div>
 

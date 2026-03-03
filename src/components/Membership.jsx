@@ -102,6 +102,7 @@ const Membership = () => {
       <div className="membership-bg-elements">
         <div className="membership-circle membership-circle-1"></div>
         <div className="membership-circle membership-circle-2"></div>
+        <div className="membership-circle membership-circle-3"></div>
         <div className="membership-gradient-overlay"></div>
       </div>
 

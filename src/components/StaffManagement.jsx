@@ -552,7 +552,6 @@ const StaffManagement = () => {
                 </button>
             </div>
 
-            {/* Statistics Cards */}
             <div className="staff-stats-bar">
                 <div className="staff-stat-item">
                     <i className="fas fa-dumbbell"></i>

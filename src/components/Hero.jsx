@@ -65,7 +65,7 @@ const Hero = () => {
         <div 
           className={`hero-background next ${isTransitioning ? 'fade-in' : ''}`}
           style={{ 
-            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(${backgroundImages[nextImageIndex]})` 
+            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(${backgroundImages[currentImageIndex]})` 
           }}
         />
       </div>
@@ -82,14 +82,7 @@ const Hero = () => {
             className="btn-primary"
             onClick={(e) => { e.preventDefault(); handleScrollToSection('membership'); }}
           >
-            Start Your Journey
-          </a>
-          <a 
-            href="#about" 
-            className="btn-secondary"
-            onClick={(e) => { e.preventDefault(); handleScrollToSection('about'); }}
-          >
-            Learn More
+            Get Started
           </a>
         </div>
       </div>
