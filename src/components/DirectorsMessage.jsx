@@ -95,7 +95,6 @@ const DirectorsMessage = () => {
                 alt="Fitness Guru Director" 
                 className="directors-image"
               />
-              <div className="directors-image-overlay"></div>
             </div>
             <div className="directors-info">
               <h3 className="directors-name">Roshan Das</h3>
@@ -124,7 +123,7 @@ const DirectorsMessage = () => {
                 <span
                   key={index}
                   className={`message-word ${index <= currentWordIndex ? 'visible' : ''}`}
-                  style={{ '--delay': `${index * 0.05}s` }}
+                  style={{ '--delay': `${index * 0}s` }}
                 >
                   {word}
                   {index < words.length - 1 && ' '}

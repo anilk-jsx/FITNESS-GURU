@@ -162,6 +162,7 @@
 .card-front {
   z-index: 2;
   background: linear-gradient(135deg, #232526 0%, #414345 100%);
+  justify-content: space-between;
 }
 .card-back {
   transform: rotateY(180deg);
@@ -169,11 +170,12 @@
   color: #232526;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   font-size: 1.2rem;
   font-weight: 600;
   padding: 1.5em;
 }
+
 .trainer-img-full {
   width: 100%;
   height: 68%;
@@ -240,9 +242,12 @@
   .trainer-card {
     max-width: 300px;
   }
-  .trainer-img-full {
-    min-height: 180px; /* increase image height for better visibility */
-    height: 65%;
+  .trainer-img-full { 
+    height: 100%;
+  }
+
+  .card-back p{
+    font-size: 1.4rem;
   }
 }
 
@@ -259,6 +264,11 @@
   .card-inner {
     height: 100%;
   }
+
+  .card-back p{
+    font-size: 1rem;
+  }
+
   .trainer-img-full {
     height: 100%;
   }
@@ -269,7 +279,7 @@
   }
   .trainer-card {
     /* max-width: 350px; */
-    max-width: 70vw;
+    max-width: 50vw;
     /* aspect-ratio: auto; */
     height: auto;
   }
@@ -279,22 +289,34 @@
   .trainer-img-full {
     height: 100%;
   }
+
+  .card-back p{
+    font-size: 1.25rem;
+  }
+
 }
 
-@media (max-width: 424px) {
+@media (max-width: 474px) {
   .trainers-list {
     grid-template-columns: repeat(1, 2fr);
   }
   .trainer-card {
     /* max-width: 350px; */
-    max-width: 80vw;
+    max-width: 60vw;
     /* aspect-ratio: auto; */
     height: auto;
   }
   .card-inner {
     height: 100%;
   }
+
   .trainer-img-full {
     height: 100%;
+  }
+}
+
+@media (max-width: 1290px){
+  .card-back{
+    font-size: 1rem;
   }
 }

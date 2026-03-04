@@ -35,8 +35,8 @@
 }
 
 .membership-circle-1 {
-  width: 500px;
-  height: 500px;
+  width: 400px;
+  height: 400px;
   top: 20%;
   right: -150px;
   animation-delay: 0s;
@@ -55,6 +55,14 @@
   height: 200px;
   top: 10%;
   left: 200px;
+  animation-delay: 6s;
+}
+
+.membership-circle-4 {
+  width: 200px;
+  height: 200px;
+  top: 60%;
+  left: 900px;
   animation-delay: 6s;
 }
 
@@ -194,7 +202,8 @@
 }
 
 .pricing-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   padding: 2rem 1.5rem 2rem 1.5rem;
@@ -203,7 +212,7 @@
   overflow: hidden;
   animation: slideUp 0.8s ease forwards;
   animation-delay: var(--delay, 0s);
-  transform: translateY(50px);
+  transform: translateY(0px);
   opacity: 0;
   display: flex;
   flex-direction: column;
@@ -220,41 +229,42 @@
 
 @keyframes slideUp {
   to {
-    transform: translateY(0) scale(1);
+    transform: translateY(0) 0.8s scale(1);
     opacity: 1;
   }
 }
 
 .pricing-card:hover {
   transform: translateY(0) scale(1.05) !important;
-  border-color: rgba(255, 107, 53, 0.6);
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.8), rgba(231, 76, 60, 0.8));
+  /* border-color: rgba(255, 107, 53, 0.6);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.8), rgba(231, 76, 60, 0.8)); */
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border: 1px solid #9c9c9c;
 }
 
-.pricing-card:hover .plan-name,
-.pricing-card:hover .price,
-.pricing-card:hover .feature-item,
-.pricing-card:hover .period {
-  color: #ffffff;
+.pricing-card .plan-name,
+.pricing-card .price,
+.pricing-card .feature-item,
+.pricing-card .period {
+  color: #dadadaae;
 }
 
-.pricing-card:hover .currency {
-  color: #ffffff;
+.pricing-card .currency {
+  color: #dadadaae;
 }
 
-.pricing-card:hover .check-icon {
-  color: #ffffff;
+.pricing-card .check-icon {
+  color: #dadadaae;
 }
 
-.pricing-card:hover .plan-btn {
-  color: #ffffff;
-  border: 2px solid #ffffff;
+.pricing-card .plan-btn {
+  color: #9c9c9c;
+  border: 2px solid #9c9c9c;
 }
 
-.pricing-card:hover .popular-badge {
-  background: #ffffff;
-  color: #ff6b35;
+.pricing-card .popular-badge {
+  background: #93939382;
+  color: #ffffffb2;
 }
 
 /* Popular Badge */
@@ -274,18 +284,17 @@
 
 .premium-card {
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 107, 53, 0.05);
   transform: scale(1.02);
   z-index: 2;
 }
 
 .premium-card:hover {
   transform: translateY(0) scale(1.08) !important;
-  background: linear-gradient(135deg, #ff6b35, #e74c3c);
-  border-color: rgba(255, 107, 53, 0.8);
+  /* background: linear-gradient(135deg, #ff6b35, #e74c3c);
+  border-color: rgba(255, 107, 53, 0.8); */
 }
 
-.premium-card:hover .plan-name,
+/* .premium-card:hover .plan-name,
 .premium-card:hover .price,
 .premium-card:hover .feature-item,
 .premium-card:hover .period,
@@ -295,7 +304,7 @@
 
 .premium-card:hover .check-icon {
   color: #ffffff;
-}
+} */
 
 /* Card Header */
 .card-header {
@@ -414,8 +423,8 @@
 .premium-btn,
 .elite-btn {
   background: transparent;
-  color: #ff6b35;
-  border: 2px solid #ff6b35;
+  color: #afafaf;
+  border: 2px solid #acacac;
   box-shadow: none;
 }
 
@@ -423,10 +432,8 @@
 .premium-btn:hover,
 .elite-btn:hover {
   transform: translateY(-2px);
-  background: rgba(255, 107, 53, 0.1);
-  box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
-  color: #ffffff;
-  border: 2px solid white;
+  color: #bababa;
+  border: 2px solid rgb(179, 179, 179);
 }
 
 /* Footer */

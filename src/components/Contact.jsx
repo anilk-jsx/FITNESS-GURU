@@ -83,7 +83,7 @@ const Contact = () => {
                   </select>
                 </div>
                 <div className="form-group">
-                  <textarea rows="6" placeholder="Your Message" required></textarea>
+                  <textarea rows="4" placeholder="Your Message" required></textarea>
                 </div>
                 <button type="submit" className="submit-btn">Send Message</button>
               </form>

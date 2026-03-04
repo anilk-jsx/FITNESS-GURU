@@ -413,6 +413,7 @@
     min-height: auto !important;
     padding-left: 50px;
     position: relative;
+    padding-bottom: 5rem;
   }
 
   .tl-svg-wrap { display: none; }
@@ -568,4 +569,5 @@
   .tl-float-img-2 { width: 40%; height: 80px; }
   .tl-textbox { padding: 1.2rem 1rem; border-radius: 14px; }
   .tl-section { margin-top: 2rem 0.5rem; }
+  .tl-body { padding-bottom: 2rem;}
 }

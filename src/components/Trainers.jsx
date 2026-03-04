@@ -7,7 +7,7 @@ import hero4 from "../assets/heroImg/home7.avif";
 
 const trainers = [
   {
-    name: "Chandan kumar Das",
+    name: "Diego Simsons",
     role: "Fitness Instructor",
     img: hero1,
     socials: {
@@ -16,10 +16,10 @@ const trainers = [
       instagram: "#",
       linkedin: "#",
     },
-    message: "Let’s achieve your fitness goals together!",
+    message: "Certified strength and conditioning specialist with over 8 years of experience helping clients build muscle and improve overall performance.",
   },
   {
-    name: "Rohan Das",
+    name: "Mark Johnson",
     role: "CrossFit Expert, Nutrition",
     img: hero2,
     socials: {
@@ -28,10 +28,10 @@ const trainers = [
       instagram: "#",
       linkedin: "#",
     },
-    message: "Push your limits, see the results!",
+    message: "High-energy CrossFit coach skilled in high-intensity interval training and athletic performance development.",
   },
   {
-    name: "Leo Das",
+    name: "Tom McClern",
     role: "Nutrition Specialized",
     img: hero3,
     socials: {
@@ -40,10 +40,10 @@ const trainers = [
       instagram: "#",
       linkedin: "#",
     },
-    message: "Eat well, train hard, live better!",
+    message: "Certified sports nutritionist helping clients optimize performance through personalized diet planning and balanced meal strategies.",
   },
   {
-    name: "Jailer Das",
+    name: "Julietta MoonWalk",
     role: "Strength & Core",
     img: hero4,
     socials: {
@@ -52,14 +52,13 @@ const trainers = [
       instagram: "#",
       linkedin: "#",
     },
-    message: "Strength comes from within!",
+    message: "Experienced instructor focussing on flexibility, mobility, and mental wellness through mindful movement practices.",
   },
 ];
 
 function Trainers() {
   return (
     <section className="trainers-section" id="trainers">
-
       <div className="trainer-bg-elements">
         <div className="trainer-circle trainer-circle-1"></div>
         <div className="trainer-circle trainer-circle-2"></div>
@@ -104,40 +103,40 @@ function Trainers() {
                   <div className="trainer-info">
                     <h4 className="trainer-name">{trainer.name}</h4>
                     <p className="trainer-role">{trainer.role}</p>
-                    <div className="trainer-socials">
-                      <a
-                        href={trainer.socials.facebook}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <i className="fab fa-facebook-f"></i>
-                      </a>
-                      <a
-                        href={trainer.socials.twitter}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <i className="fab fa-twitter"></i>
-                      </a>
-                      <a
-                        href={trainer.socials.instagram}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <i className="fab fa-instagram"></i>
-                      </a>
-                      <a
-                        href={trainer.socials.linkedin}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <i className="fab fa-linkedin-in"></i>
-                      </a>
-                    </div>
                   </div>
                 </div>
                 <div className="card-back">
                   <p>{trainer.message}</p>
+                  <div className="trainer-socials">
+                    <a
+                      href={trainer.socials.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <i className="fab fa-facebook-f"></i>
+                    </a>
+                    <a
+                      href={trainer.socials.twitter}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <i className="fab fa-twitter"></i>
+                    </a>
+                    <a
+                      href={trainer.socials.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <i className="fab fa-instagram"></i>
+                    </a>
+                    <a
+                      href={trainer.socials.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <i className="fab fa-linkedin-in"></i>
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
