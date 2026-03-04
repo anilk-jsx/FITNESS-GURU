@@ -315,8 +315,14 @@
   }
 }
 
-@media (max-width: 1290px){
-  .card-back{
+@media (max-width:420px){
+  .card-back p{
     font-size: 1rem;
+  }
+}
+
+@media (max-width:360px){
+  .card-back p{
+    font-size: 0.75rem;
   }
 }
