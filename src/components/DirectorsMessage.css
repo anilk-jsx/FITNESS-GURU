@@ -415,9 +415,10 @@
     padding: 1rem 2rem;
     font-size: 1rem;
   }
+
 }
 
-@media (max-width: 480px) {
+@media (max-width: 500px) {
   .directors-message-text {
     font-size: 1rem;
     line-height: 1.6;
@@ -441,6 +442,11 @@
 
   .directors-credentials {
     justify-content: center;
+  }
+
+  .directors-image-wrapper{
+    height: 18rem;
+    width: 100%;
   }
 }
 
