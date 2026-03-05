@@ -814,6 +814,9 @@
 }
 
 @media (max-width: 480px) {
+    .branch-management{
+        padding-top: 25px;
+    }
     .branch-header {
         padding: 16px;
     }

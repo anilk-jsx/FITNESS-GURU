@@ -56,7 +56,7 @@ export default function Testimonials() {
       <div className="testimonials-header">
         <span className="section-tag">Testimonials</span>
         <h2 className="testimonials-title">
-          <span>What Say</span> <span className="highlight">About Our Clients</span>
+          Voice Of <span className="highlight">Our Community</span>
         </h2>
       </div>
       <div className="testimonials-content">

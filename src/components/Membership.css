@@ -177,7 +177,6 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
-  margin-bottom: 4rem;
   opacity: 0;
   transform: translateY(50px);
   transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.4s;
@@ -219,9 +218,15 @@
   height: 620px;
 }
 
-.pricing-card:nth-child(1) { --delay: 0.6s; }
-.pricing-card:nth-child(2) { --delay: 0.7s; }
-.pricing-card:nth-child(3) { --delay: 0.8s; }
+.pricing-card:nth-child(1) {
+  --delay: 0.6s;
+}
+.pricing-card:nth-child(2) {
+  --delay: 0.7s;
+}
+.pricing-card:nth-child(3) {
+  --delay: 0.8s;
+}
 
 .membership-section.in-view .pricing-card {
   animation: slideUp 0.8s ease forwards;
@@ -474,7 +479,8 @@
 
 /* Animations */
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px) rotate(0deg);
   }
   50% {
@@ -483,20 +489,59 @@
 }
 
 /* Responsive Design */
+/* ===============================
+   MOBILE + TABLET CAROUSEL
+=================================*/
+
 @media (max-width: 1024px) {
-  .pricing-cards {
-    grid-template-columns: 1fr;
+  .membership-container {
+    padding: 0 1.5rem;
+  }
+
+  .pricing-card {
     max-width: 500px;
-    margin-left: auto;
-    margin-right: auto;
+    will-change: transform;
+    backface-visibility: hidden;
   }
 
-  .premium-card {
-    transform: none;
+  .swipe-carousel {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 40px 20vw;
+    scroll-behavior: smooth;
   }
 
-  .premium-card:hover {
-    transform: translateY(-10px);
+  .swipe-carousel::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* shrink side cards */
+  .swipe-carousel .pricing-card {
+    flex: 0 0 80%;
+    scroll-snap-align: center;
+
+    transform: scale(0.82);
+    opacity: 0.55;
+    filter: blur(1px);
+
+    transition:
+      transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+      opacity 0.5s ease,
+      filter 0.5s ease;
+    pointer-events: none;
+  }
+
+  /* focused card */
+  .swipe-carousel .center-card {
+    transform: scale(1.08);
+    opacity: 1;
+    filter: blur(0);
+    z-index: 20;
+  }
+
+  .membership-footer{
+    margin: 0;
   }
 }
 
@@ -517,6 +562,7 @@
     padding: 1.5rem 1.2rem 2rem 1.2rem;
     height: auto;
     min-height: 560px;
+    justify-content: space-between;
   }
 
   .features-list {
@@ -536,6 +582,16 @@
     padding: 0.6rem 1rem;
     font-size: 0.9rem;
   }
+
+  .plan-btn {
+    margin: 0;
+  }
+}
+
+@media (max-width: 650px) {
+  .pricing-card {
+    min-width: 400px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -549,8 +605,13 @@
 
   .pricing-card {
     padding: 1.5rem 1rem 2rem 1rem;
-    height: auto;
-    min-height: 520px;
+    min-height: 500px;
+    min-width: 380px;
+    justify-content: space-between;
+  }
+
+  .plan-btn {
+    margin: 0;
   }
 
   .features-list {
@@ -576,5 +637,23 @@
 
   .payment-text {
     font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 440px) {
+  .pricing-card {
+    min-width: 300px;
+  }
+}
+
+@media (max-width: 380px) {
+  .pricing-card {
+    min-width: 280px;
+  }
+}
+
+@media (max-width: 340px) {
+  .pricing-card {
+    min-width: 250px;
   }
 }

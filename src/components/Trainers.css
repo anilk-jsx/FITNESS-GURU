@@ -3,7 +3,7 @@
   /* background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%); */
   background: #1a1a1a;
   color: #fff;
-  padding: 120px 0 80px 0;
+  padding: 30px 0 80px 0;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -171,7 +171,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 600;
   padding: 1.5em;
 }

@@ -899,7 +899,10 @@
 
 @media (max-width: 768px) {
     .subscription-management {
-        padding: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-bottom: 1rem;
+        padding-top: 60px;
     }
 
     .sub-title {
