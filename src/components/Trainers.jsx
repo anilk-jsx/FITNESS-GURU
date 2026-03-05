@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from "react";
 import "./Trainers.css";
 
 import hero1 from "../assets/heroImg/home7.avif";
@@ -10,62 +11,114 @@ const trainers = [
     name: "Diego Simsons",
     role: "Fitness Instructor",
     img: hero1,
-    socials: {
-      facebook: "#",
-      twitter: "#",
-      instagram: "#",
-      linkedin: "#",
-    },
-    message: "Certified strength and conditioning specialist with over 8 years of experience helping clients build muscle and improve overall performance.",
+    socials: {},
+    message:
+      "Certified strength and conditioning specialist with over 8 years of experience helping clients build muscle and improve overall performance.",
   },
   {
     name: "Mark Johnson",
     role: "CrossFit Expert, Nutrition",
     img: hero2,
-    socials: {
-      facebook: "#",
-      twitter: "#",
-      instagram: "#",
-      linkedin: "#",
-    },
-    message: "High-energy CrossFit coach skilled in high-intensity interval training and athletic performance development.",
+    socials: {},
+    message:
+      "High-energy CrossFit coach skilled in high-intensity interval training and athletic performance development.",
   },
   {
     name: "Tom McClern",
     role: "Nutrition Specialized",
     img: hero3,
-    socials: {
-      facebook: "#",
-      twitter: "#",
-      instagram: "#",
-      linkedin: "#",
-    },
-    message: "Certified sports nutritionist helping clients optimize performance through personalized diet planning and balanced meal strategies.",
+    socials: {},
+    message:
+      "Certified sports nutritionist helping clients optimize performance through personalized diet planning and balanced meal strategies.",
   },
   {
     name: "Julietta MoonWalk",
     role: "Strength & Core",
     img: hero4,
-    socials: {
-      facebook: "#",
-      twitter: "#",
-      instagram: "#",
-      linkedin: "#",
-    },
-    message: "Experienced instructor focussing on flexibility, mobility, and mental wellness through mindful movement practices.",
+    socials: {},
+    message:
+      "Experienced instructor focussing on flexibility, mobility, and mental wellness through mindful movement practices.",
   },
 ];
 
 function Trainers() {
+  const [activeIndex, setActiveIndex] = useState(Math.floor(trainers.length / 2));
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+
+    const handleScroll = () => {
+      const cards = container.querySelectorAll(".trainer-card");
+      let closest = 0;
+      let closestOffset = Infinity;
+
+      cards.forEach((card, index) => {
+        const rect = card.getBoundingClientRect();
+        const offset = Math.abs(
+          rect.left + rect.width / 2 - window.innerWidth / 2,
+        );
+
+        if (offset < closestOffset) {
+          closestOffset = offset;
+          closest = index;
+        }
+      });
+
+      setActiveIndex(closest);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+  const container = containerRef.current;
+  const cards = container.querySelectorAll(".trainer-card");
+
+  // Scroll to middle card on first load
+  const middleIndex = Math.floor(cards.length / 2);
+  const middleCard = cards[middleIndex];
+
+  if (middleCard) {
+    const cardOffset =
+      middleCard.offsetLeft -
+      container.offsetWidth / 2 +
+      middleCard.offsetWidth / 2;
+
+    container.scrollTo({
+      left: cardOffset,
+      behavior: "auto",
+    });
+  }
+
+  const handleScroll = () => {
+    let closest = 0;
+    let closestOffset = Infinity;
+
+    cards.forEach((card, index) => {
+      const rect = card.getBoundingClientRect();
+      const offset = Math.abs(
+        rect.left + rect.width / 2 - window.innerWidth / 2
+      );
+
+      if (offset < closestOffset) {
+        closestOffset = offset;
+        closest = index;
+      }
+    });
+
+    setActiveIndex(closest);
+  };
+
+  container.addEventListener("scroll", handleScroll);
+
+  return () => container.removeEventListener("scroll", handleScroll);
+}, []);
+
   return (
     <section className="trainers-section" id="trainers">
-      <div className="trainer-bg-elements">
-        <div className="trainer-circle trainer-circle-1"></div>
-        <div className="trainer-circle trainer-circle-2"></div>
-        <div className="trainer-circle trainer-circle-3"></div>
-        <div className="trainer-gradient-overlay"></div>
-      </div>
-
       <div className="trainers-container">
         <div className="trainers-header">
           <span className="section-tag">Our Trainers</span>
@@ -77,34 +130,28 @@ function Trainers() {
             guide and motivate you every step of the way.
           </p>
         </div>
-        <div className="trainers-list">
+
+        <div className="trainers-list" ref={containerRef}>
           {trainers.map((trainer, idx) => (
             <div
-              className="trainer-card fade-in-up"
+              className={`trainer-card fade-in-up ${
+                idx === activeIndex ? "active" : "inactive"
+              }`}
               key={idx}
-              style={{ animationDelay: `${0.2 + idx * 0.15}s` }}
             >
               <div className="card-inner">
                 <div className="card-front">
                   <div
                     className="trainer-img-full"
                     style={{ backgroundImage: `url(${trainer.img})` }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget
-                        .closest(".trainer-card")
-                        .classList.add("flipped");
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget
-                        .closest(".trainer-card")
-                        .classList.remove("flipped");
-                    }}
                   ></div>
+
                   <div className="trainer-info">
                     <h4 className="trainer-name">{trainer.name}</h4>
                     <p className="trainer-role">{trainer.role}</p>
                   </div>
                 </div>
+
                 <div className="card-back">
                   <p>{trainer.message}</p>
                   <div className="trainer-socials">
