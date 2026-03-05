@@ -25,7 +25,7 @@
   border: 1px solid rgba(255, 107, 53, 0.3);
 }
 .testimonials-title {
-  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  font-size: clamp(2.5rem, 5vw, 4rem);
   font-weight: 800;
   margin-bottom: 1.5rem;
   line-height: 1.2;
@@ -38,6 +38,7 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  
 }
 .testimonials-content {
   display: flex;
@@ -174,9 +175,7 @@
   .testimonials-section {
     padding: 40px 0 24px 0;
   }
-  .testimonials-title {
-    font-size: 1.1rem;
-  }
+  
   .testimonials-content {
     gap: 0.8rem;
   }
