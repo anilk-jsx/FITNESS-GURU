@@ -3,7 +3,7 @@
   /* background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%); */
   background: #1a1a1a;
   color: #fff;
-  padding: 30px 0 80px 0;
+  padding: 30px 0 0 0;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -102,9 +102,11 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 2.5rem;
-  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
   justify-items: center;
   align-items: start;
+  padding: 0 2rem 80px 2rem;
 }
 /* Card entrance animation */
 .trainer-card {
@@ -235,9 +237,10 @@
 }
 
 /* Grid breakpoints: 4 columns -> 2 columns -> 1 column */
-@media (max-width: 1075px) {
+@media (max-width: 1160px) {
   .trainers-list {
     grid-template-columns: repeat(2, 0.5fr);
+    padding: 10px 40px 100px 40px;
   }
   .trainer-card {
     max-width: 300px;
@@ -272,42 +275,44 @@
   }
 
   .trainers-list::before,
-  .trainers-list::after{
-    content:"";
-    flex:0 0 15%;
+  .trainers-list::after {
+    content: "";
+    flex: 0 0 15%;
   }
 
-  .trainers-list{
-    display:flex;
-    overflow-x:auto;
-    gap:20px;
-    scroll-snap-type:x mandatory;
-    scroll-behavior:smooth;
-    padding:20px 40px;
+  .trainers-list {
+    display: flex;
+    overflow-x: auto;
+    gap: 20px;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    padding: 20px 40px 100px 40px;
   }
 
-  .trainers-list::-webkit-scrollbar{
-    display:none;
+  .trainers-list::-webkit-scrollbar {
+    display: none;
   }
 
-  .trainer-card{
-    flex:0 0 65%;
-    scroll-snap-align:center;
-    transition:transform .35s ease, opacity .35s ease;
+  .trainer-card {
+    flex: 0 0 65%;
+    scroll-snap-align: center;
+    transition:
+      transform 0.35s ease,
+      opacity 0.35s ease;
     animation: none;
   }
 
   /* CENTER CARD */
-  .trainer-card.active{
+  .trainer-card.active {
     transform: translateY(0) scale(1.08);
-    opacity:1;
-    z-index:10;
+    opacity: 1;
+    z-index: 10;
   }
 
   /* SIDE CARDS */
-  .trainer-card.inactive{
+  .trainer-card.inactive {
     transform: translateY(0) scale(0.85);
-    opacity:.55;
+    opacity: 0.55;
     pointer-events: none;
   }
 }
@@ -353,10 +358,10 @@
     height: 100%;
   }
 
-  .trainer-socials{
+  .trainer-socials {
     gap: 2vw;
   }
-  .card-back p{
+  .card-back p {
     font-size: 0.85rem;
   }
 }

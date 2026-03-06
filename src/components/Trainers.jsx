@@ -42,7 +42,9 @@ const trainers = [
 ];
 
 function Trainers() {
-  const [activeIndex, setActiveIndex] = useState(Math.floor(trainers.length / 2));
+  const [activeIndex, setActiveIndex] = useState(
+    Math.floor(trainers.length / 2),
+  );
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -74,63 +76,64 @@ function Trainers() {
   }, []);
 
   useEffect(() => {
-  const container = containerRef.current;
-  const cards = container.querySelectorAll(".trainer-card");
+    const container = containerRef.current;
+    const cards = container.querySelectorAll(".trainer-card");
 
-  // Scroll to middle card on first load
-  const middleIndex = Math.floor(cards.length / 2);
-  const middleCard = cards[middleIndex];
+    // Scroll to middle card on first load
+    const middleIndex = Math.floor(cards.length / 2);
+    const middleCard = cards[middleIndex];
 
-  if (middleCard) {
-    const cardOffset =
-      middleCard.offsetLeft -
-      container.offsetWidth / 2 +
-      middleCard.offsetWidth / 2;
+    if (middleCard) {
+      const cardOffset =
+        middleCard.offsetLeft -
+        container.offsetWidth / 2 +
+        middleCard.offsetWidth / 2;
 
-    container.scrollTo({
-      left: cardOffset,
-      behavior: "auto",
-    });
-  }
+      container.scrollTo({
+        left: cardOffset,
+        behavior: "auto",
+      });
+    }
 
-  const handleScroll = () => {
-    let closest = 0;
-    let closestOffset = Infinity;
+    const handleScroll = () => {
+      let closest = 0;
+      let closestOffset = Infinity;
 
-    cards.forEach((card, index) => {
-      const rect = card.getBoundingClientRect();
-      const offset = Math.abs(
-        rect.left + rect.width / 2 - window.innerWidth / 2
-      );
+      cards.forEach((card, index) => {
+        const rect = card.getBoundingClientRect();
+        const offset = Math.abs(
+          rect.left + rect.width / 2 - window.innerWidth / 2,
+        );
 
-      if (offset < closestOffset) {
-        closestOffset = offset;
-        closest = index;
-      }
-    });
+        if (offset < closestOffset) {
+          closestOffset = offset;
+          closest = index;
+        }
+      });
 
-    setActiveIndex(closest);
-  };
+      setActiveIndex(closest);
+    };
 
-  container.addEventListener("scroll", handleScroll);
+    container.addEventListener("scroll", handleScroll);
 
-  return () => container.removeEventListener("scroll", handleScroll);
-}, []);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
-    <section className="trainers-section" id="trainers">
-      <div className="trainers-container">
-        <div className="trainers-header">
-          <span className="section-tag">Our Trainers</span>
-          <h2 className="trainers-title">
-            Meet Our <span className="highlight">Trainers</span>
-          </h2>
-          <p className="trainers-subtitle">
-            Expertise. Passion. Results. Our certified trainers are here to
-            guide and motivate you every step of the way.
-          </p>
+    <>
+      <section className="trainers-section" id="trainers">
+        <div className="trainers-container">
+          <div className="trainers-header">
+            <span className="section-tag">Our Trainers</span>
+            <h2 className="trainers-title">
+              Meet Our <span className="highlight">Trainers</span>
+            </h2>
+            <p className="trainers-subtitle">
+              Expertise. Passion. Results. Our certified trainers are here to
+              guide and motivate you every step of the way.
+            </p>
+          </div>
         </div>
-
         <div className="trainers-list" ref={containerRef}>
           {trainers.map((trainer, idx) => (
             <div
@@ -189,8 +192,8 @@ function Trainers() {
             </div>
           ))}
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
 
