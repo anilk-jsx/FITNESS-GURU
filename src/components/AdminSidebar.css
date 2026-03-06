@@ -185,4 +185,7 @@
         width: 28px;
         height: 28px;
     }
+    .logout-btn{
+        margin-bottom: 50px;
+    }
 }

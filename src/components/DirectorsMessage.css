@@ -1,15 +1,7 @@
-.directors-message-section {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 30%, #0f0f0f 70%, #0a0a0a 100%);
-  position: relative;
-  overflow: hidden;
-  padding: 120px 0;
-}
-
 .directors-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 4rem;
   position: relative;
   z-index: 2;
 }
@@ -27,24 +19,32 @@
 .directors-circle {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 107, 53, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 107, 53, 0.2), transparent);
   animation: float 6s ease-in-out infinite;
 }
 
 .directors-circle-1 {
   width: 400px;
   height: 400px;
-  top: 10%;
+  top: 20%;
   right: -100px;
   animation-delay: 0s;
 }
 
 .directors-circle-2 {
-  width: 300px;
-  height: 300px;
+  width: 200px;
+  height: 200px;
   bottom: 20%;
   left: -80px;
   animation-delay: 3s;
+}
+
+.directors-circle-3 {
+  width: 100px;
+  height: 100px;
+  top: 25%;
+  left: 550px;
+  animation-delay: 6s;
 }
 
 .directors-gradient-overlay {
@@ -53,13 +53,6 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    45deg,
-    rgba(255, 107, 53, 0.03) 0%,
-    transparent 25%,
-    transparent 75%,
-    rgba(231, 76, 60, 0.03) 100%
-  );
 }
 
 /* Header Styles */
@@ -79,10 +72,10 @@
 /* Ensure section is visible */
 .directors-message-section {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 30%, #0f0f0f 70%, #0a0a0a 100%);
+  background: #1a1a1a;
   position: relative;
   overflow: hidden;
-  padding: 120px 0;
+  padding: 70px 0;
   opacity: 1;
   visibility: visible;
 }
@@ -104,13 +97,18 @@
 }
 
 .directors-tag::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 107, 53, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 107, 53, 0.2),
+    transparent
+  );
   transition: left 0.6s ease;
 }
 
@@ -144,8 +142,7 @@
 
 /* Main Content */
 .directors-content {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
+  display: flex;
   gap: 4rem;
   margin-bottom: 5rem;
   align-items: center;
@@ -170,33 +167,16 @@
   margin-bottom: 2rem;
   background: linear-gradient(45deg, #ff6b35, #e74c3c);
   padding: 4px;
+  height: 25rem;
+  width: 25rem;
 }
 
 .directors-image {
   width: 100%;
-  height: 400px;
+  height: 100%;
   object-fit: cover;
   border-radius: 16px;
   transition: transform 0.6s ease;
-}
-
-.directors-image-wrapper:hover .directors-image {
-  transform: scale(1.05);
-}
-
-.directors-image-overlay {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  right: 4px;
-  bottom: 4px;
-  background: linear-gradient(
-    135deg,
-    transparent 0%,
-    rgba(0, 0, 0, 0.3) 100%
-  );
-  border-radius: 16px;
-  pointer-events: none;
 }
 
 .directors-info {
@@ -255,7 +235,7 @@
 .directors-message-text {
   font-size: 1.2rem;
   line-height: 1.8;
-  color: #e0e0e0;
+  color: #c3c3c3;
   margin-bottom: 3rem;
   text-align: justify;
   opacity: 1;
@@ -264,15 +244,15 @@
 
 .message-word {
   opacity: 1;
-  color: #888888;
-  font-weight: 400;
+  color: #56565600;
+  font-weight: 300;
   display: inline;
   transition: color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   transition-delay: var(--delay);
 }
 
 .message-word.visible {
-  color: #ffffff;
+  color: #e2e2e2;
 }
 
 .directors-signature {
@@ -333,13 +313,18 @@
 }
 
 .directors-cta-btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
   transition: left 0.6s ease;
 }
 
@@ -365,7 +350,8 @@
 
 /* Animations */
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px) rotate(0deg);
   }
   50% {
@@ -401,7 +387,7 @@
   }
 
   .directors-container {
-    padding: 0 1rem;
+    padding: 0 3rem;
   }
 
   .directors-header {
@@ -417,21 +403,22 @@
   }
 
   .directors-image {
-    height: 300px;
+    height: 100%;
   }
 
   .directors-message-text {
     font-size: 1.1rem;
-    text-align: left;
+    text-align: justify;
   }
 
   .directors-cta-btn {
     padding: 1rem 2rem;
     font-size: 1rem;
   }
+
 }
 
-@media (max-width: 480px) {
+@media (max-width: 500px) {
   .directors-message-text {
     font-size: 1rem;
     line-height: 1.6;
@@ -455,5 +442,16 @@
 
   .directors-credentials {
     justify-content: center;
+  }
+
+  .directors-image-wrapper{
+    height: 18rem;
+    width: 100%;
+  }
+}
+
+@media(max-width:1200px){
+  .directors-content{
+    flex-direction: column;
   }
 }

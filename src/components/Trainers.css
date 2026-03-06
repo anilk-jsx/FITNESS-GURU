@@ -1,12 +1,55 @@
 /* Themed Trainers Section */
 .trainers-section {
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+  /* background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%); */
+  background: #1a1a1a;
   color: #fff;
-  padding: 120px 0 80px 0;
+  padding: 30px 0 0 0;
   text-align: center;
   position: relative;
   overflow: hidden;
 }
+
+/* Background Elements */
+.trainer-bg-elements {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.trainer-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 107, 53, 0.2), transparent);
+  animation: float 8s ease-in-out infinite;
+}
+
+.trainer-circle-1 {
+  width: 250px;
+  height: 250px;
+  bottom: 0%;
+  right: -150px;
+  animation-delay: 0s;
+}
+
+.trainer-circle-2 {
+  width: 200px;
+  height: 200px;
+  bottom: 40%;
+  left: 100px;
+  animation-delay: 4s;
+}
+
+.trainer-circle-3 {
+  width: 150px;
+  height: 150px;
+  top: 10%;
+  right: 100px;
+  animation-delay: 2s;
+}
+
 .trainers-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -59,9 +102,11 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 2.5rem;
-  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
   justify-items: center;
   align-items: start;
+  padding: 0 2rem 80px 2rem;
 }
 /* Card entrance animation */
 .trainer-card {
@@ -77,11 +122,6 @@
   position: relative;
   z-index: 1;
 }
-.fade-in-up {
-  opacity: 0;
-  transform: translateY(40px);
-  animation: fadeInUp 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-}
 @keyframes fadeInUp {
   to {
     opacity: 1;
@@ -92,15 +132,16 @@
   position: relative;
   width: 100%;
   height: 100%;
-  transition: transform 0.7s cubic-bezier(0.4,0.2,0.2,1);
+  transition: transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);
   transform-style: preserve-3d;
   will-change: transform;
 }
-.trainer-card.flipped .card-inner {
+.trainer-card:hover .card-inner {
   transform: rotateY(180deg);
 }
 /* Card styling */
-.card-front, .card-back {
+.card-front,
+.card-back {
   position: absolute;
   top: 0;
   left: 0;
@@ -108,7 +149,7 @@
   height: 100%;
   backface-visibility: hidden;
   border-radius: 18px;
-  box-shadow: 0 6px 32px 0 rgba(0,0,0,0.18);
+  box-shadow: 0 6px 32px 0 rgba(0, 0, 0, 0.18);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -119,6 +160,7 @@
 .card-front {
   z-index: 2;
   background: linear-gradient(135deg, #232526 0%, #414345 100%);
+  justify-content: space-between;
 }
 .card-back {
   transform: rotateY(180deg);
@@ -126,11 +168,12 @@
   color: #232526;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
+  justify-content: space-between;
+  font-size: 1rem;
   font-weight: 600;
   padding: 1.5em;
 }
+
 .trainer-img-full {
   width: 100%;
   height: 68%;
@@ -142,7 +185,7 @@
   border-bottom: 2px solid #232526;
 }
 .trainer-info {
-  background: rgba(35,37,38,0.98);
+  background: rgba(35, 37, 38, 0.98);
   padding: 1.1em 1em 1.2em 1em;
   border-bottom-left-radius: 18px;
   border-bottom-right-radius: 18px;
@@ -180,26 +223,34 @@
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
-  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 8px rgba(255,107,53,0.08);
+  transition:
+    background 0.2s,
+    color 0.2s,
+    box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.08);
 }
 .trainer-socials a:hover {
+  cursor: pointer;
   background: #ff6b35;
   color: #fff;
-  box-shadow: 0 4px 16px rgba(255,107,53,0.18);
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.18);
 }
 
 /* Grid breakpoints: 4 columns -> 2 columns -> 1 column */
-@media (max-width: 1075px) {
+@media (max-width: 1160px) {
   .trainers-list {
     grid-template-columns: repeat(2, 0.5fr);
+    padding: 10px 40px 100px 40px;
   }
   .trainer-card {
     max-width: 300px;
   }
   .trainer-img-full {
-    min-height: 180px; /* increase image height for better visibility */
-    height: 65%;
+    height: 100%;
+  }
+
+  .card-back p {
+    font-size: 1.4rem;
   }
 }
 
@@ -209,49 +260,120 @@
   }
   .trainer-card {
     max-width: 250px;
-    /* width: 98vw; */
-    /* aspect-ratio: auto; */
     height: auto;
   }
   .card-inner {
     height: 100%;
   }
+
+  .card-back p {
+    font-size: 1rem;
+  }
+
   .trainer-img-full {
     height: 100%;
   }
+
+  .trainers-list::before,
+  .trainers-list::after {
+    content: "";
+    flex: 0 0 15%;
+  }
+
+  .trainers-list {
+    display: flex;
+    overflow-x: auto;
+    gap: 20px;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    padding: 20px 40px 100px 40px;
+  }
+
+  .trainers-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .trainer-card {
+    flex: 0 0 65%;
+    scroll-snap-align: center;
+    transition:
+      transform 0.35s ease,
+      opacity 0.35s ease;
+    animation: none;
+  }
+
+  /* CENTER CARD */
+  .trainer-card.active {
+    transform: translateY(0) scale(1.08);
+    opacity: 1;
+    z-index: 10;
+  }
+
+  /* SIDE CARDS */
+  .trainer-card.inactive {
+    transform: translateY(0) scale(0.85);
+    opacity: 0.55;
+    pointer-events: none;
+  }
 }
+
 @media (max-width: 550px) {
   .trainers-list {
     grid-template-columns: repeat(1, 2fr);
   }
   .trainer-card {
     /* max-width: 350px; */
-    max-width: 70vw;
+    max-width: 50vw;
     /* aspect-ratio: auto; */
     height: auto;
   }
   .card-inner {
     height: 100%;
   }
+
   .trainer-img-full {
     height: 100%;
   }
+
+  .card-back p {
+    font-size: 1rem;
+  }
 }
 
-@media (max-width: 424px) {
+@media (max-width: 474px) {
   .trainers-list {
     grid-template-columns: repeat(1, 2fr);
   }
   .trainer-card {
     /* max-width: 350px; */
-    max-width: 80vw;
+    max-width: 220px;
     /* aspect-ratio: auto; */
-    height: auto;
+    height: 300px;
   }
   .card-inner {
     height: 100%;
   }
+
   .trainer-img-full {
     height: 100%;
+  }
+
+  .trainer-socials {
+    gap: 2vw;
+  }
+  .card-back p {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .card-back p {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .card-back p {
+    font-size: 0.75rem;
   }
 }

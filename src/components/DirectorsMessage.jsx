@@ -10,7 +10,7 @@ const DirectorsMessage = () => {
   
   const message = "In today's fast-paced world, fitness isn't just a luxury—it's a necessity. At Fitness Guru, we understand the challenges of maintaining your health while juggling career, family, and personal goals. Our mission is simple: to be your trusted partner in transforming not just your body, but your entire approach to wellness. We believe that everyone deserves access to world-class fitness guidance, regardless of their schedule or starting point. Through innovative training methods, personalized coaching, and a supportive community, we're here to help you reclaim your strength, energy, and confidence. Because when you invest in your fitness, you're investing in every aspect of your life."
 
-  const words = message.split(' ')
+  const words = message.split('. ')
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -69,6 +69,7 @@ const DirectorsMessage = () => {
       <div className="directors-bg-elements">
         <div className="directors-circle directors-circle-1"></div>
         <div className="directors-circle directors-circle-2"></div>
+        <div className="directors-circle directors-circle-3"></div>
         <div className="directors-gradient-overlay"></div>
       </div>
 
@@ -94,7 +95,6 @@ const DirectorsMessage = () => {
                 alt="Fitness Guru Director" 
                 className="directors-image"
               />
-              <div className="directors-image-overlay"></div>
             </div>
             <div className="directors-info">
               <h3 className="directors-name">Roshan Das</h3>
@@ -123,7 +123,7 @@ const DirectorsMessage = () => {
                 <span
                   key={index}
                   className={`message-word ${index <= currentWordIndex ? 'visible' : ''}`}
-                  style={{ '--delay': `${index * 0.05}s` }}
+                  style={{ '--delay': `${index * 0}s` }}
                 >
                   {word}
                   {index < words.length - 1 && ' '}

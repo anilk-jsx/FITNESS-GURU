@@ -2,8 +2,8 @@
 
 .subscription-management {
     padding: 2rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
+    animation: fadeInUp 0.5s ease;
 }
 
 /* Header */
@@ -899,7 +899,10 @@
 
 @media (max-width: 768px) {
     .subscription-management {
-        padding: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-bottom: 1rem;
+        padding-top: 60px;
     }
 
     .sub-title {
