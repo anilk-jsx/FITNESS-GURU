@@ -57,8 +57,8 @@ const MemberManagement = () => {
     address_line2: "",
     country_id: "1",
     state_id: "",
-    district_id: "",
-    city_id: "",
+    district: "",
+    city: "",
   });
 
   // Location and branch data - state management
@@ -425,17 +425,17 @@ const MemberManagement = () => {
 
   // Effect to fetch cities when district changes in add form
   useEffect(() => {
-    if (addFormData.district_id) {
-      fetchCities(addFormData.district_id);
+    if (addFormData.district) {
+      fetchCities(addFormData.district);
     }
-  }, [addFormData.district_id]);
+  }, [addFormData.district]);
 
   // Effect to fetch cities when district changes in edit form
   useEffect(() => {
-    if (editFormData?.district_id) {
-      fetchCities(editFormData.district_id);
+    if (editFormData?.district) {
+      fetchCities(editFormData.district);
     }
-  }, [editFormData?.district_id]);
+  }, [editFormData?.district]);
 
   // Effect to fetch membership plans when branch changes
   useEffect(() => {
@@ -486,7 +486,7 @@ const MemberManagement = () => {
 
     try {
       const response = await tokenManager.apiCall(
-        `${API_BASE_URL}/api/members/view?user_id=${userId}`,
+        buildApiUrl(`members/view?user_id=${userId}`),
         {
           method: "GET",
           headers: {
@@ -570,7 +570,7 @@ const MemberManagement = () => {
       try {
         setLoading(true);
         const response = await tokenManager.apiCall(
-          `${API_BASE_URL}/api/members/view?user_id=${member.user_id}`,
+          buildApiUrl(`members/view?user_id=${member.user_id}`),
           {
             method: "GET",
             headers: {
@@ -647,8 +647,8 @@ const MemberManagement = () => {
       emergency_contact: detailedMember.emergency_contact || "",
       country: parseInt(detailedMember.country_id) || 1,
       state: parseInt(detailedMember.state_id) || "",
-      district_id: parseInt(detailedMember.district_id) || "",
-      city_id: parseInt(detailedMember.city_id) || "",
+      district: parseInt(detailedMember.district_id) || "",
+      city: parseInt(detailedMember.city_id) || "",
       address_line1: detailedMember.address_line1 || "",
       address_line2: detailedMember.address_line2 || "",
 
@@ -689,8 +689,8 @@ const MemberManagement = () => {
         if (formData.state) {
           await fetchDistricts(formData.state);
         }
-        if (formData.district_id) {
-          await fetchCities(formData.district_id);
+        if (formData.district) {
+          await fetchCities(formData.district);
         }
 
         // Now set the form data AFTER all dropdowns are loaded
@@ -737,13 +737,13 @@ const MemberManagement = () => {
       // Reset dependent fields when parent changes (for location dropdowns)
       if (name === "country") {
         updated.state = "";
-        updated.district_id = "";
-        updated.city_id = "";
+        updated.district = "";
+        updated.city = "";
       } else if (name === "state") {
-        updated.district_id = "";
-        updated.city_id = "";
-      } else if (name === "district_id") {
-        updated.city_id = "";
+        updated.district = "";
+        updated.city = "";
+      } else if (name === "district") {
+        updated.city = "";
       } else if (name === "branch_id") {
         // Reset plan selection when branch changes
         updated.membership_plan = "";
@@ -801,7 +801,7 @@ const MemberManagement = () => {
         name: editFormData.name.trim(),
         email: editFormData.email.trim(),
         phone: editFormData.phone.trim(),
-        status: editFormData.status,
+        status: editFormData.status === "ACTIVE" ? 1 : 0,
 
         // Profile information
         dob: editFormData.dob,
@@ -850,7 +850,7 @@ const MemberManagement = () => {
       console.log("Updating member with data:", updateData);
 
       // Use the single API endpoint for updating member details
-      const apiUrl = "https://api.fitnessguru.org.in/api/members/updateMember";
+      const apiUrl = buildApiUrl("members/updateMember");
       console.log("API URL:", apiUrl);
 
       const response = await tokenManager.apiCall(apiUrl, {
@@ -993,8 +993,8 @@ const MemberManagement = () => {
   const getFilteredCities = () => {
     return cities.filter(
       (city) =>
-        city.district_id === parseInt(addFormData.district_id) &&
-        city.status === "ACTIVE",
+        city.district_id === parseInt(addFormData.district) &&
+        city.status === 1
     );
   };
 
@@ -1014,8 +1014,8 @@ const MemberManagement = () => {
   const getEditFilteredCities = () => {
     return cities.filter(
       (city) =>
-        city.district_id === parseInt(editFormData.district_id) &&
-        city.status === "ACTIVE",
+        city.district_id === parseInt(editFormData.district) &&
+        city.status === 1
     );
   };
 
@@ -1024,7 +1024,7 @@ const MemberManagement = () => {
     const selectedBranchId = addFormData.branch_id || editFormData?.branch_id;
     return membershipPlans.filter(
       (plan) =>
-        plan.status === "ACTIVE" &&
+        plan.status === 1 &&
         (plan.branch_id == selectedBranchId || plan.branch_id === null),
     );
   };
@@ -1044,13 +1044,13 @@ const MemberManagement = () => {
       // Reset dependent fields when parent changes
       if (name === "country_id") {
         updated.state_id = "";
-        updated.district_id = "";
-        updated.city_id = "";
+        updated.district = "";
+        updated.city = "";
       } else if (name === "state_id") {
-        updated.district_id = "";
-        updated.city_id = "";
-      } else if (name === "district_id") {
-        updated.city_id = "";
+        updated.district = "";
+        updated.city = "";
+      } else if (name === "district") {
+        updated.city = "";
       } else if (name === "branch_id") {
         // Reset plan selection when branch changes
         updated.plan_id = "";
@@ -1172,8 +1172,8 @@ const MemberManagement = () => {
           transformGoalFocus(addFormData.goal_focus) || "General Fitness",
         country: parseInt(addFormData.country_id) || 1,
         state: parseInt(addFormData.state_id) || 1,
-        district: parseInt(addFormData.district_id) || 1,
-        city: parseInt(addFormData.city_id) || 1,
+        district: parseInt(addFormData.district) || 1,
+        city: parseInt(addFormData.city) || 1,
         address_line1: addFormData.address_line1 || "",
         address_line2: addFormData.address_line2 || "",
         emergency_contact: addFormData.emergency_contact || "",
@@ -1229,8 +1229,8 @@ const MemberManagement = () => {
           address_line2: "",
           country_id: "1",
           state_id: "",
-          district_id: "",
-          city_id: "",
+          district: "",
+          city: "",
         });
 
         // Refresh the members list
@@ -1270,8 +1270,8 @@ const MemberManagement = () => {
       address_line2: "",
       country_id: "1",
       state_id: "",
-      district_id: "",
-      city_id: "",
+      district: "",
+      city: "",
     });
     setShowAddModal(true);
   };
@@ -2218,8 +2218,8 @@ const MemberManagement = () => {
                     <div className="member-form-group">
                       <label>District</label>
                       <select
-                        name="district_id"
-                        value={editFormData.district_id}
+                        name="district"
+                        value={editFormData.district}
                         onChange={handleFormChange}
                         disabled={
                           !editFormData.state || dropdownLoading.districts
@@ -2249,10 +2249,10 @@ const MemberManagement = () => {
                     <div className="member-form-group">
                       <label>City</label>
                       <select
-                        name="city_id"
-                        value={editFormData.city_id}
+                        name="city"
+                        value={editFormData.city}
                         onChange={handleFormChange}
-                        disabled={!editFormData.district_id}
+                        disabled={!editFormData.district}
                       >
                         <option key="select-city" value="">
                           Select City
@@ -2750,8 +2750,8 @@ const MemberManagement = () => {
                     <div className="member-form-group">
                       <label>District *</label>
                       <select
-                        name="district_id"
-                        value={addFormData.district_id}
+                        name="district"
+                        value={addFormData.district}
                         onChange={handleAddFormChange}
                         required
                         disabled={
@@ -2778,11 +2778,11 @@ const MemberManagement = () => {
                     <div className="member-form-group">
                       <label>City *</label>
                       <select
-                        name="city_id"
-                        value={addFormData.city_id}
+                        name="city"
+                        value={addFormData.city}
                         onChange={handleAddFormChange}
                         required
-                        disabled={!addFormData.district_id}
+                        disabled={!addFormData.district}
                       >
                         <option key="select-city" value="">
                           Select City
