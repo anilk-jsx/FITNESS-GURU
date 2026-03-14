@@ -96,6 +96,55 @@ const MemberManagement = () => {
     return `${API_BASE_URL}${basePath}/${endpoint}`;
   };
 
+  const isActiveStatus = (value) => {
+    if (value === 1 || value === "1") return true;
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") {
+      const normalized = value.trim().toUpperCase();
+      return normalized === "ACTIVE" || normalized === "TRUE";
+    }
+    return false;
+  };
+
+  const toIntOrNull = (value) => {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
+
+  const normalizeMembershipPlan = (plan, index) => {
+    const rawPlanId =
+      plan.plan_id ??
+      plan.membership_plan_id ??
+      plan.id ??
+      plan.subscription_plan_id ??
+      null;
+
+    return {
+      ...plan,
+      plan_id: rawPlanId,
+      branch_id: toIntOrNull(plan.branch_id),
+      is_active: isActiveStatus(plan.status ?? plan.is_active),
+      plan_name: plan.plan_name || plan.name || `Plan ${index + 1}`,
+      duration_days:
+        toIntOrNull(plan.duration_days) ??
+        (toIntOrNull(plan.duration_months)
+          ? toIntOrNull(plan.duration_months) * 30
+          : null),
+    };
+  };
+
+  const getPlanOptionValue = (plan) => {
+    if (plan.plan_id === null || plan.plan_id === undefined) return "";
+    return String(plan.plan_id);
+  };
+
+  const isBranchMatched = (planBranchId, selectedBranchId) => {
+    if (planBranchId === null || planBranchId === undefined || planBranchId === "") {
+      return true;
+    }
+    return String(planBranchId) === String(selectedBranchId);
+  };
+
   // Fetch countries from API
   const fetchCountries = async () => {
     setDropdownLoading((prev) => ({ ...prev, countries: true }));
@@ -265,10 +314,11 @@ const MemberManagement = () => {
 
       const result = await response.json();
       if (result.status === "success") {
-        setMembershipPlans(result.data || []);
+        const normalizedPlans = (result.data || []).map(normalizeMembershipPlan);
+        setMembershipPlans(normalizedPlans);
         console.log(
           "Membership plans loaded:",
-          result.data?.length || 0,
+          normalizedPlans.length,
           "items",
         );
       } else {
@@ -558,7 +608,7 @@ const MemberManagement = () => {
   };
 
   const formatSubscriptionStatus = (status) => {
-    return status === 1 ? "Active" : "Inactive";
+    return isActiveStatus(status) ? "Active" : "Inactive";
   };
 
   const handleEditMember = async (member) => {
@@ -598,17 +648,12 @@ const MemberManagement = () => {
     }
 
     // Populate form with detailed member data
-    console.log(
-      "🔍 All fields in detailedMember:",
-      Object.keys(detailedMember),
-    );
-    console.log("🔍 Membership-related fields:", {
-      membership_plan: detailedMember.membership_plan,
-      plan_id: detailedMember.plan_id,
-      membership_plan_id: detailedMember.membership_plan_id,
-      current_plan: detailedMember.current_plan,
-      branch_id: detailedMember.branch_id,
-    });
+    const resolvedMembershipPlanId =
+      detailedMember.membership_plan ??
+      detailedMember.plan_id ??
+      detailedMember.membership_plan_id ??
+      detailedMember.current_plan ??
+      "";
 
     const formData = {
       user_id: detailedMember.user_id,
@@ -634,21 +679,18 @@ const MemberManagement = () => {
       goal_focus: detailedMember.goal_focus || "",
 
       // Gym and membership - try multiple possible field names
-      branch_id: detailedMember.branch_id || "",
-      membership_plan:
-        parseInt(detailedMember.membership_plan) ||
-        parseInt(detailedMember.plan_id) ||
-        parseInt(detailedMember.membership_plan_id) ||
-        parseInt(detailedMember.current_plan) ||
-        "",
+      branch_id: detailedMember.branch_id ? String(detailedMember.branch_id) : "",
+      membership_plan: resolvedMembershipPlanId
+        ? String(resolvedMembershipPlanId)
+        : "",
       join_date: detailedMember.date_of_joining || "",
 
       // Contact and address - using consistent property names
       emergency_contact: detailedMember.emergency_contact || "",
-      country: parseInt(detailedMember.country_id) || 1,
-      state: parseInt(detailedMember.state_id) || "",
-      district: parseInt(detailedMember.district_id) || "",
-      city: parseInt(detailedMember.city_id) || "",
+      country: detailedMember.country_id ? String(detailedMember.country_id) : "1",
+      state: detailedMember.state_id ? String(detailedMember.state_id) : "",
+      district: detailedMember.district_id ? String(detailedMember.district_id) : "",
+      city: detailedMember.city_id ? String(detailedMember.city_id) : "",
       address_line1: detailedMember.address_line1 || "",
       address_line2: detailedMember.address_line2 || "",
 
@@ -657,63 +699,20 @@ const MemberManagement = () => {
       confirm_password: "",
     };
 
-    console.log("🎯 Final formData created:", formData);
-    console.log("🎯 membership_plan value to set:", formData.membership_plan);
+    // Open modal immediately to avoid delayed UX, then hydrate dropdowns in background.
+    setEditFormData(formData);
+    setShowEditModal(true);
 
-    // Load dropdown data in sequence FIRST, then set form data
-    const loadEditFormDropdowns = async () => {
-      try {
-        // Clear existing membership plans to avoid stale data
-        setMembershipPlans([]);
+    Promise.allSettled([
+      fetchBranches(1),
+      formData.branch_id ? fetchMembershipPlans(1, formData.branch_id) : Promise.resolve(),
+      formData.country ? fetchStates(formData.country) : Promise.resolve(),
+      formData.state ? fetchDistricts(formData.state) : Promise.resolve(),
+      formData.district ? fetchCities(formData.district) : Promise.resolve(),
+    ]).catch((dropdownError) => {
+      console.error("Error loading edit dropdown data:", dropdownError);
+    });
 
-        // Always load branches first
-        await fetchBranches(1);
-
-        // Load membership plans for the selected branch FIRST to ensure they're available
-        if (detailedMember.branch_id) {
-          await fetchMembershipPlans(1, detailedMember.branch_id);
-          console.log(
-            "🎯 Loaded membership plans for branch:",
-            detailedMember.branch_id,
-          );
-          console.log(
-            "🎯 Available membership plans after loading:",
-            membershipPlans,
-          );
-        }
-
-        // Load location data in sequence if we have the IDs
-        if (formData.country) {
-          await fetchStates(formData.country);
-        }
-        if (formData.state) {
-          await fetchDistricts(formData.state);
-        }
-        if (formData.district) {
-          await fetchCities(formData.district);
-        }
-
-        // Now set the form data AFTER all dropdowns are loaded
-        console.log("🎯 About to set form data:", formData);
-        setEditFormData(formData);
-
-        // Add small delay to ensure state updates
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        console.log("🎯 Form data set, showing modal");
-
-        // Show the modal only after everything is loaded
-        setShowEditModal(true);
-      } catch (error) {
-        console.error("Error loading dropdown data for edit form:", error);
-        // Set form data and show modal even if there's an error loading dropdowns
-        setEditFormData(formData);
-        setShowEditModal(true);
-      }
-    };
-
-    // Load dropdown data first, then set form data and show modal
-    loadEditFormDropdowns();
     setShowMemberProfile(false);
   };
 
@@ -751,7 +750,7 @@ const MemberManagement = () => {
         if (value) {
           fetchMembershipPlans(1, value);
         } else {
-          fetchMembershipPlans(1); // Fetch gym-wide plans
+          setMembershipPlans([]);
         }
       }
 
@@ -816,7 +815,7 @@ const MemberManagement = () => {
 
         // Gym and membership
         branch_id: parseInt(editFormData.branch_id) || null,
-        membership_plan: parseInt(editFormData.membership_plan) || null,
+        membership_plan: toIntOrNull(editFormData.membership_plan),
         join_date: editFormData.join_date,
 
         // Contact and address
@@ -994,7 +993,7 @@ const MemberManagement = () => {
     return cities.filter(
       (city) =>
         city.district_id === parseInt(addFormData.district) &&
-        city.status === 1
+        isActiveStatus(city.status),
     );
   };
 
@@ -1015,24 +1014,22 @@ const MemberManagement = () => {
     return cities.filter(
       (city) =>
         city.district_id === parseInt(editFormData.district) &&
-        city.status === 1
+        isActiveStatus(city.status),
     );
   };
 
   // Get available plans based on selected branch (gym-wide plans + branch-specific plans)
-  const getAvailablePlans = () => {
-    const selectedBranchId = addFormData.branch_id || editFormData?.branch_id;
+  const getAvailablePlans = (selectedBranchId) => {
     return membershipPlans.filter(
       (plan) =>
-        plan.status === 1 &&
-        (plan.branch_id == selectedBranchId || plan.branch_id === null),
+        plan.is_active && isBranchMatched(plan.branch_id, selectedBranchId),
     );
   };
 
   // Get branch name from branch_id
   const getBranchName = (branchId) => {
     if (!branchId) return "N/A";
-    const branch = branches.find((b) => b.branch_id === branchId);
+    const branch = branches.find((b) => String(b.branch_id) === String(branchId));
     return branch ? branch.branch_name : `Branch ${branchId}`;
   };
 
@@ -1160,7 +1157,7 @@ const MemberManagement = () => {
         status: addFormData.status === "ACTIVE" ? 1 : 0,
         join_date:
           addFormData.join_date || new Date().toISOString().split("T")[0],
-        membership_plan: parseInt(addFormData.plan_id) || 1,
+        membership_plan: toIntOrNull(addFormData.plan_id),
         dob: addFormData.dob || "",
         gender: transformGender(addFormData.gender) || "Male",
         blood_group: addFormData.blood_group || "O+",
@@ -1378,7 +1375,7 @@ const MemberManagement = () => {
           <span>
             Active:{" "}
             <strong>
-              {members.filter((m) => m.status === "ACTIVE").length}
+              {members.filter((m) => isActiveStatus(m.status)).length}
             </strong>
           </span>
         </div>
@@ -2093,25 +2090,18 @@ const MemberManagement = () => {
                           Select Plan
                         </option>
                         {membershipPlans
-                          .filter(
-                            (plan) =>
-                              plan.is_active &&
-                              (plan.branch_id === null || // Gym-wide plans
-                                plan.branch_id ===
-                                  parseInt(editFormData.branch_id)), // Branch-specific plans
+                          .filter((plan) =>
+                            isBranchMatched(plan.branch_id, editFormData.branch_id),
                           )
                           .map((plan, index) => {
-                            // Debug log to check plan values
-                            console.log(
-                              `Plan ${index}: ID=${plan.plan_id}, Name=${plan.plan_name}, Selected=${editFormData.membership_plan}`,
-                            );
                             return (
                               <option
-                                key={`edit-plan-${plan.plan_id}-${index}`}
-                                value={plan.plan_id}
+                                key={`edit-plan-${plan.plan_id ?? plan.plan_name}-${index}`}
+                                value={getPlanOptionValue(plan)}
+                                disabled={!getPlanOptionValue(plan)}
                               >
                                 {plan.plan_name} - ₹{plan.price} (
-                                {plan.duration_days} days)
+                                {plan.duration_days ?? "-"} days)
                               </option>
                             );
                           })}
@@ -2501,13 +2491,14 @@ const MemberManagement = () => {
                         <option key="select-plan" value="">
                           Select Membership Plan
                         </option>
-                        {getAvailablePlans().map((plan, index) => (
+                        {getAvailablePlans(addFormData.branch_id).map((plan, index) => (
                           <option
-                            key={`plan-${plan.plan_id}-${index}`}
-                            value={plan.plan_id}
+                            key={`plan-${plan.plan_id ?? plan.plan_name}-${index}`}
+                            value={getPlanOptionValue(plan)}
+                            disabled={!getPlanOptionValue(plan)}
                           >
                             {plan.plan_name} - ₹{plan.price} (
-                            {plan.duration_days} days)
+                            {plan.duration_days ?? "-"} days)
                             {plan.branch_id && " - Branch Exclusive"}
                           </option>
                         ))}
@@ -2523,7 +2514,7 @@ const MemberManagement = () => {
                           {
                             membershipPlans.find(
                               (p) =>
-                                p.plan_id === parseInt(addFormData.plan_id),
+                                String(p.plan_id) === String(addFormData.plan_id),
                             )?.description
                           }
                         </small>
