@@ -112,14 +112,32 @@ const MemberManagement = () => {
   };
 
   const normalizeMembershipPlan = (plan, index) => {
-    const rawPlanId =
+    // Extract plan ID from multiple possible field names
+    let rawPlanId =
       plan.plan_id ??
       plan.membership_plan_id ??
       plan.id ??
       plan.subscription_plan_id ??
+      plan.planId ??
+      plan.membershipPlanId ??
       null;
 
-    return {
+    // If still no ID, try finding numeric field (common API pattern)
+    if (!rawPlanId) {
+      const numericFields = Object.values(plan).filter((v) => typeof v === "number");
+      if (numericFields.length > 0 && numericFields[0] > 0) {
+        rawPlanId = numericFields[0]; // Use first numeric value as ID
+        console.log(`Plan #${index} using numeric field as ID:`, rawPlanId);
+      }
+    }
+
+    // If still no ID, use index as fallback (plans might not have IDs in API response)
+    if (!rawPlanId) {
+      rawPlanId = index + 1; // Use 1-indexed position
+      console.warn(`Plan "${plan.plan_name}" using index+1 as ID:`, rawPlanId, "Full plan:", plan);
+    }
+
+    const normalizedPlan = {
       ...plan,
       plan_id: rawPlanId,
       branch_id: toIntOrNull(plan.branch_id),
@@ -130,12 +148,28 @@ const MemberManagement = () => {
         (toIntOrNull(plan.duration_months)
           ? toIntOrNull(plan.duration_months) * 30
           : null),
+      price: plan.price || 0,
+      description: plan.description || "",
     };
+
+    return normalizedPlan;
   };
 
   const getPlanOptionValue = (plan) => {
-    if (plan.plan_id === null || plan.plan_id === undefined) return "";
-    return String(plan.plan_id);
+    // Use a fallback identifier if plan_id is not available
+    const planId =
+      plan.plan_id ??
+      plan.membership_plan_id ??
+      plan.id ??
+      plan.subscription_plan_id ??
+      plan.planId ??
+      plan.plan_name; // Use plan_name as fallback identifier
+
+    if (!planId) {
+      console.warn("Plan has no usable identifier:", plan);
+      return "";
+    }
+    return String(planId);
   };
 
   const isBranchMatched = (planBranchId, selectedBranchId) => {
@@ -300,6 +334,7 @@ const MemberManagement = () => {
       const url = buildApiUrl(
         `membershipPlan?gym_id=${gymId}&branch_id=${branchId}`,
       );
+      console.log("Fetching membership plans from:", url);
 
       const response = await tokenManager.apiCall(url, {
         method: "GET",
@@ -313,8 +348,11 @@ const MemberManagement = () => {
       }
 
       const result = await response.json();
+      console.log("Membership plans API response:", result);
+
       if (result.status === "success") {
         const normalizedPlans = (result.data || []).map(normalizeMembershipPlan);
+        console.log("Normalized plans:", normalizedPlans);
         setMembershipPlans(normalizedPlans);
         console.log(
           "Membership plans loaded:",
@@ -1178,6 +1216,7 @@ const MemberManagement = () => {
 
       // Log the data being sent for debugging
       console.log("Sending member data:", memberData);
+      console.log("Plan ID value:", addFormData.plan_id, "Converted to:", memberData.membership_plan);
 
       const response = await tokenManager.apiCall(
         buildApiUrl("members/addMember"),
@@ -1191,10 +1230,19 @@ const MemberManagement = () => {
       );
 
       if (!response.ok) {
-        console.error("API Response:", response.status, response.statusText);
-        const errorText = await response.text();
-        console.error("API Error Details:", errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          console.error("API Error Response:", errorData);
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (e) {
+          const errorText = await response.text();
+          console.error("API Error Details:", errorText);
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -1931,22 +1979,15 @@ const MemberManagement = () => {
                         <option key="select-plan-edit" value="">
                           Select Plan
                         </option>
-                        {membershipPlans
-                          .filter((plan) =>
-                            isBranchMatched(plan.branch_id, editFormData.branch_id),
-                          )
-                          .map((plan, index) => {
-                            return (
-                              <option
-                                key={`edit-plan-${plan.plan_id ?? plan.plan_name}-${index}`}
-                                value={getPlanOptionValue(plan)}
-                                disabled={!getPlanOptionValue(plan)}
-                              >
-                                {plan.plan_name} - ₹{plan.price} (
-                                {plan.duration_days ?? "-"} days)
-                              </option>
-                            );
-                          })}
+                        {getAvailablePlans(editFormData.branch_id).map((plan, index) => (
+                          <option
+                            key={`edit-plan-${plan.plan_id ?? plan.plan_name}-${index}`}
+                            value={getPlanOptionValue(plan)}
+                          >
+                            {plan.plan_name} - ₹{plan.price} (
+                            {plan.duration_days ?? "-"} days)
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div className="member-form-group">
@@ -2501,7 +2542,6 @@ const MemberManagement = () => {
                           <option
                             key={`plan-${plan.plan_id ?? plan.plan_name}-${index}`}
                             value={getPlanOptionValue(plan)}
-                            disabled={!getPlanOptionValue(plan)}
                           >
                             {plan.plan_name} - ₹{plan.price} (
                             {plan.duration_days ?? "-"} days)
@@ -2519,8 +2559,12 @@ const MemberManagement = () => {
                         >
                           {
                             membershipPlans.find(
-                              (p) =>
-                                String(p.plan_id) === String(addFormData.plan_id),
+                              (p) => {
+                                // Try multiple comparison approaches
+                                const pValue = getPlanOptionValue(p);
+                                const selectedValue = String(addFormData.plan_id);
+                                return pValue === selectedValue || p.plan_name === selectedValue;
+                              },
                             )?.description
                           }
                         </small>
