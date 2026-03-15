@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './AttendanceManagement.css';
 import { tokenManager } from '../utils/tokenManager';
+import ManualAttendanceEntry from './ManualAttendanceEntry';
 
 const AttendanceManagement = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -306,6 +307,22 @@ const AttendanceManagement = () => {
         const date = new Date(datetime);
         return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
     };
+
+    // Manual entry component - shown when manual entry modal is opened
+    if (showManualEntryModal) {
+        return (
+            <div className="attendance-wrapper">
+                <button
+                    className="back-btn"
+                    onClick={() => setShowManualEntryModal(false)}
+                >
+                    <i className="fas fa-arrow-left"></i>
+                    Back to Attendance Logs
+                </button>
+                <ManualAttendanceEntry onClose={() => setShowManualEntryModal(false)} />
+            </div>
+        );
+    }
 
     return (
         <div className="attendance-management">
@@ -685,108 +702,6 @@ const AttendanceManagement = () => {
                                 </div>
                             )}
                         </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Manual Entry Modal */}
-            {showManualEntryModal && (
-                <div className="att-modal-overlay" onClick={() => setShowManualEntryModal(false)}>
-                    <div className="att-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="att-modal-header">
-                            <h2><i className="fas fa-plus"></i> Manual Attendance Entry</h2>
-                            <button className="att-modal-close" onClick={() => setShowManualEntryModal(false)}>
-                                <i className="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <form onSubmit={handleManualEntrySubmit} className="att-modal-body">
-                            <div className="att-form-group">
-                                <label>User Name *</label>
-                                <input
-                                    type="text"
-                                    value={manualEntryData.user_name}
-                                    onChange={(e) => setManualEntryData({ ...manualEntryData, user_name: e.target.value })}
-                                    placeholder="Enter user name"
-                                    required
-                                />
-                            </div>
-                            <div className="att-form-row">
-                                <div className="att-form-group">
-                                    <label>Role *</label>
-                                    <select
-                                        value={manualEntryData.role_type}
-                                        onChange={(e) => setManualEntryData({ ...manualEntryData, role_type: e.target.value })}
-                                        required
-                                    >
-                                        <option value="MEMBER">Member</option>
-                                        <option value="TRAINER">Trainer</option>
-                                        <option value="STAFF">Staff</option>
-                                    </select>
-                                </div>
-                                <div className="att-form-group">
-                                    <label>Branch *</label>
-                                    <select
-                                        value={manualEntryData.branch_name}
-                                        onChange={(e) => setManualEntryData({ ...manualEntryData, branch_name: e.target.value })}
-                                        required
-                                        disabled={branchesLoading}
-                                    >
-                                        <option value="">{branchesLoading ? 'Loading branches...' : 'Select Branch'}</option>
-                                        {branches.map((branch) => (
-                                            <option key={branch.branch_id} value={branch.branch_name}>
-                                                {branch.branch_name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="att-form-group">
-                                <label>Attendance Date *</label>
-                                <input
-                                    type="date"
-                                    value={manualEntryData.attendance_date}
-                                    onChange={(e) => setManualEntryData({ ...manualEntryData, attendance_date: e.target.value })}
-                                    required
-                                />
-                            </div>
-                            <div className="att-form-row">
-                                <div className="att-form-group">
-                                    <label>Check In Time *</label>
-                                    <input
-                                        type="time"
-                                        value={manualEntryData.check_in_time}
-                                        onChange={(e) => setManualEntryData({ ...manualEntryData, check_in_time: e.target.value })}
-                                        required
-                                    />
-                                </div>
-                                <div className="att-form-group">
-                                    <label>Check Out Time</label>
-                                    <input
-                                        type="time"
-                                        value={manualEntryData.check_out_time}
-                                        onChange={(e) => setManualEntryData({ ...manualEntryData, check_out_time: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                            <div className="att-form-group">
-                                <label>Remarks *</label>
-                                <textarea
-                                    value={manualEntryData.remarks}
-                                    onChange={(e) => setManualEntryData({ ...manualEntryData, remarks: e.target.value })}
-                                    rows="3"
-                                    placeholder="Reason for manual entry..."
-                                    required
-                                />
-                            </div>
-                            <div className="att-modal-actions">
-                                <button type="button" className="att-btn-secondary" onClick={() => setShowManualEntryModal(false)}>
-                                    Cancel
-                                </button>
-                                <button type="submit" className="att-btn-primary">
-                                    Add Attendance
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
             )}

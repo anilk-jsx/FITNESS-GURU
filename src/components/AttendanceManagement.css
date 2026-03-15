@@ -1,5 +1,37 @@
 /* Attendance Management Styles */
 
+.attendance-wrapper {
+  padding: clamp(1rem, 3vw, 2rem);
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background-color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #667eea;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.back-btn:hover {
+  background-color: #f8f9fa;
+  transform: translateX(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.back-btn i {
+  font-size: 1rem;
+}
+
 .attendance-management {
   padding: clamp(1rem, 3vw, 2rem);
   animation: fadeInUp 0.5s ease;
