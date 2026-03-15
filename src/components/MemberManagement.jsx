@@ -1832,11 +1832,11 @@ const MemberManagement = () => {
 
             <form onSubmit={handleSaveChanges} className="member-edit-form">
               <div className="member-modal-body">
-                {/* Basic Information */}
+                {/* User Account Information */}
                 <div className="member-form-section">
                   <h3 className="member-form-section-title">
-                    <i className="fas fa-info-circle"></i>
-                    Basic Information
+                    <i className="fas fa-user"></i>
+                    User Account Information
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
@@ -1868,164 +1868,6 @@ const MemberManagement = () => {
                         onChange={handleFormChange}
                         required
                       />
-                    </div>
-                    <div className="member-form-group">
-                      <label>Role *</label>
-                      <select
-                        name="role"
-                        value={editFormData.role}
-                        onChange={handleFormChange}
-                        required
-                      >
-                        <option value="MEMBER">Member</option>
-                        <option value="TRAINER">Trainer</option>
-                        <option value="STAFF">Staff</option>
-                        <option value="ADMIN">Admin</option>
-                      </select>
-                    </div>
-                    <div className="member-form-group">
-                      <label>Date of Birth</label>
-                      <input
-                        type="date"
-                        name="dob"
-                        value={editFormData.dob}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                    <div className="member-form-group">
-                      <label>Gender</label>
-                      <select
-                        name="gender"
-                        value={editFormData.gender}
-                        onChange={handleFormChange}
-                      >
-                        <option key="MALE-edit" value="MALE">
-                          Male
-                        </option>
-                        <option key="FEMALE-edit" value="FEMALE">
-                          Female
-                        </option>
-                        <option key="OTHER-edit" value="OTHER">
-                          Other
-                        </option>
-                      </select>
-                    </div>
-                    <div className="member-form-group">
-                      <label>Blood Group</label>
-                      <select
-                        name="blood_group"
-                        value={editFormData.blood_group}
-                        onChange={handleFormChange}
-                      >
-                        <option key="A+-edit" value="A+">
-                          A+
-                        </option>
-                        <option key="A--edit" value="A-">
-                          A-
-                        </option>
-                        <option key="B+-edit" value="B+">
-                          B+
-                        </option>
-                        <option key="B--edit" value="B-">
-                          B-
-                        </option>
-                        <option key="O+-edit" value="O+">
-                          O+
-                        </option>
-                        <option key="O--edit" value="O-">
-                          O-
-                        </option>
-                        <option key="AB+-edit" value="AB+">
-                          AB+
-                        </option>
-                        <option key="AB--edit" value="AB-">
-                          AB-
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Physical Information */}
-                <div className="member-form-section">
-                  <h3 className="member-form-section-title">
-                    <i className="fas fa-weight"></i>
-                    Physical Information
-                  </h3>
-                  <div className="member-form-grid">
-                    <div className="member-form-group">
-                      <label>Height (cm)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        name="height"
-                        value={editFormData.height}
-                        onChange={handleFormChange}
-                        placeholder="175.5"
-                      />
-                    </div>
-                    <div className="member-form-group">
-                      <label>Weight (kg)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        name="weight"
-                        value={editFormData.weight}
-                        onChange={handleFormChange}
-                        placeholder="70.5"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Fitness Information */}
-                <div className="member-form-section">
-                  <h3 className="member-form-section-title">
-                    <i className="fas fa-dumbbell"></i>
-                    Fitness Information
-                  </h3>
-                  <div className="member-form-grid">
-                    <div className="member-form-group">
-                      <label>Fitness Level</label>
-                      <select
-                        name="fitness_level"
-                        value={editFormData.fitness_level}
-                        onChange={handleFormChange}
-                      >
-                        <option key="BEGINNER-edit" value="BEGINNER">
-                          Beginner
-                        </option>
-                        <option key="INTERMEDIATE-edit" value="INTERMEDIATE">
-                          Intermediate
-                        </option>
-                        <option key="ADVANCED-edit" value="ADVANCED">
-                          Advanced
-                        </option>
-                      </select>
-                    </div>
-                    <div className="member-form-group">
-                      <label>Goal Focus</label>
-                      <select
-                        name="goal_focus"
-                        value={editFormData.goal_focus}
-                        onChange={handleFormChange}
-                      >
-                        <option key="WEIGHT_LOSS-edit" value="WEIGHT_LOSS">
-                          Weight Loss
-                        </option>
-                        <option key="MUSCLE_GAIN-edit" value="MUSCLE_GAIN">
-                          Muscle Gain
-                        </option>
-                        <option key="STRENGTH-edit" value="STRENGTH">
-                          Strength
-                        </option>
-                        <option key="ENDURANCE-edit" value="ENDURANCE">
-                          Endurance
-                        </option>
-                        <option key="GENERAL-edit" value="GENERAL">
-                          General Fitness
-                        </option>
-                      </select>
                     </div>
                   </div>
                 </div>
@@ -2128,23 +1970,167 @@ const MemberManagement = () => {
                   </div>
                 </div>
 
-                {/* Contact & Address Information */}
+                {/* Personal Information */}
                 <div className="member-form-section">
                   <h3 className="member-form-section-title">
-                    <i className="fas fa-map-marker-alt"></i>
-                    Contact & Address Information
+                    <i className="fas fa-info-circle"></i>
+                    Personal Information
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
-                      <label>Emergency Phone</label>
+                      <label>Date of Birth</label>
                       <input
-                        type="tel"
-                        name="emergency_contact"
-                        value={editFormData.emergency_contact}
+                        type="date"
+                        name="dob"
+                        value={editFormData.dob}
                         onChange={handleFormChange}
-                        placeholder="+91 XXXXX XXXXX"
                       />
                     </div>
+                    <div className="member-form-group">
+                      <label>Gender</label>
+                      <select
+                        name="gender"
+                        value={editFormData.gender}
+                        onChange={handleFormChange}
+                      >
+                        <option key="MALE-edit" value="MALE">
+                          Male
+                        </option>
+                        <option key="FEMALE-edit" value="FEMALE">
+                          Female
+                        </option>
+                        <option key="OTHER-edit" value="OTHER">
+                          Other
+                        </option>
+                      </select>
+                    </div>
+                    <div className="member-form-group">
+                      <label>Blood Group</label>
+                      <select
+                        name="blood_group"
+                        value={editFormData.blood_group}
+                        onChange={handleFormChange}
+                      >
+                        <option key="A+-edit" value="A+">
+                          A+
+                        </option>
+                        <option key="A--edit" value="A-">
+                          A-
+                        </option>
+                        <option key="B+-edit" value="B+">
+                          B+
+                        </option>
+                        <option key="B--edit" value="B-">
+                          B-
+                        </option>
+                        <option key="O+-edit" value="O+">
+                          O+
+                        </option>
+                        <option key="O--edit" value="O-">
+                          O-
+                        </option>
+                        <option key="AB+-edit" value="AB+">
+                          AB+
+                        </option>
+                        <option key="AB--edit" value="AB-">
+                          AB-
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Physical Information */}
+                <div className="member-form-section">
+                  <h3 className="member-form-section-title">
+                    <i className="fas fa-weight"></i>
+                    Physical Information
+                  </h3>
+                  <div className="member-form-grid">
+                    <div className="member-form-group">
+                      <label>Height (cm)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        name="height"
+                        value={editFormData.height}
+                        onChange={handleFormChange}
+                        placeholder="175.5"
+                      />
+                    </div>
+                    <div className="member-form-group">
+                      <label>Weight (kg)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        name="weight"
+                        value={editFormData.weight}
+                        onChange={handleFormChange}
+                        placeholder="70.5"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fitness Goals */}
+                <div className="member-form-section">
+                  <h3 className="member-form-section-title">
+                    <i className="fas fa-dumbbell"></i>
+                    Fitness Goals
+                  </h3>
+                  <div className="member-form-grid">
+                    <div className="member-form-group">
+                      <label>Fitness Level</label>
+                      <select
+                        name="fitness_level"
+                        value={editFormData.fitness_level}
+                        onChange={handleFormChange}
+                      >
+                        <option key="BEGINNER-edit" value="BEGINNER">
+                          Beginner
+                        </option>
+                        <option key="INTERMEDIATE-edit" value="INTERMEDIATE">
+                          Intermediate
+                        </option>
+                        <option key="ADVANCED-edit" value="ADVANCED">
+                          Advanced
+                        </option>
+                      </select>
+                    </div>
+                    <div className="member-form-group">
+                      <label>Goal Focus</label>
+                      <select
+                        name="goal_focus"
+                        value={editFormData.goal_focus}
+                        onChange={handleFormChange}
+                      >
+                        <option key="WEIGHT_LOSS-edit" value="WEIGHT_LOSS">
+                          Weight Loss
+                        </option>
+                        <option key="MUSCLE_GAIN-edit" value="MUSCLE_GAIN">
+                          Muscle Gain
+                        </option>
+                        <option key="STRENGTH-edit" value="STRENGTH">
+                          Strength
+                        </option>
+                        <option key="ENDURANCE-edit" value="ENDURANCE">
+                          Endurance
+                        </option>
+                        <option key="GENERAL-edit" value="GENERAL">
+                          General Fitness
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address Information */}
+                <div className="member-form-section">
+                  <h3 className="member-form-section-title">
+                    <i className="fas fa-map-marked-alt"></i>
+                    Address Information
+                  </h3>
+                  <div className="member-form-grid">
                     <div className="member-form-group">
                       <label>Country</label>
                       <select
@@ -2272,6 +2258,26 @@ const MemberManagement = () => {
                         value={editFormData.address_line2}
                         onChange={handleFormChange}
                         placeholder="Landmark, Area (Optional)"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Emergency Contact */}
+                <div className="member-form-section">
+                  <h3 className="member-form-section-title">
+                    <i className="fas fa-phone-alt"></i>
+                    Emergency Contact
+                  </h3>
+                  <div className="member-form-grid">
+                    <div className="member-form-group">
+                      <label>Emergency Phone</label>
+                      <input
+                        type="tel"
+                        name="emergency_contact"
+                        value={editFormData.emergency_contact}
+                        onChange={handleFormChange}
+                        placeholder="+91 XXXXX XXXXX"
                       />
                     </div>
                   </div>
