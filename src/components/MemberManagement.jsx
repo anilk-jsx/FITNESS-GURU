@@ -873,10 +873,30 @@ const MemberManagement = () => {
             };
             membershipPlanId = planMap[selectedPlan.plan_name] || 1;
           }
+        } else {
+          console.warn("⚠️ Selected plan not found in available plans");
+          membershipPlanId = null;
         }
       } else {
         // No plan selected, use original or default
         membershipPlanId = memberDetails?.membership_plan || null;
+      }
+
+      // Special handling for branch changes
+      const originalBranchId = memberDetails?.branch_id;
+      const newBranchId = parseInt(editFormData.branch_id);
+
+      if (originalBranchId && newBranchId && originalBranchId !== newBranchId) {
+        console.log("🏢 Branch change detected:", {
+          from: originalBranchId,
+          to: newBranchId
+        });
+
+        // If branch changed but membership plan wasn't updated, clear it
+        if (membershipPlanId && editFormData.membership_plan === editFormData.membership_plan_raw) {
+          console.log("⚠️ Branch changed but plan not updated - clearing membership plan to avoid conflicts");
+          membershipPlanId = null;
+        }
       }
 
       console.log("🎯 Membership plan ID resolution:", {
@@ -940,6 +960,20 @@ const MemberManagement = () => {
         throw new Error("Phone is required");
       }
 
+      // Validate branch_id specifically since errors occur when changing branches
+      if (!updateData.branch_id) {
+        throw new Error("Branch selection is required");
+      }
+      if (isNaN(updateData.branch_id) || updateData.branch_id <= 0) {
+        throw new Error("Invalid branch selected");
+      }
+
+      // Validate membership_plan if provided
+      if (updateData.membership_plan && (isNaN(updateData.membership_plan) || updateData.membership_plan <= 0)) {
+        console.warn("⚠️ Invalid membership plan ID:", updateData.membership_plan);
+        updateData.membership_plan = null; // Set to null if invalid
+      }
+
       // Remove null/undefined values to clean up the request
       Object.keys(updateData).forEach(key => {
         if (updateData[key] === null || updateData[key] === undefined) {
@@ -949,10 +983,19 @@ const MemberManagement = () => {
         }
       });
 
+      // Validate critical data before sending
+      if (!updateData.branch_id) {
+        console.warn("⚠️ Branch ID is missing, this may cause server errors");
+      }
+
       console.log("🚀 Sending update request:", updateData);
 
+      // Debug API URL
+      const apiUrl = buildApiUrl("members/updateMember");
+      console.log("🌐 API URL:", apiUrl);
+
       // Make the API call
-      const response = await tokenManager.apiCall(buildApiUrl("members/updateMember"), {
+      const response = await tokenManager.apiCall(apiUrl, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -960,11 +1003,37 @@ const MemberManagement = () => {
         body: JSON.stringify(updateData),
       });
 
+      console.log("📡 Response status:", response.status, response.statusText);
+      console.log("📡 Response headers:", Object.fromEntries(response.headers.entries()));
+
+      // Get response text first to handle both JSON and HTML responses
+      const responseText = await response.text();
+      console.log("📡 Raw response (first 500 chars):", responseText.substring(0, 500));
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Log the full error response for debugging
+        console.error("❌ Server error response:", responseText);
+
+        if (responseText.includes("<html>") || responseText.includes("<!DOCTYPE")) {
+          throw new Error(`Server returned an error page (HTTP ${response.status}). Check server logs for details.`);
+        }
+
+        throw new Error(`HTTP error! status: ${response.status} - ${responseText}`);
       }
 
-      const result = await response.json();
+      // Try to parse as JSON
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("❌ Failed to parse response as JSON:", parseError);
+
+        if (responseText.includes("<html>") || responseText.includes("<!DOCTYPE")) {
+          throw new Error("Server returned HTML instead of JSON. This usually indicates a server error or configuration issue.");
+        }
+
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+      }
 
       if (result.status === "success") {
         // Success!
