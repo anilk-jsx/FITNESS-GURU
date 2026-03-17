@@ -843,91 +843,188 @@ const MemberManagement = () => {
       }
     }
 
-    // Prepare update data for verification (without API call)
-    const updateData = {
-      user_id: editFormData.user_id,
+    setLoading(true);
 
-      // Basic user information
-      name: editFormData.name.trim(),
-      email: editFormData.email.trim(),
-      phone: editFormData.phone.trim(),
-      status: editFormData.status === "ACTIVE" ? 1 : 0,
+    try {
+      // Find the selected membership plan to get its ID for the API
+      let membershipPlanId = null;
+      if (editFormData.membership_plan) {
+        const selectedPlan = membershipPlans.find(plan =>
+          getPlanOptionValue(plan) === editFormData.membership_plan
+        );
 
-      // Profile information
-      dob: editFormData.dob,
-      gender: editFormData.gender,
-      blood_group: editFormData.blood_group,
+        if (selectedPlan) {
+          // Try to extract numeric ID from the original member data
+          // Since the API doesn't provide plan IDs, we'll use the original membership_plan value
+          // that was stored in membership_plan_raw during form population
+          const originalMemberData = memberDetails; // This should have the original numeric plan ID
 
-      // Physical stats
-      height: parseFloat(editFormData.height) || null,
-      weight: parseFloat(editFormData.weight) || null,
-      fitness_level: editFormData.fitness_level,
-      goal_focus: editFormData.goal_focus,
-
-      // Gym and membership
-      branch_id: parseInt(editFormData.branch_id) || null,
-      membership_plan: toIntOrNull(editFormData.membership_plan),
-      join_date: editFormData.join_date,
-
-      // Contact and address
-      emergency_contact: editFormData.emergency_contact,
-      country: parseInt(editFormData.country) || 1,
-      state: parseInt(editFormData.state) || null,
-      district: parseInt(editFormData.district) || null,
-      city: parseInt(editFormData.city) || null,
-      address_line1: editFormData.address_line1,
-      address_line2: editFormData.address_line2,
-
-      // Password fields (optional)
-      new_password: editFormData.new_password || "",
-      confirm_password: editFormData.confirm_password || "",
-    };
-
-    // Log the data for verification purposes
-    console.log("📋 Form data validated:", {
-      name: updateData.name,
-      email: updateData.email,
-      gender: editFormData.gender,
-      membership_plan: editFormData.membership_plan,
-      branch_id: editFormData.branch_id
-    });
-
-    // Find and show the selected plan details
-    if (editFormData.membership_plan) {
-      const selectedPlan = membershipPlans.find(plan =>
-        getPlanOptionValue(plan) === editFormData.membership_plan
-      );
-      if (selectedPlan) {
-        console.log("Selected Plan:", selectedPlan.plan_name, "- ₹" + selectedPlan.price);
+          // Check if the current selection matches the original plan
+          if (selectedPlan.plan_name === editFormData.membership_plan_raw) {
+            // User didn't change the plan, use original numeric ID
+            membershipPlanId = originalMemberData?.membership_plan || 1;
+          } else {
+            // User changed the plan, we need to map plan names to IDs
+            // This is a temporary solution - ideally the API should provide plan IDs
+            const planMap = {
+              'Monthly Plan': 1,
+              'Quarterly Plan': 2,
+              'Yearly Plan': 3
+            };
+            membershipPlanId = planMap[selectedPlan.plan_name] || 1;
+          }
+        }
+      } else {
+        // No plan selected, use original or default
+        membershipPlanId = memberDetails?.membership_plan || null;
       }
+
+      console.log("🎯 Membership plan ID resolution:", {
+        selectedPlanName: editFormData.membership_plan,
+        originalPlanName: editFormData.membership_plan_raw,
+        resolvedPlanId: membershipPlanId,
+        originalMembershipPlan: memberDetails?.membership_plan
+      });
+
+      // Prepare update data matching the API structure
+      const updateData = {
+        user_id: editFormData.user_id,
+
+        // Basic user information
+        name: editFormData.name.trim(),
+        email: editFormData.email.trim(),
+        phone: editFormData.phone.trim(),
+        status: editFormData.status === "ACTIVE" ? 1 : 0,
+
+        // Profile information
+        dob: editFormData.dob || "",
+        gender: editFormData.gender || "",
+        blood_group: editFormData.blood_group || "",
+
+        // Physical stats (convert to numbers, handle empty values)
+        height: editFormData.height ? parseFloat(editFormData.height) : null,
+        weight: editFormData.weight ? parseFloat(editFormData.weight) : null,
+        fitness_level: editFormData.fitness_level || "",
+        goal_focus: editFormData.goal_focus || "",
+
+        // Gym and membership
+        branch_id: editFormData.branch_id ? parseInt(editFormData.branch_id) : null,
+        membership_plan: membershipPlanId,
+        join_date: editFormData.join_date || "",
+
+        // Contact and address
+        emergency_contact: editFormData.emergency_contact || "",
+        country: editFormData.country ? parseInt(editFormData.country) : 1,
+        state: editFormData.state ? parseInt(editFormData.state) : null,
+        district: editFormData.district ? parseInt(editFormData.district) : null,
+        city: editFormData.city ? parseInt(editFormData.city) : null,
+        address_line1: editFormData.address_line1 || "",
+        address_line2: editFormData.address_line2 || "",
+
+        // Password fields (optional)
+        new_password: editFormData.new_password || "",
+        confirm_password: editFormData.confirm_password || "",
+      };
+
+      // Validate required fields
+      if (!updateData.user_id) {
+        throw new Error("User ID is missing");
+      }
+      if (!updateData.name) {
+        throw new Error("Name is required");
+      }
+      if (!updateData.email) {
+        throw new Error("Email is required");
+      }
+      if (!updateData.phone) {
+        throw new Error("Phone is required");
+      }
+
+      // Remove null/undefined values to clean up the request
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === null || updateData[key] === undefined) {
+          if (key !== 'new_password' && key !== 'confirm_password') {
+            delete updateData[key];
+          }
+        }
+      });
+
+      console.log("🚀 Sending update request:", updateData);
+
+      // Make the API call
+      const response = await tokenManager.apiCall(buildApiUrl("members/updateMember"), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        // Success!
+        const successMessage = editFormData.new_password
+          ? "Member information and password updated successfully! 🎉"
+          : "Member information updated successfully! 🎉";
+
+        alert(successMessage);
+
+        // Close the modal
+        setShowEditModal(false);
+        setEditFormData(null);
+
+        // Refresh the members list to show updated data
+        fetchMembers();
+
+        // Refresh member details if we're viewing them
+        if (memberDetails && memberDetails.user_id === updateData.user_id) {
+          fetchMemberDetails(updateData.user_id);
+        }
+      } else {
+        throw new Error(result.message || "Update failed");
+      }
+
+    } catch (error) {
+      console.error("❌ Error updating member:", error);
+
+      let errorMessage = "Failed to update member";
+
+      // Handle different types of errors
+      if (error.message.includes("duplicate") || error.message.includes("email")) {
+        errorMessage = "Email already exists for another member";
+      } else if (error.message.includes("phone")) {
+        errorMessage = "Phone number already exists for another member";
+      } else if (error.message.includes("validation")) {
+        errorMessage = "Please check your input data";
+      } else if (error.message.includes("user_id")) {
+        errorMessage = "Invalid user ID";
+      } else if (error.message.includes("branch")) {
+        errorMessage = "Invalid branch selected";
+      } else if (error.message.includes("plan")) {
+        errorMessage = "Invalid membership plan selected";
+      } else if (error.message.includes("401")) {
+        errorMessage = "Authentication failed. Please login again";
+      } else if (error.message.includes("403")) {
+        errorMessage = "You don't have permission to update this member";
+      } else if (error.message.includes("404")) {
+        errorMessage = "Member not found";
+      } else if (error.message.includes("500")) {
+        errorMessage = "Server error. Please try again later";
+      } else if (error.name === "TypeError" && error.message.includes("fetch")) {
+        errorMessage = "Network error. Please check your connection";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      alert(`❌ Update Failed\n\n${errorMessage}\n\nPlease check your data and try again.`);
+    } finally {
+      setLoading(false);
     }
-
-    // Show verification message with more details
-    const selectedPlan = membershipPlans.find(plan =>
-      getPlanOptionValue(plan) === editFormData.membership_plan
-    );
-
-    const planDisplay = selectedPlan
-      ? `${selectedPlan.plan_name} (₹${selectedPlan.price || 'N/A'})`
-      : editFormData.membership_plan || "Not selected";
-
-    alert(
-      `✅ Form data validated successfully!\n\n` +
-      `👤 Member: ${updateData.name}\n` +
-      `📧 Email: ${updateData.email}\n` +
-      `📱 Phone: ${updateData.phone}\n` +
-      `🚻 Gender: ${editFormData.gender || "Not specified"}\n` +
-      `🏢 Branch ID: ${editFormData.branch_id || "Not selected"}\n` +
-      `💳 Membership Plan: ${planDisplay}\n\n` +
-      `📋 Check browser console for complete form data details.\n\n` +
-      `Note: API integration is disabled. Data is displayed for verification only.`
-    );
-
-    // Close the modal without making API call
-    setShowEditModal(false);
-    setEditFormData(null);
-
-    // TODO: Enable API integration after data verification is complete
   };
 
   const closeMemberProfile = () => {
