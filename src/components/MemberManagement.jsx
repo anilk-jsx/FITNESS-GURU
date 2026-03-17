@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import "./MemberManagement.css";
 import tokenManager from "../utils/tokenManager";
+import { normalizeGender, toIntOrNull, isActiveStatus, findMatchingPlan } from "../utils/fieldUtils";
 
 const MemberManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -112,42 +113,18 @@ const MemberManagement = () => {
   };
 
   const normalizeMembershipPlan = (plan, index) => {
-    // Extract plan ID from multiple possible field names
-    let rawPlanId =
-      plan.plan_id ??
-      plan.membership_plan_id ??
-      plan.id ??
-      plan.subscription_plan_id ??
-      plan.planId ??
-      plan.membershipPlanId ??
-      null;
-
-    // If still no ID, try finding numeric field (common API pattern)
-    if (!rawPlanId) {
-      const numericFields = Object.values(plan).filter((v) => typeof v === "number");
-      if (numericFields.length > 0 && numericFields[0] > 0) {
-        rawPlanId = numericFields[0]; // Use first numeric value as ID
-        console.log(`Plan #${index} using numeric field as ID:`, rawPlanId);
-      }
-    }
-
-    // If still no ID, use index as fallback (plans might not have IDs in API response)
-    if (!rawPlanId) {
-      rawPlanId = index + 1; // Use 1-indexed position
-      console.warn(`Plan "${plan.plan_name}" using index+1 as ID:`, rawPlanId, "Full plan:", plan);
-    }
+    // Based on actual API response: {gym_id, branch_id, plan_name, status}
+    // No plan_id is provided by the API, so we'll use plan_name as identifier
 
     const normalizedPlan = {
       ...plan,
-      plan_id: rawPlanId,
+      plan_id: plan.plan_name, // Use plan_name as the unique identifier
       branch_id: toIntOrNull(plan.branch_id),
-      is_active: isActiveStatus(plan.status ?? plan.is_active),
-      plan_name: plan.plan_name || plan.name || `Plan ${index + 1}`,
-      duration_days:
-        toIntOrNull(plan.duration_days) ??
-        (toIntOrNull(plan.duration_months)
-          ? toIntOrNull(plan.duration_months) * 30
-          : null),
+      gym_id: toIntOrNull(plan.gym_id),
+      is_active: plan.status === "ACTIVE" || isActiveStatus(plan.status),
+      plan_name: plan.plan_name || `Plan ${index + 1}`,
+      duration_days: toIntOrNull(plan.duration_days) || null,
+      duration_months: toIntOrNull(plan.duration_months) || null,
       price: plan.price || 0,
       description: plan.description || "",
     };
@@ -156,20 +133,15 @@ const MemberManagement = () => {
   };
 
   const getPlanOptionValue = (plan) => {
-    // Use a fallback identifier if plan_id is not available
-    const planId =
-      plan.plan_id ??
-      plan.membership_plan_id ??
-      plan.id ??
-      plan.subscription_plan_id ??
-      plan.planId ??
-      plan.plan_name; // Use plan_name as fallback identifier
+    // Use plan_name as the option value since that's our identifier
+    const planName = plan.plan_name;
 
-    if (!planId) {
-      console.warn("Plan has no usable identifier:", plan);
+    if (!planName) {
+      console.warn("Plan has no plan_name:", plan);
       return "";
     }
-    return String(planId);
+
+    return planName;
   };
 
   const isBranchMatched = (planBranchId, selectedBranchId) => {
@@ -352,7 +324,6 @@ const MemberManagement = () => {
 
       if (result.status === "success") {
         const normalizedPlans = (result.data || []).map(normalizeMembershipPlan);
-        console.log("Normalized plans:", normalizedPlans);
         setMembershipPlans(normalizedPlans);
         console.log(
           "Membership plans loaded:",
@@ -685,13 +656,42 @@ const MemberManagement = () => {
       detailedMember = memberDetails;
     }
 
-    // Populate form with detailed member data
-    const resolvedMembershipPlanId =
-      detailedMember.membership_plan ??
-      detailedMember.plan_id ??
-      detailedMember.membership_plan_id ??
-      detailedMember.current_plan ??
-      "";
+    // Debug membership plan resolution
+    const userPlanName = detailedMember.plan_name || "";
+
+    // Function to find matching plan in available membership plans
+    const findMatchingPlan = (userPlanName, availablePlans) => {
+      if (!userPlanName || !availablePlans.length) return "";
+
+      // Direct match on plan_name (exact match)
+      const matchingPlan = availablePlans.find(plan =>
+        plan.plan_name === userPlanName
+      );
+
+      if (matchingPlan) {
+        const result = getPlanOptionValue(matchingPlan);
+        // Ensure we return a string, not an object
+        return typeof result === 'string' ? result : matchingPlan.plan_name;
+      } else {
+        return "";
+      }
+    };
+
+    // Normalize gender value to match dropdown options (MALE, FEMALE, OTHER)
+    const normalizedGender = (() => {
+      const genderValue = detailedMember.gender || "";
+      if (!genderValue) return "";
+
+      const lowerGender = String(genderValue).toLowerCase();
+      if (lowerGender === 'male' || lowerGender === 'm') return 'MALE';
+      if (lowerGender === 'female' || lowerGender === 'f') return 'FEMALE';
+      if (lowerGender === 'other' || lowerGender === 'o') return 'OTHER';
+
+      // If it's already in correct format, use as-is
+      if (['MALE', 'FEMALE', 'OTHER'].includes(String(genderValue))) return String(genderValue);
+
+      return ""; // Empty if unrecognized
+    })();
 
     const formData = {
       user_id: detailedMember.user_id,
@@ -707,8 +707,8 @@ const MemberManagement = () => {
 
       // Profile information
       dob: detailedMember.date_of_birth || "",
-      gender: detailedMember.gender || "Male",
-      blood_group: detailedMember.blood_group || "O+",
+      gender: normalizedGender,
+      blood_group: detailedMember.blood_group || "",
 
       // Physical stats
       height: parseFloat(detailedMember.height_cm) || "",
@@ -716,11 +716,10 @@ const MemberManagement = () => {
       fitness_level: detailedMember.fitness_level || "",
       goal_focus: detailedMember.goal_focus || "",
 
-      // Gym and membership - try multiple possible field names
+      // Gym and membership - use plan_name as identifier
       branch_id: detailedMember.branch_id ? String(detailedMember.branch_id) : "",
-      membership_plan: resolvedMembershipPlanId
-        ? String(resolvedMembershipPlanId)
-        : "",
+      membership_plan: "", // Will be populated after plans load and matching is done
+      membership_plan_raw: userPlanName, // Keep plan name for matching later
       join_date: detailedMember.date_of_joining || "",
 
       // Contact and address - using consistent property names
@@ -765,9 +764,26 @@ const MemberManagement = () => {
     }
   };
 
+  // useEffect to handle plan matching when membership plans are loaded
+  React.useEffect(() => {
+    if (editFormData?.branch_id && editFormData?.membership_plan_raw && membershipPlans.length > 0) {
+      const availablePlans = getAvailablePlans(editFormData.branch_id);
+      const matchingPlanId = findMatchingPlan(editFormData.membership_plan_raw, availablePlans);
+
+      if (matchingPlanId && matchingPlanId !== editFormData.membership_plan) {
+        console.log("🔄 Auto-updating membership plan:", matchingPlanId);
+        setEditFormData(prev => ({
+          ...prev,
+          membership_plan: typeof matchingPlanId === 'string' ? matchingPlanId : matchingPlanId.plan_name || ""
+        }));
+      }
+    }
+  }, [editFormData?.branch_id, editFormData?.membership_plan_raw, membershipPlans.length]);
+
   // Enhanced form change handler for edit form
   const handleFormChange = (e) => {
     const { name, value } = e.target;
+
     setEditFormData((prev) => {
       const updated = { ...prev, [name]: value };
 
@@ -827,171 +843,91 @@ const MemberManagement = () => {
       }
     }
 
-    setLoading(true);
+    // Prepare update data for verification (without API call)
+    const updateData = {
+      user_id: editFormData.user_id,
 
-    try {
-      // Prepare update data matching the API structure
-      const updateData = {
-        user_id: editFormData.user_id,
+      // Basic user information
+      name: editFormData.name.trim(),
+      email: editFormData.email.trim(),
+      phone: editFormData.phone.trim(),
+      status: editFormData.status === "ACTIVE" ? 1 : 0,
 
-        // Basic user information
-        name: editFormData.name.trim(),
-        email: editFormData.email.trim(),
-        phone: editFormData.phone.trim(),
-        status: editFormData.status === "ACTIVE" ? 1 : 0,
+      // Profile information
+      dob: editFormData.dob,
+      gender: editFormData.gender,
+      blood_group: editFormData.blood_group,
 
-        // Profile information
-        dob: editFormData.dob,
-        gender: editFormData.gender,
-        blood_group: editFormData.blood_group,
+      // Physical stats
+      height: parseFloat(editFormData.height) || null,
+      weight: parseFloat(editFormData.weight) || null,
+      fitness_level: editFormData.fitness_level,
+      goal_focus: editFormData.goal_focus,
 
-        // Physical stats
-        height: parseFloat(editFormData.height) || null,
-        weight: parseFloat(editFormData.weight) || null,
-        fitness_level: editFormData.fitness_level,
-        goal_focus: editFormData.goal_focus,
+      // Gym and membership
+      branch_id: parseInt(editFormData.branch_id) || null,
+      membership_plan: toIntOrNull(editFormData.membership_plan),
+      join_date: editFormData.join_date,
 
-        // Gym and membership
-        branch_id: parseInt(editFormData.branch_id) || null,
-        membership_plan: toIntOrNull(editFormData.membership_plan),
-        join_date: editFormData.join_date,
+      // Contact and address
+      emergency_contact: editFormData.emergency_contact,
+      country: parseInt(editFormData.country) || 1,
+      state: parseInt(editFormData.state) || null,
+      district: parseInt(editFormData.district) || null,
+      city: parseInt(editFormData.city) || null,
+      address_line1: editFormData.address_line1,
+      address_line2: editFormData.address_line2,
 
-        // Contact and address
-        emergency_contact: editFormData.emergency_contact,
-        country: parseInt(editFormData.country) || 1,
-        state: parseInt(editFormData.state) || null,
-        district: parseInt(editFormData.district) || null,
-        city: parseInt(editFormData.city) || null,
-        address_line1: editFormData.address_line1,
-        address_line2: editFormData.address_line2,
+      // Password fields (optional)
+      new_password: editFormData.new_password || "",
+      confirm_password: editFormData.confirm_password || "",
+    };
 
-        // Password fields (optional)
-        new_password: editFormData.new_password || "",
-        confirm_password: editFormData.confirm_password || "",
-      };
+    // Log the data for verification purposes
+    console.log("📋 Form data validated:", {
+      name: updateData.name,
+      email: updateData.email,
+      gender: editFormData.gender,
+      membership_plan: editFormData.membership_plan,
+      branch_id: editFormData.branch_id
+    });
 
-      // Remove empty/null values to avoid sending unnecessary data
-      Object.keys(updateData).forEach((key) => {
-        if (
-          updateData[key] === null ||
-          updateData[key] === undefined ||
-          updateData[key] === ""
-        ) {
-          if (key !== "new_password" && key !== "confirm_password") {
-            delete updateData[key];
-          }
-        }
-      });
-
-      // Debug log to verify data structure
-      console.log("Updating member with data:", updateData);
-
-      // Use the single API endpoint for updating member details
-      const apiUrl = buildApiUrl("members/updateMember");
-      console.log("API URL:", apiUrl);
-
-      const response = await tokenManager.apiCall(apiUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updateData),
-      });
-
-      console.log("Response status:", response.status);
-      console.log("Response ok:", response.ok);
-
-      // Handle success based on HTTP status code instead of JSON parsing
-      if (response.ok) {
-        // Success! (200-299 status codes)
-        let data = null;
-        let responseText = "";
-
-        try {
-          responseText = await response.text();
-          console.log("Response body:", responseText.substring(0, 200));
-
-          // Try to parse as JSON, but don't fail if it's not JSON
-          try {
-            data = JSON.parse(responseText);
-            console.log("Parsed JSON data:", data);
-          } catch (parseError) {
-            console.log(
-              "Response is not JSON (probably HTML success page), treating as success",
-            );
-            // If it's not JSON but status is OK, treat as success
-            data = {
-              status: "success",
-              message: "Member updated successfully",
-            };
-          }
-        } catch (textError) {
-          console.log(
-            "Could not read response text, treating as success based on status code",
-          );
-          data = { status: "success", message: "Member updated successfully" };
-        }
-
-        // Show success message
-        const updateMessage = editFormData.new_password
-          ? "Member information and password updated successfully! 🎉"
-          : "Member information updated successfully! 🎉";
-        alert(updateMessage);
-
-        setShowEditModal(false);
-        setEditFormData(null);
-
-        // Refresh the members list to show updated data
-        fetchMembers();
-
-        // If we're viewing member details, refresh those too
-        if (memberDetails && memberDetails.user_id === updateData.user_id) {
-          fetchMemberDetails(updateData.user_id);
-        }
-      } else {
-        // Handle error responses
-        let errorMessage = `HTTP error! status: ${response.status}`;
-        try {
-          const errorText = await response.text();
-          console.log("Error response body:", errorText.substring(0, 200));
-
-          // Try to parse as JSON for error details
-          try {
-            const errorData = JSON.parse(errorText);
-            errorMessage = errorData.message || errorMessage;
-          } catch (parseError) {
-            // If it's HTML error page
-            if (
-              errorText.includes("<html>") ||
-              errorText.includes("<!DOCTYPE")
-            ) {
-              errorMessage =
-                "Server returned an error page. Please check the API endpoint.";
-            } else {
-              errorMessage = `Server error: ${errorText.substring(0, 100)}...`;
-            }
-          }
-        } catch (textError) {
-          console.error("Could not read error response:", textError);
-        }
-        throw new Error(errorMessage);
+    // Find and show the selected plan details
+    if (editFormData.membership_plan) {
+      const selectedPlan = membershipPlans.find(plan =>
+        getPlanOptionValue(plan) === editFormData.membership_plan
+      );
+      if (selectedPlan) {
+        console.log("Selected Plan:", selectedPlan.plan_name, "- ₹" + selectedPlan.price);
       }
-    } catch (err) {
-      console.error("Error updating member:", err);
-      let errorMessage = "Failed to update member";
-
-      if (err.message.includes("duplicate") || err.message.includes("unique")) {
-        errorMessage = "Email or phone number already exists";
-      } else if (err.message.includes("validation")) {
-        errorMessage = "Please check your input data";
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-
-      alert(`Error: ${errorMessage}`);
-    } finally {
-      setLoading(false);
     }
+
+    // Show verification message with more details
+    const selectedPlan = membershipPlans.find(plan =>
+      getPlanOptionValue(plan) === editFormData.membership_plan
+    );
+
+    const planDisplay = selectedPlan
+      ? `${selectedPlan.plan_name} (₹${selectedPlan.price || 'N/A'})`
+      : editFormData.membership_plan || "Not selected";
+
+    alert(
+      `✅ Form data validated successfully!\n\n` +
+      `👤 Member: ${updateData.name}\n` +
+      `📧 Email: ${updateData.email}\n` +
+      `📱 Phone: ${updateData.phone}\n` +
+      `🚻 Gender: ${editFormData.gender || "Not specified"}\n` +
+      `🏢 Branch ID: ${editFormData.branch_id || "Not selected"}\n` +
+      `💳 Membership Plan: ${planDisplay}\n\n` +
+      `📋 Check browser console for complete form data details.\n\n` +
+      `Note: API integration is disabled. Data is displayed for verification only.`
+    );
+
+    // Close the modal without making API call
+    setShowEditModal(false);
+    setEditFormData(null);
+
+    // TODO: Enable API integration after data verification is complete
   };
 
   const closeMemberProfile = () => {
@@ -1979,15 +1915,23 @@ const MemberManagement = () => {
                         <option key="select-plan-edit" value="">
                           Select Plan
                         </option>
-                        {getAvailablePlans(editFormData.branch_id).map((plan, index) => (
-                          <option
-                            key={`edit-plan-${plan.plan_id ?? plan.plan_name}-${index}`}
-                            value={getPlanOptionValue(plan)}
-                          >
-                            {plan.plan_name} - ₹{plan.price} (
-                            {plan.duration_days ?? "-"} days)
-                          </option>
-                        ))}
+                        {(() => {
+                          const availablePlans = getAvailablePlans(editFormData.branch_id);
+
+                          return availablePlans.map((plan, index) => {
+                            const optionValue = getPlanOptionValue(plan);
+
+                            return (
+                              <option
+                                key={`edit-plan-${plan.plan_id ?? plan.plan_name}-${index}`}
+                                value={optionValue}
+                              >
+                                {plan.plan_name} - ₹{plan.price} (
+                                {plan.duration_days ?? "-"} days)
+                              </option>
+                            );
+                          });
+                        })()}
                       </select>
                     </div>
                     <div className="member-form-group">
@@ -2031,9 +1975,12 @@ const MemberManagement = () => {
                       <label>Gender</label>
                       <select
                         name="gender"
-                        value={editFormData.gender}
+                        value={editFormData.gender || ""}
                         onChange={handleFormChange}
                       >
+                        <option key="SELECT-GENDER-edit" value="">
+                          Select Gender
+                        </option>
                         <option key="MALE-edit" value="MALE">
                           Male
                         </option>
@@ -2127,6 +2074,9 @@ const MemberManagement = () => {
                         value={editFormData.fitness_level}
                         onChange={handleFormChange}
                       >
+                        <option key="SELECT-FITNESS-LEVEL-edit" value="">
+                          Select Fitness Level
+                        </option>
                         <option key="BEGINNER-edit" value="BEGINNER">
                           Beginner
                         </option>
@@ -2145,6 +2095,9 @@ const MemberManagement = () => {
                         value={editFormData.goal_focus}
                         onChange={handleFormChange}
                       >
+                        <option key="SELECT-GOAL-FOCUS-edit" value="">
+                          Select Goal Focus
+                        </option>
                         <option key="WEIGHT_LOSS-edit" value="WEIGHT_LOSS">
                           Weight Loss
                         </option>
