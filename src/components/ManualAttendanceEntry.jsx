@@ -7,7 +7,7 @@ const ManualAttendanceEntry = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBranch, setFilterBranch] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL'); // ALL, CHECKED_IN, NOT_CHECKED_IN
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate] = useState(new Date().toISOString().split('T')[0]); // Fixed to current date
 
   // API data states
   const [users, setUsers] = useState([]);
@@ -43,7 +43,19 @@ const ManualAttendanceEntry = () => {
   // Fetch users when filters or pagination changes
   useEffect(() => {
     fetchUsers();
-  }, [pagination.page, filterBranch, selectedDate]);
+  }, [pagination.page, filterBranch]);
+
+  // Helper function to get branch name from branch ID
+  const getBranchName = (branchId) => {
+    if (!branchId || !branches.length) return "N/A";
+
+    // Convert both to strings for comparison to handle type mismatches
+    const branch = branches.find(b =>
+      String(b.branch_id) === String(branchId)
+    );
+
+    return branch ? branch.branch_name : `Branch ID: ${branchId}`;
+  };
 
   // Fetch branches
   const fetchBranches = async () => {
@@ -58,6 +70,7 @@ const ManualAttendanceEntry = () => {
       const data = await response.json();
       if (data.status === "success") {
         setBranches(data.data || []);
+        console.log("Branches loaded:", data.data || []);
       }
     } catch (err) {
       console.error("Error fetching branches:", err);
@@ -111,6 +124,13 @@ const ManualAttendanceEntry = () => {
       if (data.status === "success") {
         const usersList = data.users || data.members || data.data || [];
         setUsers(usersList);
+
+        // Log first user to check data structure
+        if (usersList.length > 0) {
+          console.log("Sample user data:", usersList[0]);
+          console.log("Available branches:", branches);
+        }
+
         setPagination((prev) => ({
           ...prev,
           total: data.meta?.total || data.total || data.pagination?.total || usersList.length,
@@ -145,15 +165,37 @@ const ManualAttendanceEntry = () => {
         }
       );
 
-      if (!response.ok) throw new Error("Failed to fetch session status");
+      if (!response.ok) {
+        if (response.status === 404) {
+          // No sessions found for this date - user not checked in
+          const sessionInfo = {
+            isCheckedIn: false,
+            sessions: [],
+            lastSession: null,
+          };
+
+          setUserSessions((prev) => ({
+            ...prev,
+            [userId]: sessionInfo,
+          }));
+
+          return sessionInfo;
+        }
+        throw new Error("Failed to fetch session status");
+      }
 
       const data = await response.json();
-      const sessions = data.status === "success" ? data.data : [];
+      // Extract sessions from data.sessions as per API response structure
+      const sessions = data.status === "success" ? (data.data?.sessions || []) : [];
+
+      // Determine status based on the last session
+      const lastSession = sessions.length > 0 ? sessions[sessions.length - 1] : null;
+      const isCheckedIn = lastSession && (lastSession.check_out === null || lastSession.check_out === undefined || lastSession.check_out === "");
 
       const sessionInfo = {
-        hasCheckedIn: sessions.length > 0,
-        hasCheckedOut: sessions.length > 0 && sessions.some((s) => s.check_out_time),
+        isCheckedIn,
         sessions: sessions,
+        lastSession: lastSession,
       };
 
       setUserSessions((prev) => ({
@@ -164,7 +206,14 @@ const ManualAttendanceEntry = () => {
       return sessionInfo;
     } catch (err) {
       console.error(`Error fetching session status for user ${userId}:`, err);
-      return { hasCheckedIn: false, hasCheckedOut: false, sessions: [] };
+      const errorSessionInfo = { isCheckedIn: false, sessions: [], lastSession: null };
+
+      setUserSessions((prev) => ({
+        ...prev,
+        [userId]: errorSessionInfo,
+      }));
+
+      return errorSessionInfo;
     } finally {
       setSessionsLoading((prev) => ({ ...prev, [userId]: false }));
     }
@@ -175,15 +224,16 @@ const ManualAttendanceEntry = () => {
     try {
       setActionLoading((prev) => ({ ...prev, [user.user_id]: true }));
 
-      const checkInTime = new Date().toLocaleString("sv-SE").replace(" ", "T");
+      // Format timestamp as "YYYY-MM-DD HH:MM:SS" format expected by API
+      const checkInTime = new Date().toLocaleString("sv-SE").replace("T", " ");
 
       const payload = {
         user_id: user.user_id,
         gym_id: 1,
         branch_id: user.branch_id || 1,
-        shift_id: 1,
+        shift_id: user.shift_id || 3, // Default to 3 as per API example
         device_id: 1,
-        attendance_date: selectedDate,
+        attendance_date: selectedDate, // Current date only
         status: "ON_TIME",
         check_in_time: checkInTime,
         source: "MANUAL",
@@ -202,24 +252,67 @@ const ManualAttendanceEntry = () => {
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to check in");
+        let errorMessage = "Failed to check in";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+
+          // Handle specific error codes
+          if (response.status === 400) {
+            errorMessage = `Invalid request: ${errorMessage}`;
+          } else if (response.status === 401) {
+            errorMessage = "You are not authorized. Please log in again.";
+          } else if (response.status === 409) {
+            errorMessage = `User is already checked in: ${errorMessage}`;
+          } else if (response.status === 500) {
+            errorMessage = "Server error. Please try again later.";
+          }
+        } catch (parseError) {
+          console.error("Error parsing error response:", parseError);
+          errorMessage = `Server returned error ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
       if (data.status === "success") {
-        alert(`${user.name} checked in successfully!`);
-        // Update session cache
-        setUserSessions((prev) => ({
-          ...prev,
-          [user.user_id]: { hasCheckedIn: true, hasCheckedOut: false, sessions: [] },
-        }));
+        alert(`${user.name} checked in successfully at ${checkInTime}!`);
+
+        // Update session cache with new check-in session
+        setUserSessions((prev) => {
+          const currentSessions = prev[user.user_id]?.sessions || [];
+          const newSession = {
+            session_no: currentSessions.length + 1,
+            device: "",
+            check_in: checkInTime,
+            check_out: null,
+            duration: null
+          };
+
+          return {
+            ...prev,
+            [user.user_id]: {
+              isCheckedIn: true,
+              sessions: [...currentSessions, newSession],
+              lastSession: newSession,
+            },
+          };
+        });
       } else {
         throw new Error(data.message || "Failed to check in");
       }
     } catch (err) {
       console.error("Error checking in user:", err);
-      alert(`Failed to check in: ${err.message}`);
+
+      // Provide user-friendly error messages
+      let userMessage = err.message;
+      if (err.message.includes("network") || err.message.includes("fetch")) {
+        userMessage = "Network error. Please check your connection and try again.";
+      } else if (err.message.includes("timeout")) {
+        userMessage = "Request timeout. Please try again.";
+      }
+
+      alert(`Failed to check in ${user.name}: ${userMessage}`);
     } finally {
       setActionLoading((prev) => ({ ...prev, [user.user_id]: false }));
     }
@@ -230,17 +323,30 @@ const ManualAttendanceEntry = () => {
     try {
       setActionLoading((prev) => ({ ...prev, [user.user_id]: true }));
 
-      const checkOutTime = new Date().toLocaleString("sv-SE").replace(" ", "T");
+      // Check if user has a valid check-in session
+      const userSessionData = userSessions[user.user_id];
+      if (!userSessionData || !userSessionData.isCheckedIn || !userSessionData.lastSession) {
+        throw new Error("User must be checked in before checking out");
+      }
+
+      // Format timestamp as "YYYY-MM-DD HH:MM:SS" format expected by API
+      const checkOutTime = new Date().toLocaleString("sv-SE").replace("T", " ");
+
+      // Get the original check-in time from the last session
+      const checkInTime = userSessionData.lastSession.check_in;
+      if (!checkInTime) {
+        throw new Error("Could not find check-in time. Please refresh and try again.");
+      }
 
       const payload = {
         user_id: user.user_id,
         gym_id: 1,
         branch_id: user.branch_id || 1,
-        shift_id: 1,
+        shift_id: user.shift_id || 3, // Default to 3 as per API example
         device_id: 1,
-        attendance_date: selectedDate,
+        attendance_date: selectedDate, // Current date only
         status: "ON_TIME",
-        check_in_time: userSessions[user.user_id]?.sessions[0]?.check_in_time || checkOutTime,
+        check_in_time: checkInTime,
         check_out_time: checkOutTime,
         source: "MANUAL",
         remarks: "Manual check-out entry",
@@ -258,24 +364,72 @@ const ManualAttendanceEntry = () => {
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to check out");
+        let errorMessage = "Failed to check out";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+
+          // Handle specific error codes
+          if (response.status === 400) {
+            errorMessage = `Invalid request: ${errorMessage}`;
+          } else if (response.status === 401) {
+            errorMessage = "You are not authorized. Please log in again.";
+          } else if (response.status === 404) {
+            errorMessage = "Check-in session not found. Please check in first.";
+          } else if (response.status === 409) {
+            errorMessage = `User is already checked out: ${errorMessage}`;
+          } else if (response.status === 500) {
+            errorMessage = "Server error. Please try again later.";
+          }
+        } catch (parseError) {
+          console.error("Error parsing error response:", parseError);
+          errorMessage = `Server returned error ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
       if (data.status === "success") {
-        alert(`${user.name} checked out successfully!`);
-        // Update session cache
-        setUserSessions((prev) => ({
-          ...prev,
-          [user.user_id]: { hasCheckedIn: true, hasCheckedOut: true, sessions: [] },
-        }));
+        alert(`${user.name} checked out successfully at ${checkOutTime}!`);
+
+        // Update session cache with checkout time - user is now ready for next check-in
+        setUserSessions((prev) => {
+          const currentData = prev[user.user_id];
+          const updatedSessions = currentData.sessions.map((session, index) => {
+            // Update the last session with check-out time
+            if (index === currentData.sessions.length - 1) {
+              return {
+                ...session,
+                check_out: checkOutTime
+              };
+            }
+            return session;
+          });
+
+          return {
+            ...prev,
+            [user.user_id]: {
+              isCheckedIn: false, // User is now available for next check-in
+              sessions: updatedSessions,
+              lastSession: updatedSessions[updatedSessions.length - 1],
+            },
+          };
+        });
       } else {
         throw new Error(data.message || "Failed to check out");
       }
     } catch (err) {
       console.error("Error checking out user:", err);
-      alert(`Failed to check out: ${err.message}`);
+
+      // Provide user-friendly error messages
+      let userMessage = err.message;
+      if (err.message.includes("network") || err.message.includes("fetch")) {
+        userMessage = "Network error. Please check your connection and try again.";
+      } else if (err.message.includes("timeout")) {
+        userMessage = "Request timeout. Please try again.";
+      }
+
+      alert(`Failed to check out ${user.name}: ${userMessage}`);
     } finally {
       setActionLoading((prev) => ({ ...prev, [user.user_id]: false }));
     }
@@ -300,8 +454,8 @@ const ManualAttendanceEntry = () => {
       filtered = await Promise.all(
         filtered.map(async (user) => {
           const sessionStatus = userSessions[user.user_id] || (await fetchUserSessionStatus(user.user_id));
-          if (filterStatus === "CHECKED_IN" && !sessionStatus.hasCheckedIn) return null;
-          if (filterStatus === "NOT_CHECKED_IN" && sessionStatus.hasCheckedIn) return null;
+          if (filterStatus === "CHECKED_IN" && !sessionStatus.isCheckedIn) return null;
+          if (filterStatus === "NOT_CHECKED_IN" && sessionStatus.isCheckedIn) return null;
           return user;
         })
       );
@@ -317,13 +471,36 @@ const ManualAttendanceEntry = () => {
     getFilteredUsers().then(setFilteredUsers);
   }, [users, searchQuery, filterBranch, filterStatus, userSessions]);
 
+  // Automatically fetch session status for all visible users
+  useEffect(() => {
+    if (filteredUsers.length > 0) {
+      filteredUsers.forEach(user => {
+        if (!userSessions[user.user_id] && !sessionsLoading[user.user_id]) {
+          fetchUserSessionStatus(user.user_id);
+        }
+      });
+    }
+  }, [filteredUsers]);
+
+  // Also fetch session status when users are initially loaded
+  useEffect(() => {
+    if (users.length > 0) {
+      users.forEach(user => {
+        if (!userSessions[user.user_id] && !sessionsLoading[user.user_id]) {
+          fetchUserSessionStatus(user.user_id);
+        }
+      });
+    }
+  }, [users]);
+
   // Get action button for user
   const getActionButton = (user) => {
     const sessionStatus = userSessions[user.user_id];
     const isLoading = actionLoading[user.user_id];
     const isSessionLoading = sessionsLoading[user.user_id];
 
-    if (isSessionLoading) {
+    // Show loading while fetching session data or performing actions
+    if (isSessionLoading || (!sessionStatus && isLoading)) {
       return (
         <button className="action-btn loading" disabled>
           <i className="fas fa-spinner fa-spin"></i>
@@ -332,42 +509,24 @@ const ManualAttendanceEntry = () => {
       );
     }
 
+    // If no session data yet and not loading, show loading state
     if (!sessionStatus) {
       return (
-        <button
-          className="action-btn check-in"
-          onClick={() => {
-            fetchUserSessionStatus(user.user_id).then((status) => {
-              if (status.hasCheckedIn) {
-                handleCheckOut(user);
-              } else {
-                handleCheckIn(user);
-              }
-            });
-          }}
-          disabled={isLoading}
-        >
-          <i className="fas fa-sync"></i>
-          Checking...
+        <button className="action-btn loading" disabled>
+          <i className="fas fa-spinner fa-spin"></i>
+          Loading...
         </button>
       );
     }
 
-    if (sessionStatus.hasCheckedIn && sessionStatus.hasCheckedOut) {
-      return (
-        <button className="action-btn completed" disabled>
-          <i className="fas fa-check-circle"></i>
-          Checked Out
-        </button>
-      );
-    }
-
-    if (sessionStatus.hasCheckedIn && !sessionStatus.hasCheckedOut) {
+    // If user is currently checked in (has active session)
+    if (sessionStatus.isCheckedIn) {
       return (
         <button
           className="action-btn check-out"
           onClick={() => handleCheckOut(user)}
           disabled={isLoading}
+          title={`Checked in at: ${sessionStatus.lastSession?.check_in}`}
         >
           {isLoading ? (
             <>
@@ -384,12 +543,13 @@ const ManualAttendanceEntry = () => {
       );
     }
 
-    // Not checked in
+    // User is not currently checked in (ready for check-in)
     return (
       <button
         className="action-btn check-in"
         onClick={() => handleCheckIn(user)}
         disabled={isLoading}
+        title="Check in this user"
       >
         {isLoading ? (
           <>
@@ -422,7 +582,12 @@ const ManualAttendanceEntry = () => {
       <div className="entry-header">
         <h2>
           <i className="fas fa-clock"></i>
-          Manual Attendance Entry
+          Manual Attendance Entry - {new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}
         </h2>
       </div>
 
@@ -440,12 +605,13 @@ const ManualAttendanceEntry = () => {
         </div>
 
         <div className="filter-group">
-          <label>Date</label>
+          <label>Date (Current Day Only)</label>
           <input
             type="date"
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="filter-input"
+            disabled
+            className="filter-input disabled"
+            title="Manual attendance can only be entered for the current day"
           />
         </div>
 
@@ -512,13 +678,27 @@ const ManualAttendanceEntry = () => {
             <tbody>
               {filteredUsers.map((user) => {
                 const sessionStatus = userSessions[user.user_id];
-                const statusDisplay = !sessionStatus
-                  ? "Loading..."
-                  : sessionStatus.hasCheckedIn && sessionStatus.hasCheckedOut
-                  ? "Checked Out"
-                  : sessionStatus.hasCheckedIn
-                  ? "Checked In"
-                  : "Not Checked In";
+                const isLoading = actionLoading[user.user_id] || sessionsLoading[user.user_id];
+
+                let statusDisplay, statusClass, statusTitle;
+
+                if (isLoading) {
+                  statusDisplay = "Loading...";
+                  statusClass = "loading";
+                  statusTitle = "Fetching current status";
+                } else if (!sessionStatus) {
+                  statusDisplay = "Loading...";
+                  statusClass = "loading";
+                  statusTitle = "Fetching current status";
+                } else if (sessionStatus.isCheckedIn) {
+                  statusDisplay = "Checked In";
+                  statusClass = "checked-in";
+                  statusTitle = `Checked in at: ${sessionStatus.lastSession?.check_in}`;
+                } else {
+                  statusDisplay = "Not Checked In";
+                  statusClass = "not-checked";
+                  statusTitle = "Ready to check in";
+                }
 
                 return (
                   <tr key={user.user_id}>
@@ -528,21 +708,17 @@ const ManualAttendanceEntry = () => {
                     </td>
                     <td>{user.email}</td>
                     <td>{user.phone}</td>
-                    <td>{user.branch_name || "N/A"}</td>
+                    <td>{getBranchName(user.branch_id)}</td>
                     <td>
                       <span
-                        className={`status-badge ${
-                          sessionStatus?.hasCheckedOut
-                            ? "completed"
-                            : sessionStatus?.hasCheckedIn
-                            ? "checked-in"
-                            : "not-checked"
-                        }`}
+                        className={`status-badge ${statusClass}`}
+                        title={statusTitle}
                       >
+                        {isLoading && <i className="fas fa-spinner fa-spin status-icon"></i>}
                         {statusDisplay}
                       </span>
                     </td>
-                    <td className="action-cell" onClick={() => fetchUserSessionStatus(user.user_id)}>
+                    <td className="action-cell">
                       {getActionButton(user)}
                     </td>
                   </tr>
