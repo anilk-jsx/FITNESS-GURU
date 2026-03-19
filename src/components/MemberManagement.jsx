@@ -46,12 +46,12 @@ const MemberManagement = () => {
     plan_id: "",
     // Profile fields
     dob: "",
-    gender: "MALE",
-    blood_group: "O+",
+    gender: "",
+    blood_group: "",
     height_cm: "",
     weight_kg: "",
-    fitness_level: "BEGINNER",
-    goal_focus: "GENERAL",
+    fitness_level: "",
+    goal_focus: "",
     emergency_contact: "",
     // Address fields
     address_line1: "",
@@ -1299,14 +1299,12 @@ const MemberManagement = () => {
           addFormData.join_date || new Date().toISOString().split("T")[0],
         membership_plan: toIntOrNull(addFormData.plan_id),
         dob: addFormData.dob || "",
-        gender: transformGender(addFormData.gender) || "Male",
-        blood_group: addFormData.blood_group || "O+",
+        gender: transformGender(addFormData.gender),
+        blood_group: addFormData.blood_group,
         height: parseFloat(addFormData.height_cm) || 0,
         weight: parseFloat(addFormData.weight_kg) || 0,
-        fitness_level:
-          transformFitnessLevel(addFormData.fitness_level) || "Beginner",
-        goal_focus:
-          transformGoalFocus(addFormData.goal_focus) || "General Fitness",
+        fitness_level: transformFitnessLevel(addFormData.fitness_level),
+        goal_focus: transformGoalFocus(addFormData.goal_focus),
         country: parseInt(addFormData.country_id) || 1,
         state: parseInt(addFormData.state_id) || 1,
         district: parseInt(addFormData.district) || 1,
@@ -1365,12 +1363,12 @@ const MemberManagement = () => {
           status: "ACTIVE",
           plan_id: "",
           dob: "",
-          gender: "MALE",
-          blood_group: "O+",
+          gender: "",
+          blood_group: "",
           height_cm: "",
           weight_kg: "",
-          fitness_level: "BEGINNER",
-          goal_focus: "GENERAL",
+          fitness_level: "",
+          goal_focus: "",
           emergency_contact: "",
           address_line1: "",
           address_line2: "",
@@ -1406,12 +1404,12 @@ const MemberManagement = () => {
       status: "ACTIVE",
       plan_id: "",
       dob: "",
-      gender: "MALE",
-      blood_group: "O+",
+      gender: "",
+      blood_group: "",
       height_cm: "",
       weight_kg: "",
-      fitness_level: "BEGINNER",
-      goal_focus: "GENERAL",
+      fitness_level: "",
+      goal_focus: "",
       emergency_contact: "",
       address_line1: "",
       address_line2: "",
@@ -2165,6 +2163,9 @@ const MemberManagement = () => {
                         value={editFormData.blood_group}
                         onChange={handleFormChange}
                       >
+                        <option key="SELECT-BLOOD-GROUP-edit" value="">
+                          Select Blood Group
+                        </option>
                         <option key="A+-edit" value="A+">
                           A+
                         </option>
@@ -2714,7 +2715,11 @@ const MemberManagement = () => {
                         name="gender"
                         value={addFormData.gender}
                         onChange={handleAddFormChange}
+                        required
                       >
+                        <option key="SELECT-GENDER" value="">
+                          Select Gender
+                        </option>
                         <option key="MALE" value="MALE">
                           Male
                         </option>
@@ -2732,7 +2737,11 @@ const MemberManagement = () => {
                         name="blood_group"
                         value={addFormData.blood_group}
                         onChange={handleAddFormChange}
+                        required
                       >
+                        <option key="SELECT-BLOOD-GROUP" value="">
+                          Select Blood Group
+                        </option>
                         <option key="A+" value="A+">
                           A+
                         </option>
@@ -2807,7 +2816,11 @@ const MemberManagement = () => {
                         name="fitness_level"
                         value={addFormData.fitness_level}
                         onChange={handleAddFormChange}
+                        required
                       >
+                        <option key="SELECT-FITNESS-LEVEL" value="">
+                          Select Fitness Level
+                        </option>
                         <option key="BEGINNER" value="BEGINNER">
                           Beginner
                         </option>
@@ -2825,7 +2838,11 @@ const MemberManagement = () => {
                         name="goal_focus"
                         value={addFormData.goal_focus}
                         onChange={handleAddFormChange}
+                        required
                       >
+                        <option key="SELECT-GOAL-FOCUS" value="">
+                          Select Goal Focus
+                        </option>
                         <option key="WEIGHT_LOSS" value="WEIGHT_LOSS">
                           Weight Loss
                         </option>
