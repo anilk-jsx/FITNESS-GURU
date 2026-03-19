@@ -46,12 +46,12 @@ const MemberManagement = () => {
     plan_id: "",
     // Profile fields
     dob: "",
-    gender: "MALE",
-    blood_group: "O+",
+    gender: "",
+    blood_group: "",
     height_cm: "",
     weight_kg: "",
-    fitness_level: "BEGINNER",
-    goal_focus: "GENERAL",
+    fitness_level: "",
+    goal_focus: "",
     emergency_contact: "",
     // Address fields
     address_line1: "",
@@ -693,6 +693,40 @@ const MemberManagement = () => {
       return ""; // Empty if unrecognized
     })();
 
+    // Normalize fitness level from database enum to UI dropdown values
+    const normalizedFitnessLevel = (() => {
+      const fitnessValue = detailedMember.fitness_level || "";
+      if (!fitnessValue) return "";
+
+      // Convert database enum values to UI dropdown values
+      if (fitnessValue === "BEGINEER") return "BEGINNER"; // Database has typo
+      if (fitnessValue === "INTERMEDIATE") return "INTERMEDIATE";
+      if (fitnessValue === "ADVANCE") return "ADVANCED"; // Database uses ADVANCE
+
+      // If it's already in UI format, use as-is
+      if (['BEGINNER', 'INTERMEDIATE', 'ADVANCED'].includes(String(fitnessValue))) return String(fitnessValue);
+
+      return ""; // Empty if unrecognized
+    })();
+
+    // Normalize goal focus from database enum to UI dropdown values
+    const normalizedGoalFocus = (() => {
+      const goalValue = detailedMember.goal_focus || "";
+      if (!goalValue) return "";
+
+      // Convert database enum values to UI dropdown values
+      if (goalValue === "GENERAL_FITNESS") return "GENERAL"; // Database uses GENERAL_FITNESS
+      if (goalValue === "WEIGHT_LOSS") return "WEIGHT_LOSS";
+      if (goalValue === "MUSCLE_GAIN") return "MUSCLE_GAIN";
+      if (goalValue === "STRENGTH") return "STRENGTH";
+      if (goalValue === "ENDURANCE") return "ENDURANCE";
+
+      // If it's already in UI format, use as-is
+      if (['GENERAL', 'WEIGHT_LOSS', 'MUSCLE_GAIN', 'STRENGTH', 'ENDURANCE'].includes(String(goalValue))) return String(goalValue);
+
+      return ""; // Empty if unrecognized
+    })();
+
     const formData = {
       user_id: detailedMember.user_id,
       name: detailedMember.name || "",
@@ -713,8 +747,8 @@ const MemberManagement = () => {
       // Physical stats
       height: parseFloat(detailedMember.height_cm) || "",
       weight: parseFloat(detailedMember.weight_kg) || "",
-      fitness_level: detailedMember.fitness_level || "",
-      goal_focus: detailedMember.goal_focus || "",
+      fitness_level: normalizedFitnessLevel,
+      goal_focus: normalizedGoalFocus,
 
       // Gym and membership - use plan_name as identifier
       branch_id: detailedMember.branch_id ? String(detailedMember.branch_id) : "",
@@ -906,6 +940,16 @@ const MemberManagement = () => {
         originalMembershipPlan: memberDetails?.membership_plan
       });
 
+      // Log enum transformations for debugging Edit Member
+      console.log("🔄 Enum transformations for Edit Member:", {
+        original: { gender: editFormData.gender, fitness_level: editFormData.fitness_level, goal_focus: editFormData.goal_focus },
+        transformed: {
+          gender: editFormData.gender === "MALE" ? "Male" : editFormData.gender === "FEMALE" ? "Female" : editFormData.gender === "OTHER" ? "Other" : editFormData.gender || "",
+          fitness_level: editFormData.fitness_level === "BEGINNER" ? "BEGINEER" : editFormData.fitness_level === "INTERMEDIATE" ? "INTERMEDIATE" : editFormData.fitness_level === "ADVANCED" ? "ADVANCE" : editFormData.fitness_level || "",
+          goal_focus: editFormData.goal_focus === "GENERAL" ? "GENERAL_FITNESS" : editFormData.goal_focus || ""
+        }
+      });
+
       // Prepare update data matching the API structure
       const updateData = {
         user_id: editFormData.user_id,
@@ -918,14 +962,14 @@ const MemberManagement = () => {
 
         // Profile information
         dob: editFormData.dob || "",
-        gender: editFormData.gender || "",
+        gender: editFormData.gender === "MALE" ? "Male" : editFormData.gender === "FEMALE" ? "Female" : editFormData.gender === "OTHER" ? "Other" : editFormData.gender || "",
         blood_group: editFormData.blood_group || "",
 
         // Physical stats (convert to numbers, handle empty values)
         height: editFormData.height ? parseFloat(editFormData.height) : null,
         weight: editFormData.weight ? parseFloat(editFormData.weight) : null,
-        fitness_level: editFormData.fitness_level || "",
-        goal_focus: editFormData.goal_focus || "",
+        fitness_level: editFormData.fitness_level === "BEGINNER" ? "BEGINEER" : editFormData.fitness_level === "INTERMEDIATE" ? "INTERMEDIATE" : editFormData.fitness_level === "ADVANCED" ? "ADVANCE" : editFormData.fitness_level || "",
+        goal_focus: editFormData.goal_focus === "GENERAL" ? "GENERAL_FITNESS" : editFormData.goal_focus || "",
 
         // Gym and membership
         branch_id: editFormData.branch_id ? parseInt(editFormData.branch_id) : null,
@@ -1253,17 +1297,19 @@ const MemberManagement = () => {
           ? "Male"
           : gender === "FEMALE"
             ? "Female"
-            : gender;
+            : gender === "OTHER"
+              ? "Other"
+              : gender;
       };
 
       const transformFitnessLevel = (level) => {
         switch (level) {
           case "BEGINNER":
-            return "Beginner";
+            return "BEGINEER"; // Database uses "BEGINEER" with typo
           case "INTERMEDIATE":
-            return "Intermediate";
+            return "INTERMEDIATE";
           case "ADVANCED":
-            return "Advanced";
+            return "ADVANCE"; // Database uses "ADVANCE" not "ADVANCED"
           default:
             return level;
         }
@@ -1272,19 +1318,25 @@ const MemberManagement = () => {
       const transformGoalFocus = (goal) => {
         switch (goal) {
           case "GENERAL":
-            return "General Fitness";
+            return "GENERAL_FITNESS"; // Database uses "GENERAL_FITNESS"
           case "WEIGHT_LOSS":
-            return "Weight Loss";
+            return "WEIGHT_LOSS";
           case "MUSCLE_GAIN":
-            return "Muscle Gain";
+            return "MUSCLE_GAIN";
           case "STRENGTH":
-            return "Strength";
+            return "STRENGTH";
           case "ENDURANCE":
-            return "Endurance";
+            return "ENDURANCE";
           default:
             return goal;
         }
       };
+
+      // Log enum transformations for debugging
+      console.log("🔄 Enum transformations for Add Member:", {
+        original: { gender: addFormData.gender, fitness_level: addFormData.fitness_level, goal_focus: addFormData.goal_focus },
+        transformed: { gender: transformGender(addFormData.gender), fitness_level: transformFitnessLevel(addFormData.fitness_level), goal_focus: transformGoalFocus(addFormData.goal_focus) }
+      });
 
       // Prepare member data for API call
       const memberData = {
@@ -1299,14 +1351,12 @@ const MemberManagement = () => {
           addFormData.join_date || new Date().toISOString().split("T")[0],
         membership_plan: toIntOrNull(addFormData.plan_id),
         dob: addFormData.dob || "",
-        gender: transformGender(addFormData.gender) || "Male",
-        blood_group: addFormData.blood_group || "O+",
+        gender: transformGender(addFormData.gender),
+        blood_group: addFormData.blood_group,
         height: parseFloat(addFormData.height_cm) || 0,
         weight: parseFloat(addFormData.weight_kg) || 0,
-        fitness_level:
-          transformFitnessLevel(addFormData.fitness_level) || "Beginner",
-        goal_focus:
-          transformGoalFocus(addFormData.goal_focus) || "General Fitness",
+        fitness_level: transformFitnessLevel(addFormData.fitness_level),
+        goal_focus: transformGoalFocus(addFormData.goal_focus),
         country: parseInt(addFormData.country_id) || 1,
         state: parseInt(addFormData.state_id) || 1,
         district: parseInt(addFormData.district) || 1,
@@ -1365,12 +1415,12 @@ const MemberManagement = () => {
           status: "ACTIVE",
           plan_id: "",
           dob: "",
-          gender: "MALE",
-          blood_group: "O+",
+          gender: "",
+          blood_group: "",
           height_cm: "",
           weight_kg: "",
-          fitness_level: "BEGINNER",
-          goal_focus: "GENERAL",
+          fitness_level: "",
+          goal_focus: "",
           emergency_contact: "",
           address_line1: "",
           address_line2: "",
@@ -1406,12 +1456,12 @@ const MemberManagement = () => {
       status: "ACTIVE",
       plan_id: "",
       dob: "",
-      gender: "MALE",
-      blood_group: "O+",
+      gender: "",
+      blood_group: "",
       height_cm: "",
       weight_kg: "",
-      fitness_level: "BEGINNER",
-      goal_focus: "GENERAL",
+      fitness_level: "",
+      goal_focus: "",
       emergency_contact: "",
       address_line1: "",
       address_line2: "",
@@ -2165,6 +2215,9 @@ const MemberManagement = () => {
                         value={editFormData.blood_group}
                         onChange={handleFormChange}
                       >
+                        <option key="SELECT-BLOOD-GROUP-edit" value="">
+                          Select Blood Group
+                        </option>
                         <option key="A+-edit" value="A+">
                           A+
                         </option>
@@ -2714,7 +2767,11 @@ const MemberManagement = () => {
                         name="gender"
                         value={addFormData.gender}
                         onChange={handleAddFormChange}
+                        required
                       >
+                        <option key="SELECT-GENDER" value="">
+                          Select Gender
+                        </option>
                         <option key="MALE" value="MALE">
                           Male
                         </option>
@@ -2732,7 +2789,11 @@ const MemberManagement = () => {
                         name="blood_group"
                         value={addFormData.blood_group}
                         onChange={handleAddFormChange}
+                        required
                       >
+                        <option key="SELECT-BLOOD-GROUP" value="">
+                          Select Blood Group
+                        </option>
                         <option key="A+" value="A+">
                           A+
                         </option>
@@ -2807,7 +2868,11 @@ const MemberManagement = () => {
                         name="fitness_level"
                         value={addFormData.fitness_level}
                         onChange={handleAddFormChange}
+                        required
                       >
+                        <option key="SELECT-FITNESS-LEVEL" value="">
+                          Select Fitness Level
+                        </option>
                         <option key="BEGINNER" value="BEGINNER">
                           Beginner
                         </option>
@@ -2825,7 +2890,11 @@ const MemberManagement = () => {
                         name="goal_focus"
                         value={addFormData.goal_focus}
                         onChange={handleAddFormChange}
+                        required
                       >
+                        <option key="SELECT-GOAL-FOCUS" value="">
+                          Select Goal Focus
+                        </option>
                         <option key="WEIGHT_LOSS" value="WEIGHT_LOSS">
                           Weight Loss
                         </option>
