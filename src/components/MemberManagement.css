@@ -1301,3 +1301,90 @@
     font-size: 1.1rem;
   }
 }
+
+/* ===========================
+   FORM HELPER TEXT STYLES
+   =========================== */
+
+.field-helper-text {
+  font-size: 0.8rem;
+  color: #666;
+  font-style: italic;
+  margin: 0.25rem 0 0.5rem 0;
+  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.field-helper-text::before {
+  content: "ℹ️";
+  font-size: 0.75rem;
+}
+
+/* Make helper text more visible when field is disabled */
+.member-form-group select:disabled + .field-helper-text,
+.member-form-group input:disabled + .field-helper-text {
+  color: #999;
+  font-weight: 500;
+}
+
+/* Add some breathing room */
+.member-form-group label + .field-helper-text {
+  margin-top: 0.25rem;
+}
+
+/* ===========================
+   VALIDATION ERROR STYLES
+   =========================== */
+
+.validation-error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #fee;
+  border: 1px solid #fcc;
+  border-radius: 6px;
+  color: #a00;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  animation: slideDownError 0.3s ease;
+}
+
+.validation-error-message i {
+  color: #e74c3c;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.validation-error-message span {
+  line-height: 1.3;
+}
+
+@keyframes slideDownError {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Error state for form inputs */
+.member-form-group input.error,
+.member-form-group select.error {
+  border-color: #e74c3c;
+  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .validation-error-message {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+  }
+}
