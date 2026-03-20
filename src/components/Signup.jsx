@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./Signup.css";
 import logo from "../assets/FGlogo.png";
 import bgImg from "../assets/heroImg/home7.avif";
@@ -10,6 +10,8 @@ export default function Signup() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [branches, setBranches] = useState([]);
+  const [branchesLoading, setBranchesLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -17,7 +19,7 @@ export default function Signup() {
     password: "",
     confirmPassword: "",
     agree: false,
-    branch: "1",
+    branch: "",
     // Gym member profile details
     dob: "",
     gender: "",
@@ -30,6 +32,43 @@ export default function Signup() {
     address: ""
   });
   const navigate = useNavigate();
+
+  // Fetch branches from API
+  const fetchBranches = async (gymId = 1) => {
+    setBranchesLoading(true);
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
+      const response = await fetch(`${API_BASE_URL}/api/gymBranchList?gym_id=${gymId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.status === "success" && data.data) {
+        setBranches(data.data);
+        console.log("Branches loaded:", data.data.length, "items");
+      } else {
+        throw new Error("Invalid API response structure");
+      }
+    } catch (err) {
+      console.error("Error fetching branches:", err.message);
+      setBranches([]);
+    } finally {
+      setBranchesLoading(false);
+    }
+  };
+
+  // Fetch branches on component mount
+  useEffect(() => {
+    fetchBranches();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -80,6 +119,12 @@ export default function Signup() {
       return;
     }
 
+    // Validate branch selection
+    if (!form.branch) {
+      setError("Please select a branch");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -91,7 +136,7 @@ export default function Signup() {
         },
         body: JSON.stringify({
           gym_id: 1,
-          branch_id: 1,
+          branch_id: parseInt(form.branch) || 1,
           name: form.name,
           email: form.email,
           phone: form.phone,
@@ -227,18 +272,26 @@ export default function Signup() {
             </button>
           </div>
           <label className="signup-label">Branch</label>
-          <select 
-            className="signup-input" 
-            name="branch" 
-            value={form.branch} 
+          <select
+            className="signup-input"
+            name="branch"
+            value={form.branch}
             onChange={handleChange}
             required
+            disabled={branchesLoading}
           >
-            <option value="1">Branch 1</option>
-            <option value="2">Branch 2</option>
-            <option value="3">Branch 3</option>
-            <option value="4">Branch 4</option>
-            <option value="5">Branch 5</option>
+            {branchesLoading ? (
+              <option value="">Loading branches...</option>
+            ) : (
+              <>
+                <option value="">Select Branch</option>
+                {branches.map((branch) => (
+                  <option key={branch.branch_id} value={branch.branch_id.toString()}>
+                    {branch.branch_name}
+                  </option>
+                ))}
+              </>
+            )}
           </select>
           <button
             type="button"
