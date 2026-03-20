@@ -117,7 +117,7 @@ const MemberManagement = () => {
   };
 
   const normalizeMembershipPlan = (plan, index) => {
-    // Based on actual API response: {gym_id, branch_id, plan_name, status}
+    // Based on actual API response: {gym_id, branch_id, plan_name, status, created_at}
     // No plan_id is provided by the API, so we'll use plan_name as identifier
 
     const normalizedPlan = {
@@ -127,10 +127,6 @@ const MemberManagement = () => {
       gym_id: toIntOrNull(plan.gym_id),
       is_active: plan.status === "ACTIVE" || isActiveStatus(plan.status),
       plan_name: plan.plan_name || `Plan ${index + 1}`,
-      duration_days: toIntOrNull(plan.duration_days) || null,
-      duration_months: toIntOrNull(plan.duration_months) || null,
-      price: plan.price || 0,
-      description: plan.description || "",
     };
 
     return normalizedPlan;
@@ -2268,8 +2264,7 @@ const MemberManagement = () => {
                                 key={`edit-plan-${plan.plan_id ?? plan.plan_name}-${index}`}
                                 value={optionValue}
                               >
-                                {plan.plan_name} - ₹{plan.price} (
-                                {plan.duration_days ?? "-"} days)
+                                {plan.plan_name}
                               </option>
                             );
                           });
@@ -2853,9 +2848,7 @@ const MemberManagement = () => {
                             key={`plan-${plan.plan_id ?? plan.plan_name}-${index}`}
                             value={getPlanOptionValue(plan)}
                           >
-                            {plan.plan_name} - ₹{plan.price} (
-                            {plan.duration_days ?? "-"} days)
-                            {plan.branch_id && " - Branch Exclusive"}
+                            {plan.plan_name}
                           </option>
                         ))}
                       </select>
