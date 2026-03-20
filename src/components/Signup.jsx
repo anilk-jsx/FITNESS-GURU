@@ -12,6 +12,12 @@ export default function Signup() {
   const [error, setError] = useState("");
   const [branches, setBranches] = useState([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
+  const [passwordRules, setPasswordRules] = useState({
+    length: false,
+    upperLower: false,
+    number: false
+  });
+  const [showPasswordRules, setShowPasswordRules] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -70,12 +76,33 @@ export default function Signup() {
     fetchBranches();
   }, []);
 
+  // Check password rules in real-time
+  const checkPasswordRules = (password) => {
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const isLengthValid = password.length >= 8;
+
+    return {
+      length: isLengthValid,
+      upperLower: hasUpperCase && hasLowerCase,
+      number: hasNumber
+    };
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value
     }));
+
+    // Handle password rule validation
+    if (name === "password") {
+      const rules = checkPasswordRules(value);
+      setPasswordRules(rules);
+      setShowPasswordRules(value.length > 0);
+    }
   };
 
   const validatePassword = (password) => {
@@ -236,11 +263,30 @@ export default function Signup() {
               )}
             </button>
           </div>
-          <ul className="signup-password-rules">
-            <li>At least 8 characters long</li>
-            <li>Contains uppercase and lowercase letters</li>
-            <li>Contains at least one number</li>
-          </ul>
+          {showPasswordRules && (
+            <ul className="signup-password-rules">
+              {!passwordRules.length && (
+                <li className="signup-password-rule-unsatisfied">
+                  ❌ At least 8 characters long
+                </li>
+              )}
+              {!passwordRules.upperLower && (
+                <li className="signup-password-rule-unsatisfied">
+                  ❌ Contains uppercase and lowercase letters
+                </li>
+              )}
+              {!passwordRules.number && (
+                <li className="signup-password-rule-unsatisfied">
+                  ❌ Contains at least one number
+                </li>
+              )}
+              {passwordRules.length && passwordRules.upperLower && passwordRules.number && (
+                <li className="signup-password-rule-satisfied">
+                  ✅ Password meets all requirements!
+                </li>
+              )}
+            </ul>
+          )}
           <label className="signup-label">Confirm Password</label>
           <div className="signup-password-wrapper">
             <input

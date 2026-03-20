@@ -142,8 +142,39 @@
   color: #ff6b35;
   font-size: 0.98rem;
   margin: 0 0 0.7rem 1.2rem;
-  padding-left: 1.2rem;
-  list-style: disc;
+  padding-left: 0;
+  list-style: none;
+  animation: slideDown 0.3s ease;
+}
+
+.signup-password-rule-unsatisfied {
+  color: #e74c3c;
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.signup-password-rule-satisfied {
+  color: #27ae60;
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .signup-member-btn {
   width: 100%;
@@ -317,7 +348,11 @@
   .signup-password-rules {
     font-size: 0.85rem;
     margin: 0 0 0.5rem 1rem;
-    padding-left: 1rem;
+    padding-left: 0;
+  }
+  .signup-password-rule-unsatisfied,
+  .signup-password-rule-satisfied {
+    font-size: 0.8rem;
   }
   .signup-member-btn {
     font-size: 0.95rem;
@@ -384,6 +419,10 @@
   }
   .signup-password-rules {
     font-size: 0.8rem;
+  }
+  .signup-password-rule-unsatisfied,
+  .signup-password-rule-satisfied {
+    font-size: 0.75rem;
   }
   .signup-member-modal-content {
     padding: 1.2rem 1rem 1.2rem 1rem;
