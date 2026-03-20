@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Hero.css';
 
 // Import local hero images
@@ -12,6 +13,8 @@ import home8 from '../assets/heroImg/home8.jpg';
 import home9 from '../assets/heroImg/home9.jpg'
 
 const Hero = () => {
+  const navigate = useNavigate();
+
   const backgroundImages = [
     home1,
     home2,
@@ -53,6 +56,10 @@ const Hero = () => {
     }
   };
 
+  const handleGetStarted = () => {
+    navigate('/signup');
+  };
+
   return (
     <section className="hero" id="home">
       <div className="hero-background-container">
@@ -77,13 +84,12 @@ const Hero = () => {
           <span className="word">State-of-the-art</span> <span className="word">equipment,</span> <span className="word">expert</span> <span className="word">trainers,</span> <span className="word">and</span> <span className="word">a</span> <span className="word">supportive</span> <span className="word">community</span> <span className="word">await</span> <span className="word">you.</span>
         </p>
         <div className="hero-buttons">
-          <a 
-            href="#membership" 
+          <button
             className="btn-primary"
-            onClick={(e) => { e.preventDefault(); handleScrollToSection('membership'); }}
+            onClick={handleGetStarted}
           >
             Get Started
-          </a>
+          </button>
         </div>
       </div>
     </section>
