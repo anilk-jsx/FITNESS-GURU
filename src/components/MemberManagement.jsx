@@ -82,6 +82,10 @@ const MemberManagement = () => {
   // Membership plans - fetch from API
   const [membershipPlans, setMembershipPlans] = useState([]);
 
+  // Form validation states
+  const [addFormErrors, setAddFormErrors] = useState({});
+  const [editFormErrors, setEditFormErrors] = useState({});
+
   // API Configuration
   const API_BASE_URL =
     import.meta.env.VITE_API_URL ||
@@ -770,6 +774,9 @@ const MemberManagement = () => {
       confirm_password: "",
     };
 
+    // Clear any existing validation errors
+    setEditFormErrors({});
+
     // Open modal immediately to avoid delayed UX, then hydrate dropdowns in background.
     setEditFormData(formData);
     setShowEditModal(true);
@@ -818,6 +825,15 @@ const MemberManagement = () => {
   const handleFormChange = (e) => {
     const { name, value } = e.target;
 
+    // Clear validation error for this field when user starts typing/selecting
+    if (editFormErrors[name]) {
+      setEditFormErrors(prev => {
+        const updated = { ...prev };
+        delete updated[name];
+        return updated;
+      });
+    }
+
     setEditFormData((prev) => {
       const updated = { ...prev, [name]: value };
 
@@ -846,35 +862,152 @@ const MemberManagement = () => {
     });
   };
 
-  const handleSaveChanges = async (e) => {
-    e.preventDefault();
+  // Form validation functions
+  const validateAddForm = (formData) => {
+    const errors = {};
 
-    // Basic validation
-    if (!editFormData.name.trim()) {
-      alert("Please enter a valid name");
-      return;
+    // Required field validation
+    if (!formData.name?.trim()) {
+      errors.name = "Name is required";
     }
 
-    if (!editFormData.email.trim()) {
-      alert("Please enter a valid email");
-      return;
+    if (!formData.email?.trim()) {
+      errors.email = "Email is required";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        errors.email = "Please enter a valid email address";
+      }
     }
 
-    if (!editFormData.phone.trim()) {
-      alert("Please enter a valid phone number");
-      return;
+    if (!formData.phone?.trim()) {
+      errors.phone = "Phone number is required";
+    } else {
+      const phoneRegex = /^[0-9]{10}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        errors.phone = "Please enter a valid 10-digit phone number";
+      }
+    }
+
+    if (!formData.password?.trim()) {
+      errors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      errors.password = "Password must be at least 6 characters long";
+    }
+
+    if (!formData.branch_id) {
+      errors.branch_id = "Please select a branch";
+    }
+
+    if (!formData.plan_id) {
+      errors.plan_id = "Please select a membership plan";
+    }
+
+    if (!formData.dob) {
+      errors.dob = "Date of birth is required";
+    }
+
+    if (!formData.gender) {
+      errors.gender = "Please select gender";
+    }
+
+    if (!formData.country_id) {
+      errors.country_id = "Please select country";
+    }
+
+    if (!formData.state_id) {
+      errors.state_id = "Please select state";
+    }
+
+    if (!formData.district) {
+      errors.district = "Please select district";
+    }
+
+    if (!formData.city) {
+      errors.city = "Please select city";
+    }
+
+    return errors;
+  };
+
+  const validateEditForm = (formData) => {
+    const errors = {};
+
+    if (!formData.name?.trim()) {
+      errors.name = "Name is required";
+    }
+
+    if (!formData.email?.trim()) {
+      errors.email = "Email is required";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        errors.email = "Please enter a valid email address";
+      }
+    }
+
+    if (!formData.phone?.trim()) {
+      errors.phone = "Phone number is required";
+    }
+
+    if (!formData.branch_id) {
+      errors.branch_id = "Please select a branch";
+    }
+
+    if (!formData.gender) {
+      errors.gender = "Please select gender";
+    }
+
+    if (!formData.country) {
+      errors.country = "Please select country";
+    }
+
+    if (!formData.state) {
+      errors.state = "Please select state";
+    }
+
+    if (!formData.district) {
+      errors.district = "Please select district";
+    }
+
+    if (!formData.city) {
+      errors.city = "Please select city";
     }
 
     // Password validation if passwords are provided
-    if (editFormData.new_password || editFormData.confirm_password) {
-      if (editFormData.new_password !== editFormData.confirm_password) {
-        alert("New password and confirm password do not match");
-        return;
+    if (formData.new_password || formData.confirm_password) {
+      if (formData.new_password !== formData.confirm_password) {
+        errors.new_password = "New password and confirm password do not match";
+        errors.confirm_password = "Passwords do not match";
       }
-      if (editFormData.new_password.length < 6) {
-        alert("Password must be at least 6 characters long");
-        return;
+      if (formData.new_password && formData.new_password.length < 6) {
+        errors.new_password = "Password must be at least 6 characters long";
       }
+    }
+
+    return errors;
+  };
+
+  // Validation error message component
+  const ValidationError = ({ error }) => {
+    if (!error) return null;
+    return (
+      <div className="validation-error-message">
+        <i className="fas fa-exclamation-triangle"></i>
+        <span>{error}</span>
+      </div>
+    );
+  };
+
+  const handleSaveChanges = async (e) => {
+    e.preventDefault();
+    setEditFormErrors({}); // Clear previous errors
+
+    // Validate form
+    const errors = validateEditForm(editFormData);
+    if (Object.keys(errors).length > 0) {
+      setEditFormErrors(errors);
+      return;
     }
 
     setLoading(true);
@@ -1090,6 +1223,7 @@ const MemberManagement = () => {
         // Close the modal
         setShowEditModal(false);
         setEditFormData(null);
+        setEditFormErrors({}); // Clear validation errors on success
 
         // Refresh the members list to show updated data
         fetchMembers();
@@ -1150,6 +1284,7 @@ const MemberManagement = () => {
   const closeEditModal = () => {
     setShowEditModal(false);
     setEditFormData(null);
+    setEditFormErrors({}); // Clear validation errors when closing
   };
 
   const showComingSoon = (feature) => {
@@ -1219,6 +1354,16 @@ const MemberManagement = () => {
 
   const handleAddFormChange = (e) => {
     const { name, value } = e.target;
+
+    // Clear validation error for this field when user starts typing/selecting
+    if (addFormErrors[name]) {
+      setAddFormErrors(prev => {
+        const updated = { ...prev };
+        delete updated[name];
+        return updated;
+      });
+    }
+
     setAddFormData((prev) => {
       const updated = { ...prev, [name]: value };
 
@@ -1250,41 +1395,12 @@ const MemberManagement = () => {
 
   const handleAddMember = async (e) => {
     e.preventDefault();
+    setAddFormErrors({}); // Clear previous errors
 
-    // Validate required fields
-    const requiredFields = [
-      "name",
-      "email",
-      "phone",
-      "password",
-      "branch_id",
-      "plan_id",
-      "dob",
-    ];
-    const missingFields = [];
-
-    requiredFields.forEach((field) => {
-      if (!addFormData[field] || addFormData[field].toString().trim() === "") {
-        missingFields.push(field);
-      }
-    });
-
-    if (missingFields.length > 0) {
-      alert(`Please fill in all required fields: ${missingFields.join(", ")}`);
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(addFormData.email)) {
-      alert("Please enter a valid email address");
-      return;
-    }
-
-    // Validate phone format
-    const phoneRegex = /^[0-9]{10}$/;
-    if (!phoneRegex.test(addFormData.phone)) {
-      alert("Please enter a valid 10-digit phone number");
+    // Validate form
+    const errors = validateAddForm(addFormData);
+    if (Object.keys(errors).length > 0) {
+      setAddFormErrors(errors);
       return;
     }
 
@@ -1404,6 +1520,7 @@ const MemberManagement = () => {
 
         // Reset form and close modal
         setShowAddModal(false);
+        setAddFormErrors({}); // Clear validation errors on success
         setAddFormData({
           name: "",
           email: "",
@@ -1470,11 +1587,16 @@ const MemberManagement = () => {
       district: "",
       city: "",
     });
+
+    // Clear any existing validation errors
+    setAddFormErrors({});
+
     setShowAddModal(true);
   };
 
   const closeAddModal = () => {
     setShowAddModal(false);
+    setAddFormErrors({}); // Clear validation errors when closing
   };
 
   return (
@@ -2040,6 +2162,7 @@ const MemberManagement = () => {
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
+                      <ValidationError error={editFormErrors.name} />
                       <label>Full Name *</label>
                       <input
                         type="text"
@@ -2050,6 +2173,7 @@ const MemberManagement = () => {
                       />
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={editFormErrors.email} />
                       <label>Email *</label>
                       <input
                         type="email"
@@ -2060,6 +2184,7 @@ const MemberManagement = () => {
                       />
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={editFormErrors.phone} />
                       <label>Phone *</label>
                       <input
                         type="tel"
@@ -2080,6 +2205,7 @@ const MemberManagement = () => {
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
+                      <ValidationError error={editFormErrors.branch_id} />
                       <label>Branch *</label>
                       <select
                         name="branch_id"
@@ -2179,6 +2305,7 @@ const MemberManagement = () => {
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
+                      <ValidationError error={editFormErrors.dob} />
                       <label>Date of Birth</label>
                       <input
                         type="date"
@@ -2188,6 +2315,7 @@ const MemberManagement = () => {
                       />
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={editFormErrors.gender} />
                       <label>Gender</label>
                       <select
                         name="gender"
@@ -2345,6 +2473,7 @@ const MemberManagement = () => {
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
+                      <ValidationError error={editFormErrors.country} />
                       <label>Country</label>
                       <select
                         name="country"
@@ -2374,6 +2503,7 @@ const MemberManagement = () => {
                       </select>
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={editFormErrors.state} />
                       <label>State</label>
                       <select
                         name="state"
@@ -2405,6 +2535,7 @@ const MemberManagement = () => {
                       </select>
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={editFormErrors.district} />
                       <label>District</label>
                       <select
                         name="district"
@@ -2436,6 +2567,7 @@ const MemberManagement = () => {
                       </select>
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={editFormErrors.city} />
                       <label>City</label>
                       <select
                         name="city"
@@ -2596,6 +2728,7 @@ const MemberManagement = () => {
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
+                      <ValidationError error={addFormErrors.name} />
                       <label>Full Name *</label>
                       <input
                         type="text"
@@ -2607,6 +2740,7 @@ const MemberManagement = () => {
                       />
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={addFormErrors.email} />
                       <label>Email *</label>
                       <input
                         type="email"
@@ -2618,6 +2752,7 @@ const MemberManagement = () => {
                       />
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={addFormErrors.phone} />
                       <label>Phone *</label>
                       <input
                         type="tel"
@@ -2629,6 +2764,7 @@ const MemberManagement = () => {
                       />
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={addFormErrors.password} />
                       <label>Password *</label>
                       <input
                         type="password"
@@ -2651,6 +2787,7 @@ const MemberManagement = () => {
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
+                      <ValidationError error={addFormErrors.branch_id} />
                       <label>Branch *</label>
                       <select
                         name="branch_id"
@@ -2699,6 +2836,7 @@ const MemberManagement = () => {
                       </select>
                     </div>
                     <div className="member-form-group member-full-width">
+                      <ValidationError error={addFormErrors.plan_id} />
                       <label>Membership Plan *</label>
                       <select
                         name="plan_id"
@@ -2753,6 +2891,7 @@ const MemberManagement = () => {
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
+                      <ValidationError error={addFormErrors.dob} />
                       <label>Date of Birth</label>
                       <input
                         type="date"
@@ -2762,6 +2901,7 @@ const MemberManagement = () => {
                       />
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={addFormErrors.gender} />
                       <label>Gender</label>
                       <select
                         name="gender"
@@ -2923,6 +3063,7 @@ const MemberManagement = () => {
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
+                      <ValidationError error={addFormErrors.country_id} />
                       <label>Country *</label>
                       <select
                         name="country_id"
@@ -2949,6 +3090,7 @@ const MemberManagement = () => {
                       </select>
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={addFormErrors.state_id} />
                       <label>State *</label>
                       <select
                         name="state_id"
@@ -2977,6 +3119,7 @@ const MemberManagement = () => {
                       </select>
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={addFormErrors.district} />
                       <label>District *</label>
                       <select
                         name="district"
@@ -3005,6 +3148,7 @@ const MemberManagement = () => {
                       </select>
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={addFormErrors.city} />
                       <label>City *</label>
                       <select
                         name="city"
