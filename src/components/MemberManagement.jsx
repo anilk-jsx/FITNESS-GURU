@@ -761,7 +761,9 @@ const MemberManagement = () => {
           ? "ACTIVE"
           : detailedMember.status === 0
             ? "INACTIVE"
-            : "ACTIVE",
+            : detailedMember.status === 2
+              ? "SUSPENDED"
+              : "ACTIVE", // Default to ACTIVE if unknown value
 
       // Profile information
       dob: detailedMember.date_of_birth || "",
@@ -1115,7 +1117,7 @@ const MemberManagement = () => {
         name: editFormData.name.trim(),
         email: editFormData.email.trim(),
         phone: editFormData.phone.trim(),
-        status: editFormData.status === "ACTIVE" ? 1 : 0,
+        status: editFormData.status === "ACTIVE" ? 1 : editFormData.status === "INACTIVE" ? 0 : editFormData.status === "SUSPENDED" ? 2 : 1, // Default to active
 
         // Profile information
         dob: editFormData.dob || "",
