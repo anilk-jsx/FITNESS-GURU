@@ -1,5 +1,6 @@
 import React from "react";
 import "./Footer.css";
+import playStoreLogo from '../assets/icons8-play-store-48.png';
 
 export default function Footer() {
   return (
@@ -8,6 +9,17 @@ export default function Footer() {
         <div className="footer-col">
           <h3 className="footer-title">FITNESS GURU</h3>
           <p className="footer-desc">Transform your body, transform your life. Join the fitness revolution today.</p>
+          <div className="footer-app-download">
+            <a
+              href="https://play.google.com/store/apps/details?id=com.la.fitguru"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-download-link"
+            >
+              <img src={playStoreLogo} alt="Google Play Store" className="play-store-logo" />
+              Download Our App
+            </a>
+          </div>
           <div className="footer-socials">
             <a href="#" aria-label="Facebook" className="footer-social"><i className="fab fa-facebook-f"></i></a>
             <a href="#" aria-label="Instagram" className="footer-social"><i className="fab fa-instagram"></i></a>
