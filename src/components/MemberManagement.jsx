@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import "./MemberManagement.css";
 import tokenManager from "../utils/tokenManager";
 import { normalizeGender, toIntOrNull, isActiveStatus, findMatchingPlan } from "../utils/fieldUtils";
+// Import eye icons for password visibility toggle
+import eyeIcon from "../assets/icons8-eye-50.png";
+import eyeSlashIcon from "../assets/icons8-invisible-48.png";
 
 const MemberManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -13,6 +16,22 @@ const MemberManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editFormData, setEditFormData] = useState(null);
+
+  // Password visibility state for add member form
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Password visibility state for edit member form
+  const [showEditNewPassword, setShowEditNewPassword] = useState(false);
+  const [showEditConfirmPassword, setShowEditConfirmPassword] = useState(false);
+
+  // Notification/Toast state for better UX
+  const [notification, setNotification] = useState(null);
+
+  // Show notification with auto-dismiss
+  const showNotification = (message, type = 'info', duration = 5000) => {
+    setNotification({ message, type, id: Date.now() });
+    setTimeout(() => setNotification(null), duration);
+  };
 
   // API state management
   const [members, setMembers] = useState([]);
@@ -41,7 +60,7 @@ const MemberManagement = () => {
     // Member fields
     branch_id: "",
     join_date: new Date().toISOString().split("T")[0],
-    status: "ACTIVE",
+    status: "",
     // Membership plan
     plan_id: "",
     // Profile fields
@@ -603,6 +622,11 @@ const MemberManagement = () => {
     return `${weightKg} kg`;
   };
 
+  // Password visibility toggle function
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case 1:
@@ -737,7 +761,9 @@ const MemberManagement = () => {
           ? "ACTIVE"
           : detailedMember.status === 0
             ? "INACTIVE"
-            : "ACTIVE",
+            : detailedMember.status === 2
+              ? "SUSPENDED"
+              : "ACTIVE", // Default to ACTIVE if unknown value
 
       // Profile information
       dob: detailedMember.date_of_birth || "",
@@ -797,7 +823,7 @@ const MemberManagement = () => {
       )
     ) {
       setMembers(members.filter((m) => m.member_id !== member.member_id));
-      alert(`Member ${member.name} has been deleted successfully!`);
+      showNotification(`Member ${member.name} has been deleted successfully!`, 'success');
     }
   };
 
@@ -893,6 +919,10 @@ const MemberManagement = () => {
 
     if (!formData.branch_id) {
       errors.branch_id = "Please select a branch";
+    }
+
+    if (!formData.status) {
+      errors.status = "Please select a status";
     }
 
     if (!formData.plan_id) {
@@ -1087,7 +1117,7 @@ const MemberManagement = () => {
         name: editFormData.name.trim(),
         email: editFormData.email.trim(),
         phone: editFormData.phone.trim(),
-        status: editFormData.status === "ACTIVE" ? 1 : 0,
+        status: editFormData.status === "ACTIVE" ? 1 : editFormData.status === "INACTIVE" ? 0 : editFormData.status === "SUSPENDED" ? 2 : 1, // Default to active
 
         // Profile information
         dob: editFormData.dob || "",
@@ -1214,7 +1244,7 @@ const MemberManagement = () => {
           ? "Member information and password updated successfully! 🎉"
           : "Member information updated successfully! 🎉";
 
-        alert(successMessage);
+        showNotification(successMessage, 'success');
 
         // Close the modal
         setShowEditModal(false);
@@ -1264,7 +1294,7 @@ const MemberManagement = () => {
         errorMessage = error.message;
       }
 
-      alert(`❌ Update Failed\n\n${errorMessage}\n\nPlease check your data and try again.`);
+      showNotification(`Update Failed: ${errorMessage}. Please check your data and try again.`, 'error');
     } finally {
       setLoading(false);
     }
@@ -1284,9 +1314,7 @@ const MemberManagement = () => {
   };
 
   const showComingSoon = (feature) => {
-    alert(
-      `${feature} feature is coming soon! 🚀\n\nThis feature is currently under development and will be available in a future update.`,
-    );
+    showNotification(`${feature} feature is coming soon! 🚀 This feature is currently under development and will be available in a future update.`, 'info', 7000);
   };
 
   // Get filtered states based on selected country
@@ -1444,11 +1472,26 @@ const MemberManagement = () => {
         }
       };
 
-      // Log enum transformations for debugging
-      console.log("🔄 Enum transformations for Add Member:", {
-        original: { gender: addFormData.gender, fitness_level: addFormData.fitness_level, goal_focus: addFormData.goal_focus },
-        transformed: { gender: transformGender(addFormData.gender), fitness_level: transformFitnessLevel(addFormData.fitness_level), goal_focus: transformGoalFocus(addFormData.goal_focus) }
-      });
+      // Handle membership plan ID mapping
+      // Since API doesn't provide numeric plan IDs, we need to map plan names to IDs
+      let membershipPlanId = null;
+      if (addFormData.plan_id) {
+        const selectedPlan = membershipPlans.find(plan =>
+          getPlanOptionValue(plan) === addFormData.plan_id
+        );
+
+        if (selectedPlan) {
+          // Map plan names to numeric IDs as expected by the API
+          const planMap = {
+            'Monthly Plan': 1,
+            'Quarterly Plan': 2,
+            'Yearly Plan': 3
+          };
+          membershipPlanId = planMap[selectedPlan.plan_name] || 1;
+        } else {
+          membershipPlanId = 1; // fallback to default
+        }
+      }
 
       // Prepare member data for API call
       const memberData = {
@@ -1458,10 +1501,10 @@ const MemberManagement = () => {
         password: addFormData.password || "",
         gym_id: 1, // Default gym_id - you may want to make this dynamic
         branch_id: parseInt(addFormData.branch_id) || 1,
-        status: addFormData.status === "ACTIVE" ? 1 : 0,
+        status: addFormData.status === "ACTIVE" ? 1 : addFormData.status === "INACTIVE" ? 0 : addFormData.status === "SUSPENDED" ? 2 : 1, // Default to active if empty
         join_date:
           addFormData.join_date || new Date().toISOString().split("T")[0],
-        membership_plan: toIntOrNull(addFormData.plan_id),
+        membership_plan: membershipPlanId,
         dob: addFormData.dob || "",
         gender: transformGender(addFormData.gender),
         blood_group: addFormData.blood_group,
@@ -1477,10 +1520,6 @@ const MemberManagement = () => {
         address_line2: addFormData.address_line2 || "",
         emergency_contact: addFormData.emergency_contact || "",
       };
-
-      // Log the data being sent for debugging
-      console.log("Sending member data:", memberData);
-      console.log("Plan ID value:", addFormData.plan_id, "Converted to:", memberData.membership_plan);
 
       const response = await tokenManager.apiCall(
         buildApiUrl("members/addMember"),
@@ -1512,7 +1551,7 @@ const MemberManagement = () => {
       const data = await response.json();
 
       if (data.status === "success") {
-        alert(`Member ${addFormData.name} has been added successfully! 🎉`);
+        showNotification(`Member ${addFormData.name} has been added successfully! 🎉`, 'success');
 
         // Reset form and close modal
         setShowAddModal(false);
@@ -1525,7 +1564,7 @@ const MemberManagement = () => {
           role: "MEMBER",
           branch_id: "",
           join_date: new Date().toISOString().split("T")[0],
-          status: "ACTIVE",
+          status: "",
           plan_id: "",
           dob: "",
           gender: "",
@@ -1550,7 +1589,21 @@ const MemberManagement = () => {
       }
     } catch (err) {
       console.error("Error adding member:", err);
-      alert(`Failed to add member: ${err.message}`);
+
+      // Enhanced error messages for better UX
+      let errorMessage = "Failed to add member. Please try again.";
+
+      if (err.message.includes('duplicate') || err.message.includes('already exists')) {
+        errorMessage = "A member with this email or phone number already exists.";
+      } else if (err.message.includes('network') || err.message.includes('fetch')) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      } else if (err.message.includes('validation') || err.message.includes('required')) {
+        errorMessage = "Please check all required fields and try again.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      showNotification(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
@@ -1566,7 +1619,7 @@ const MemberManagement = () => {
       role: "MEMBER",
       branch_id: "",
       join_date: new Date().toISOString().split("T")[0], // Current date
-      status: "ACTIVE",
+      status: "",
       plan_id: "",
       dob: "",
       gender: "",
@@ -1593,6 +1646,46 @@ const MemberManagement = () => {
   const closeAddModal = () => {
     setShowAddModal(false);
     setAddFormErrors({}); // Clear validation errors when closing
+  };
+
+  // Toast Notification Component
+  const ToastNotification = () => {
+    if (!notification) return null;
+
+    const getToastClass = (type) => {
+      const baseClass = "toast-notification";
+      switch (type) {
+        case 'success': return `${baseClass} toast-success`;
+        case 'error': return `${baseClass} toast-error`;
+        case 'warning': return `${baseClass} toast-warning`;
+        default: return `${baseClass} toast-info`;
+      }
+    };
+
+    const getToastIcon = (type) => {
+      switch (type) {
+        case 'success': return 'fas fa-check-circle';
+        case 'error': return 'fas fa-exclamation-circle';
+        case 'warning': return 'fas fa-exclamation-triangle';
+        default: return 'fas fa-info-circle';
+      }
+    };
+
+    return (
+      <div className={getToastClass(notification.type)}>
+        <div className="toast-content">
+          <i className={getToastIcon(notification.type)}></i>
+          <span className="toast-message">{notification.message}</span>
+          <button
+            className="toast-close"
+            onClick={() => setNotification(null)}
+            aria-label="Close notification"
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -2278,6 +2371,7 @@ const MemberManagement = () => {
                         value={editFormData.status}
                         onChange={handleFormChange}
                       >
+                        <option value="">Select Status</option>
                         <option key="ACTIVE-edit-status" value="ACTIVE">
                           Active
                         </option>
@@ -2632,25 +2726,91 @@ const MemberManagement = () => {
                   <div className="member-form-grid">
                     <div className="member-form-group">
                       <label>New Password</label>
-                      <input
-                        type="password"
-                        name="new_password"
-                        value={editFormData.new_password}
-                        onChange={handleFormChange}
-                        placeholder="Leave blank to keep current password"
-                        minLength="6"
-                      />
+                      <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+                        <input
+                          type={showEditNewPassword ? "text" : "password"}
+                          name="new_password"
+                          value={editFormData.new_password}
+                          onChange={handleFormChange}
+                          placeholder="Leave blank to keep current password"
+                          minLength="6"
+                          style={{
+                            paddingRight: '45px',
+                            width: '100%',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowEditNewPassword(!showEditNewPassword)}
+                          style={{
+                            position: 'absolute',
+                            right: '12px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1
+                          }}
+                          tabIndex={-1}
+                          title={showEditNewPassword ? "Hide password" : "Show password"}
+                        >
+                          <img
+                            src={showEditNewPassword ? eyeIcon : eyeSlashIcon}
+                            alt={showEditNewPassword ? "Hide password" : "Show password"}
+                            style={{ width: '20px', height: '20px', opacity: 0.7 }}
+                          />
+                        </button>
+                      </div>
                     </div>
                     <div className="member-form-group">
                       <label>Confirm New Password</label>
-                      <input
-                        type="password"
-                        name="confirm_password"
-                        value={editFormData.confirm_password}
-                        onChange={handleFormChange}
-                        placeholder="Confirm new password"
-                        minLength="6"
-                      />
+                      <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+                        <input
+                          type={showEditConfirmPassword ? "text" : "password"}
+                          name="confirm_password"
+                          value={editFormData.confirm_password}
+                          onChange={handleFormChange}
+                          placeholder="Confirm new password"
+                          minLength="6"
+                          style={{
+                            paddingRight: '45px',
+                            width: '100%',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowEditConfirmPassword(!showEditConfirmPassword)}
+                          style={{
+                            position: 'absolute',
+                            right: '12px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1
+                          }}
+                          tabIndex={-1}
+                          title={showEditConfirmPassword ? "Hide password" : "Show password"}
+                        >
+                          <img
+                            src={showEditConfirmPassword ? eyeIcon : eyeSlashIcon}
+                            alt={showEditConfirmPassword ? "Hide password" : "Show password"}
+                            style={{ width: '20px', height: '20px', opacity: 0.7 }}
+                          />
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div className="member-form-note">
@@ -2761,15 +2921,48 @@ const MemberManagement = () => {
                     <div className="member-form-group">
                       <ValidationError error={addFormErrors.password} />
                       <label>Password *</label>
-                      <input
-                        type="password"
-                        name="password"
-                        value={addFormData.password}
-                        onChange={handleAddFormChange}
-                        required
-                        placeholder="Enter password"
-                        minLength="6"
-                      />
+                      <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          name="password"
+                          value={addFormData.password}
+                          onChange={handleAddFormChange}
+                          required
+                          placeholder="Enter password"
+                          minLength="6"
+                          style={{
+                            paddingRight: '45px',
+                            width: '100%',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={togglePasswordVisibility}
+                          style={{
+                            position: 'absolute',
+                            right: '12px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1
+                          }}
+                          tabIndex={-1}
+                          title={showPassword ? "Hide password" : "Show password"}
+                        >
+                          <img
+                            src={showPassword ? eyeIcon : eyeSlashIcon}
+                            alt={showPassword ? "Hide password" : "Show password"}
+                            style={{ width: '20px', height: '20px', opacity: 0.7 }}
+                          />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2819,12 +3012,14 @@ const MemberManagement = () => {
                       />
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={addFormErrors.status} />
                       <label>Status</label>
                       <select
                         name="status"
                         value={addFormData.status}
                         onChange={handleAddFormChange}
                       >
+                        <option value="">Select Status</option>
                         <option value="ACTIVE">Active</option>
                         <option value="INACTIVE">Inactive</option>
                         <option value="SUSPENDED">Suspended</option>
@@ -3223,6 +3418,9 @@ const MemberManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Toast Notification */}
+      <ToastNotification />
     </div>
   );
 };
