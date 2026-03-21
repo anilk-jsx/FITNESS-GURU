@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import "./MemberManagement.css";
 import tokenManager from "../utils/tokenManager";
 import { normalizeGender, toIntOrNull, isActiveStatus, findMatchingPlan } from "../utils/fieldUtils";
+// Import eye icons for password visibility toggle
+import eyeIcon from "../assets/icons8-eye-50.png";
+import eyeSlashIcon from "../assets/icons8-invisible-48.png";
 
 const MemberManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -13,6 +16,9 @@ const MemberManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editFormData, setEditFormData] = useState(null);
+
+  // Password visibility state for add member form
+  const [showPassword, setShowPassword] = useState(false);
 
   // API state management
   const [members, setMembers] = useState([]);
@@ -41,7 +47,7 @@ const MemberManagement = () => {
     // Member fields
     branch_id: "",
     join_date: new Date().toISOString().split("T")[0],
-    status: "ACTIVE",
+    status: "",
     // Membership plan
     plan_id: "",
     // Profile fields
@@ -603,6 +609,11 @@ const MemberManagement = () => {
     return `${weightKg} kg`;
   };
 
+  // Password visibility toggle function
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case 1:
@@ -893,6 +904,10 @@ const MemberManagement = () => {
 
     if (!formData.branch_id) {
       errors.branch_id = "Please select a branch";
+    }
+
+    if (!formData.status) {
+      errors.status = "Please select a status";
     }
 
     if (!formData.plan_id) {
@@ -1481,7 +1496,7 @@ const MemberManagement = () => {
         password: addFormData.password || "",
         gym_id: 1, // Default gym_id - you may want to make this dynamic
         branch_id: parseInt(addFormData.branch_id) || 1,
-        status: addFormData.status === "ACTIVE" ? 1 : 0,
+        status: addFormData.status === "ACTIVE" ? 1 : addFormData.status === "INACTIVE" ? 0 : addFormData.status === "SUSPENDED" ? 2 : 1, // Default to active if empty
         join_date:
           addFormData.join_date || new Date().toISOString().split("T")[0],
         membership_plan: membershipPlanId,
@@ -1529,7 +1544,7 @@ const MemberManagement = () => {
         role: "MEMBER",
         branch_id: "",
         join_date: new Date().toISOString().split("T")[0],
-        status: "ACTIVE",
+        status: "",
         plan_id: "",
         dob: "",
         gender: "",
@@ -1566,7 +1581,7 @@ const MemberManagement = () => {
       role: "MEMBER",
       branch_id: "",
       join_date: new Date().toISOString().split("T")[0], // Current date
-      status: "ACTIVE",
+      status: "",
       plan_id: "",
       dob: "",
       gender: "",
@@ -2761,15 +2776,48 @@ const MemberManagement = () => {
                     <div className="member-form-group">
                       <ValidationError error={addFormErrors.password} />
                       <label>Password *</label>
-                      <input
-                        type="password"
-                        name="password"
-                        value={addFormData.password}
-                        onChange={handleAddFormChange}
-                        required
-                        placeholder="Enter password"
-                        minLength="6"
-                      />
+                      <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          name="password"
+                          value={addFormData.password}
+                          onChange={handleAddFormChange}
+                          required
+                          placeholder="Enter password"
+                          minLength="6"
+                          style={{
+                            paddingRight: '45px',
+                            width: '100%',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={togglePasswordVisibility}
+                          style={{
+                            position: 'absolute',
+                            right: '12px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1
+                          }}
+                          tabIndex={-1}
+                          title={showPassword ? "Hide password" : "Show password"}
+                        >
+                          <img
+                            src={showPassword ? eyeIcon : eyeSlashIcon}
+                            alt={showPassword ? "Hide password" : "Show password"}
+                            style={{ width: '20px', height: '20px', opacity: 0.7 }}
+                          />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2819,12 +2867,14 @@ const MemberManagement = () => {
                       />
                     </div>
                     <div className="member-form-group">
+                      <ValidationError error={addFormErrors.status} />
                       <label>Status</label>
                       <select
                         name="status"
                         value={addFormData.status}
                         onChange={handleAddFormChange}
                       >
+                        <option value="">Select Status</option>
                         <option value="ACTIVE">Active</option>
                         <option value="INACTIVE">Inactive</option>
                         <option value="SUSPENDED">Suspended</option>
