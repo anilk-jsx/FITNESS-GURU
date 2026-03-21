@@ -311,7 +311,8 @@
   font-weight: bold;
   text-decoration: none;
   transition: all 0.3s ease;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   cursor: pointer;
 }
 
@@ -319,6 +320,13 @@
   background: white;
   color: #333;
   transform: translateY(-3px);
+}
+
+.play-store-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  margin-right: 0.5rem;
 }
 
 /* Animations */

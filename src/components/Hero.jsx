@@ -11,6 +11,7 @@ import home6 from '../assets/heroImg/home6.jpg';
 import home7 from '../assets/heroImg/home7.avif';
 import home8 from '../assets/heroImg/home8.jpg';
 import home9 from '../assets/heroImg/home9.jpg'
+import playStoreLogo from '../assets/icons8-play-store-48.png'
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -60,6 +61,10 @@ const Hero = () => {
     navigate('/signup');
   };
 
+  const handleDownloadApp = () => {
+    window.open('https://play.google.com/store/apps/details?id=com.la.fitguru', '_blank');
+  };
+
   return (
     <section className="hero" id="home">
       <div className="hero-background-container">
@@ -89,6 +94,13 @@ const Hero = () => {
             onClick={handleGetStarted}
           >
             Get Started
+          </button>
+          <button
+            className="btn-secondary"
+            onClick={handleDownloadApp}
+          >
+            <img src={playStoreLogo} alt="Google Play Store" className="play-store-logo" />
+            Download App
           </button>
         </div>
       </div>

@@ -45,6 +45,41 @@
     margin: 0.7rem 0 0.2rem 0;
   }
 }
+.footer-app-download {
+  margin: 1rem 0 1.5rem 0;
+}
+
+.footer-download-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ff6b35;
+  color: #fff;
+  padding: 0.7rem 1.2rem;
+  border-radius: 25px;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.footer-download-link:hover {
+  background: #fff;
+  color: #ff6b35;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+}
+
+.footer-download-link i {
+  font-size: 1.1rem;
+}
+
+.play-store-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
 /* Footer Section Styles */
 .footer-section {
   background: #181818;
@@ -193,6 +228,17 @@
   }
   .footer-socials {
     justify-content: center;
+  }
+  .footer-app-download {
+    margin: 1rem 0;
+  }
+  .footer-download-link {
+    font-size: 0.9rem;
+    padding: 0.6rem 1rem;
+  }
+  .play-store-logo {
+    width: 18px;
+    height: 18px;
   }
   .footer-section {
     padding: 18px 0 0 0;
