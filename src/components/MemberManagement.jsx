@@ -1459,12 +1459,6 @@ const MemberManagement = () => {
         }
       };
 
-      // Log enum transformations for debugging
-      console.log("🔄 Enum transformations for Add Member:", {
-        original: { gender: addFormData.gender, fitness_level: addFormData.fitness_level, goal_focus: addFormData.goal_focus },
-        transformed: { gender: transformGender(addFormData.gender), fitness_level: transformFitnessLevel(addFormData.fitness_level), goal_focus: transformGoalFocus(addFormData.goal_focus) }
-      });
-
       // Handle membership plan ID mapping
       // Since API doesn't provide numeric plan IDs, we need to map plan names to IDs
       let membershipPlanId = null;
@@ -1481,9 +1475,7 @@ const MemberManagement = () => {
             'Yearly Plan': 3
           };
           membershipPlanId = planMap[selectedPlan.plan_name] || 1;
-          console.log(`🎯 Plan mapping: "${selectedPlan.plan_name}" → ID: ${membershipPlanId}`);
         } else {
-          console.warn("⚠️ Selected plan not found in available plans");
           membershipPlanId = 1; // fallback to default
         }
       }
@@ -1516,22 +1508,72 @@ const MemberManagement = () => {
         emergency_contact: addFormData.emergency_contact || "",
       };
 
-      // Print the formatted data that would be sent to API
-      console.log("🚀 === ADD MEMBER API REQUEST DATA ===");
-      console.log("📡 Endpoint: POST /members/addMember");
-      console.log("📋 Request Body (JSON):");
-      console.log(JSON.stringify(memberData, null, 2));
-      console.log("🔄 Data Transformations Applied:");
-      console.log("  - Gender:", addFormData.gender, "→", memberData.gender);
-      console.log("  - Fitness Level:", addFormData.fitness_level, "→", memberData.fitness_level);
-      console.log("  - Goal Focus:", addFormData.goal_focus, "→", memberData.goal_focus);
-      console.log("  - Status:", addFormData.status, "→", memberData.status);
-      console.log("  - Plan Selection:", addFormData.plan_id, "→", memberData.membership_plan);
-      console.log("==========================================");
+      const response = await tokenManager.apiCall(
+        buildApiUrl("members/addMember"),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(memberData),
+        },
+      );
 
-      // Show formatted data in alert as well
-      const formattedDataString = JSON.stringify(memberData, null, 2);
-      alert(`✅ Add Member Form Submitted Successfully!\n\n📋 Formatted API Request Data:\n\n${formattedDataString}\n\n📡 This data is ready to be sent to: POST /members/addMember\n\n⚠️ Note: API integration is currently disabled.`);
+      if (!response.ok) {
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          console.error("API Error Response:", errorData);
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (e) {
+          const errorText = await response.text();
+          console.error("API Error Details:", errorText);
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        alert(`Member ${addFormData.name} has been added successfully! 🎉`);
+
+        // Reset form and close modal
+        setShowAddModal(false);
+        setAddFormErrors({}); // Clear validation errors on success
+        setAddFormData({
+          name: "",
+          email: "",
+          phone: "",
+          password: "",
+          role: "MEMBER",
+          branch_id: "",
+          join_date: new Date().toISOString().split("T")[0],
+          status: "",
+          plan_id: "",
+          dob: "",
+          gender: "",
+          blood_group: "",
+          height_cm: "",
+          weight_kg: "",
+          fitness_level: "",
+          goal_focus: "",
+          emergency_contact: "",
+          address_line1: "",
+          address_line2: "",
+          country_id: "1",
+          state_id: "",
+          district: "",
+          city: "",
+        });
+
+        // Refresh the members list
+        fetchMembers();
+      } else {
+        throw new Error(data.message || "Failed to add member");
+      }
 
       // Reset form and close modal
       setShowAddModal(false);
