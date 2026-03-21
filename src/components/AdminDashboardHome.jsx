@@ -115,7 +115,7 @@ const AdminDashboardHome = () => {
             </div>
             <div>
               <h3 className="admin-stat-title">Active Subscriptions</h3>
-              <p className="admin-stat-value">987</p>
+              <p className="admin-stat-value">0</p>
             </div>
           </div>
           <p className="admin-stat-subtitle">Current active members</p>
@@ -127,7 +127,7 @@ const AdminDashboardHome = () => {
             </div>
             <div>
               <h3 className="admin-stat-title">Monthly Revenue</h3>
-              <p className="admin-stat-value">₹12,3000</p>
+              <p className="admin-stat-value">0</p>
             </div>
           </div>
           <p className="admin-stat-subtitle">This month's earnings</p>
@@ -139,7 +139,7 @@ const AdminDashboardHome = () => {
             </div>
             <div>
               <h3 className="admin-stat-title">Attendance</h3>
-              <p className="admin-stat-value">78%</p>
+              <p className="admin-stat-value">100%</p>
             </div>
           </div>
           <p className="admin-stat-subtitle">Average attendance rate</p>
