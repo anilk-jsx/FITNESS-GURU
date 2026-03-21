@@ -20,6 +20,10 @@ const MemberManagement = () => {
   // Password visibility state for add member form
   const [showPassword, setShowPassword] = useState(false);
 
+  // Password visibility state for edit member form
+  const [showEditNewPassword, setShowEditNewPassword] = useState(false);
+  const [showEditConfirmPassword, setShowEditConfirmPassword] = useState(false);
+
   // Notification/Toast state for better UX
   const [notification, setNotification] = useState(null);
 
@@ -2365,6 +2369,7 @@ const MemberManagement = () => {
                         value={editFormData.status}
                         onChange={handleFormChange}
                       >
+                        <option value="">Select Status</option>
                         <option key="ACTIVE-edit-status" value="ACTIVE">
                           Active
                         </option>
@@ -2719,25 +2724,91 @@ const MemberManagement = () => {
                   <div className="member-form-grid">
                     <div className="member-form-group">
                       <label>New Password</label>
-                      <input
-                        type="password"
-                        name="new_password"
-                        value={editFormData.new_password}
-                        onChange={handleFormChange}
-                        placeholder="Leave blank to keep current password"
-                        minLength="6"
-                      />
+                      <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+                        <input
+                          type={showEditNewPassword ? "text" : "password"}
+                          name="new_password"
+                          value={editFormData.new_password}
+                          onChange={handleFormChange}
+                          placeholder="Leave blank to keep current password"
+                          minLength="6"
+                          style={{
+                            paddingRight: '45px',
+                            width: '100%',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowEditNewPassword(!showEditNewPassword)}
+                          style={{
+                            position: 'absolute',
+                            right: '12px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1
+                          }}
+                          tabIndex={-1}
+                          title={showEditNewPassword ? "Hide password" : "Show password"}
+                        >
+                          <img
+                            src={showEditNewPassword ? eyeIcon : eyeSlashIcon}
+                            alt={showEditNewPassword ? "Hide password" : "Show password"}
+                            style={{ width: '20px', height: '20px', opacity: 0.7 }}
+                          />
+                        </button>
+                      </div>
                     </div>
                     <div className="member-form-group">
                       <label>Confirm New Password</label>
-                      <input
-                        type="password"
-                        name="confirm_password"
-                        value={editFormData.confirm_password}
-                        onChange={handleFormChange}
-                        placeholder="Confirm new password"
-                        minLength="6"
-                      />
+                      <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+                        <input
+                          type={showEditConfirmPassword ? "text" : "password"}
+                          name="confirm_password"
+                          value={editFormData.confirm_password}
+                          onChange={handleFormChange}
+                          placeholder="Confirm new password"
+                          minLength="6"
+                          style={{
+                            paddingRight: '45px',
+                            width: '100%',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowEditConfirmPassword(!showEditConfirmPassword)}
+                          style={{
+                            position: 'absolute',
+                            right: '12px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1
+                          }}
+                          tabIndex={-1}
+                          title={showEditConfirmPassword ? "Hide password" : "Show password"}
+                        >
+                          <img
+                            src={showEditConfirmPassword ? eyeIcon : eyeSlashIcon}
+                            alt={showEditConfirmPassword ? "Hide password" : "Show password"}
+                            style={{ width: '20px', height: '20px', opacity: 0.7 }}
+                          />
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div className="member-form-note">
