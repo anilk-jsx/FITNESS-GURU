@@ -20,6 +20,15 @@ const MemberManagement = () => {
   // Password visibility state for add member form
   const [showPassword, setShowPassword] = useState(false);
 
+  // Notification/Toast state for better UX
+  const [notification, setNotification] = useState(null);
+
+  // Show notification with auto-dismiss
+  const showNotification = (message, type = 'info', duration = 5000) => {
+    setNotification({ message, type, id: Date.now() });
+    setTimeout(() => setNotification(null), duration);
+  };
+
   // API state management
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -808,7 +817,7 @@ const MemberManagement = () => {
       )
     ) {
       setMembers(members.filter((m) => m.member_id !== member.member_id));
-      alert(`Member ${member.name} has been deleted successfully!`);
+      showNotification(`Member ${member.name} has been deleted successfully!`, 'success');
     }
   };
 
@@ -1229,7 +1238,7 @@ const MemberManagement = () => {
           ? "Member information and password updated successfully! 🎉"
           : "Member information updated successfully! 🎉";
 
-        alert(successMessage);
+        showNotification(successMessage, 'success');
 
         // Close the modal
         setShowEditModal(false);
@@ -1279,7 +1288,7 @@ const MemberManagement = () => {
         errorMessage = error.message;
       }
 
-      alert(`❌ Update Failed\n\n${errorMessage}\n\nPlease check your data and try again.`);
+      showNotification(`Update Failed: ${errorMessage}. Please check your data and try again.`, 'error');
     } finally {
       setLoading(false);
     }
@@ -1299,9 +1308,7 @@ const MemberManagement = () => {
   };
 
   const showComingSoon = (feature) => {
-    alert(
-      `${feature} feature is coming soon! 🚀\n\nThis feature is currently under development and will be available in a future update.`,
-    );
+    showNotification(`${feature} feature is coming soon! 🚀 This feature is currently under development and will be available in a future update.`, 'info', 7000);
   };
 
   // Get filtered states based on selected country
@@ -1538,7 +1545,7 @@ const MemberManagement = () => {
       const data = await response.json();
 
       if (data.status === "success") {
-        alert(`Member ${addFormData.name} has been added successfully! 🎉`);
+        showNotification(`Member ${addFormData.name} has been added successfully! 🎉`, 'success');
 
         // Reset form and close modal
         setShowAddModal(false);
@@ -1574,40 +1581,23 @@ const MemberManagement = () => {
       } else {
         throw new Error(data.message || "Failed to add member");
       }
-
-      // Reset form and close modal
-      setShowAddModal(false);
-      setAddFormErrors({}); // Clear validation errors on success
-      setAddFormData({
-        name: "",
-        email: "",
-        phone: "",
-        password: "",
-        role: "MEMBER",
-        branch_id: "",
-        join_date: new Date().toISOString().split("T")[0],
-        status: "",
-        plan_id: "",
-        dob: "",
-        gender: "",
-        blood_group: "",
-        height_cm: "",
-        weight_kg: "",
-        fitness_level: "",
-        goal_focus: "",
-        emergency_contact: "",
-        address_line1: "",
-        address_line2: "",
-        country_id: "1",
-        state_id: "",
-        district: "",
-        city: "",
-      });
-
-      // Note: fetchMembers() call removed since no actual member was added
     } catch (err) {
-      console.error("Error in form processing:", err);
-      alert(`Failed to process member form: ${err.message}`);
+      console.error("Error adding member:", err);
+
+      // Enhanced error messages for better UX
+      let errorMessage = "Failed to add member. Please try again.";
+
+      if (err.message.includes('duplicate') || err.message.includes('already exists')) {
+        errorMessage = "A member with this email or phone number already exists.";
+      } else if (err.message.includes('network') || err.message.includes('fetch')) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      } else if (err.message.includes('validation') || err.message.includes('required')) {
+        errorMessage = "Please check all required fields and try again.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      showNotification(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
@@ -1650,6 +1640,46 @@ const MemberManagement = () => {
   const closeAddModal = () => {
     setShowAddModal(false);
     setAddFormErrors({}); // Clear validation errors when closing
+  };
+
+  // Toast Notification Component
+  const ToastNotification = () => {
+    if (!notification) return null;
+
+    const getToastClass = (type) => {
+      const baseClass = "toast-notification";
+      switch (type) {
+        case 'success': return `${baseClass} toast-success`;
+        case 'error': return `${baseClass} toast-error`;
+        case 'warning': return `${baseClass} toast-warning`;
+        default: return `${baseClass} toast-info`;
+      }
+    };
+
+    const getToastIcon = (type) => {
+      switch (type) {
+        case 'success': return 'fas fa-check-circle';
+        case 'error': return 'fas fa-exclamation-circle';
+        case 'warning': return 'fas fa-exclamation-triangle';
+        default: return 'fas fa-info-circle';
+      }
+    };
+
+    return (
+      <div className={getToastClass(notification.type)}>
+        <div className="toast-content">
+          <i className={getToastIcon(notification.type)}></i>
+          <span className="toast-message">{notification.message}</span>
+          <button
+            className="toast-close"
+            onClick={() => setNotification(null)}
+            aria-label="Close notification"
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -3315,6 +3345,9 @@ const MemberManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Toast Notification */}
+      <ToastNotification />
     </div>
   );
 };

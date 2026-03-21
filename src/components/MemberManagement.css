@@ -1381,10 +1381,135 @@
   box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
 }
 
+/* ===========================
+   TOAST NOTIFICATIONS
+   =========================== */
+
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  min-width: 320px;
+  max-width: 500px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: slideInRight 0.4s ease-out;
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.2rem;
+  gap: 12px;
+}
+
+.toast-content i {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.toast-message {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.toast-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.toast-close i {
+  font-size: 0.9rem;
+}
+
+/* Toast Types */
+.toast-success {
+  background: linear-gradient(135deg, #10DC60 0%, #16A085 100%);
+  color: white;
+}
+
+.toast-success .toast-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.toast-error {
+  background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+  color: white;
+}
+
+.toast-error .toast-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.toast-warning {
+  background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%);
+  color: white;
+}
+
+.toast-warning .toast-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.toast-info {
+  background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
+  color: white;
+}
+
+.toast-info .toast-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Animation */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .validation-error-message {
     font-size: 0.8rem;
     padding: 0.4rem 0.6rem;
+  }
+
+  .toast-notification {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    min-width: auto;
+    width: calc(100% - 20px);
+  }
+
+  .toast-content {
+    padding: 0.9rem 1rem;
+  }
+
+  .toast-message {
+    font-size: 0.9rem;
   }
 }
