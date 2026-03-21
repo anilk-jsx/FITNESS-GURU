@@ -40,9 +40,9 @@ export default function Footer() {
         <div className="footer-col">
           <h4 className="footer-heading">Contact Info</h4>
           <ul className="footer-contact">
-            <li><i className="fas fa-phone"></i> (555) 123-4567</li>
+            <li><i className="fas fa-phone"></i> +91 90901 77009</li>
             <li><i className="fas fa-envelope"></i> bharatfitnessguru@gmail.com</li>
-            <li><i className="fas fa-map-marker-alt"></i> 123 Fitness Street<br />Workout City, WC 12345</li>
+            <li><i className="fas fa-map-marker-alt"></i> Fitness Guru Gym<br />Sundarpada, Bhubaneswar, Odisha, India</li>
           </ul>
         </div>
         <div className="footer-col">

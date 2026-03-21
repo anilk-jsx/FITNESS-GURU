@@ -30,8 +30,9 @@ const Contact = () => {
               <div className="info-details">
                 <h3>Phone</h3>
                 <p>
-                  +91 98765 43210<br />
-                  +91 91234 56789
+                  +91 90901 77009<br />
+                  +91 90901 55009<br />
+                  +91 98610 59070
                 </p>
               </div>
             </div>
@@ -42,7 +43,7 @@ const Contact = () => {
               <div className="info-details">
                 <h3>Email</h3>
                 <p>
-                  support@fitnessguru.org.in
+                  bharatfitnessguru@gmail.com
                 </p>
               </div>
             </div>
