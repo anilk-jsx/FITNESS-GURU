@@ -486,16 +486,47 @@ const ManualAttendanceEntry = ({ onClose }) => {
                 throw new Error('User gym information not found. Please login again.');
             }
 
+            // Validate required user data
+            if (!userId) {
+                throw new Error('Invalid user ID');
+            }
+
+            // Ensure branch_id is a valid number
+            let branchId = user.branch_id;
+            if (!branchId || isNaN(parseInt(branchId))) {
+                console.warn(`User ${user.name || user.user_name} has invalid branch_id: ${branchId}, defaulting to 1`);
+                branchId = 1;
+            } else {
+                branchId = parseInt(branchId);
+            }
+
+            // Ensure gym_id is a valid number
+            let gymId = userData.gym_id;
+            if (!gymId || isNaN(parseInt(gymId))) {
+                throw new Error('Invalid gym ID from user data');
+            } else {
+                gymId = parseInt(gymId);
+            }
+
             const requestBody = {
-                user_id: userId,
-                gym_id: userData.gym_id,
-                branch_id: user.branch_id || 1, // Use user's branch_id or default to 1
+                user_id: parseInt(userId),
+                gym_id: gymId,
+                branch_id: branchId,
                 shift_id: currentShift.id,
                 device_id: 1, // Default device_id for admin entry
                 status: 'ON_TIME', // Default status
                 source: 'ADMIN_ENTRY',
                 remarks: `Manual attendance entry by admin during ${currentShift.shiftName} shift`
             };
+
+            // Debug logging to help identify the issue
+            console.log('Check-in request for user:', {
+                userName: user.name || user.user_name,
+                userEmail: user.email,
+                originalUserId: user.user_id || user.id,
+                originalBranchId: user.branch_id,
+                requestBody: requestBody
+            });
 
             const response = await tokenManager.apiCall(`${tokenManager.API_BASE_URL}/api/attendance/checkIn`, {
                 method: 'POST',
@@ -507,19 +538,38 @@ const ManualAttendanceEntry = ({ onClose }) => {
 
             const data = await response.json();
 
+            console.log('Check-in response for user:', {
+                userName: user.name || user.user_name,
+                status: response.status,
+                responseData: data
+            });
+
             if (response.ok && (data.status === 'success' || data.success)) {
                 // Success - refresh session data to get updated status
                 await refreshUserSession(userId);
                 setError(''); // Clear any previous errors
             } else {
-                throw new Error(data.message || data.error || 'Check-in failed');
+                console.error('Check-in failed for user:', {
+                    userName: user.name || user.user_name,
+                    status: response.status,
+                    responseData: data
+                });
+                throw new Error(data.message || data.error || `Check-in failed (HTTP ${response.status})`);
             }
 
         } catch (error) {
+            console.error('Check-in error for user:', {
+                userName: user.name || user.user_name,
+                userEmail: user.email,
+                userId: userId,
+                error: error.message,
+                errorStack: error.stack
+            });
+
             let errorMessage = `Failed to check in ${user.name || user.user_name}: `;
 
             if (error.message.includes('400')) {
-                errorMessage += 'Invalid request data. Please try again.';
+                errorMessage += 'Invalid request data. Please check user information and try again.';
             } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
                 errorMessage += 'Authentication failed. Please login again.';
             } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
@@ -527,7 +577,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
             } else if (error.message.includes('409') || error.message.toLowerCase().includes('already')) {
                 errorMessage += 'User is already checked in.';
             } else if (error.message.includes('500')) {
-                errorMessage += 'Server error. Please try again later.';
+                errorMessage += 'Server error. Please check the console for detailed error information.';
             } else if (error.message.includes('network') || error.message.includes('fetch')) {
                 errorMessage += 'Network error. Please check your connection.';
             } else {
