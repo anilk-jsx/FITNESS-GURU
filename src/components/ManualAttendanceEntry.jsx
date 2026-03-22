@@ -19,6 +19,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
     // Track user sessions for today
     const [userSessions, setUserSessions] = useState({});
     const [processingUsers, setProcessingUsers] = useState(new Set());
+    const [loadingSessions, setLoadingSessions] = useState(false);
 
     // Get current date
     const currentDate = new Date().toISOString().split('T')[0];
@@ -53,6 +54,28 @@ const ManualAttendanceEntry = ({ onClose }) => {
             console.error('Error fetching gym branches:', error);
         } finally {
             setBranchesLoading(false);
+        }
+    };
+
+    const fetchUserSessions = async (userId, date) => {
+        try {
+            const url = `${tokenManager.API_BASE_URL}/api/attendance/userSessions?user_id=${userId}&date=${date}`;
+
+            const response = await tokenManager.apiCall(url, {
+                method: 'GET'
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success' && data.data) {
+                return data.data;
+            } else {
+                console.warn(`No session data found for user ${userId} on ${date}`);
+                return null;
+            }
+        } catch (error) {
+            console.error(`Error fetching sessions for user ${userId}:`, error);
+            return null;
         }
     };
 
@@ -122,7 +145,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
 
             setUsers(usersList);
             if (usersList.length > 0) {
-                initializeUserSessions(usersList);
+                await initializeUserSessions(usersList);
             }
 
             if (usersList.length === 0 && !error) {
@@ -159,7 +182,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
 
                 // Uncomment below lines to use mock data for testing
                 // setUsers(mockUsers);
-                // initializeUserSessions(mockUsers);
+                // await initializeUserSessions(mockUsers);
                 // setError('Using mock data for testing - Check console for API response structure');
             }
         } catch (error) {
@@ -188,31 +211,71 @@ const ManualAttendanceEntry = ({ onClose }) => {
         }
     };
 
-    // Initialize user sessions state
-    const initializeUserSessions = (usersList) => {
+    // Initialize user sessions state with real API data
+    const initializeUserSessions = async (usersList) => {
         console.log('Initializing sessions for:', usersList); // Debug log
+        setLoadingSessions(true);
 
         // Ensure usersList is an array
         if (!Array.isArray(usersList)) {
             console.warn('initializeUserSessions received non-array:', typeof usersList, usersList);
+            setLoadingSessions(false);
             return;
         }
 
         const sessions = {};
-        usersList.forEach(user => {
+
+        // Fetch session data for each user
+        for (const user of usersList) {
             const userId = user.user_id || user.id;
             if (userId) {
+                // Fetch current session data for today
+                const sessionData = await fetchUserSessions(userId, currentDate);
+
+                // Determine current status based on session data
+                const { isCheckedIn, totalSessions, lastSession } = analyzeSessionData(sessionData);
+
                 sessions[userId] = {
-                    isCheckedIn: false,
-                    sessions: [],
-                    currentSessionStart: null
+                    isCheckedIn: isCheckedIn,
+                    sessions: sessionData?.sessions || [],
+                    totalSessions: totalSessions,
+                    lastSession: lastSession,
+                    attendanceSummary: sessionData?.attendance_summary || null,
+                    currentSessionStart: isCheckedIn ? (lastSession?.check_in || null) : null
                 };
+
+                console.log(`User ${user.name || user.user_name} session status:`, {
+                    userId,
+                    isCheckedIn,
+                    totalSessions,
+                    hasSessionData: !!sessionData
+                });
             } else {
                 console.warn('User without ID found:', user);
             }
-        });
+        }
+
         setUserSessions(sessions);
-        console.log('Initialized user sessions:', sessions); // Debug log
+        setLoadingSessions(false);
+        console.log('Initialized user sessions with API data:', sessions); // Debug log
+    };
+
+    // Refresh session data for a specific user
+    const refreshUserSession = async (userId) => {
+        const sessionData = await fetchUserSessions(userId, currentDate);
+        const { isCheckedIn, totalSessions, lastSession } = analyzeSessionData(sessionData);
+
+        setUserSessions(prev => ({
+            ...prev,
+            [userId]: {
+                isCheckedIn: isCheckedIn,
+                sessions: sessionData?.sessions || [],
+                totalSessions: totalSessions,
+                lastSession: lastSession,
+                attendanceSummary: sessionData?.attendance_summary || null,
+                currentSessionStart: isCheckedIn ? (lastSession?.check_in || null) : null
+            }
+        }));
     };
 
     // Helper function to get branch name from branch_id
@@ -234,6 +297,30 @@ const ManualAttendanceEntry = ({ onClose }) => {
         );
 
         return branch ? branch.branch_name : `Unknown (ID: ${branchId})`;
+    };
+
+    // Analyze session data to determine current user status
+    const analyzeSessionData = (sessionData) => {
+        if (!sessionData || !sessionData.sessions || sessionData.sessions.length === 0) {
+            return {
+                isCheckedIn: false,
+                totalSessions: 0,
+                lastSession: null
+            };
+        }
+
+        const sessions = sessionData.sessions;
+        const totalSessions = sessions.length;
+        const lastSession = sessions[sessions.length - 1]; // Get the most recent session
+
+        // If the last session has no check_out time (null), user is currently checked in
+        const isCheckedIn = lastSession && lastSession.check_out === null;
+
+        return {
+            isCheckedIn: isCheckedIn,
+            totalSessions: totalSessions,
+            lastSession: lastSession
+        };
     };
     useEffect(() => {
         const fetchData = async () => {
@@ -313,31 +400,30 @@ const ManualAttendanceEntry = ({ onClose }) => {
         setProcessingUsers(prev => new Set(prev).add(userId));
 
         try {
-            // Simulate API call for check-in
-            // In real implementation, you would call the check-in API here
+            // TODO: Replace with actual check-in API call
+            // const response = await tokenManager.apiCall(`${tokenManager.API_BASE_URL}/api/attendance/check-in`, {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ user_id: userId, date: currentDate })
+            // });
 
-            const checkInTime = new Date().toLocaleTimeString('en-IN', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
-            });
+            // Simulate API call for now
+            console.log(`Simulating check-in for user ${user.name || user.user_name} (ID: ${userId})`);
 
-            setUserSessions(prev => ({
-                ...prev,
-                [userId]: {
-                    ...prev[userId],
-                    isCheckedIn: true,
-                    currentSessionStart: new Date().toISOString()
-                }
-            }));
+            // Wait a bit to simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // You can add success notification here
-            console.log(`${user.name || user.user_name} checked in at ${checkInTime}`);
+            // Refresh session data from API to get real status
+            await refreshUserSession(userId);
+
+            console.log(`${user.name || user.user_name} checked in successfully`);
 
         } catch (error) {
             console.error('Error during check-in:', error);
-            setError(`Failed to check in ${user.name || user.user_name}`);
+            const errorMessage = `Failed to check in ${user.name || user.user_name}: ${error.message || 'Unknown error'}`;
+            setError(errorMessage);
+            // Auto close error after 5 seconds
+            setTimeout(() => setError(''), 5000);
         } finally {
             setProcessingUsers(prev => {
                 const newSet = new Set(prev);
@@ -354,48 +440,30 @@ const ManualAttendanceEntry = ({ onClose }) => {
         setProcessingUsers(prev => new Set(prev).add(userId));
 
         try {
-            // Simulate API call for check-out
-            // In real implementation, you would call the check-out API here
+            // TODO: Replace with actual check-out API call
+            // const response = await tokenManager.apiCall(`${tokenManager.API_BASE_URL}/api/attendance/check-out`, {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ user_id: userId, date: currentDate })
+            // });
 
-            const checkOutTime = new Date().toLocaleTimeString('en-IN', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
-            });
+            // Simulate API call for now
+            console.log(`Simulating check-out for user ${user.name || user.user_name} (ID: ${userId})`);
 
-            const userSession = userSessions[userId];
-            const sessionStart = new Date(userSession.currentSessionStart);
-            const sessionEnd = new Date();
-            const duration = Math.round((sessionEnd - sessionStart) / (1000 * 60)); // Duration in minutes
+            // Wait a bit to simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
-            const newSession = {
-                sessionNo: (userSession.sessions?.length || 0) + 1,
-                checkIn: new Date(userSession.currentSessionStart).toLocaleTimeString('en-IN', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                }),
-                checkOut: checkOutTime,
-                duration: duration
-            };
+            // Refresh session data from API to get real status
+            await refreshUserSession(userId);
 
-            setUserSessions(prev => ({
-                ...prev,
-                [userId]: {
-                    ...prev[userId],
-                    isCheckedIn: false,
-                    currentSessionStart: null,
-                    sessions: [...(prev[userId].sessions || []), newSession]
-                }
-            }));
-
-            // You can add success notification here
-            console.log(`${user.name || user.user_name} checked out at ${checkOutTime}`);
+            console.log(`${user.name || user.user_name} checked out successfully`);
 
         } catch (error) {
             console.error('Error during check-out:', error);
-            setError(`Failed to check out ${user.name || user.user_name}`);
+            const errorMessage = `Failed to check out ${user.name || user.user_name}: ${error.message || 'Unknown error'}`;
+            setError(errorMessage);
+            // Auto close error after 5 seconds
+            setTimeout(() => setError(''), 5000);
         } finally {
             setProcessingUsers(prev => {
                 const newSet = new Set(prev);
@@ -413,7 +481,12 @@ const ManualAttendanceEntry = ({ onClose }) => {
         if (!userSessionData) return 'Not Checked In';
 
         if (userSessionData.isCheckedIn) {
-            return 'Checked In';
+            // Show current session info if available
+            const currentSessionStart = userSessionData.lastSession?.check_in;
+            return `Checked In${currentSessionStart ? ` (since ${currentSessionStart})` : ''}`;
+        } else if (userSessionData.totalSessions > 0) {
+            // Show completed sessions count
+            return `${userSessionData.totalSessions} session${userSessionData.totalSessions > 1 ? 's' : ''} completed`;
         } else {
             return 'Not Checked In';
         }
@@ -514,11 +587,13 @@ const ManualAttendanceEntry = ({ onClose }) => {
 
                     <button
                         className="refresh-btn"
-                        onClick={fetchUsers}
-                        disabled={loading}
-                        title="Refresh Users"
+                        onClick={async () => {
+                            await fetchUsers();
+                        }}
+                        disabled={loading || loadingSessions}
+                        title="Refresh Users & Sessions"
                     >
-                        <i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`}></i>
+                        <i className={`fas fa-sync-alt ${loading || loadingSessions ? 'fa-spin' : ''}`}></i>
                     </button>
                 </div>
             </div>
@@ -528,6 +603,20 @@ const ManualAttendanceEntry = ({ onClose }) => {
                 <div className="error-message">
                     <i className="fas fa-exclamation-triangle"></i>
                     {error}
+                    <button
+                        onClick={() => setError('')}
+                        style={{
+                            marginLeft: '1rem',
+                            background: 'none',
+                            border: 'none',
+                            color: '#c0392b',
+                            cursor: 'pointer',
+                            fontSize: '1.1rem'
+                        }}
+                        title="Close"
+                    >
+                        <i className="fas fa-times"></i>
+                    </button>
                     {error.includes('format') && (
                         <details style={{ marginTop: '10px' }}>
                             <summary>Debug Info</summary>
@@ -553,11 +642,11 @@ const ManualAttendanceEntry = ({ onClose }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {loading ? (
+                        {loading || loadingSessions ? (
                             <tr>
                                 <td colSpan="6" className="loading-indicator">
                                     <i className="fas fa-spinner fa-spin"></i>
-                                    Loading users...
+                                    {loading ? 'Loading users...' : 'Loading session data...'}
                                 </td>
                             </tr>
                         ) : filteredUsers.length === 0 ? (
@@ -598,7 +687,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
                                         </td>
                                         <td data-label="Sessions">
                                             <span className="session-count">
-                                                {userSessionData?.sessions?.length || 0}
+                                                {userSessionData?.totalSessions || 0}
                                             </span>
                                         </td>
                                         <td data-label="Action" className="action-cell">
