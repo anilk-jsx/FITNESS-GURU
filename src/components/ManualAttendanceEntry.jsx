@@ -70,11 +70,9 @@ const ManualAttendanceEntry = ({ onClose }) => {
             if (data.status === 'success' && data.data) {
                 return data.data;
             } else {
-                console.warn(`No session data found for user ${userId} on ${date}`);
                 return null;
             }
         } catch (error) {
-            console.error(`Error fetching sessions for user ${userId}:`, error);
             return null;
         }
     };
@@ -95,7 +93,6 @@ const ManualAttendanceEntry = ({ onClose }) => {
             });
 
             const data = await response.json();
-            console.log('API Response:', data); // Debug log
 
             // Handle different possible response structures
             let usersList = [];
@@ -106,7 +103,6 @@ const ManualAttendanceEntry = ({ onClose }) => {
                 } else if (Array.isArray(data.users)) {
                     usersList = data.users;
                 } else if (data.data && typeof data.data === 'object') {
-                    // If data.data is an object, try to extract array from it
                     usersList = Object.values(data.data).flat().filter(item =>
                         item && typeof item === 'object' && (item.user_id || item.id)
                     );
@@ -117,77 +113,25 @@ const ManualAttendanceEntry = ({ onClose }) => {
                 usersList = data.data;
             }
 
-            console.log('Processed usersList:', usersList); // Debug log
-
-            // Debug: Log the structure of the first user and branch mapping
-            if (usersList.length > 0) {
-                console.log('First user structure:', usersList[0]);
-                console.log('Available fields in first user:', Object.keys(usersList[0]));
-
-                // Specifically check for branch_id field
-                const firstUser = usersList[0];
-                console.log('User branch_id:', firstUser.branch_id);
-                console.log('Available branches for mapping:', branches);
-
-                if (branches.length > 0) {
-                    console.log('Branch mapping example:', {
-                        user_branch_id: firstUser.branch_id,
-                        mapped_branch_name: getBranchName(firstUser.branch_id)
-                    });
-                }
-            }
-
             // Ensure we have a valid array
             if (!Array.isArray(usersList)) {
-                console.warn('Expected array but got:', typeof usersList, usersList);
                 usersList = [];
             }
 
             setUsers(usersList);
+
+            // Initialize session data to empty state for immediate rendering
+            initializeEmptyUserSessions(usersList);
+
+            // Load session data in background after users are displayed
             if (usersList.length > 0) {
-                await initializeUserSessions(usersList);
+                loadUserSessionsInBackground(usersList);
             }
 
             if (usersList.length === 0 && !error) {
-                // If no users found, set a helpful message but don't treat it as an error
                 setError('No users found. This might be because the API returned empty data or the user list is genuinely empty.');
-
-                // Optional: Add some mock data for testing (remove in production)
-                const mockUsers = [
-                    {
-                        id: 1,
-                        name: 'Test Member 1',
-                        email: 'member1@example.com',
-                        phone: '1234567890',
-                        role: 'MEMBER',
-                        branch_id: 1 // Using branch_id to match API structure
-                    },
-                    {
-                        id: 2,
-                        name: 'Test Trainer 1',
-                        email: 'trainer1@example.com',
-                        phone: '0987654321',
-                        role: 'TRAINER',
-                        branch_id: 2 // Using branch_id to match API structure
-                    },
-                    {
-                        id: 3,
-                        name: 'Test Staff 1',
-                        email: 'staff1@example.com',
-                        phone: '5555555555',
-                        role: 'STAFF',
-                        branch_id: 1 // Using branch_id to match API structure
-                    }
-                ];
-
-                // Uncomment below lines to use mock data for testing
-                // setUsers(mockUsers);
-                // await initializeUserSessions(mockUsers);
-                // setError('Using mock data for testing - Check console for API response structure');
             }
         } catch (error) {
-            console.error('Error fetching users:', error);
-
             let errorMessage = 'Failed to fetch users: ';
 
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -205,20 +149,89 @@ const ManualAttendanceEntry = ({ onClose }) => {
             }
 
             setError(errorMessage);
-            setUsers([]); // Ensure users is always an array
+            setUsers([]);
         } finally {
             setLoading(false);
         }
     };
 
-    // Initialize user sessions state with real API data
-    const initializeUserSessions = async (usersList) => {
-        console.log('Initializing sessions for:', usersList); // Debug log
+    // Initialize empty user sessions state for immediate rendering
+    const initializeEmptyUserSessions = (usersList) => {
+        if (!Array.isArray(usersList)) {
+            return;
+        }
+
+        const sessions = {};
+        usersList.forEach(user => {
+            const userId = user.user_id || user.id;
+            if (userId) {
+                sessions[userId] = {
+                    isCheckedIn: false,
+                    sessions: [],
+                    totalSessions: 0,
+                    lastSession: null,
+                    attendanceSummary: null,
+                    currentSessionStart: null,
+                    loaded: false // Flag to indicate if session data is loaded
+                };
+            }
+        });
+        setUserSessions(sessions);
+    };
+
+    // Load user sessions in background for better performance
+    const loadUserSessionsInBackground = async (usersList) => {
         setLoadingSessions(true);
 
-        // Ensure usersList is an array
+        // Process users in smaller batches to avoid overwhelming the API
+        const batchSize = 10;
+        const batches = [];
+
+        for (let i = 0; i < usersList.length; i += batchSize) {
+            batches.push(usersList.slice(i, i + batchSize));
+        }
+
+        // Process each batch in parallel
+        for (const batch of batches) {
+            const promises = batch.map(async (user) => {
+                const userId = user.user_id || user.id;
+                if (!userId) return;
+
+                try {
+                    const sessionData = await fetchUserSessions(userId, currentDate);
+                    const { isCheckedIn, totalSessions, lastSession } = analyzeSessionData(sessionData);
+
+                    // Update session data for this specific user
+                    setUserSessions(prev => ({
+                        ...prev,
+                        [userId]: {
+                            isCheckedIn: isCheckedIn,
+                            sessions: sessionData?.sessions || [],
+                            totalSessions: totalSessions,
+                            lastSession: lastSession,
+                            attendanceSummary: sessionData?.attendance_summary || null,
+                            currentSessionStart: isCheckedIn ? (lastSession?.check_in || null) : null,
+                            loaded: true
+                        }
+                    }));
+                } catch (error) {
+                    // Silently handle individual user session errors
+                    // Keep the empty state for this user
+                }
+            });
+
+            // Wait for current batch to complete before starting next batch
+            await Promise.all(promises);
+        }
+
+        setLoadingSessions(false);
+    };
+
+    // Initialize user sessions state with real API data (legacy - now unused)
+    const initializeUserSessions = async (usersList) => {
+        setLoadingSessions(true);
+
         if (!Array.isArray(usersList)) {
-            console.warn('initializeUserSessions received non-array:', typeof usersList, usersList);
             setLoadingSessions(false);
             return;
         }
@@ -229,10 +242,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
         for (const user of usersList) {
             const userId = user.user_id || user.id;
             if (userId) {
-                // Fetch current session data for today
                 const sessionData = await fetchUserSessions(userId, currentDate);
-
-                // Determine current status based on session data
                 const { isCheckedIn, totalSessions, lastSession } = analyzeSessionData(sessionData);
 
                 sessions[userId] = {
@@ -241,23 +251,14 @@ const ManualAttendanceEntry = ({ onClose }) => {
                     totalSessions: totalSessions,
                     lastSession: lastSession,
                     attendanceSummary: sessionData?.attendance_summary || null,
-                    currentSessionStart: isCheckedIn ? (lastSession?.check_in || null) : null
+                    currentSessionStart: isCheckedIn ? (lastSession?.check_in || null) : null,
+                    loaded: true
                 };
-
-                console.log(`User ${user.name || user.user_name} session status:`, {
-                    userId,
-                    isCheckedIn,
-                    totalSessions,
-                    hasSessionData: !!sessionData
-                });
-            } else {
-                console.warn('User without ID found:', user);
             }
         }
 
         setUserSessions(sessions);
         setLoadingSessions(false);
-        console.log('Initialized user sessions with API data:', sessions); // Debug log
     };
 
     // Refresh session data for a specific user
@@ -336,13 +337,11 @@ const ManualAttendanceEntry = ({ onClose }) => {
     const getFilteredUsers = () => {
         try {
             if (!Array.isArray(users)) {
-                console.warn('Users is not an array:', users);
                 return [];
             }
 
             return users.filter(user => {
                 if (!user || typeof user !== 'object') {
-                    console.warn('Invalid user object:', user);
                     return false;
                 }
 
@@ -362,13 +361,6 @@ const ManualAttendanceEntry = ({ onClose }) => {
                 // Updated branch matching to use branch_id mapping
                 const userBranchId = user.branch_id;
                 const userBranchName = getBranchName(userBranchId);
-
-                console.log(`User ${user.name || user.user_name} branch mapping:`, {
-                    branch_id: userBranchId,
-                    mapped_branch_name: userBranchName,
-                    available_branches: branches.map(b => ({ id: b.branch_id, name: b.branch_name }))
-                });
-
                 const matchesBranch = filterBranch === 'ALL' || userBranchName === filterBranch;
 
                 // Filter by attendance status - simplified to only check checked in/not checked in
@@ -381,12 +373,10 @@ const ManualAttendanceEntry = ({ onClose }) => {
                 } else if (filterStatus === 'NOT_CHECKED') {
                     matchesStatus = !userSessionData?.isCheckedIn;
                 }
-                // Removed 'COMPLETED' status filter
 
                 return matchesSearch && matchesRole && matchesBranch && matchesStatus;
             });
         } catch (error) {
-            console.error('Error filtering users:', error);
             return [];
         }
     };
@@ -408,21 +398,14 @@ const ManualAttendanceEntry = ({ onClose }) => {
             // });
 
             // Simulate API call for now
-            console.log(`Simulating check-in for user ${user.name || user.user_name} (ID: ${userId})`);
-
-            // Wait a bit to simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Refresh session data from API to get real status
             await refreshUserSession(userId);
 
-            console.log(`${user.name || user.user_name} checked in successfully`);
-
         } catch (error) {
-            console.error('Error during check-in:', error);
             const errorMessage = `Failed to check in ${user.name || user.user_name}: ${error.message || 'Unknown error'}`;
             setError(errorMessage);
-            // Auto close error after 5 seconds
             setTimeout(() => setError(''), 5000);
         } finally {
             setProcessingUsers(prev => {
@@ -448,21 +431,14 @@ const ManualAttendanceEntry = ({ onClose }) => {
             // });
 
             // Simulate API call for now
-            console.log(`Simulating check-out for user ${user.name || user.user_name} (ID: ${userId})`);
-
-            // Wait a bit to simulate API call
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Refresh session data from API to get real status
             await refreshUserSession(userId);
 
-            console.log(`${user.name || user.user_name} checked out successfully`);
-
         } catch (error) {
-            console.error('Error during check-out:', error);
             const errorMessage = `Failed to check out ${user.name || user.user_name}: ${error.message || 'Unknown error'}`;
             setError(errorMessage);
-            // Auto close error after 5 seconds
             setTimeout(() => setError(''), 5000);
         } finally {
             setProcessingUsers(prev => {
@@ -479,6 +455,11 @@ const ManualAttendanceEntry = ({ onClose }) => {
         const userSessionData = userSessions[userId];
 
         if (!userSessionData) return 'Not Checked In';
+
+        // Show loading indicator if session data hasn't been loaded yet
+        if (!userSessionData.loaded && loadingSessions) {
+            return 'Loading...';
+        }
 
         if (userSessionData.isCheckedIn) {
             // Show current session info if available
@@ -498,6 +479,11 @@ const ManualAttendanceEntry = ({ onClose }) => {
         const userSessionData = userSessions[userId];
 
         if (!userSessionData) return 'status-not-checked';
+
+        // Show loading state
+        if (!userSessionData.loaded && loadingSessions) {
+            return 'status-loading';
+        }
 
         if (userSessionData.isCheckedIn) {
             return 'status-checked-in';
@@ -588,12 +574,14 @@ const ManualAttendanceEntry = ({ onClose }) => {
                     <button
                         className="refresh-btn"
                         onClick={async () => {
-                            await fetchUsers();
+                            setError(''); // Clear any errors
+                            await fetchUsers(); // This will also reload sessions
                         }}
                         disabled={loading || loadingSessions}
-                        title="Refresh Users & Sessions"
+                        title="Refresh Users & Session Data"
                     >
                         <i className={`fas fa-sync-alt ${loading || loadingSessions ? 'fa-spin' : ''}`}></i>
+                        {loadingSessions ? 'Loading Sessions...' : 'Refresh'}
                     </button>
                 </div>
             </div>
@@ -617,14 +605,6 @@ const ManualAttendanceEntry = ({ onClose }) => {
                     >
                         <i className="fas fa-times"></i>
                     </button>
-                    {error.includes('format') && (
-                        <details style={{ marginTop: '10px' }}>
-                            <summary>Debug Info</summary>
-                            <p>Users data type: {typeof users}</p>
-                            <p>Users length: {Array.isArray(users) ? users.length : 'N/A'}</p>
-                            <p>Sample user keys: {Array.isArray(users) && users[0] ? Object.keys(users[0]).join(', ') : 'N/A'}</p>
-                        </details>
-                    )}
                 </div>
             )}
 
@@ -642,11 +622,11 @@ const ManualAttendanceEntry = ({ onClose }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {loading || loadingSessions ? (
+                        {loading ? (
                             <tr>
                                 <td colSpan="6" className="loading-indicator">
                                     <i className="fas fa-spinner fa-spin"></i>
-                                    {loading ? 'Loading users...' : 'Loading session data...'}
+                                    Loading users...
                                 </td>
                             </tr>
                         ) : filteredUsers.length === 0 ? (
@@ -687,7 +667,11 @@ const ManualAttendanceEntry = ({ onClose }) => {
                                         </td>
                                         <td data-label="Sessions">
                                             <span className="session-count">
-                                                {userSessionData?.totalSessions || 0}
+                                                {userSessionData?.loaded === false && loadingSessions ? (
+                                                    <i className="fas fa-spinner fa-spin" style={{ fontSize: '0.8rem' }}></i>
+                                                ) : (
+                                                    userSessionData?.totalSessions || 0
+                                                )}
                                             </span>
                                         </td>
                                         <td data-label="Action" className="action-cell">
@@ -695,7 +679,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
                                                 <button
                                                     className="action-btn check-out"
                                                     onClick={() => handleCheckOut(user)}
-                                                    disabled={isProcessing}
+                                                    disabled={isProcessing || (!userSessionData?.loaded && loadingSessions)}
                                                 >
                                                     {isProcessing ? (
                                                         <>
@@ -713,7 +697,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
                                                 <button
                                                     className="action-btn check-in"
                                                     onClick={() => handleCheckIn(user)}
-                                                    disabled={isProcessing}
+                                                    disabled={isProcessing || (!userSessionData?.loaded && loadingSessions)}
                                                 >
                                                     {isProcessing ? (
                                                         <>
