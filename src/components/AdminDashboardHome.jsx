@@ -10,7 +10,7 @@ const AdminDashboardHome = () => {
   });
 
   // API Configuration
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://test-api.fitnessguru.org.in';
   
   // Fetch total members count from API with token refresh handling
   const fetchMemberStats = async () => {

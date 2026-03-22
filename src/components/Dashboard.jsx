@@ -292,7 +292,7 @@ const Dashboard = () => {
           return;
         }
 
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://test-api.fitnessguru.org.in';
         const response = await tokenManager.apiCall(`${API_BASE_URL}/api/users/profile`, {
           method: 'GET',
           headers: {

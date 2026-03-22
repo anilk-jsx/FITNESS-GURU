@@ -26,7 +26,7 @@ const ManualAttendanceEntry = () => {
   const [actionLoading, setActionLoading] = useState({});
 
   // API Configuration
-  const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "https://api.fitnessguru.org.in";
+  const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "https://test-api.fitnessguru.org.in";
 
   const buildApiUrl = (endpoint) => {
     const isLocalhost = API_BASE_URL.includes("localhost");

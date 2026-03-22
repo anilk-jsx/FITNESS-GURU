@@ -13,7 +13,7 @@ const TopAvatar = ({ userData = { name: 'John Doe', email: 'john.doe@example.com
         const refreshToken = tokenManager.getRefreshToken();
 
         if (accessToken && refreshToken) {
-          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://test-api.fitnessguru.org.in';
           await fetch(`${API_BASE_URL}/api/auth/logout`, {
             method: 'POST',
             headers: {
