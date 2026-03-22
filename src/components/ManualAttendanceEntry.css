@@ -182,11 +182,38 @@
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     margin-bottom: 2rem;
+    /* Add horizontal scroll for tables that don't fit */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Add scrollbar styling for better visibility */
+    scrollbar-width: thin;
+    scrollbar-color: #bdc3c7 #ecf0f1;
+}
+
+/* Custom scrollbar for webkit browsers */
+.users-table-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.users-table-container::-webkit-scrollbar-track {
+    background: #ecf0f1;
+    border-radius: 4px;
+}
+
+.users-table-container::-webkit-scrollbar-thumb {
+    background: #bdc3c7;
+    border-radius: 4px;
+}
+
+.users-table-container::-webkit-scrollbar-thumb:hover {
+    background: #95a5a6;
 }
 
 .users-table {
     width: 100%;
     border-collapse: collapse;
+    /* Ensure minimum width to trigger horizontal scroll when needed */
+    min-width: 800px;
 }
 
 .users-table thead {
@@ -359,14 +386,69 @@
 }
 
 /* Responsive Design */
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
     .filter-row {
-        grid-template-columns: 1fr;
-        gap: 1rem;
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+        gap: 0.75rem;
     }
 }
 
+@media (max-width: 1200px) {
+    .filter-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .search-filter {
+        grid-column: 1 / -1; /* Full width */
+    }
+}
+
+@media (max-width: 992px) {
+    .manual-attendance-entry {
+        padding: 1.5rem;
+    }
+
+    .users-table-container {
+        /* Ensure horizontal scroll is maintained */
+        overflow-x: auto;
+    }
+
+    .users-table {
+        font-size: 0.9rem;
+        /* Maintain minimum width for horizontal scroll */
+        min-width: 750px;
+    }
+
+    .users-table th,
+    .users-table td {
+        padding: 1rem;
+    }
+
+    .action-btn {
+        min-width: 110px;
+        padding: 0.55rem 1rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* Add scroll hint for mobile users */
 @media (max-width: 768px) {
+    .users-table-container::after {
+        content: "← Scroll to see more →";
+        display: block;
+        text-align: center;
+        padding: 0.5rem;
+        font-size: 0.8rem;
+        color: #7f8c8d;
+        background: #f8f9fa;
+        border-top: 1px solid #ecf0f1;
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+
     .manual-attendance-entry {
         padding: 1rem;
     }
@@ -380,19 +462,54 @@
 
     .entry-header-content h2 {
         font-size: 1.5rem;
+        justify-content: center;
+    }
+
+    .entry-subtitle {
+        text-align: center;
+    }
+
+    .close-btn {
+        padding: 0.6rem 1rem;
+        font-size: 1rem;
     }
 
     .filter-row {
         grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .search-filter {
+        grid-column: auto; /* Reset grid-column for mobile */
+    }
+
+    .entry-filters {
+        padding: 1.25rem;
+    }
+
+    .users-table-container {
+        /* Ensure horizontal scroll is available */
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .users-table {
         font-size: 0.85rem;
+        /* Maintain minimum width for horizontal scroll */
+        min-width: 700px;
     }
 
     .users-table th,
     .users-table td {
-        padding: 0.75rem;
+        padding: 0.75rem 0.5rem;
+    }
+
+    .user-info strong {
+        font-size: 0.95rem;
+    }
+
+    .user-info span {
+        font-size: 0.8rem;
     }
 
     .action-btn {
@@ -400,14 +517,264 @@
         font-size: 0.75rem;
         min-width: 100px;
     }
+
+    .status-badge, .role-badge {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.75rem;
+    }
+
+    .session-count {
+        padding: 0.2rem 0.6rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .manual-attendance-entry {
+        padding: 0.75rem;
+    }
+
+    .entry-header {
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .entry-header-content h2 {
+        font-size: 1.35rem;
+        gap: 8px;
+    }
+
+    .entry-header-content i {
+        font-size: 1.4rem;
+    }
+
+    .entry-filters {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-input, .search-filter .filter-input {
+        padding: 0.65rem 0.8rem;
+        font-size: 0.9rem;
+    }
+
+    .refresh-btn {
+        padding: 0.65rem 0.8rem;
+        font-size: 0.9rem;
+    }
+
+    .users-table-container {
+        /* Ensure horizontal scroll */
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .users-table {
+        /* Reduce min-width for smaller screens but maintain scroll */
+        min-width: 650px;
+    }
 }
 
 @media (max-width: 480px) {
     .users-table-container {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
     }
 
     .users-table {
-        min-width: 600px;
+        min-width: 650px;
+    }
+
+    .manual-attendance-entry {
+        padding: 0.5rem;
+    }
+
+    .entry-header {
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    .entry-header-content h2 {
+        font-size: 1.25rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .entry-subtitle {
+        font-size: 0.9rem;
+    }
+
+    .close-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .entry-filters {
+        padding: 0.75rem;
+        border-radius: 8px;
+    }
+
+    .users-table-container {
+        border-radius: 8px;
+    }
+
+    .users-table th {
+        padding: 0.75rem 0.4rem;
+        font-size: 0.8rem;
+    }
+
+    .users-table td {
+        padding: 0.6rem 0.4rem;
+    }
+
+    .action-btn {
+        padding: 0.45rem 0.6rem;
+        font-size: 0.7rem;
+        min-width: 90px;
+        gap: 0.25rem;
+    }
+
+    .action-btn i {
+        font-size: 0.8rem;
+    }
+
+    .user-info {
+        gap: 0.2rem;
+    }
+
+    .user-info strong {
+        font-size: 0.85rem;
+    }
+
+    .user-info span {
+        font-size: 0.75rem;
+    }
+
+    .status-badge, .role-badge {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.7rem;
+    }
+
+    .session-count {
+        padding: 0.15rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .error-message {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .loading-indicator,
+    .no-data-message {
+        padding: 2rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .loading-indicator i,
+    .no-data-message i {
+        font-size: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+}
+
+/* Touch-friendly improvements for mobile */
+@media (max-width: 768px) and (hover: none) {
+    .action-btn:active {
+        transform: scale(0.95);
+    }
+
+    .close-btn:active {
+        transform: scale(0.95);
+    }
+
+    .refresh-btn:active {
+        transform: scale(0.95);
+    }
+
+    .clear-search:active {
+        transform: scale(0.9);
+    }
+}
+
+/* Table card layout for very small screens */
+@media (max-width: 380px) {
+    .users-table-container {
+        overflow-x: visible;
+    }
+
+    /* Remove scroll hint for card layout */
+    .users-table-container::after {
+        display: none;
+    }
+
+    .users-table,
+    .users-table thead,
+    .users-table tbody,
+    .users-table th,
+    .users-table td,
+    .users-table tr {
+        display: block;
+    }
+
+    .users-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    .users-table tr {
+        background: white;
+        border: 1px solid #ecf0f1;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .users-table td {
+        border: none;
+        position: relative;
+        padding: 0.5rem 0;
+    }
+
+    .users-table td:before {
+        content: attr(data-label) ": ";
+        font-weight: 600;
+        color: #2c3e50;
+        display: inline-block;
+        min-width: 80px;
+    }
+
+    .action-cell {
+        min-width: auto;
+        text-align: center;
+        margin-top: 0.5rem;
+    }
+
+    .action-btn {
+        width: 100%;
+        min-width: auto;
+    }
+}
+
+/* Landscape mobile orientation */
+@media (max-height: 500px) and (orientation: landscape) {
+    .manual-attendance-entry {
+        padding: 0.5rem;
+    }
+
+    .entry-header {
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .entry-header-content h2 {
+        font-size: 1.2rem;
+    }
+
+    .entry-filters {
+        padding: 0.75rem;
+        margin-bottom: 1rem;
     }
 }

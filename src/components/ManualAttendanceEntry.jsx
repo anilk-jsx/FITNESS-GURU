@@ -576,32 +576,32 @@ const ManualAttendanceEntry = ({ onClose }) => {
 
                                 return (
                                     <tr key={userId}>
-                                        <td>
+                                        <td data-label="User Details">
                                             <div className="user-info">
                                                 <strong>{user.name || user.user_name}</strong>
                                                 <span>{user.email}</span>
                                                 <span>{user.phone}</span>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td data-label="Role">
                                             <span className={`role-badge ${getRoleBadgeClass(user.role || user.role_type)}`}>
                                                 {user.role || user.role_type}
                                             </span>
                                         </td>
-                                        <td>
+                                        <td data-label="Branch">
                                             {getBranchName(user.branch_id)}
                                         </td>
-                                        <td>
+                                        <td data-label="Status">
                                             <span className={`status-badge ${getStatusBadgeClass(user)}`}>
                                                 {getUserStatus(user)}
                                             </span>
                                         </td>
-                                        <td>
+                                        <td data-label="Sessions">
                                             <span className="session-count">
                                                 {userSessionData?.sessions?.length || 0}
                                             </span>
                                         </td>
-                                        <td className="action-cell">
+                                        <td data-label="Action" className="action-cell">
                                             {isCheckedIn ? (
                                                 <button
                                                     className="action-btn check-out"
