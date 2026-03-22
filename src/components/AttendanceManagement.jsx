@@ -4,10 +4,19 @@ import { tokenManager } from '../utils/tokenManager';
 import ManualAttendanceEntry from './ManualAttendanceEntry';
 
 const AttendanceManagement = () => {
+    // Get current date in local timezone (not UTC)
+    const getCurrentLocalDate = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     const [searchQuery, setSearchQuery] = useState('');
     const [filterRole, setFilterRole] = useState('ALL');
     const [filterStatus, setFilterStatus] = useState('ALL');
-    const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+    const [filterDate, setFilterDate] = useState(getCurrentLocalDate()); // Use local date
     const [filterBranch, setFilterBranch] = useState('ALL');
 
     // API data states
@@ -67,7 +76,7 @@ const AttendanceManagement = () => {
             const queryParams = new URLSearchParams();
             
             // Always pass from_date and to_date
-            const dateToUse = filterDate || new Date().toISOString().split('T')[0];
+            const dateToUse = filterDate || getCurrentLocalDate(); // Use local date
             queryParams.append('from_date', dateToUse);
             queryParams.append('to_date', dateToUse);
             
@@ -133,10 +142,28 @@ const AttendanceManagement = () => {
         }
     };
 
+    // Track initial today date for auto-updating
+    const [initialToday] = useState(getCurrentLocalDate());
+
     // useEffect to fetch data on component mount and filter changes
     useEffect(() => {
         fetchGymBranches();
-    }, []);
+
+        // Set up interval to handle day changes - only auto-update if user is viewing today
+        const dateCheckInterval = setInterval(() => {
+            const freshDate = getCurrentLocalDate();
+
+            setFilterDate(prevDate => {
+                // Auto-update only if user is currently viewing today's date and day has changed
+                if (prevDate === initialToday && freshDate !== initialToday) {
+                    return freshDate;
+                }
+                return prevDate;
+            });
+        }, 60000); // Check every minute
+
+        return () => clearInterval(dateCheckInterval);
+    }, [initialToday]);
     
     useEffect(() => {
         if (branches.length > 0) {
@@ -159,21 +186,21 @@ const AttendanceManagement = () => {
         return matchesSearch && matchesRole && matchesStatus && matchesDate && matchesBranch;
     });
 
-    // Get statistics
+    // Get statistics based on the currently viewed date
     const getStats = () => {
-        const today = new Date().toISOString().split('T')[0];
-        const todayLogs = attendanceLogs.filter(log => log.attendance_date === today);
-        
-        const totalPresent = todayLogs.filter(log => log.status !== 'ABSENT').length;
-        const totalAbsent = todayLogs.filter(log => log.status === 'ABSENT').length;
-        const onTime = todayLogs.filter(log => log.status === 'ON_TIME').length;
-        const late = todayLogs.filter(log => log.status === 'LATE').length;
-        const avgDuration = todayLogs.length > 0
-            ? Math.round(todayLogs.reduce((sum, log) => sum + log.total_duration_min, 0) / todayLogs.length)
+        const viewingDate = filterDate; // Use the current filter date, not just today
+        const viewingDateLogs = attendanceLogs.filter(log => log.attendance_date === viewingDate);
+
+        const totalPresent = viewingDateLogs.filter(log => log.status !== 'ABSENT').length;
+        const totalAbsent = viewingDateLogs.filter(log => log.status === 'ABSENT').length;
+        const onTime = viewingDateLogs.filter(log => log.status === 'ON_TIME').length;
+        const late = viewingDateLogs.filter(log => log.status === 'LATE').length;
+        const avgDuration = viewingDateLogs.length > 0
+            ? Math.round(viewingDateLogs.reduce((sum, log) => sum + log.total_duration_min, 0) / viewingDateLogs.length)
             : 0;
 
-        const attendanceRate = todayLogs.length > 0
-            ? Math.round((totalPresent / todayLogs.length) * 100)
+        const attendanceRate = viewingDateLogs.length > 0
+            ? Math.round((totalPresent / viewingDateLogs.length) * 100)
             : 0;
 
         return { totalPresent, totalAbsent, onTime, late, avgDuration, attendanceRate };
@@ -255,9 +282,26 @@ const AttendanceManagement = () => {
             <div className="att-header">
                 <div>
                     <h1 className="att-title">Attendance Management</h1>
-                    <p className="att-subtitle">Track and manage member, trainer, and staff attendance</p>
+                    <p className="att-subtitle">
+                        Track and manage member, trainer, and staff attendance for {filterDate}
+                        {filterDate !== getCurrentLocalDate() && (
+                            <span style={{ color: '#e67e22', marginLeft: '8px' }}>
+                                (Historical view)
+                            </span>
+                        )}
+                    </p>
                 </div>
                 <div className="att-header-actions">
+                    {filterDate !== getCurrentLocalDate() && (
+                        <button
+                            onClick={() => setFilterDate(getCurrentLocalDate())}
+                            className="att-btn-secondary"
+                            title="Jump to Today"
+                        >
+                            <i className="fas fa-calendar-day"></i>
+                            Today
+                        </button>
+                    )}
                     <button
                         onClick={handleManualEntry}
                         className="att-btn-primary"
@@ -267,13 +311,20 @@ const AttendanceManagement = () => {
                         Manual Entry
                     </button>
                     <button
-                        onClick={fetchAttendanceLogs}
+                        onClick={() => {
+                            // Refresh to current date if needed
+                            const freshDate = getCurrentLocalDate();
+                            if (filterDate !== freshDate) {
+                                setFilterDate(freshDate);
+                            }
+                            fetchAttendanceLogs();
+                        }}
                         className="att-btn-secondary"
                         disabled={loading}
-                        title="Refresh Data"
+                        title="Refresh Data for Current Date"
                     >
                         <i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`}></i>
-                        Refresh
+                        Refresh ({getCurrentLocalDate()})
                     </button>
                 </div>
             </div>
@@ -281,16 +332,23 @@ const AttendanceManagement = () => {
             {/* Statistics Cards */}
             <div className="att-stats-bar">
                 <div className="att-stat-item">
+                    <i className="fas fa-calendar-day"></i>
+                    <div>
+                        <span className="att-stat-label">Viewing Date</span>
+                        <span className="att-stat-value">{filterDate}</span>
+                    </div>
+                </div>
+                <div className="att-stat-item">
                     <i className="fas fa-user-check"></i>
                     <div>
-                        <span className="att-stat-label">Present Today</span>
+                        <span className="att-stat-label">Present {filterDate === getCurrentLocalDate() ? 'Today' : filterDate}</span>
                         <span className="att-stat-value">{stats.totalPresent}</span>
                     </div>
                 </div>
                 <div className="att-stat-item">
                     <i className="fas fa-user-times"></i>
                     <div>
-                        <span className="att-stat-label">Absent Today</span>
+                        <span className="att-stat-label">Absent {filterDate === getCurrentLocalDate() ? 'Today' : filterDate}</span>
                         <span className="att-stat-value">{stats.totalAbsent}</span>
                     </div>
                 </div>
@@ -369,13 +427,13 @@ const AttendanceManagement = () => {
                     onChange={(e) => handleDateFilterChange(e.target.value)}
                     className="att-filter"
                 />
-                {(filterDate !== new Date().toISOString().split('T')[0] || filterRole !== 'ALL' || filterStatus !== 'ALL' || filterBranch !== 'ALL' || searchQuery) && (
+                {(filterDate !== getCurrentLocalDate() || filterRole !== 'ALL' || filterStatus !== 'ALL' || filterBranch !== 'ALL' || searchQuery) && (
                     <button 
                         className="att-clear-filters"
                         onClick={() => {
                             setFilterRole('ALL');
                             setFilterStatus('ALL');
-                            setFilterDate(new Date().toISOString().split('T')[0]);
+                            setFilterDate(getCurrentLocalDate()); // Use local date
                             setFilterBranch('ALL');
                             setSearchQuery('');
                             // Data will be refetched automatically by useEffect
