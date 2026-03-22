@@ -38,6 +38,44 @@
     font-size: 1rem;
 }
 
+.shift-info {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.shift-info i {
+    color: #ffd700;
+    font-size: 1rem;
+}
+
+.shift-info.no-shift {
+    background: rgba(231, 76, 60, 0.2);
+}
+
+.shift-info.no-shift i {
+    color: #fff;
+}
+
+.shift-info .current-time {
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+.shift-info .shift-help {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    margin-top: 0.25rem;
+    width: 100%;
+    line-height: 1.3;
+}
+
 .close-btn {
     background: rgba(255, 255, 255, 0.2);
     border: 2px solid rgba(255, 255, 255, 0.3);
@@ -385,6 +423,21 @@
     transform: translateY(-2px);
 }
 
+.action-btn.disabled-no-shift {
+    background-color: #95a5a6;
+    border-color: #95a5a6;
+    color: white;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.action-btn.disabled-no-shift:hover {
+    background-color: #95a5a6;
+    border-color: #95a5a6;
+    transform: none;
+    box-shadow: none;
+}
+
 .action-btn i {
     font-size: 0.9rem;
 }
@@ -491,6 +544,16 @@
 
     .entry-subtitle {
         text-align: center;
+    }
+
+    .shift-info {
+        justify-content: center;
+        text-align: center;
+        font-size: 0.85rem;
+    }
+
+    .shift-info .shift-help {
+        font-size: 0.75rem;
     }
 
     .close-btn {

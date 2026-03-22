@@ -24,6 +24,74 @@ const ManualAttendanceEntry = ({ onClose }) => {
     // Get current date
     const currentDate = new Date().toISOString().split('T')[0];
 
+    // Mock shift data (since shift API is not implemented)
+    const mockShifts = [
+        {
+            id: 1,
+            shiftName: 'Morning',
+            startTime: '00:00 AM',
+            endTime: '11:00 AM',
+            isActive: true,
+            description: 'Kickstart your day with an energetic early morning session.'
+        },
+        {
+            id: 2,
+            shiftName: 'Afternoon',
+            startTime: '02:00 PM',
+            endTime: '05:00 PM',
+            isActive: true,
+            description: 'Afternoon power session.'
+        },
+        {
+            id: 3,
+            shiftName: 'Evening',
+            startTime: '06:00 PM',
+            endTime: '11:59 PM',
+            isActive: true,
+            description: 'Evening power session.'
+        }
+    ];
+
+    // Convert time string to minutes for comparison
+    const timeToMinutes = (timeStr) => {
+        const [time, period] = timeStr.split(' ');
+        let [hours, minutes] = time.split(':').map(Number);
+
+        if (period === 'PM' && hours !== 12) {
+            hours += 12;
+        } else if (period === 'AM' && hours === 12) {
+            hours = 0;
+        }
+
+        return hours * 60 + minutes;
+    };
+
+    // Get current shift based on current time
+    const getCurrentShift = () => {
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        for (const shift of mockShifts) {
+            if (!shift.isActive) continue;
+
+            const startMinutes = timeToMinutes(shift.startTime);
+            let endMinutes = timeToMinutes(shift.endTime);
+
+            // Handle overnight shifts (like evening going to next day)
+            if (endMinutes < startMinutes) {
+                if (currentMinutes >= startMinutes || currentMinutes <= endMinutes) {
+                    return shift;
+                }
+            } else {
+                if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
+                    return shift;
+                }
+            }
+        }
+
+        return null;
+    };
+
     // API Functions
     const fetchGymBranches = async () => {
         try {
@@ -31,7 +99,6 @@ const ManualAttendanceEntry = ({ onClose }) => {
             const userData = tokenManager.getUserData();
 
             if (!userData || !userData.gym_id) {
-                console.error('No gym_id found in user data');
                 return;
             }
 
@@ -47,11 +114,9 @@ const ManualAttendanceEntry = ({ onClose }) => {
 
             if (data.status === 'success') {
                 setBranches(data.data || []);
-            } else {
-                console.error('Failed to fetch gym branches:', data.message);
             }
         } catch (error) {
-            console.error('Error fetching gym branches:', error);
+            // Silently handle branch loading errors
         } finally {
             setBranchesLoading(false);
         }
@@ -263,20 +328,32 @@ const ManualAttendanceEntry = ({ onClose }) => {
 
     // Refresh session data for a specific user
     const refreshUserSession = async (userId) => {
-        const sessionData = await fetchUserSessions(userId, currentDate);
-        const { isCheckedIn, totalSessions, lastSession } = analyzeSessionData(sessionData);
+        try {
+            const sessionData = await fetchUserSessions(userId, currentDate);
+            const { isCheckedIn, totalSessions, lastSession } = analyzeSessionData(sessionData);
 
-        setUserSessions(prev => ({
-            ...prev,
-            [userId]: {
-                isCheckedIn: isCheckedIn,
-                sessions: sessionData?.sessions || [],
-                totalSessions: totalSessions,
-                lastSession: lastSession,
-                attendanceSummary: sessionData?.attendance_summary || null,
-                currentSessionStart: isCheckedIn ? (lastSession?.check_in || null) : null
-            }
-        }));
+            setUserSessions(prev => ({
+                ...prev,
+                [userId]: {
+                    isCheckedIn: isCheckedIn,
+                    sessions: sessionData?.sessions || [],
+                    totalSessions: totalSessions,
+                    lastSession: lastSession,
+                    attendanceSummary: sessionData?.attendance_summary || null,
+                    currentSessionStart: isCheckedIn ? (lastSession?.check_in || null) : null,
+                    loaded: true
+                }
+            }));
+        } catch (error) {
+            // If refresh fails, keep the current state but mark as loaded
+            setUserSessions(prev => ({
+                ...prev,
+                [userId]: {
+                    ...prev[userId],
+                    loaded: true
+                }
+            }));
+        }
     };
 
     // Helper function to get branch name from branch_id
@@ -387,26 +464,78 @@ const ManualAttendanceEntry = ({ onClose }) => {
     const handleCheckIn = async (user) => {
         const userId = user.user_id || user.id;
 
+        // Check if current time falls within any active shift
+        const currentShift = getCurrentShift();
+        if (!currentShift) {
+            const currentTime = new Date().toLocaleTimeString('en-IN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+            setError(`Cannot check in at ${currentTime}. No active shift available. Please check in during valid shift hours.`);
+            setTimeout(() => setError(''), 8000);
+            return;
+        }
+
         setProcessingUsers(prev => new Set(prev).add(userId));
 
         try {
-            // TODO: Replace with actual check-in API call
-            // const response = await tokenManager.apiCall(`${tokenManager.API_BASE_URL}/api/attendance/check-in`, {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ user_id: userId, date: currentDate })
-            // });
+            // Get user's gym_id and branch_id
+            const userData = tokenManager.getUserData();
+            if (!userData || !userData.gym_id) {
+                throw new Error('User gym information not found. Please login again.');
+            }
 
-            // Simulate API call for now
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const requestBody = {
+                user_id: userId,
+                gym_id: userData.gym_id,
+                branch_id: user.branch_id || 1, // Use user's branch_id or default to 1
+                shift_id: currentShift.id,
+                device_id: 1, // Default device_id for admin entry
+                status: 'ON_TIME', // Default status
+                source: 'ADMIN_ENTRY',
+                remarks: `Manual attendance entry by admin during ${currentShift.shiftName} shift`
+            };
 
-            // Refresh session data from API to get real status
-            await refreshUserSession(userId);
+            const response = await tokenManager.apiCall(`${tokenManager.API_BASE_URL}/api/attendance/checkIn`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            const data = await response.json();
+
+            if (response.ok && (data.status === 'success' || data.success)) {
+                // Success - refresh session data to get updated status
+                await refreshUserSession(userId);
+                setError(''); // Clear any previous errors
+            } else {
+                throw new Error(data.message || data.error || 'Check-in failed');
+            }
 
         } catch (error) {
-            const errorMessage = `Failed to check in ${user.name || user.user_name}: ${error.message || 'Unknown error'}`;
+            let errorMessage = `Failed to check in ${user.name || user.user_name}: `;
+
+            if (error.message.includes('400')) {
+                errorMessage += 'Invalid request data. Please try again.';
+            } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                errorMessage += 'Authentication failed. Please login again.';
+            } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
+                errorMessage += 'You do not have permission to perform this action.';
+            } else if (error.message.includes('409') || error.message.toLowerCase().includes('already')) {
+                errorMessage += 'User is already checked in.';
+            } else if (error.message.includes('500')) {
+                errorMessage += 'Server error. Please try again later.';
+            } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                errorMessage += 'Network error. Please check your connection.';
+            } else {
+                errorMessage += error.message || 'Unknown error occurred.';
+            }
+
             setError(errorMessage);
-            setTimeout(() => setError(''), 5000);
+            setTimeout(() => setError(''), 8000);
         } finally {
             setProcessingUsers(prev => {
                 const newSet = new Set(prev);
@@ -423,23 +552,51 @@ const ManualAttendanceEntry = ({ onClose }) => {
         setProcessingUsers(prev => new Set(prev).add(userId));
 
         try {
-            // TODO: Replace with actual check-out API call
-            // const response = await tokenManager.apiCall(`${tokenManager.API_BASE_URL}/api/attendance/check-out`, {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ user_id: userId, date: currentDate })
-            // });
+            const requestBody = {
+                user_id: userId
+            };
 
-            // Simulate API call for now
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const response = await tokenManager.apiCall(`${tokenManager.API_BASE_URL}/api/attendance/checkOut`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
 
-            // Refresh session data from API to get real status
-            await refreshUserSession(userId);
+            const data = await response.json();
+
+            if (response.ok && (data.status === 'success' || data.success)) {
+                // Success - refresh session data to get updated status
+                await refreshUserSession(userId);
+                setError(''); // Clear any previous errors
+            } else {
+                throw new Error(data.message || data.error || 'Check-out failed');
+            }
 
         } catch (error) {
-            const errorMessage = `Failed to check out ${user.name || user.user_name}: ${error.message || 'Unknown error'}`;
+            let errorMessage = `Failed to check out ${user.name || user.user_name}: `;
+
+            if (error.message.includes('400')) {
+                errorMessage += 'Invalid request data. Please try again.';
+            } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                errorMessage += 'Authentication failed. Please login again.';
+            } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
+                errorMessage += 'You do not have permission to perform this action.';
+            } else if (error.message.includes('404') || error.message.toLowerCase().includes('not found')) {
+                errorMessage += 'No active check-in session found for this user.';
+            } else if (error.message.includes('409') || error.message.toLowerCase().includes('already')) {
+                errorMessage += 'User is already checked out.';
+            } else if (error.message.includes('500')) {
+                errorMessage += 'Server error. Please try again later.';
+            } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                errorMessage += 'Network error. Please check your connection.';
+            } else {
+                errorMessage += error.message || 'Unknown error occurred.';
+            }
+
             setError(errorMessage);
-            setTimeout(() => setError(''), 5000);
+            setTimeout(() => setError(''), 8000);
         } finally {
             setProcessingUsers(prev => {
                 const newSet = new Set(prev);
@@ -511,6 +668,32 @@ const ManualAttendanceEntry = ({ onClose }) => {
                         Manual Attendance Entry
                     </h2>
                     <p className="entry-subtitle">Mark attendance for {currentDate}</p>
+                    {(() => {
+                        const currentShift = getCurrentShift();
+                        const currentTime = new Date().toLocaleTimeString('en-IN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+
+                        if (currentShift) {
+                            return (
+                                <div className="shift-info">
+                                    <i className="fas fa-clock"></i>
+                                    <span>Current: {currentShift.shiftName} Shift ({currentShift.startTime} - {currentShift.endTime})</span>
+                                    <span className="current-time">• {currentTime}</span>
+                                </div>
+                            );
+                        } else {
+                            return (
+                                <div className="shift-info no-shift">
+                                    <i className="fas fa-exclamation-triangle"></i>
+                                    <span>No active shift at {currentTime}</span>
+                                    <span className="shift-help">Check-in available during: Morning (12:00 AM - 11:00 AM), Afternoon (2:00 PM - 5:00 PM), Evening (6:00 PM - 11:59 PM)</span>
+                                </div>
+                            );
+                        }
+                    })()}
                 </div>
                 <button className="close-btn" onClick={onClose} title="Close">
                     <i className="fas fa-times"></i>
@@ -694,23 +877,37 @@ const ManualAttendanceEntry = ({ onClose }) => {
                                                     )}
                                                 </button>
                                             ) : (
-                                                <button
-                                                    className="action-btn check-in"
-                                                    onClick={() => handleCheckIn(user)}
-                                                    disabled={isProcessing || (!userSessionData?.loaded && loadingSessions)}
-                                                >
-                                                    {isProcessing ? (
-                                                        <>
-                                                            <i className="fas fa-spinner fa-spin"></i>
-                                                            Processing...
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <i className="fas fa-sign-in-alt"></i>
-                                                            Check In
-                                                        </>
-                                                    )}
-                                                </button>
+                                                (() => {
+                                                    const currentShift = getCurrentShift();
+                                                    const isShiftActive = currentShift !== null;
+                                                    const isDisabled = isProcessing || (!userSessionData?.loaded && loadingSessions) || !isShiftActive;
+
+                                                    return (
+                                                        <button
+                                                            className={`action-btn check-in ${!isShiftActive ? 'disabled-no-shift' : ''}`}
+                                                            onClick={() => handleCheckIn(user)}
+                                                            disabled={isDisabled}
+                                                            title={!isShiftActive ? 'No active shift available' : 'Check In'}
+                                                        >
+                                                            {isProcessing ? (
+                                                                <>
+                                                                    <i className="fas fa-spinner fa-spin"></i>
+                                                                    Processing...
+                                                                </>
+                                                            ) : !isShiftActive ? (
+                                                                <>
+                                                                    <i className="fas fa-ban"></i>
+                                                                    No active shift
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <i className="fas fa-sign-in-alt"></i>
+                                                                    Check In
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })()
                                             )}
                                         </td>
                                     </tr>
