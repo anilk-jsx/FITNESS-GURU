@@ -207,7 +207,8 @@ const AttendanceManagement = () => {
             'LATE': 'att-status-late',
             'EARLY_OUT': 'att-status-early-out',
             'ABSENT': 'att-status-absent',
-            'PARTIAL': 'att-status-partial'
+            'PARTIAL': 'att-status-partial',
+            'MANUAL_ENTRY': 'att-status-manual'
         };
         return statusMap[status] || '';
     };
@@ -329,6 +330,7 @@ const AttendanceManagement = () => {
                     <option value="EARLY_OUT">Early Out</option>
                     <option value="ABSENT">Absent</option>
                     <option value="PARTIAL">Partial</option>
+                    <option value="MANUAL_ENTRY">Manual Entry</option>
                 </select>
                 <select value={filterBranch} onChange={(e) => setFilterBranch(e.target.value)} className="att-filter" disabled={branchesLoading}>
                     <option value="ALL">{branchesLoading ? 'Loading branches...' : 'All Branches'}</option>
@@ -450,13 +452,6 @@ const AttendanceManagement = () => {
                                                 title="View Sessions"
                                             >
                                                 <i className="fas fa-eye"></i>
-                                            </button>
-                                            <button
-                                                className="att-action-btn mark"
-                                                onClick={() => alert(`Mark attendance feature for ${log.user_name} coming soon!`)}
-                                                title="Mark Attendance"
-                                            >
-                                                <i className="fas fa-user-check"></i>
                                             </button>
                                         </div>
                                     </td>
