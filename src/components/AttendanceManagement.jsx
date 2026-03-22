@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './AttendanceManagement.css';
 import { tokenManager } from '../utils/tokenManager';
+import ManualAttendanceEntry from './ManualAttendanceEntry';
 
 const AttendanceManagement = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -23,6 +24,7 @@ const AttendanceManagement = () => {
     // Modal states
     const [showSessionsModal, setShowSessionsModal] = useState(false);
     const [selectedAttendance, setSelectedAttendance] = useState(null);
+    const [showManualEntryModal, setShowManualEntryModal] = useState(false);
 
     // API Functions
     const fetchGymBranches = async () => {
@@ -200,6 +202,14 @@ const AttendanceManagement = () => {
         setError(''); // Clear any error messages
     };
 
+    const handleManualEntry = () => {
+        setShowManualEntryModal(true);
+    };
+
+    const handleCloseManualEntry = () => {
+        setShowManualEntryModal(false);
+    };
+
     // Get status badge class
     const getStatusBadgeClass = (status) => {
         const statusMap = {
@@ -234,6 +244,11 @@ const AttendanceManagement = () => {
         return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
     };
 
+    // Render ManualAttendanceEntry if modal is open
+    if (showManualEntryModal) {
+        return <ManualAttendanceEntry onClose={handleCloseManualEntry} />;
+    }
+
     return (
         <div className="attendance-management">
             {/* Header */}
@@ -243,6 +258,14 @@ const AttendanceManagement = () => {
                     <p className="att-subtitle">Track and manage member, trainer, and staff attendance</p>
                 </div>
                 <div className="att-header-actions">
+                    <button
+                        onClick={handleManualEntry}
+                        className="att-btn-primary"
+                        title="Add Manual Entry"
+                    >
+                        <i className="fas fa-plus"></i>
+                        Manual Entry
+                    </button>
                     <button
                         onClick={fetchAttendanceLogs}
                         className="att-btn-secondary"
