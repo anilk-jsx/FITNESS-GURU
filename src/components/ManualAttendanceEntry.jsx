@@ -21,31 +21,31 @@ const ManualAttendanceEntry = ({ onClose }) => {
     const [processingUsers, setProcessingUsers] = useState(new Set());
     const [loadingSessions, setLoadingSessions] = useState(false);
 
-    // Get current date
-    const currentDate = new Date().toISOString().split('T')[0];
+    // Get current date in local timezone (not UTC)
+    const getCurrentLocalDate = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
 
-    // Mock shift data (since shift API is not implemented)
+    const currentDate = getCurrentLocalDate();
+
+    // Mock shift data - Using actual database shift IDs to avoid foreign key constraint violations
     const mockShifts = [
         {
             id: 1,
             shiftName: 'Morning',
             startTime: '00:00 AM',
-            endTime: '11:00 AM',
+            endTime: '12:59 PM',
             isActive: true,
             description: 'Kickstart your day with an energetic early morning session.'
         },
         {
             id: 2,
-            shiftName: 'Afternoon',
-            startTime: '02:00 PM',
-            endTime: '05:00 PM',
-            isActive: true,
-            description: 'Afternoon power session.'
-        },
-        {
-            id: 3,
             shiftName: 'Evening',
-            startTime: '06:00 PM',
+            startTime: '02:00 PM',
             endTime: '11:59 PM',
             isActive: true,
             description: 'Evening power session.'
@@ -494,7 +494,6 @@ const ManualAttendanceEntry = ({ onClose }) => {
             // Ensure branch_id is a valid number
             let branchId = user.branch_id;
             if (!branchId || isNaN(parseInt(branchId))) {
-                console.warn(`User ${user.name || user.user_name} has invalid branch_id: ${branchId}, defaulting to 1`);
                 branchId = 1;
             } else {
                 branchId = parseInt(branchId);
@@ -519,15 +518,6 @@ const ManualAttendanceEntry = ({ onClose }) => {
                 remarks: `Manual attendance entry by admin during ${currentShift.shiftName} shift`
             };
 
-            // Debug logging to help identify the issue
-            console.log('Check-in request for user:', {
-                userName: user.name || user.user_name,
-                userEmail: user.email,
-                originalUserId: user.user_id || user.id,
-                originalBranchId: user.branch_id,
-                requestBody: requestBody
-            });
-
             const response = await tokenManager.apiCall(`${tokenManager.API_BASE_URL}/api/attendance/checkIn`, {
                 method: 'POST',
                 headers: {
@@ -538,34 +528,15 @@ const ManualAttendanceEntry = ({ onClose }) => {
 
             const data = await response.json();
 
-            console.log('Check-in response for user:', {
-                userName: user.name || user.user_name,
-                status: response.status,
-                responseData: data
-            });
-
             if (response.ok && (data.status === 'success' || data.success)) {
                 // Success - refresh session data to get updated status
                 await refreshUserSession(userId);
                 setError(''); // Clear any previous errors
             } else {
-                console.error('Check-in failed for user:', {
-                    userName: user.name || user.user_name,
-                    status: response.status,
-                    responseData: data
-                });
                 throw new Error(data.message || data.error || `Check-in failed (HTTP ${response.status})`);
             }
 
         } catch (error) {
-            console.error('Check-in error for user:', {
-                userName: user.name || user.user_name,
-                userEmail: user.email,
-                userId: userId,
-                error: error.message,
-                errorStack: error.stack
-            });
-
             let errorMessage = `Failed to check in ${user.name || user.user_name}: `;
 
             if (error.message.includes('400')) {
@@ -577,7 +548,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
             } else if (error.message.includes('409') || error.message.toLowerCase().includes('already')) {
                 errorMessage += 'User is already checked in.';
             } else if (error.message.includes('500')) {
-                errorMessage += 'Server error. Please check the console for detailed error information.';
+                errorMessage += 'Server error. Please try again later.';
             } else if (error.message.includes('network') || error.message.includes('fetch')) {
                 errorMessage += 'Network error. Please check your connection.';
             } else {
@@ -602,10 +573,16 @@ const ManualAttendanceEntry = ({ onClose }) => {
         setProcessingUsers(prev => new Set(prev).add(userId));
 
         try {
+            // Validate user data
+            if (!userId) {
+                throw new Error('Invalid user ID');
+            }
+
             const requestBody = {
-                user_id: userId
+                user_id: parseInt(userId)
             };
 
+            // Use the correct checkout API endpoint and method from actual API specification
             const response = await tokenManager.apiCall(`${tokenManager.API_BASE_URL}/api/attendance/checkOut`, {
                 method: 'PUT',
                 headers: {
@@ -621,7 +598,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
                 await refreshUserSession(userId);
                 setError(''); // Clear any previous errors
             } else {
-                throw new Error(data.message || data.error || 'Check-out failed');
+                throw new Error(data.message || data.error || `Check-out failed (HTTP ${response.status})`);
             }
 
         } catch (error) {
@@ -739,7 +716,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
                                 <div className="shift-info no-shift">
                                     <i className="fas fa-exclamation-triangle"></i>
                                     <span>No active shift at {currentTime}</span>
-                                    <span className="shift-help">Check-in available during: Morning (12:00 AM - 11:00 AM), Afternoon (2:00 PM - 5:00 PM), Evening (6:00 PM - 11:59 PM)</span>
+                                    <span className="shift-help">Check-in available during: Morning (12:00 AM - 12:59 PM), Evening (2:00 PM - 11:59 PM)</span>
                                 </div>
                             );
                         }
