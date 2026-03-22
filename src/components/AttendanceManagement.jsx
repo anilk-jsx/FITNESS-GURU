@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './AttendanceManagement.css';
 import { tokenManager } from '../utils/tokenManager';
-import ManualAttendanceEntry from './ManualAttendanceEntry';
 
 const AttendanceManagement = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -24,18 +23,6 @@ const AttendanceManagement = () => {
     // Modal states
     const [showSessionsModal, setShowSessionsModal] = useState(false);
     const [selectedAttendance, setSelectedAttendance] = useState(null);
-    const [showManualEntryModal, setShowManualEntryModal] = useState(false);
-
-    // Manual entry form data
-    const [manualEntryData, setManualEntryData] = useState({
-        user_name: '',
-        role_type: 'MEMBER',
-        branch_name: '',
-        attendance_date: new Date().toISOString().split('T')[0],
-        check_in_time: '',
-        check_out_time: '',
-        remarks: ''
-    });
 
     // API Functions
     const fetchGymBranches = async () => {
@@ -213,67 +200,6 @@ const AttendanceManagement = () => {
         setError(''); // Clear any error messages
     };
 
-    const handleManualEntry = () => {
-        setManualEntryData({
-            user_name: '',
-            role_type: 'MEMBER',
-            branch_name: '',
-            attendance_date: new Date().toISOString().split('T')[0],
-            check_in_time: '',
-            check_out_time: '',
-            remarks: ''
-        });
-        setShowManualEntryModal(true);
-    };
-
-    const handleManualEntrySubmit = (e) => {
-        e.preventDefault();
-        
-        const checkIn = new Date(`${manualEntryData.attendance_date}T${manualEntryData.check_in_time}`);
-        const checkOut = manualEntryData.check_out_time 
-            ? new Date(`${manualEntryData.attendance_date}T${manualEntryData.check_out_time}`)
-            : null;
-        
-        const duration = checkOut 
-            ? Math.round((checkOut - checkIn) / (1000 * 60))
-            : 0;
-
-        const newLog = {
-            attendance_id: attendanceLogs.length + 1,
-            user_id: 9000 + attendanceLogs.length,
-            user_name: manualEntryData.user_name,
-            email: `${manualEntryData.user_name.toLowerCase().replace(' ', '.')}@email.com`,
-            phone: '9800000000',
-            role_type: manualEntryData.role_type,
-            branch_name: manualEntryData.branch_name,
-            shift_name: null,
-            attendance_date: manualEntryData.attendance_date,
-            total_sessions: 1,
-            total_duration_min: duration,
-            status: 'MANUAL_ENTRY',
-            sessions: [{
-                session_id: attendanceLogs.length + 1,
-                session_no: 1,
-                check_in_time: `${manualEntryData.attendance_date} ${manualEntryData.check_in_time}:00`,
-                check_out_time: checkOut ? `${manualEntryData.attendance_date} ${manualEntryData.check_out_time}:00` : null,
-                duration_min: duration,
-                source: 'ADMIN_ENTRY',
-                remarks: manualEntryData.remarks
-            }]
-        };
-
-        setAttendanceLogs([newLog, ...attendanceLogs]);
-        alert('Manual attendance entry added successfully!');
-        setShowManualEntryModal(false);
-    };
-
-    const handleDeleteAttendance = (attendance) => {
-        if (window.confirm(`Delete attendance record for ${attendance.user_name} on ${attendance.attendance_date}?`)) {
-            setAttendanceLogs(attendanceLogs.filter(log => log.attendance_id !== attendance.attendance_id));
-            alert('Attendance record deleted successfully!');
-        }
-    };
-
     // Get status badge class
     const getStatusBadgeClass = (status) => {
         const statusMap = {
@@ -281,8 +207,7 @@ const AttendanceManagement = () => {
             'LATE': 'att-status-late',
             'EARLY_OUT': 'att-status-early-out',
             'ABSENT': 'att-status-absent',
-            'PARTIAL': 'att-status-partial',
-            'MANUAL_ENTRY': 'att-status-manual'
+            'PARTIAL': 'att-status-partial'
         };
         return statusMap[status] || '';
     };
@@ -308,22 +233,6 @@ const AttendanceManagement = () => {
         return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
     };
 
-    // Manual entry component - shown when manual entry modal is opened
-    if (showManualEntryModal) {
-        return (
-            <div className="attendance-wrapper">
-                <button
-                    className="back-btn"
-                    onClick={() => setShowManualEntryModal(false)}
-                >
-                    <i className="fas fa-arrow-left"></i>
-                    Back to Attendance Logs
-                </button>
-                <ManualAttendanceEntry onClose={() => setShowManualEntryModal(false)} />
-            </div>
-        );
-    }
-
     return (
         <div className="attendance-management">
             {/* Header */}
@@ -333,16 +242,8 @@ const AttendanceManagement = () => {
                     <p className="att-subtitle">Track and manage member, trainer, and staff attendance</p>
                 </div>
                 <div className="att-header-actions">
-                    <button 
-                        onClick={handleManualEntry}
-                        className="att-btn-primary"
-                        title="Add Manual Entry"
-                    >
-                        <i className="fas fa-plus"></i>
-                        Manual Entry
-                    </button>
-                    <button 
-                        onClick={fetchAttendanceLogs} 
+                    <button
+                        onClick={fetchAttendanceLogs}
                         className="att-btn-secondary"
                         disabled={loading}
                         title="Refresh Data"
@@ -428,7 +329,6 @@ const AttendanceManagement = () => {
                     <option value="EARLY_OUT">Early Out</option>
                     <option value="ABSENT">Absent</option>
                     <option value="PARTIAL">Partial</option>
-                    <option value="MANUAL_ENTRY">Manual Entry</option>
                 </select>
                 <select value={filterBranch} onChange={(e) => setFilterBranch(e.target.value)} className="att-filter" disabled={branchesLoading}>
                     <option value="ALL">{branchesLoading ? 'Loading branches...' : 'All Branches'}</option>
@@ -558,15 +458,6 @@ const AttendanceManagement = () => {
                                             >
                                                 <i className="fas fa-user-check"></i>
                                             </button>
-                                            {log.status === 'MANUAL_ENTRY' && (
-                                                <button
-                                                    className="att-action-btn delete"
-                                                    onClick={() => handleDeleteAttendance(log)}
-                                                    title="Delete"
-                                                >
-                                                    <i className="fas fa-trash"></i>
-                                                </button>
-                                            )}
                                         </div>
                                     </td>
                                 </tr>
