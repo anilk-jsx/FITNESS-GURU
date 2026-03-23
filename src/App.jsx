@@ -10,6 +10,7 @@ import SubscriptionManagement from './components/SubscriptionManagement';
 import AttendanceManagement from './components/AttendanceManagement';
 import StaffManagement from './components/StaffManagement';
 import BranchManagement from './components/BranchManagement';
+import ContactManagement from './components/ContactManagement';
 import SectionDivider from './components/SectionDivider';
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -42,6 +43,7 @@ function App() {
           <Route path="attendance" element={<AttendanceManagement />} />
           <Route path="staff" element={<StaffManagement />} />
           <Route path="branches" element={<BranchManagement />} />
+          <Route path="contacts" element={<ContactManagement />} />
         </Route>
         <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

@@ -73,13 +73,23 @@ const AdminSidebar = ({
                     </NavLink>
                 </div>
                 <div className="nav-item">
-                    <NavLink 
+                    <NavLink
                         to="/admin-dashboard/branches"
                         className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                         onClick={handleNavClick}
                     >
                         <i className="fas fa-building"></i>
                         Branch Management
+                    </NavLink>
+                </div>
+                <div className="nav-item">
+                    <NavLink
+                        to="/admin-dashboard/contacts"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
+                    >
+                        <i className="fas fa-envelope"></i>
+                        Contact Management
                     </NavLink>
                 </div>
             </div>
