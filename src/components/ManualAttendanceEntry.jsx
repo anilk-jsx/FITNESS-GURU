@@ -12,6 +12,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState(''); // Add success message state
     const [branches, setBranches] = useState([]);
     const [branchesLoading, setBranchesLoading] = useState(false);
     const [gymId, setGymId] = useState(null);
@@ -20,6 +21,12 @@ const ManualAttendanceEntry = ({ onClose }) => {
     const [userSessions, setUserSessions] = useState({});
     const [processingUsers, setProcessingUsers] = useState(new Set());
     const [loadingSessions, setLoadingSessions] = useState(false);
+    const [sessionLoadProgress, setSessionLoadProgress] = useState({ current: 0, total: 0 }); // Add progress tracking
+
+    // Network and retry states
+    const [isOnline, setIsOnline] = useState(navigator.onLine || true);
+    const [retryCount, setRetryCount] = useState(0);
+    const maxRetries = 3;
 
     // Get current date in local timezone (not UTC)
     const getCurrentLocalDate = () => {
@@ -31,6 +38,43 @@ const ManualAttendanceEntry = ({ onClose }) => {
     };
 
     const currentDate = getCurrentLocalDate();
+
+    // Utility functions for better UX
+    const showSuccess = (message) => {
+        setSuccess(message);
+        setError(''); // Clear any existing errors
+        setTimeout(() => setSuccess(''), 5000); // Auto-hide after 5 seconds
+    };
+
+    const showError = (message, autoHide = true) => {
+        setError(message);
+        setSuccess(''); // Clear any existing success messages
+        if (autoHide) {
+            setTimeout(() => setError(''), 8000); // Auto-hide after 8 seconds
+        }
+    };
+
+    const clearMessages = () => {
+        setError('');
+        setSuccess('');
+    };
+
+    // Network monitoring
+    useEffect(() => {
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => {
+            setIsOnline(false);
+            showError('You are offline. Some features may not work properly.', false);
+        };
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
 
     // Mock shift data - Using actual database shift IDs to avoid foreign key constraint violations
     const mockShifts = [
@@ -92,13 +136,14 @@ const ManualAttendanceEntry = ({ onClose }) => {
         return null;
     };
 
-    // API Functions
-    const fetchGymBranches = async () => {
+    // Enhanced API Functions with retry logic
+    const fetchGymBranches = async (retryAttempt = 0) => {
         try {
             setBranchesLoading(true);
             const userData = tokenManager.getUserData();
 
             if (!userData || !userData.gym_id) {
+                showError('User session expired. Please login again to continue.');
                 return;
             }
 
@@ -114,9 +159,26 @@ const ManualAttendanceEntry = ({ onClose }) => {
 
             if (data.status === 'success') {
                 setBranches(data.data || []);
+                setRetryCount(0); // Reset retry count on success
+            } else {
+                throw new Error(data.message || 'Failed to fetch gym branches');
             }
         } catch (error) {
-            // Silently handle branch loading errors
+            console.error('Error fetching gym branches:', error);
+
+            if (retryAttempt < maxRetries && isOnline) {
+                // Retry with exponential backoff
+                const delay = Math.pow(2, retryAttempt) * 1000;
+                setTimeout(() => {
+                    fetchGymBranches(retryAttempt + 1);
+                }, delay);
+                setRetryCount(retryAttempt + 1);
+            } else {
+                const errorMessage = !isOnline
+                    ? 'Unable to load branches due to network connection.'
+                    : `Failed to load gym branches: ${error.message || 'Unknown error'}`;
+                showError(errorMessage);
+            }
         } finally {
             setBranchesLoading(false);
         }
@@ -142,10 +204,15 @@ const ManualAttendanceEntry = ({ onClose }) => {
         }
     };
 
-    const fetchUsers = async () => {
+    const fetchUsers = async (retryAttempt = 0) => {
         try {
             setLoading(true);
-            setError('');
+            clearMessages();
+
+            if (!isOnline) {
+                showError('You are offline. Please check your internet connection and try again.');
+                return;
+            }
 
             // Using the provided API endpoint
             const url = 'https://test-api.fitnessguru.org.in/api/users/list';
@@ -156,6 +223,10 @@ const ManualAttendanceEntry = ({ onClose }) => {
                     'Content-Type': 'application/json'
                 }
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
 
             const data = await response.json();
 
@@ -184,6 +255,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
             }
 
             setUsers(usersList);
+            setRetryCount(0); // Reset retry count on success
 
             // Initialize session data to empty state for immediate rendering
             initializeEmptyUserSessions(usersList);
@@ -191,29 +263,45 @@ const ManualAttendanceEntry = ({ onClose }) => {
             // Load session data in background after users are displayed
             if (usersList.length > 0) {
                 loadUserSessionsInBackground(usersList);
+                showSuccess(`Successfully loaded ${usersList.length} users for ${currentDate}`);
+            } else {
+                showError('No users found. The user database appears to be empty or you may not have permission to view users.');
             }
 
-            if (usersList.length === 0 && !error) {
-                setError('No users found. This might be because the API returned empty data or the user list is genuinely empty.');
-            }
         } catch (error) {
-            let errorMessage = 'Failed to fetch users: ';
+            console.error('Error fetching users:', error);
+
+            // Implement retry logic for network errors
+            if (retryAttempt < maxRetries && (error.name === 'TypeError' && error.message.includes('fetch'))) {
+                const delay = Math.pow(2, retryAttempt) * 1000;
+                setTimeout(() => {
+                    fetchUsers(retryAttempt + 1);
+                }, delay);
+                setRetryCount(retryAttempt + 1);
+                showError(`Connection failed. Retrying... (${retryAttempt + 1}/${maxRetries})`);
+                return;
+            }
+
+            // Handle specific error types with actionable messages
+            let errorMessage = 'Failed to load users: ';
 
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                errorMessage += 'Network error. Please check your internet connection.';
+                errorMessage += 'Network connection failed. Please check your internet connection and try again.';
             } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-                errorMessage += 'Authentication failed. Please log in again.';
+                errorMessage += 'Your session has expired. Please log out and log in again to continue.';
             } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
-                errorMessage += 'You do not have permission to access user data.';
+                errorMessage += 'You do not have permission to view user data. Please contact your administrator.';
             } else if (error.message.includes('404')) {
-                errorMessage += 'API endpoint not found.';
+                errorMessage += 'User service is not available. Please try again later or contact support.';
             } else if (error.message.includes('500')) {
-                errorMessage += 'Server error. Please try again later.';
+                errorMessage += 'Server error occurred. Please try again in a few moments.';
+            } else if (error.message.includes('timeout')) {
+                errorMessage += 'Request timed out. Please check your connection and try again.';
             } else {
-                errorMessage += error.message || 'Unknown error occurred.';
+                errorMessage += error.message || 'An unexpected error occurred.';
             }
 
-            setError(errorMessage);
+            showError(errorMessage);
             setUsers([]);
         } finally {
             setLoading(false);
@@ -244,9 +332,10 @@ const ManualAttendanceEntry = ({ onClose }) => {
         setUserSessions(sessions);
     };
 
-    // Load user sessions in background for better performance
+    // Enhanced session loading with progress tracking
     const loadUserSessionsInBackground = async (usersList) => {
         setLoadingSessions(true);
+        setSessionLoadProgress({ current: 0, total: usersList.length });
 
         // Process users in smaller batches to avoid overwhelming the API
         const batchSize = 10;
@@ -256,40 +345,65 @@ const ManualAttendanceEntry = ({ onClose }) => {
             batches.push(usersList.slice(i, i + batchSize));
         }
 
-        // Process each batch in parallel
-        for (const batch of batches) {
-            const promises = batch.map(async (user) => {
-                const userId = user.user_id || user.id;
-                if (!userId) return;
+        let processedCount = 0;
 
-                try {
-                    const sessionData = await fetchUserSessions(userId, currentDate);
-                    const { isCheckedIn, totalSessions, lastSession } = analyzeSessionData(sessionData);
+        try {
+            // Process each batch in parallel
+            for (const batch of batches) {
+                const promises = batch.map(async (user) => {
+                    const userId = user.user_id || user.id;
+                    if (!userId) return;
 
-                    // Update session data for this specific user
-                    setUserSessions(prev => ({
-                        ...prev,
-                        [userId]: {
-                            isCheckedIn: isCheckedIn,
-                            sessions: sessionData?.sessions || [],
-                            totalSessions: totalSessions,
-                            lastSession: lastSession,
-                            attendanceSummary: sessionData?.attendance_summary || null,
-                            currentSessionStart: isCheckedIn ? (lastSession?.check_in || null) : null,
-                            loaded: true
-                        }
-                    }));
-                } catch (error) {
-                    // Silently handle individual user session errors
-                    // Keep the empty state for this user
-                }
-            });
+                    try {
+                        const sessionData = await fetchUserSessions(userId, currentDate);
+                        const { isCheckedIn, totalSessions, lastSession } = analyzeSessionData(sessionData);
 
-            // Wait for current batch to complete before starting next batch
-            await Promise.all(promises);
+                        // Update session data for this specific user
+                        setUserSessions(prev => ({
+                            ...prev,
+                            [userId]: {
+                                isCheckedIn: isCheckedIn,
+                                sessions: sessionData?.sessions || [],
+                                totalSessions: totalSessions,
+                                lastSession: lastSession,
+                                attendanceSummary: sessionData?.attendance_summary || null,
+                                currentSessionStart: isCheckedIn ? (lastSession?.check_in || null) : null,
+                                loaded: true
+                            }
+                        }));
+                    } catch (error) {
+                        // Mark this user's session as loaded with error state
+                        setUserSessions(prev => ({
+                            ...prev,
+                            [userId]: {
+                                isCheckedIn: false,
+                                sessions: [],
+                                totalSessions: 0,
+                                lastSession: null,
+                                attendanceSummary: null,
+                                currentSessionStart: null,
+                                loaded: true,
+                                loadError: true
+                            }
+                        }));
+                    }
+                });
+
+                // Wait for current batch to complete before starting next batch
+                await Promise.all(promises);
+
+                processedCount += batch.length;
+                setSessionLoadProgress({ current: processedCount, total: usersList.length });
+            }
+
+            showSuccess(`Session data loaded for all users`);
+        } catch (error) {
+            console.error('Error loading user sessions:', error);
+            showError(`Failed to load session data: ${error.message || 'Unknown error'}`);
+        } finally {
+            setLoadingSessions(false);
+            setSessionLoadProgress({ current: 0, total: 0 });
         }
-
-        setLoadingSessions(false);
     };
 
     // Initialize user sessions state with real API data (legacy - now unused)
@@ -460,9 +574,16 @@ const ManualAttendanceEntry = ({ onClose }) => {
 
     const filteredUsers = getFilteredUsers();
 
-    // Handle check-in
+    // Enhanced check-in with comprehensive feedback
     const handleCheckIn = async (user) => {
         const userId = user.user_id || user.id;
+        const userName = user.name || user.user_name || 'Unknown User';
+
+        // Pre-validation checks with user-friendly messages
+        if (!isOnline) {
+            showError('Cannot check in while offline. Please check your internet connection.');
+            return;
+        }
 
         // Check if current time falls within any active shift
         const currentShift = getCurrentShift();
@@ -472,23 +593,29 @@ const ManualAttendanceEntry = ({ onClose }) => {
                 minute: '2-digit',
                 hour12: true
             });
-            setError(`Cannot check in at ${currentTime}. No active shift available. Please check in during valid shift hours.`);
-            setTimeout(() => setError(''), 8000);
+            showError(`Cannot check in ${userName} at ${currentTime}. No active shift available. Check-in is available during Morning (12:00 AM - 12:59 PM) or Evening (2:00 PM - 11:59 PM) shifts.`);
+            return;
+        }
+
+        // Check if user is already processing
+        if (processingUsers.has(userId)) {
+            showError('Please wait, another operation is in progress for this user.');
             return;
         }
 
         setProcessingUsers(prev => new Set(prev).add(userId));
+        clearMessages();
 
         try {
             // Get user's gym_id and branch_id
             const userData = tokenManager.getUserData();
             if (!userData || !userData.gym_id) {
-                throw new Error('User gym information not found. Please login again.');
+                throw new Error('Session expired. Please login again to continue.');
             }
 
             // Validate required user data
             if (!userId) {
-                throw new Error('Invalid user ID');
+                throw new Error('Invalid user information. Please refresh and try again.');
             }
 
             // Ensure branch_id is a valid number
@@ -502,7 +629,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
             // Ensure gym_id is a valid number
             let gymId = userData.gym_id;
             if (!gymId || isNaN(parseInt(gymId))) {
-                throw new Error('Invalid gym ID from user data');
+                throw new Error('Invalid gym information. Please contact administrator.');
             } else {
                 gymId = parseInt(gymId);
             }
@@ -531,32 +658,40 @@ const ManualAttendanceEntry = ({ onClose }) => {
             if (response.ok && (data.status === 'success' || data.success)) {
                 // Success - refresh session data to get updated status
                 await refreshUserSession(userId);
-                setError(''); // Clear any previous errors
+
+                const currentTime = new Date().toLocaleTimeString('en-IN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                showSuccess(`✅ ${userName} successfully checked in at ${currentTime} during ${currentShift.shiftName} shift`);
             } else {
                 throw new Error(data.message || data.error || `Check-in failed (HTTP ${response.status})`);
             }
 
         } catch (error) {
-            let errorMessage = `Failed to check in ${user.name || user.user_name}: `;
+            console.error('Check-in error:', error);
+
+            let errorMessage = `Failed to check in ${userName}: `;
 
             if (error.message.includes('400')) {
                 errorMessage += 'Invalid request data. Please check user information and try again.';
             } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-                errorMessage += 'Authentication failed. Please login again.';
+                errorMessage += 'Session expired. Please logout and login again.';
             } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
-                errorMessage += 'You do not have permission to perform this action.';
+                errorMessage += 'You do not have permission to perform this action. Contact your administrator.';
             } else if (error.message.includes('409') || error.message.toLowerCase().includes('already')) {
-                errorMessage += 'User is already checked in.';
+                errorMessage += 'User is already checked in. Please refresh to see the latest status.';
             } else if (error.message.includes('500')) {
-                errorMessage += 'Server error. Please try again later.';
+                errorMessage += 'Server error occurred. Please try again in a few moments.';
             } else if (error.message.includes('network') || error.message.includes('fetch')) {
-                errorMessage += 'Network error. Please check your connection.';
+                errorMessage += 'Network connection failed. Please check your connection and try again.';
             } else {
-                errorMessage += error.message || 'Unknown error occurred.';
+                errorMessage += error.message || 'An unexpected error occurred.';
             }
 
-            setError(errorMessage);
-            setTimeout(() => setError(''), 8000);
+            showError(errorMessage);
         } finally {
             setProcessingUsers(prev => {
                 const newSet = new Set(prev);
@@ -566,16 +701,29 @@ const ManualAttendanceEntry = ({ onClose }) => {
         }
     };
 
-    // Handle check-out
+    // Enhanced check-out with comprehensive feedback
     const handleCheckOut = async (user) => {
         const userId = user.user_id || user.id;
+        const userName = user.name || user.user_name || 'Unknown User';
+
+        // Pre-validation checks
+        if (!isOnline) {
+            showError('Cannot check out while offline. Please check your internet connection.');
+            return;
+        }
+
+        if (processingUsers.has(userId)) {
+            showError('Please wait, another operation is in progress for this user.');
+            return;
+        }
 
         setProcessingUsers(prev => new Set(prev).add(userId));
+        clearMessages();
 
         try {
             // Validate user data
             if (!userId) {
-                throw new Error('Invalid user ID');
+                throw new Error('Invalid user information. Please refresh and try again.');
             }
 
             const requestBody = {
@@ -596,34 +744,42 @@ const ManualAttendanceEntry = ({ onClose }) => {
             if (response.ok && (data.status === 'success' || data.success)) {
                 // Success - refresh session data to get updated status
                 await refreshUserSession(userId);
-                setError(''); // Clear any previous errors
+
+                const currentTime = new Date().toLocaleTimeString('en-IN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                showSuccess(`✅ ${userName} successfully checked out at ${currentTime}`);
             } else {
                 throw new Error(data.message || data.error || `Check-out failed (HTTP ${response.status})`);
             }
 
         } catch (error) {
-            let errorMessage = `Failed to check out ${user.name || user.user_name}: `;
+            console.error('Check-out error:', error);
+
+            let errorMessage = `Failed to check out ${userName}: `;
 
             if (error.message.includes('400')) {
                 errorMessage += 'Invalid request data. Please try again.';
             } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-                errorMessage += 'Authentication failed. Please login again.';
+                errorMessage += 'Session expired. Please logout and login again.';
             } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
-                errorMessage += 'You do not have permission to perform this action.';
+                errorMessage += 'You do not have permission to perform this action. Contact your administrator.';
             } else if (error.message.includes('404') || error.message.toLowerCase().includes('not found')) {
-                errorMessage += 'No active check-in session found for this user.';
+                errorMessage += 'No active check-in session found for this user. Please refresh to see the latest status.';
             } else if (error.message.includes('409') || error.message.toLowerCase().includes('already')) {
-                errorMessage += 'User is already checked out.';
+                errorMessage += 'User is already checked out. Please refresh to see the latest status.';
             } else if (error.message.includes('500')) {
-                errorMessage += 'Server error. Please try again later.';
+                errorMessage += 'Server error occurred. Please try again in a few moments.';
             } else if (error.message.includes('network') || error.message.includes('fetch')) {
-                errorMessage += 'Network error. Please check your connection.';
+                errorMessage += 'Network connection failed. Please check your connection and try again.';
             } else {
-                errorMessage += error.message || 'Unknown error occurred.';
+                errorMessage += error.message || 'An unexpected error occurred.';
             }
 
-            setError(errorMessage);
-            setTimeout(() => setError(''), 8000);
+            showError(errorMessage);
         } finally {
             setProcessingUsers(prev => {
                 const newSet = new Set(prev);
@@ -784,30 +940,56 @@ const ManualAttendanceEntry = ({ onClose }) => {
                     <button
                         className="refresh-btn"
                         onClick={async () => {
-                            setError(''); // Clear any errors
-                            await fetchUsers(); // This will also reload sessions
+                            clearMessages();
+                            await fetchUsers(); // This will also reload sessions with enhanced feedback
                         }}
                         disabled={loading || loadingSessions}
-                        title="Refresh Users & Session Data"
+                        title="Refresh Users & Session Data for Current Date"
                     >
                         <i className={`fas fa-sync-alt ${loading || loadingSessions ? 'fa-spin' : ''}`}></i>
-                        {loadingSessions ? 'Loading Sessions...' : 'Refresh'}
+                        {loadingSessions ?
+                            `Loading Sessions... ${sessionLoadProgress.current}/${sessionLoadProgress.total}` :
+                            'Refresh'}
+                        {retryCount > 0 && ` (Retry ${retryCount}/${maxRetries})`}
                     </button>
                 </div>
             </div>
 
-            {/* Error Message */}
-            {error && (
-                <div className="error-message">
-                    <i className="fas fa-exclamation-triangle"></i>
-                    {error}
+            {/* Network Status */}
+            {!isOnline && (
+                <div className="network-status offline">
+                    <i className="fas fa-wifi-slash"></i>
+                    <span>You are currently offline. Some features may not work properly.</span>
                     <button
-                        onClick={() => setError('')}
+                        onClick={() => {
+                            if (navigator.onLine) {
+                                setIsOnline(true);
+                                clearMessages();
+                                showSuccess('Connection restored! You can now use all features.');
+                            } else {
+                                showError('Still offline. Please check your internet connection.');
+                            }
+                        }}
+                        className="retry-connection-btn"
+                    >
+                        <i className="fas fa-redo"></i>
+                        Check Connection
+                    </button>
+                </div>
+            )}
+
+            {/* Success Message */}
+            {success && (
+                <div className="success-message">
+                    <i className="fas fa-check-circle"></i>
+                    {success}
+                    <button
+                        onClick={() => setSuccess('')}
                         style={{
                             marginLeft: '1rem',
                             background: 'none',
                             border: 'none',
-                            color: '#c0392b',
+                            color: '#27ae60',
                             cursor: 'pointer',
                             fontSize: '1.1rem'
                         }}
@@ -815,6 +997,68 @@ const ManualAttendanceEntry = ({ onClose }) => {
                     >
                         <i className="fas fa-times"></i>
                     </button>
+                </div>
+            )}
+
+            {/* Enhanced Error Message */}
+            {error && (
+                <div className="error-message">
+                    <i className="fas fa-exclamation-triangle"></i>
+                    <div className="error-content">
+                        <span>{error}</span>
+                        <div className="error-actions">
+                            {error.includes('Network') || error.includes('connection') ? (
+                                <button
+                                    onClick={() => {
+                                        clearMessages();
+                                        fetchUsers();
+                                    }}
+                                    className="retry-btn"
+                                    disabled={loading}
+                                >
+                                    <i className="fas fa-redo"></i>
+                                    Retry
+                                </button>
+                            ) : null}
+                            {error.includes('session') || error.includes('login') ? (
+                                <button
+                                    onClick={() => {
+                                        // Redirect to login or refresh page
+                                        window.location.reload();
+                                    }}
+                                    className="refresh-page-btn"
+                                >
+                                    <i className="fas fa-refresh"></i>
+                                    Refresh Page
+                                </button>
+                            ) : null}
+                            <button
+                                onClick={clearMessages}
+                                className="close-error-btn"
+                                title="Close"
+                            >
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Progress Indicator for Session Loading */}
+            {loadingSessions && sessionLoadProgress.total > 0 && (
+                <div className="progress-indicator">
+                    <div className="progress-info">
+                        <span>Loading session data...</span>
+                        <span>{sessionLoadProgress.current}/{sessionLoadProgress.total}</span>
+                    </div>
+                    <div className="progress-bar">
+                        <div
+                            className="progress-fill"
+                            style={{
+                                width: `${(sessionLoadProgress.current / sessionLoadProgress.total) * 100}%`
+                            }}
+                        ></div>
+                    </div>
                 </div>
             )}
 
@@ -835,15 +1079,36 @@ const ManualAttendanceEntry = ({ onClose }) => {
                         {loading ? (
                             <tr>
                                 <td colSpan="6" className="loading-indicator">
-                                    <i className="fas fa-spinner fa-spin"></i>
-                                    Loading users...
+                                    <div className="loading-content">
+                                        <i className="fas fa-spinner fa-spin"></i>
+                                        <div className="loading-text">
+                                            <span>Loading users...</span>
+                                            {retryCount > 0 && <small>Retrying connection ({retryCount}/{maxRetries})</small>}
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         ) : filteredUsers.length === 0 ? (
                             <tr>
                                 <td colSpan="6" className="no-data-message">
-                                    <i className="fas fa-inbox"></i>
-                                    No users found
+                                    <div className="no-data-content">
+                                        <i className="fas fa-inbox"></i>
+                                        <div className="no-data-text">
+                                            <span>No users found</span>
+                                            {searchQuery && <small>Try adjusting your search filters</small>}
+                                            {!isOnline && <small>You may be offline - check your connection</small>}
+                                        </div>
+                                        {!searchQuery && (
+                                            <button
+                                                onClick={() => fetchUsers()}
+                                                className="reload-users-btn"
+                                                disabled={loading}
+                                            >
+                                                <i className="fas fa-redo"></i>
+                                                Reload Users
+                                            </button>
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         ) : (
@@ -876,13 +1141,29 @@ const ManualAttendanceEntry = ({ onClose }) => {
                                             </span>
                                         </td>
                                         <td data-label="Sessions">
-                                            <span className="session-count">
+                                            <div className="session-info">
                                                 {userSessionData?.loaded === false && loadingSessions ? (
-                                                    <i className="fas fa-spinner fa-spin" style={{ fontSize: '0.8rem' }}></i>
+                                                    <div className="session-loading">
+                                                        <i className="fas fa-spinner fa-spin" style={{ fontSize: '0.8rem' }}></i>
+                                                        <span>Loading...</span>
+                                                    </div>
+                                                ) : userSessionData?.loadError ? (
+                                                    <div className="session-error">
+                                                        <span className="error-text">Load failed</span>
+                                                        <button
+                                                            onClick={() => refreshUserSession(userId)}
+                                                            className="retry-session-btn"
+                                                            title="Retry loading session data"
+                                                        >
+                                                            <i className="fas fa-redo"></i>
+                                                        </button>
+                                                    </div>
                                                 ) : (
-                                                    userSessionData?.totalSessions || 0
+                                                    <span className="session-count">
+                                                        {userSessionData?.totalSessions || 0}
+                                                    </span>
                                                 )}
-                                            </span>
+                                            </div>
                                         </td>
                                         <td data-label="Action" className="action-cell">
                                             {isCheckedIn ? (
