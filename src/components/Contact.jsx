@@ -1,7 +1,58 @@
-import React from 'react'
+import React, { useState } from 'react'
 import './Contact.css'
 
 const Contact = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    service: '',
+    message: ''
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState(null) // 'success', 'error', or null
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setSubmitStatus(null)
+
+    try {
+      const response = await fetch('https://test-api.fitnessguru.org.in/api/addContactUs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      })
+
+      if (response.ok) {
+        setSubmitStatus('success')
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          service: '',
+          message: ''
+        })
+      } else {
+        throw new Error('Failed to send message')
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error)
+      setSubmitStatus('error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
   return (
     <section id="contact" className="contact-section">
       <div className="container">
@@ -64,29 +115,88 @@ const Contact = () => {
           <div className="contact-form-container">
             <div className="contact-form">
               <h3>Send us a Message</h3>
-              <form>
+
+              {submitStatus === 'success' && (
+                <div className="alert alert-success">
+                  <i className="fas fa-check-circle"></i>
+                  Thank you! Your message has been sent successfully. We'll get back to you soon.
+                </div>
+              )}
+
+              {submitStatus === 'error' && (
+                <div className="alert alert-error">
+                  <i className="fas fa-exclamation-circle"></i>
+                  Sorry, there was an error sending your message. Please try again later.
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                  <input type="text" placeholder="Your Name" required />
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Your Name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div className="form-group">
-                  <input type="email" placeholder="Your Email" required />
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Your Email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div className="form-group">
-                  <input type="tel" placeholder="Your Phone" />
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="Your Phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div className="form-group">
-                  <select>
+                  <select
+                    name="service"
+                    value={formData.service}
+                    onChange={handleChange}
+                    required
+                  >
                     <option value="">Select Service</option>
-                    <option value="membership">Membership Inquiry</option>
-                    <option value="personal-training">Personal Training</option>
-                    <option value="group-classes">Group Classes</option>
-                    <option value="other">Other</option>
+                    <option value="Membership Inquiry">Membership Inquiry</option>
+                    <option value="Personal Training">Personal Training</option>
+                    <option value="Group Classes">Group Classes</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
                 <div className="form-group">
-                  <textarea rows="4" placeholder="Your Message" required></textarea>
+                  <textarea
+                    name="message"
+                    rows="4"
+                    placeholder="Your Message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
-                <button type="submit" className="submit-btn">Send Message</button>
+                <button
+                  type="submit"
+                  className="submit-btn"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin"></i> Sending...
+                    </>
+                  ) : (
+                    'Send Message'
+                  )}
+                </button>
               </form>
             </div>
           </div>
