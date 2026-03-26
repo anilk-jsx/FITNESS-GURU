@@ -44,22 +44,32 @@ const AdminSidebar = ({
                 </div>
                 <div className="nav-item">
                     <NavLink 
-                        to="/admin-dashboard/subscriptions"
-                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                        onClick={handleNavClick}
-                    >
-                        <i className="fas fa-credit-card"></i>
-                        Subscription Management
-                    </NavLink>
-                </div>
-                <div className="nav-item">
-                    <NavLink 
                         to="/admin-dashboard/attendance"
                         className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                         onClick={handleNavClick}
                     >
                         <i className="fas fa-calendar-check"></i>
                         Attendance Management
+                    </NavLink>
+                </div>
+                <div className="nav-item">
+                    <NavLink
+                        to="/admin-dashboard/contacts"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
+                    >
+                        <i className="fas fa-envelope"></i>
+                        Contact Management
+                    </NavLink>
+                </div>
+                <div className="nav-item">
+                    <NavLink 
+                        to="/admin-dashboard/subscriptions"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
+                    >
+                        <i className="fas fa-credit-card"></i>
+                        Subscription Management
                     </NavLink>
                 </div>
                 <div className="nav-item">
@@ -80,16 +90,6 @@ const AdminSidebar = ({
                     >
                         <i className="fas fa-building"></i>
                         Branch Management
-                    </NavLink>
-                </div>
-                <div className="nav-item">
-                    <NavLink
-                        to="/admin-dashboard/contacts"
-                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                        onClick={handleNavClick}
-                    >
-                        <i className="fas fa-envelope"></i>
-                        Contact Management
                     </NavLink>
                 </div>
             </div>
