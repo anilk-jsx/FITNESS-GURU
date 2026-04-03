@@ -205,7 +205,7 @@ const Contact = () => {
           <h3>Find Us Here</h3>
           <div className="map-container">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3744.300110257676!2d85.79746567582602!3d20.204846415565353!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a19a6668a95f523%3A0x4fea5bf5951e5dd!2sFitness%20Guru%20Gym!5e0!3m2!1sen!2sin!4v1769542747434!5m2!1sen!2sin"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3744.4282909627764!2d85.7957042!3d20.1995161!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a19a70d6ec06f79%3A0xf5ed27cf83df2cc0!2sFITNESS%20GURU%20GOLD!5e0!3m2!1sen!2sin!4v1775226294683!5m2!1sen!2sin"
               width="100%"
               height="400"
               style={{ border: 0 }}
