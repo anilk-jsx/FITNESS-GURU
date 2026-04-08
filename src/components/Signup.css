@@ -2,8 +2,8 @@
 .signup-bg {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -25,9 +25,9 @@
 .signup-container {
   position: relative;
   z-index: 2;
-  width: 100%;
+  width: calc(100% - 2rem);
   max-width: 410px;
-  margin: auto;
+  margin: 1rem auto;
   padding: 2.5rem 2rem 2rem 2rem;
   background: #fff;
   border-radius: 22px;
@@ -36,6 +36,7 @@
   flex-direction: column;
   align-items: center;
   animation: fadeInUp 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  box-sizing: border-box;
 }
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(40px); }
@@ -485,5 +486,125 @@
   }
   .signup-member-modal-content {
     padding: 1.2rem 1rem 1.2rem 1rem;
+  }
+}
+
+/* Terms & Privacy Policy Modal */
+.signup-policy-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10,10,10,0.6);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease;
+  overflow-y: auto;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.signup-policy-content {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 40px 0 rgba(0,0,0,0.25);
+  padding: 2rem;
+  max-width: 600px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.signup-policy-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: #888;
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.2s;
+  line-height: 1;
+  padding: 0.25rem;
+}
+
+.signup-policy-close:hover {
+  color: #ff6b35;
+}
+
+.signup-policy-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #232526;
+  margin-bottom: 1.5rem;
+  padding-right: 2rem;
+}
+
+.signup-policy-body h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #ff6b35;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.signup-policy-body h3:first-child {
+  margin-top: 0;
+}
+
+.signup-policy-body p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.signup-policy-body ul {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.signup-policy-body li {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.signup-policy-body strong {
+  font-weight: 600;
+  color: #232526;
+}
+
+@media (max-width: 768px) {
+  .signup-policy-content {
+    padding: 1.5rem;
+    max-height: 90vh;
+  }
+  
+  .signup-policy-title {
+    font-size: 1.3rem;
+  }
+  
+  .signup-policy-body h3 {
+    font-size: 1rem;
+  }
+  
+  .signup-policy-body p,
+  .signup-policy-body li {
+    font-size: 0.9rem;
   }
 }

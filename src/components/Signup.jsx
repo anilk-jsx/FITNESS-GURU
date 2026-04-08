@@ -12,6 +12,8 @@ export default function Signup() {
   const [error, setError] = useState("");
   const [branches, setBranches] = useState([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [passwordRules, setPasswordRules] = useState({
     length: false,
     upperLower: false,
@@ -438,7 +440,7 @@ export default function Signup() {
             
             <div className="signup-agree">
               <input type="checkbox" name="agree" checked={form.agree} onChange={handleChange} required />
-              <span>I agree to the <a href="#" className="signup-link">Terms of Service</a> and <a href="#" className="signup-link">Privacy Policy</a></span>
+              <span>I agree to the <a href="#" className="signup-link" onClick={(e) => { e.preventDefault(); setShowTerms(true); }}>Terms of Service</a> and <a href="#" className="signup-link" onClick={(e) => { e.preventDefault(); setShowPrivacy(true); }}>Privacy Policy</a></span>
             </div>
             
             {error && <div className="signup-error" style={{ color: 'red', textAlign: 'center', marginBottom: '1rem', padding: '0.5rem', backgroundColor: 'rgba(255, 0, 0, 0.1)', borderRadius: '4px' }}>{error}</div>}
@@ -632,6 +634,123 @@ export default function Signup() {
           </form>
         )}
       </div>
+
+      {/* Terms of Service Modal */}
+      {showTerms && (
+        <div className="signup-policy-modal" onClick={() => setShowTerms(false)}>
+          <div className="signup-policy-content" onClick={(e) => e.stopPropagation()}>
+            <button className="signup-policy-close" onClick={() => setShowTerms(false)} aria-label="Close">&times;</button>
+            <h2 className="signup-policy-title">Terms of Service</h2>
+            <div className="signup-policy-body">
+              <h3>1. Acceptance of Terms</h3>
+              <p>By registering and using FITNESS GURU gym facilities, you agree to comply with and be bound by these Terms of Service. If you do not agree to these terms, please do not register or use our services.</p>
+
+              <h3>2. Membership and Registration</h3>
+              <p>You must provide accurate and complete information during registration. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.</p>
+
+              <h3>3. Gym Rules and Conduct</h3>
+              <ul>
+                <li>Members must follow all gym rules and staff instructions at all times</li>
+                <li>Proper athletic attire and closed-toe shoes are required</li>
+                <li>Equipment must be used properly and returned to designated areas after use</li>
+                <li>Disruptive, offensive, or unsafe behavior is strictly prohibited</li>
+                <li>Members must respect other members and maintain a clean environment</li>
+              </ul>
+
+              <h3>4. Health and Safety</h3>
+              <p>You acknowledge that physical exercise involves inherent risks. You should consult with a physician before beginning any exercise program. FITNESS GURU is not responsible for any injuries sustained during the use of our facilities.</p>
+
+              <h3>5. Payment and Fees</h3>
+              <ul>
+                <li>Membership fees must be paid in advance as per the selected plan</li>
+                <li>Late payments may result in suspension of membership privileges</li>
+                <li>All fees are non-refundable unless otherwise stated</li>
+              </ul>
+
+              <h3>6. Cancellation and Termination</h3>
+              <p>Members may cancel their membership according to the terms of their specific membership plan. FITNESS GURU reserves the right to terminate memberships for violation of these terms or gym rules.</p>
+
+              <h3>7. Limitation of Liability</h3>
+              <p>FITNESS GURU shall not be liable for any indirect, incidental, or consequential damages arising from the use of our facilities or services.</p>
+
+              <h3>8. Changes to Terms</h3>
+              <p>We reserve the right to modify these terms at any time. Continued use of our services after changes constitutes acceptance of the modified terms.</p>
+
+              <p><strong>Last Updated:</strong> April 2026</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Privacy Policy Modal */}
+      {showPrivacy && (
+        <div className="signup-policy-modal" onClick={() => setShowPrivacy(false)}>
+          <div className="signup-policy-content" onClick={(e) => e.stopPropagation()}>
+            <button className="signup-policy-close" onClick={() => setShowPrivacy(false)} aria-label="Close">&times;</button>
+            <h2 className="signup-policy-title">Privacy Policy</h2>
+            <div className="signup-policy-body">
+              <h3>1. Information We Collect</h3>
+              <p>We collect the following information when you register:</p>
+              <ul>
+                <li><strong>Personal Information:</strong> Name, email, phone number, date of birth, gender</li>
+                <li><strong>Health Information:</strong> Height, weight, blood group, fitness level, health goals</li>
+                <li><strong>Contact Information:</strong> Address, emergency contact details</li>
+                <li><strong>Membership Information:</strong> Selected branch, membership plan, payment details</li>
+              </ul>
+
+              <h3>2. How We Use Your Information</h3>
+              <p>Your information is used for:</p>
+              <ul>
+                <li>Managing your gym membership and account</li>
+                <li>Providing personalized fitness programs and recommendations</li>
+                <li>Communicating important updates about your membership</li>
+                <li>Emergency contact purposes</li>
+                <li>Improving our services and facilities</li>
+                <li>Compliance with legal and regulatory requirements</li>
+              </ul>
+
+              <h3>3. Information Sharing</h3>
+              <p>We do not sell or rent your personal information to third parties. We may share your information only in the following circumstances:</p>
+              <ul>
+                <li>With your explicit consent</li>
+                <li>To comply with legal obligations or court orders</li>
+                <li>In emergency situations to protect your health and safety</li>
+                <li>With service providers who assist in operating our facilities (under strict confidentiality agreements)</li>
+              </ul>
+
+              <h3>4. Data Security</h3>
+              <p>We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. However, no internet transmission is completely secure, and we cannot guarantee absolute security.</p>
+
+              <h3>5. Your Rights</h3>
+              <p>You have the right to:</p>
+              <ul>
+                <li>Access your personal information</li>
+                <li>Correct inaccurate or incomplete information</li>
+                <li>Request deletion of your information (subject to legal requirements)</li>
+                <li>Opt-out of marketing communications</li>
+                <li>Lodge a complaint with relevant data protection authorities</li>
+              </ul>
+
+              <h3>6. Data Retention</h3>
+              <p>We retain your information for as long as your membership is active and for a reasonable period thereafter as required by law or for legitimate business purposes.</p>
+
+              <h3>7. Cookies and Tracking</h3>
+              <p>Our website may use cookies to enhance your experience. You can control cookie preferences through your browser settings.</p>
+
+              <h3>8. Children's Privacy</h3>
+              <p>Our services are not intended for individuals under 16 years of age. We do not knowingly collect information from children without parental consent.</p>
+
+              <h3>9. Changes to Privacy Policy</h3>
+              <p>We may update this privacy policy periodically. We will notify you of significant changes via email or through our website.</p>
+
+              <h3>10. Contact Us</h3>
+              <p>If you have questions about this privacy policy or how we handle your information, please contact us at the gym reception or via our official communication channels.</p>
+
+              <p><strong>Last Updated:</strong> April 2026</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
