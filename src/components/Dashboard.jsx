@@ -168,13 +168,6 @@ const Dashboard = () => {
 
   const quickActions = [
     {
-      icon: 'fas fa-qrcode',
-      color: 'orange',
-      title: 'Check In',
-      subtitle: 'Scan QR or manual entry',
-      link: '/profile?tab=attendance'
-    },
-    {
       icon: 'fas fa-user-edit',
       color: 'blue',
       title: 'Update Profile',
