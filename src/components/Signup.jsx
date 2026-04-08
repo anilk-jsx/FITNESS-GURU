@@ -293,43 +293,76 @@ export default function Signup() {
             <h2 className="signup-title">Create Account</h2>
             <p className="signup-step-indicator">Step 1 of 2 - Basic Information</p>
             
-            <label className="signup-label">Full Name</label>
-            <input
-              type="text"
-              className="signup-input"
-              name="name"
-              placeholder="John Doe"
-              value={form.name}
-              onChange={handleChange}
-              required
-            />
-            
-            <label className="signup-label">Email</label>
-            <input
-              type="email"
-              className="signup-input"
-              name="email"
-              placeholder="your@email.com"
-              value={form.email}
-              onChange={handleChange}
-              required
-            />
-            
-            <label className="signup-label">Phone Number</label>
-            <input
-              type="tel"
-              className="signup-input"
-              name="phone"
-              placeholder="9876543210"
-              value={form.phone}
-              onChange={handleChange}
-              required
-              pattern="[0-9]{10,15}"
-              title="Please enter a valid phone number (10-15 digits)"
-            />
-            
-            <label className="signup-label">Password</label>
-            <div className="signup-password-wrapper">
+            <div className="signup-field-grid">
+              <div>
+                <label className="signup-label">Full Name</label>
+                <input
+                  type="text"
+                  className="signup-input"
+                  name="name"
+                  placeholder="John Doe"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="signup-label">Email</label>
+                <input
+                  type="email"
+                  className="signup-input"
+                  name="email"
+                  placeholder="your@email.com"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="signup-label">Phone Number</label>
+                <input
+                  type="tel"
+                  className="signup-input"
+                  name="phone"
+                  placeholder="9876543210"
+                  value={form.phone}
+                  onChange={handleChange}
+                  required
+                  pattern="[0-9]{10,15}"
+                  title="Please enter a valid phone number (10-15 digits)"
+                />
+              </div>
+              
+              <div>
+                <label className="signup-label">Branch</label>
+                <select
+                  className="signup-input"
+                  name="branch"
+                  value={form.branch}
+                  onChange={handleChange}
+                  required
+                  disabled={branchesLoading}
+                >
+                  {branchesLoading ? (
+                    <option value="">Loading branches...</option>
+                  ) : (
+                    <>
+                      <option value="">Select Branch</option>
+                      {branches.map((branch) => (
+                        <option key={branch.branch_id} value={branch.branch_id.toString()}>
+                          {branch.branch_name}
+                        </option>
+                      ))}
+                    </>
+                  )}
+                </select>
+              </div>
+              
+              <div className="signup-full-width">
+                <label className="signup-label">Password</label>
+                <div className="signup-password-wrapper">
               <input
                 type={showPassword ? "text" : "password"}
                 className="signup-input"
@@ -383,60 +416,41 @@ export default function Signup() {
                 )}
               </ul>
             )}
+              </div>
             
-            <label className="signup-label">Confirm Password</label>
-            <div className="signup-password-wrapper">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                className="signup-input"
-                name="confirmPassword"
-                placeholder="Confirm Password"
-                value={form.confirmPassword}
-                onChange={handleChange}
-                required
-              />
-              <button
-                type="button"
-                className="signup-password-toggle"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-              >
-                {showConfirmPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                )}
-              </button>
+              <div className="signup-full-width">
+                <label className="signup-label">Confirm Password</label>
+                <div className="signup-password-wrapper">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    className="signup-input"
+                    name="confirmPassword"
+                    placeholder="Confirm Password"
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="signup-password-toggle"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
-            
-            <label className="signup-label">Branch</label>
-            <select
-              className="signup-input"
-              name="branch"
-              value={form.branch}
-              onChange={handleChange}
-              required
-              disabled={branchesLoading}
-            >
-              {branchesLoading ? (
-                <option value="">Loading branches...</option>
-              ) : (
-                <>
-                  <option value="">Select Branch</option>
-                  {branches.map((branch) => (
-                    <option key={branch.branch_id} value={branch.branch_id.toString()}>
-                      {branch.branch_name}
-                    </option>
-                  ))}
-                </>
-              )}
-            </select>
             
             <div className="signup-agree">
               <input type="checkbox" name="agree" checked={form.agree} onChange={handleChange} required />
