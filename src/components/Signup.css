@@ -244,6 +244,47 @@
   grid-template-columns: 1fr 1fr;
   gap: 1.2rem 1.5rem;
 }
+.signup-full-width {
+  grid-column: span 2;
+}
+.signup-step-indicator {
+  text-align: center;
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 1.2rem;
+  font-weight: 500;
+}
+.signup-button-group {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+.signup-back-btn {
+  flex: 1;
+  background: #f0f0f0;
+  color: #333;
+  font-weight: 600;
+  font-size: 1.05rem;
+  border: none;
+  border-radius: 10px;
+  padding: 0.9rem 0;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  letter-spacing: 0.3px;
+}
+.signup-back-btn:hover {
+  background: #e0e0e0;
+  transform: translateY(-1px);
+}
+.signup-back-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.signup-button-group .signup-btn {
+  flex: 2;
+  margin-bottom: 0;
+}
 .signup-agree {
   display: flex;
   align-items: center;
@@ -392,6 +433,24 @@
   .signup-member-grid {
     grid-template-columns: 1fr;
     gap: 0.8rem;
+  }
+  .signup-full-width {
+    grid-column: span 1;
+  }
+  .signup-step-indicator {
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+  .signup-button-group {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .signup-back-btn {
+    font-size: 0.95rem;
+    padding: 0.75rem 0;
+  }
+  .signup-button-group .signup-btn {
+    margin-bottom: 0;
   }
   .signup-member-title {
     font-size: 1.1rem;
