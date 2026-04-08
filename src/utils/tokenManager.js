@@ -6,6 +6,26 @@ class TokenManager {
     this.API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://test-api.fitnessguru.org.in';
     this.isRefreshing = false;
     this.failedQueue = [];
+    this.SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+    this.lastActivityTime = Date.now();
+    this.setupSessionTimeout();
+  }
+
+  // Setup session timeout monitoring
+  setupSessionTimeout() {
+    if (typeof window !== 'undefined') {
+      ['click', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(event => {
+        window.addEventListener(event, () => {
+          this.lastActivityTime = Date.now();
+        }, { passive: true });
+      });
+    }
+  }
+
+  // Check if session has timed out due to inactivity
+  isSessionExpired() {
+    const timeSinceLastActivity = Date.now() - this.lastActivityTime;
+    return timeSinceLastActivity > this.SESSION_TIMEOUT_MS;
   }
 
   // Get access token from localStorage
@@ -44,14 +64,14 @@ class TokenManager {
         resolve(token);
       }
     });
-    
+
     this.failedQueue = [];
   }
 
   // Refresh access token using refresh token
   async refreshAccessToken() {
     const refreshToken = this.getRefreshToken();
-    
+
     if (!refreshToken) {
       throw new Error('No refresh token available');
     }
@@ -85,8 +105,15 @@ class TokenManager {
 
   // Make API call with automatic token refresh
   async apiCall(url, options = {}) {
+    // Check for session timeout
+    if (this.isSessionExpired()) {
+      this.clearTokens();
+      window.location.href = '/login';
+      throw new Error('Session expired due to inactivity');
+    }
+
     const accessToken = this.getAccessToken();
-    
+
     // Add Authorization header if not present
     const headers = {
       ...options.headers,
@@ -100,7 +127,7 @@ class TokenManager {
 
     try {
       const response = await fetch(url, config);
-      
+
       // If token is expired (401), attempt refresh
       if (response.status === 401) {
         if (this.isRefreshing) {
@@ -119,7 +146,7 @@ class TokenManager {
           const newAccessToken = await this.refreshAccessToken();
           this.isRefreshing = false;
           this.processQueue(null, newAccessToken);
-          
+
           // Retry original request with new token
           config.headers['Authorization'] = `Bearer ${newAccessToken}`;
           return fetch(url, config);
@@ -142,6 +169,20 @@ class TokenManager {
     const accessToken = this.getAccessToken();
     const refreshToken = this.getRefreshToken();
     return !!(accessToken && refreshToken);
+  }
+
+  // Check if token is valid (not expired or about to expire)
+  isTokenValid() {
+    if (!this.isAuthenticated()) {
+      return false;
+    }
+
+    // Check for session timeout
+    if (this.isSessionExpired()) {
+      return false;
+    }
+
+    return true;
   }
 
   // Check if user is admin

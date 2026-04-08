@@ -309,9 +309,7 @@ const Dashboard = () => {
           setError(data.message || 'Failed to fetch profile');
           // If token is invalid, redirect to login
           if (response.status === 401) {
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            localStorage.removeItem('user');
+            tokenManager.clearTokens();
             window.location.href = '/login';
           }
         }

@@ -3,6 +3,7 @@ import "./Signup.css";
 import logo from "../assets/FGlogo.png";
 import bgImg from "../assets/heroImg/home7.avif";
 import { useNavigate, Link } from 'react-router-dom';
+import tokenManager from '../utils/tokenManager';
 
 export default function Signup() {
   const [step, setStep] = useState(1); // Multi-step form: 1 = basic info, 2 = additional details
@@ -248,9 +249,8 @@ export default function Signup() {
       if (data.status === "success") {
         // Store tokens if provided, otherwise navigate to login
         if (data.tokens) {
-          localStorage.setItem("access_token", data.tokens.access_token);
-          localStorage.setItem("refresh_token", data.tokens.refresh_token);
-          localStorage.setItem("user", JSON.stringify(data.user));
+          tokenManager.setTokens(data.tokens.access_token, data.tokens.refresh_token);
+          tokenManager.setUserData(data.user);
           navigate("/dashboard");
         } else {
           // If no tokens, registration successful but need to login
