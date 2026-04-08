@@ -90,7 +90,8 @@ class TokenManager {
       const data = await response.json();
 
       if (response.ok && data.status === 'success') {
-        this.setTokens(data.access_token);
+        // Store both access and refresh tokens (backend may rotate refresh token)
+        this.setTokens(data.access_token, data.refresh_token);
         return data.access_token;
       } else {
         throw new Error(data.message || 'Token refresh failed');
