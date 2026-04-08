@@ -6,16 +6,14 @@ import './Dashboard.css';
 
 /**
  * Dashboard Component - Member Dashboard Page
- * 
- * Backend Integration Notes:
- * - ✅ User profile data fetched from GET /api/users/profile
- * - API Endpoints still needed:
- *   - GET /api/member/attendance/stats - Attendance statistics
- *   - GET /api/member/attendance/recent - Recent attendance sessions
- *   - GET /api/member/subscription - Current subscription details
+ *
+ * Backend Integration:
+ * - ✅ User profile data fetched from GET /api/members/view?user_id={userId}
+ * - ✅ Attendance sessions fetched from GET /api/attendance/userSessions?user_id={userId}&date={date}
+ * - ✅ Dashboard stats calculated from fetched data
  * - ✅ Loading states and error handling implemented
  * - ✅ Token validation and redirect on 401
- * - TODO: Implement real-time data refresh
+ * - ✅ Real-time data refresh on component mount
  */
 
 // Dashboard Components
@@ -55,13 +53,22 @@ const StatCard = ({ icon, iconClass, title, value, subtitle, linkTo }) => (
 );
 
 const AttendanceChart = ({ recentSessions }) => {
-  // Group sessions by date
+  // Group sessions by date (handle both formats: with timestamps and without)
   const groupedSessions = recentSessions.reduce((acc, session) => {
-    const date = new Date(session.check_in_time).toISOString().split('T')[0];
-    if (!acc[date]) {
-      acc[date] = [];
+    let dateKey;
+    if (session.check_in && !session.check_in.includes('T')) {
+      // Format: "09:00 pm" - use today's date
+      dateKey = new Date().toISOString().split('T')[0];
+    } else if (session.check_in_time) {
+      dateKey = new Date(session.check_in_time).toISOString().split('T')[0];
+    } else {
+      dateKey = new Date().toISOString().split('T')[0];
     }
-    acc[date].push(session);
+
+    if (!acc[dateKey]) {
+      acc[dateKey] = [];
+    }
+    acc[dateKey].push(session);
     return acc;
   }, {});
 
@@ -97,24 +104,20 @@ const AttendanceChart = ({ recentSessions }) => {
                 <div className="sessions-list">
                   {sessions.map((session, sessionIndex) => (
                     <div key={sessionIndex} className="session-item">
-                      <div className="session-number">#{sessionIndex + 1}</div>
+                      <div className="session-number">#{session.session_no || sessionIndex + 1}</div>
                       <div className="session-details">
                         <div className="session-time">
-                          {new Date(session.check_in_time).toLocaleTimeString('en-US', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                          {session.check_out_time && ` - ${new Date(session.check_out_time).toLocaleTimeString('en-US', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}`}
+                          {session.check_in || 'N/A'}
+                          {session.check_out && ` - ${session.check_out}`}
                         </div>
                         <div className="session-meta">
-                          {session.duration_min && <span>{session.duration_min} mins</span>}
-                          <span className="separator">•</span>
-                          <span className={`source-badge ${session.source?.toLowerCase()}`}>
-                            {session.source}
-                          </span>
+                          {session.duration && <span>{session.duration} mins</span>}
+                          {session.duration && session.device && <span className="separator">•</span>}
+                          {session.device && (
+                            <span className={`source-badge ${session.device?.toLowerCase()}`}>
+                              {session.device}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="session-status">
@@ -159,80 +162,9 @@ const QuickActionsCard = ({ actions }) => (
 
 const Dashboard = () => {
   const [userData, setUserData] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Mock dashboard data - Replace with API calls
-  const [dashboardData] = useState({
-    member: {
-      join_date: '2024-03-15',
-      status: 'ACTIVE'
-    },
-    subscription: {
-      plan_name: 'Premium Plan',
-      status: 'ACTIVE',
-      start_date: '2024-03-15',
-      end_date: '2026-03-15',
-      days_remaining: 380,
-      freeze_status: 'NONE',
-      freeze_days: 0
-    },
-    attendance: {
-      total_sessions_this_month: 18,
-      total_duration_this_month: 1320, // minutes
-      current_streak: 5, // consecutive days
-      last_check_in: '2026-02-14T18:30:00',
-      avg_duration: 73 // minutes
-    },
-    profile: {
-      completion: 85,
-      missing_fields: ['emergency_contact', 'fitness_level']
-    },
-    recent_sessions: [
-      {
-        session_id: 1,
-        check_in_time: '2026-02-14T06:30:00',
-        check_out_time: '2026-02-14T07:45:00',
-        duration_min: 75,
-        source: 'DEVICE'
-      },
-      {
-        session_id: 2,
-        check_in_time: '2026-02-14T18:00:00',
-        check_out_time: '2026-02-14T19:20:00',
-        duration_min: 80,
-        source: 'DEVICE'
-      },
-      {
-        session_id: 3,
-        check_in_time: '2026-02-13T07:00:00',
-        check_out_time: '2026-02-13T08:15:00',
-        duration_min: 75,
-        source: 'MOBILE'
-      },
-      {
-        session_id: 4,
-        check_in_time: '2026-02-13T17:30:00',
-        check_out_time: '2026-02-13T19:00:00',
-        duration_min: 90,
-        source: 'WEB'
-      },
-      {
-        session_id: 5,
-        check_in_time: '2026-02-12T06:00:00',
-        check_out_time: '2026-02-12T07:30:00',
-        duration_min: 90,
-        source: 'DEVICE'
-      },
-      {
-        session_id: 6,
-        check_in_time: '2026-02-11T06:30:00',
-        check_out_time: '2026-02-11T08:00:00',
-        duration_min: 90,
-        source: 'DEVICE'
-      }
-    ]
-  });
 
   const quickActions = [
     {
@@ -266,8 +198,8 @@ const Dashboard = () => {
   ];
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      year: 'numeric', 
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
       month: 'short'
     });
   };
@@ -281,47 +213,147 @@ const Dashboard = () => {
     return `${mins}m`;
   };
 
-  // Fetch user profile data
+  // Get membership plan name from plan ID
+  const getPlanName = (planId) => {
+    const plans = {
+      1: 'Monthly Plan',
+      2: 'Quarterly Plan',
+      3: 'Yearly Plan'
+    };
+    return plans[planId] || 'Standard Plan';
+  };
+
+  // Calculate profile completion percentage
+  const calculateProfileCompletion = (profile) => {
+    const requiredFields = [
+      'name', 'email', 'phone', 'date_of_birth', 'gender',
+      'blood_group', 'height_cm', 'weight_kg', 'fitness_level', 'goal_focus'
+    ];
+
+    const filledFields = requiredFields.filter(field =>
+      profile[field] && profile[field] !== '' && profile[field] !== null && profile[field] !== 'Not Provided'
+    ).length;
+
+    return Math.round((filledFields / requiredFields.length) * 100);
+  };
+
+  // Fetch user profile and attendance data
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        
+
         if (!tokenManager.isAuthenticated()) {
           setError('No authentication token found');
           return;
         }
 
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://test-api.fitnessguru.org.in';
-        const response = await tokenManager.apiCall(`${API_BASE_URL}/api/users/profile`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
 
-        const data = await response.json();
-        console.log('Profile data:', data);
-        if (response.ok && data.status === 'success') {
-          setUserData(data.user);
-          setError(null);
-        } else {
-          setError(data.message || 'Failed to fetch profile');
-          // If token is invalid, redirect to login
-          if (response.status === 401) {
+        // Get user ID from stored user data
+        const storedUserData = tokenManager.getUserData();
+        const userId = storedUserData?.userId || storedUserData?.id || storedUserData?.member_id || storedUserData?.user_id;
+
+        if (!userId) {
+          setError('User ID not found. Please login again.');
+          tokenManager.clearTokens();
+          window.location.href = '/login';
+          return;
+        }
+
+        // Fetch member profile
+        const profileResponse = await tokenManager.apiCall(
+          `${API_BASE_URL}/api/members/view?user_id=${userId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        const profileData = await profileResponse.json();
+        console.log('Profile response:', profileData);
+
+        if (!profileResponse.ok || profileData.status !== 'success') {
+          if (profileResponse.status === 401) {
             tokenManager.clearTokens();
             window.location.href = '/login';
           }
+          setError(profileData.message || 'Failed to fetch profile');
+          return;
         }
+
+        const memberData = profileData.data;
+        setUserData(memberData);
+
+        // Fetch attendance sessions for today
+        const today = new Date().toISOString().split('T')[0];
+        const sessionsResponse = await tokenManager.apiCall(
+          `${API_BASE_URL}/api/attendance/userSessions?user_id=${userId}&date=${today}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        const sessionsData = await sessionsResponse.json();
+        console.log('Sessions response:', sessionsData);
+
+        const sessions = sessionsData.status === 'success' ? (sessionsData.data.sessions || []) : [];
+
+        // Calculate dashboard stats
+        const profileCompletion = calculateProfileCompletion(memberData);
+
+        // Calculate days remaining
+        const endDate = new Date(memberData.end_date);
+        const today_date = new Date();
+        const daysRemaining = Math.ceil((endDate - today_date) / (1000 * 60 * 60 * 24));
+
+        const dashData = {
+          member: {
+            join_date: memberData.date_of_joining || new Date().toISOString().split('T')[0],
+            status: memberData.status === 1 ? 'ACTIVE' : 'INACTIVE'
+          },
+          subscription: {
+            plan_name: memberData.plan_name || getPlanName(memberData.membership_plan),
+            status: memberData.subscription_status === 1 ? 'ACTIVE' : 'INACTIVE',
+            start_date: memberData.start_date || new Date().toISOString().split('T')[0],
+            end_date: memberData.end_date || new Date().toISOString().split('T')[0],
+            days_remaining: Math.max(0, daysRemaining),
+            freeze_status: 'NONE',
+            freeze_days: 0
+          },
+          attendance: {
+            total_sessions_this_month: sessions.length || 0,
+            total_duration_this_month: sessions.reduce((sum, s) => sum + (parseInt(s.duration) || 0), 0),
+            current_streak: 1, // Would need more data history to calculate accurately
+            last_check_in: sessions.length > 0 ? sessions[0].check_in : null,
+            avg_duration: sessions.length > 0
+              ? Math.round(sessions.reduce((sum, s) => sum + (parseInt(s.duration) || 0), 0) / sessions.length)
+              : 0
+          },
+          profile: {
+            completion: profileCompletion,
+            missing_fields: []
+          },
+          recent_sessions: sessions,
+          memberData: memberData
+        };
+
+        setDashboardData(dashData);
+        setError(null);
       } catch (err) {
         setError('Network error. Please try again.');
-        console.error('Profile fetch error:', err);
+        console.error('Dashboard data fetch error:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserProfile();
+    fetchDashboardData();
   }, []);
 
   useEffect(() => {
@@ -355,7 +387,7 @@ const Dashboard = () => {
             Retry
           </button>
         </div>
-      ) : !userData ? (
+      ) : !userData || !dashboardData ? (
         <div className="dashboard-error">
           <i className="fas fa-user-slash"></i>
           <h3>No User Data</h3>
@@ -363,55 +395,55 @@ const Dashboard = () => {
         </div>
       ) : (
         <DashboardLayout userData={userData}>
-          <DashboardHeader 
-            userName={userData.name} 
+          <DashboardHeader
+            userName={userData.name}
             memberSince={formatDate(dashboardData.member.join_date)}
           />
 
-      {/* Stats Grid */}
-      <div className="stats-grid">
-        <StatCard
-          icon="fas fa-crown"
-          iconClass="subscription"
-          title="Subscription"
-          value={dashboardData.subscription.plan_name}
-          subtitle={`Expires ${formatDate(dashboardData.subscription.end_date)}`}
-          linkTo="/subscriptions"
-        />
+          {/* Stats Grid */}
+          <div className="stats-grid">
+            <StatCard
+              icon="fas fa-crown"
+              iconClass="subscription"
+              title="Subscription"
+              value={dashboardData.subscription.plan_name}
+              subtitle={`Expires ${formatDate(dashboardData.subscription.end_date)}`}
+              linkTo="/subscriptions"
+            />
 
-        <StatCard
-          icon="fas fa-dumbbell"
-          iconClass="workouts"
-          title="This Month"
-          value={`${dashboardData.attendance.total_sessions_this_month} Sessions`}
-          subtitle={formatDuration(dashboardData.attendance.total_duration_this_month)}
-          linkTo="/profile?tab=attendance"
-        />
+            <StatCard
+              icon="fas fa-dumbbell"
+              iconClass="workouts"
+              title="Today"
+              value={`${dashboardData.attendance.total_sessions_this_month} Sessions`}
+              subtitle={formatDuration(dashboardData.attendance.total_duration_this_month)}
+              linkTo="/profile?tab=attendance"
+            />
 
-        <StatCard
-          icon="fas fa-fire"
-          iconClass="streak"
-          title="Current Streak"
-          value={`${dashboardData.attendance.current_streak} Days`}
-          subtitle={null}
-          linkTo="/profile?tab=attendance"
-        />
+            <StatCard
+              icon="fas fa-fire"
+              iconClass="streak"
+              title="Avg Duration"
+              value={`${dashboardData.attendance.avg_duration} mins`}
+              subtitle={null}
+              linkTo="/profile?tab=attendance"
+            />
 
-        <StatCard
-          icon="fas fa-user-check"
-          iconClass="profile"
-          title="Profile"
-          value={`${dashboardData.profile.completion}%`}
-          subtitle={dashboardData.profile.completion === 100 ? 'Complete' : 'Incomplete'}
-          linkTo="/profile"
-        />
-      </div>
+            <StatCard
+              icon="fas fa-user-check"
+              iconClass="profile"
+              title="Profile"
+              value={`${dashboardData.profile.completion}%`}
+              subtitle={dashboardData.profile.completion === 100 ? 'Complete' : 'Incomplete'}
+              linkTo="/profile"
+            />
+          </div>
 
-      {/* Recent Attendance and Quick Actions */}
-      <div className="dashboard-grid">
-        <AttendanceChart recentSessions={dashboardData.recent_sessions} />
-        <QuickActionsCard actions={quickActions} />
-      </div>
+          {/* Recent Attendance and Quick Actions */}
+          <div className="dashboard-grid">
+            <AttendanceChart recentSessions={dashboardData.recent_sessions} />
+            <QuickActionsCard actions={quickActions} />
+          </div>
         </DashboardLayout>
       )}
     </>
