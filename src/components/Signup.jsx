@@ -40,7 +40,7 @@ export default function Signup() {
     address_line2: "",
     country: 1,
     state: 1,
-    district: 1,
+    district: 19,
     city: 1
   });
   const navigate = useNavigate();
@@ -65,13 +65,13 @@ export default function Signup() {
 
       if (data.status === "success" && data.data) {
         setBranches(data.data);
-        console.log("Branches loaded:", data.data.length, "items");
       } else {
         throw new Error("Invalid API response structure");
       }
     } catch (err) {
-      console.error("Error fetching branches:", err.message);
+      console.error("Error fetching branches:", err);
       setBranches([]);
+      setError("Unable to load branches. Please refresh the page.");
     } finally {
       setBranchesLoading(false);
     }
@@ -192,33 +192,27 @@ export default function Signup() {
         gym_id: 1,
         branch_id: parseInt(form.branch),
         status: 1,
-        join_date: new Date().toISOString().split('T')[0], // Current date
+        join_date: new Date().toISOString().split('T')[0],
         membership_plan: 1,
         dob: form.dob,
         gender: form.gender,
         
         // Optional fields with defaults
-        blood_group: form.blood_group || 'O+', // Default blood group
-        height: form.height ? parseFloat(form.height) : 170.0, // Default height in cm
-        weight: form.weight ? parseFloat(form.weight) : 70.0, // Default weight in kg
-        fitness_level: form.fitness_level || 'BEGINNER', // Default fitness level
-        goal_focus: form.goal_focus || 'GENERAL_FITNESS', // Default goal
-        emergency_contact: form.emergency_contact || form.phone, // Default to phone
+        blood_group: form.blood_group || 'O+',
+        height: form.height ? parseFloat(form.height) : 170.0,
+        weight: form.weight ? parseFloat(form.weight) : 70.0,
+        fitness_level: form.fitness_level || 'BEGINNER',
+        goal_focus: form.goal_focus || 'GENERAL_FITNESS',
+        emergency_contact: form.emergency_contact || form.phone,
         
         // Address fields with defaults
         address_line1: form.address_line1 || 'Not Provided',
         address_line2: form.address_line2 || '',
-        country: form.country ? parseInt(form.country) : 1, // Default country ID
-        state: form.state ? parseInt(form.state) : 1, // Default state ID
-        district: form.district ? parseInt(form.district) : 19, // Default district ID
-        city: form.city ? parseInt(form.city) : 1, // Default city ID
+        country: form.country ? parseInt(form.country) : 1,
+        state: form.state ? parseInt(form.state) : 1,
+        district: form.district ? parseInt(form.district) : 19,
+        city: form.city ? parseInt(form.city) : 1,
       };
-
-      // Debug: Log the data being sent
-      console.log("=== SIGNUP DATA BEING SENT ===");
-      console.log("API Endpoint:", `${API_BASE_URL}/api/members/addMember`);
-      console.log("Member Data:", JSON.stringify(memberData, null, 2));
-      console.log("==============================");
 
       const response = await fetch(`${API_BASE_URL}/api/members/addMember`, {
         method: "POST",
@@ -228,13 +222,26 @@ export default function Signup() {
         body: JSON.stringify(memberData)
       });
 
+      // Handle non-OK responses
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        
+        if (response.status === 400) {
+          setError(errorData?.message || "Invalid data provided. Please check your information.");
+          return;
+        } else if (response.status === 409) {
+          setError(errorData?.message || "An account with this email or phone already exists.");
+          return;
+        } else if (response.status === 500) {
+          setError("Server error. Please try again later or contact support.");
+          return;
+        } else {
+          setError(errorData?.message || `Error: ${response.status}. Please try again.`);
+          return;
+        }
+      }
+
       const data = await response.json();
-      
-      // Debug: Log the response
-      console.log("=== API RESPONSE ===");
-      console.log("Status:", response.status);
-      console.log("Response Data:", JSON.stringify(data, null, 2));
-      console.log("====================");
 
       if (data.status === "success") {
         // Store tokens if provided, otherwise navigate to login
@@ -248,11 +255,19 @@ export default function Signup() {
           navigate("/login", { state: { message: "Account created successfully! Please login." } });
         }
       } else {
+        // Handle error response with success status
         setError(data.message || "Registration failed. Please try again.");
       }
     } catch (err) {
+      // Network errors, JSON parsing errors, etc.
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        setError("Unable to connect to the server. Please check your internet connection.");
+      } else if (err.name === 'SyntaxError') {
+        setError("Invalid response from server. Please try again.");
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
       console.error("Signup error:", err);
-      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
