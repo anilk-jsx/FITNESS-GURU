@@ -19,79 +19,23 @@ const Profile = () => {
     email: '',
     phone: '',
     memberId: '',
-    dob: '12-12-2012',
-    gender: 'MALE',
+    dob: '',
+    gender: 'Male',
     bloodGroup: 'O+',
-    height: 175.5,
-    weight: 72.5,
-    fitnessLevel: 'INTERMEDIATE',
-    goalFocus: 'MUSCLE_GAIN',
-    emergencyContact: '1929283746',
-    address: 'bhubaneswar, odisha',
+    height: 170,
+    weight: 70,
+    fitnessLevel: 'BEGINNER',
+    goalFocus: 'GENERAL_FITNESS',
+    emergencyContact: '',
+    address: '',
+    city: '',
+    state: '',
     profilePhoto: null,
     biometricEnrolled: false
   });
 
-  // Physical information history
-  const physicalHistory = [
-    { date: '2026-02-01', weight: 72.5, height: 175.5, bmi: 23.5 },
-    { date: '2026-01-01', weight: 73.8, height: 175.5, bmi: 23.9 },
-    { date: '2025-12-01', weight: 75.2, height: 175.5, bmi: 24.4 },
-    { date: '2025-11-01', weight: 76.5, height: 175.5, bmi: 24.8 }
-  ];
-
-  // Attendance data from database (attendance_logs + attendance_sessions)
-  const attendanceData = [
-    {
-      attendance_id: 1,
-      attendance_date: '2026-02-14',
-      total_sessions: 2,
-      total_duration_min: 155,
-      status: 'PRESENT',
-      sessions: [
-        { session_id: 1, check_in_time: '2026-02-14T06:30:00', check_out_time: '2026-02-14T07:45:00', duration_min: 75, source: 'DEVICE' },
-        { session_id: 2, check_in_time: '2026-02-14T18:00:00', check_out_time: '2026-02-14T19:20:00', duration_min: 80, source: 'DEVICE' }
-      ]
-    },
-    {
-      attendance_id: 2,
-      attendance_date: '2026-02-13',
-      total_sessions: 1,
-      total_duration_min: 75,
-      status: 'PRESENT',
-      sessions: [
-        { session_id: 3, check_in_time: '2026-02-13T07:00:00', check_out_time: '2026-02-13T08:15:00', duration_min: 75, source: 'MOBILE' }
-      ]
-    },
-    {
-      attendance_id: 3,
-      attendance_date: '2026-02-12',
-      total_sessions: 1,
-      total_duration_min: 90,
-      status: 'PRESENT',
-      sessions: [
-        { session_id: 4, check_in_time: '2026-02-12T06:00:00', check_out_time: '2026-02-12T07:30:00', duration_min: 90, source: 'DEVICE' }
-      ]
-    },
-    {
-      attendance_id: 4,
-      attendance_date: '2026-02-11',
-      total_sessions: 1,
-      total_duration_min: 90,
-      status: 'PRESENT',
-      sessions: [
-        { session_id: 5, check_in_time: '2026-02-11T06:30:00', check_out_time: '2026-02-11T08:00:00', duration_min: 90, source: 'DEVICE' }
-      ]
-    },
-    {
-      attendance_id: 5,
-      attendance_date: '2026-02-10',
-      total_sessions: 0,
-      total_duration_min: 0,
-      status: 'ABSENT',
-      sessions: []
-    }
-  ];
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [physicalHistory] = useState([]);
 
   const fitnessLevels = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
   const goalOptions = ['WEIGHT_LOSS', 'MUSCLE_GAIN', 'STRENGTH', 'ENDURANCE', 'GENERAL'];
@@ -103,7 +47,7 @@ const Profile = () => {
     const fetchUserProfile = async () => {
       try {
         setLoading(true);
-        
+
         if (!tokenManager.isAuthenticated()) {
           setError('No authentication token found');
           window.location.href = '/login';
@@ -111,7 +55,20 @@ const Profile = () => {
         }
 
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://test-api.fitnessguru.org.in';
-        const response = await tokenManager.apiCall(`${API_BASE_URL}/api/users/profile`, {
+
+        // Get user ID from stored user data
+        const storedUserData = tokenManager.getUserData();
+        const userId = storedUserData?.userId || storedUserData?.id || storedUserData?.member_id || storedUserData?.user_id;
+
+        if (!userId) {
+          setError('User ID not found. Please login again.');
+          tokenManager.clearTokens();
+          window.location.href = '/login';
+          return;
+        }
+
+        // Fetch member profile
+        const response = await tokenManager.apiCall(`${API_BASE_URL}/api/members/view?user_id=${userId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -119,21 +76,32 @@ const Profile = () => {
         });
 
         const data = await response.json();
+        console.log('Profile data:', data);
 
         if (response.ok && data.status === 'success') {
-          setUserData(data.user);
-          
+          const memberData = data.data;
+          setUserData(memberData);
+
           // Update profile data with fetched user data
           setProfileData(prev => ({
             ...prev,
-            name: data.user.name || '',
-            email: data.user.email || '',
-            phone: data.user.phone || '',
-            memberId: `FG-${data.user.user_id}` || '',
-            // Other fields will be populated when backend provides them
-            // For now, keeping default values from state
+            name: memberData.name || '',
+            email: memberData.email || '',
+            phone: memberData.phone || '',
+            memberId: `FG-${memberData.user_id}` || '',
+            dob: memberData.date_of_birth || '',
+            gender: memberData.gender || 'Male',
+            bloodGroup: memberData.blood_group || 'O+',
+            height: parseFloat(memberData.height_cm) || 170,
+            weight: parseFloat(memberData.weight_kg) || 70,
+            fitnessLevel: memberData.fitness_level || 'BEGINNER',
+            goalFocus: memberData.goal_focus || 'GENERAL_FITNESS',
+            emergencyContact: memberData.emergency_contact || '',
+            address: memberData.address_line1 || '',
+            city: memberData.city_name || '',
+            state: memberData.state_name || ''
           }));
-          
+
           setError(null);
         } else {
           setError(data.message || 'Failed to fetch profile');
@@ -155,7 +123,7 @@ const Profile = () => {
 
   useEffect(() => {
     filterAttendanceByView();
-  }, [attendanceView, selectedDate]);
+  }, [attendanceView, selectedDate, attendanceData]);
 
   const filterAttendanceByView = () => {
     const selected = new Date(selectedDate);
@@ -168,7 +136,7 @@ const Profile = () => {
       weekStart.setDate(selected.getDate() - selected.getDay());
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
-      
+
       filtered = attendanceData.filter(log => {
         const logDate = new Date(log.attendance_date);
         return logDate >= weekStart && logDate <= weekEnd;
@@ -182,6 +150,71 @@ const Profile = () => {
 
     setFilteredAttendance(filtered);
   };
+
+  // Fetch attendance data
+  useEffect(() => {
+    const fetchAttendanceData = async () => {
+      try {
+        if (!tokenManager.isAuthenticated()) {
+          return;
+        }
+
+        const storedUserData = tokenManager.getUserData();
+        const userId = storedUserData?.userId || storedUserData?.id || storedUserData?.member_id || storedUserData?.user_id;
+
+        if (!userId) {
+          return;
+        }
+
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://test-api.fitnessguru.org.in';
+
+        // Fetch attendance for the selected date
+        const sessionsResponse = await tokenManager.apiCall(
+          `${API_BASE_URL}/api/attendance/userSessions?user_id=${userId}&date=${selectedDate}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        const sessionsData = await sessionsResponse.json();
+        console.log('Attendance data for', selectedDate, ':', sessionsData);
+
+        if (sessionsResponse.ok && sessionsData.status === 'success') {
+          const sessions = sessionsData.data.sessions || [];
+
+          // Transform API response to internal format
+          let transformedData = [];
+
+          if (sessions.length > 0) {
+            // Convert to internal format - there could be multiple sessions on same date
+            transformedData = [{
+              attendance_id: 1,
+              attendance_date: selectedDate,
+              total_sessions: sessions.length,
+              total_duration_min: sessions.reduce((sum, s) => sum + (parseInt(s.duration) || 0), 0),
+              status: sessions.length > 0 ? 'PRESENT' : 'ABSENT',
+              sessions: sessions.map((s, i) => ({
+                session_id: s.session_no || i + 1,
+                check_in_time: s.check_in || '', // API format: "09:00 pm"
+                check_out_time: s.check_out || null, // API format or null
+                duration_min: parseInt(s.duration) || 0,
+                source: s.device || 'DEVICE'
+              }))
+            }];
+          }
+
+          setAttendanceData(transformedData);
+        }
+      } catch (err) {
+        console.error('Attendance fetch error:', err);
+      }
+    };
+
+    fetchAttendanceData();
+  }, [selectedDate]);
 
   const handlePhysicalUpdate = (field, value) => {
     setProfileData(prev => ({
@@ -391,7 +424,16 @@ const Profile = () => {
                     </div>
                     <div className="info-item">
                       <label>Date of Birth</label>
-                      <span className="info-value">{new Date(profileData.dob).toLocaleDateString()}</span>
+                      <span className="info-value">
+                        {profileData.dob
+                          ? new Date(profileData.dob).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })
+                          : 'Not Provided'
+                        }
+                      </span>
                     </div>
                     <div className="info-item">
                       <label>Gender</label>
@@ -410,7 +452,12 @@ const Profile = () => {
                   <div className="info-grid">
                     <div className="info-item full-width">
                       <label>Address</label>
-                      <span className="info-value">{profileData.address}</span>
+                      <span className="info-value">
+                        {profileData.address || profileData.city || profileData.state
+                          ? `${profileData.address}${profileData.city ? ', ' + profileData.city : ''}${profileData.state ? ', ' + profileData.state : ''}`
+                          : 'Not Provided'
+                        }
+                      </span>
                     </div>
                     <div className="info-item">
                       <label>Emergency Contact</label>
@@ -535,29 +582,35 @@ const Profile = () => {
                   <div className="physical-history">
                     <h4>Progress History</h4>
                     <div className="history-list">
-                      {physicalHistory.map((record, index) => (
-                        <div key={index} className="history-item">
-                          <div className="history-date">
-                            {new Date(record.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                          </div>
-                          <div className="history-stats">
-                            <div className="history-stat">
-                              <span className="history-label">Weight</span>
-                              <span className="history-value">{record.weight} kg</span>
-                              {index < physicalHistory.length - 1 && (
-                                <span className={`history-change ${record.weight < physicalHistory[index + 1].weight ? 'down' : 'up'}`}>
-                                  {record.weight < physicalHistory[index + 1].weight ? '-' : '+'}
-                                  {Math.abs(record.weight - physicalHistory[index + 1].weight).toFixed(1)} kg
-                                </span>
-                              )}
+                      {physicalHistory.length > 0 ? (
+                        physicalHistory.map((record, index) => (
+                          <div key={index} className="history-item">
+                            <div className="history-date">
+                              {new Date(record.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                             </div>
-                            <div className="history-stat">
-                              <span className="history-label">BMI</span>
-                              <span className="history-value">{record.bmi}</span>
+                            <div className="history-stats">
+                              <div className="history-stat">
+                                <span className="history-label">Weight</span>
+                                <span className="history-value">{record.weight} kg</span>
+                                {index < physicalHistory.length - 1 && (
+                                  <span className={`history-change ${record.weight < physicalHistory[index + 1].weight ? 'down' : 'up'}`}>
+                                    {record.weight < physicalHistory[index + 1].weight ? '-' : '+'}
+                                    {Math.abs(record.weight - physicalHistory[index + 1].weight).toFixed(1)} kg
+                                  </span>
+                                )}
+                              </div>
+                              <div className="history-stat">
+                                <span className="history-label">BMI</span>
+                                <span className="history-value">{record.bmi}</span>
+                              </div>
                             </div>
                           </div>
+                        ))
+                      ) : (
+                        <div style={{ padding: '1.5rem', textAlign: 'center', color: '#999' }}>
+                          <p>No progress history available yet</p>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
                 </div>
@@ -705,20 +758,28 @@ const Profile = () => {
                               <div className="session-time-info">
                                 <div className="session-time">
                                   <i className="fas fa-sign-in-alt"></i>
-                                  {new Date(session.check_in_time).toLocaleTimeString('en-US', { 
-                                    hour: '2-digit', 
-                                    minute: '2-digit'
-                                  })}
+                                  {session.check_in_time && !session.check_in_time.includes('T')
+                                    ? session.check_in_time
+                                    : session.check_in_time
+                                      ? new Date(session.check_in_time).toLocaleTimeString('en-US', {
+                                          hour: '2-digit',
+                                          minute: '2-digit'
+                                        })
+                                      : 'N/A'
+                                  }
                                 </div>
                                 {session.check_out_time && (
                                   <>
                                     <span className="time-separator">→</span>
                                     <div className="session-time">
                                       <i className="fas fa-sign-out-alt"></i>
-                                      {new Date(session.check_out_time).toLocaleTimeString('en-US', { 
-                                        hour: '2-digit', 
-                                        minute: '2-digit'
-                                      })}
+                                      {session.check_out_time && !session.check_out_time.includes('T')
+                                        ? session.check_out_time
+                                        : new Date(session.check_out_time).toLocaleTimeString('en-US', {
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })
+                                      }
                                     </div>
                                   </>
                                 )}
