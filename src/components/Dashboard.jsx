@@ -266,7 +266,6 @@ const Dashboard = () => {
         );
 
         const profileData = await profileResponse.json();
-        console.log('Profile response:', profileData);
 
         if (!profileResponse.ok || profileData.status !== 'success') {
           if (profileResponse.status === 401) {

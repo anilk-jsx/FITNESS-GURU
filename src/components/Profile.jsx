@@ -76,7 +76,6 @@ const Profile = () => {
         });
 
         const data = await response.json();
-        console.log('Profile data:', data);
 
         if (response.ok && data.status === 'success') {
           const memberData = data.data;
@@ -180,7 +179,6 @@ const Profile = () => {
         );
 
         const sessionsData = await sessionsResponse.json();
-        console.log('Attendance data for', selectedDate, ':', sessionsData);
 
         if (sessionsResponse.ok && sessionsData.status === 'success') {
           const sessions = sessionsData.data.sessions || [];
@@ -227,12 +225,6 @@ const Profile = () => {
     // Here you would send the data to your backend API
     setIsEditingPhysical(false);
     alert('Physical information updated successfully! 🎉');
-    console.log('Physical data to save:', {
-      weight: profileData.weight,
-      height: profileData.height,
-      fitnessLevel: profileData.fitnessLevel,
-      goalFocus: profileData.goalFocus
-    });
   };
 
   const getAttendanceStats = () => {
