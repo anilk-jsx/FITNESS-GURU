@@ -10,6 +10,11 @@ const StaffManagement = () => {
     const [isLoadingTrainers, setIsLoadingTrainers] = useState(true);
     const [trainersError, setTrainersError] = useState(null);
     const [gymBranches, setGymBranches] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalTrainers, setTotalTrainers] = useState(0);
+    const [itemsPerPage] = useState(10);
+    const [currentStaffPage, setCurrentStaffPage] = useState(1);
 
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
 
@@ -77,7 +82,7 @@ const StaffManagement = () => {
     }, [API_BASE_URL]);
 
     // Fetch trainers from API
-    const fetchTrainers = useCallback(async (branches = []) => {
+    const fetchTrainers = useCallback(async (branches = [], page = 1) => {
         try {
             setIsLoadingTrainers(true);
             setTrainersError(null);
@@ -89,7 +94,7 @@ const StaffManagement = () => {
                 return;
             }
 
-            const url = `${API_BASE_URL}/api/trainer/getTrainers?page=1&limit=10&gym_id=1&status=Active`;
+            const url = `${API_BASE_URL}/api/trainer/getTrainers?page=${page}&limit=${10}&gym_id=1&status=Active`;
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -133,6 +138,14 @@ const StaffManagement = () => {
                     };
                 });
                 setTrainers(transformedTrainers);
+
+                // Handle pagination info from API response
+                if (data.pagination) {
+                    setCurrentPage(data.pagination.page || 1);
+                    setTotalPages(Math.ceil(data.pagination.total / 10) || 1);
+                    setTotalTrainers(data.pagination.total || 0);
+                }
+
                 console.log('Trainers fetched and transformed:', transformedTrainers);
             } else {
                 setTrainersError('Invalid API response format');
@@ -149,11 +162,31 @@ const StaffManagement = () => {
     useEffect(() => {
         const loadData = async () => {
             const branches = await fetchGymBranches();
-            await fetchTrainers(branches);
+            await fetchTrainers(branches, currentPage);
         };
         loadData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Reset pagination when filters/search changes
+    useEffect(() => {
+        setCurrentPage(1);
+        setCurrentStaffPage(1);
+    }, [searchQuery, filterBranch, filterStatus]);
+
+    // Reset staff page when switching tabs
+    useEffect(() => {
+        setCurrentStaffPage(1);
+    }, [activeTab]);
+
+    // Handle page change
+    const handlePageChange = async (page) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+            const branches = gymBranches.length > 0 ? gymBranches : await fetchGymBranches();
+            await fetchTrainers(branches, page);
+        }
+    };
 
     // Trainers state - will be populated from API
     const [trainers, setTrainers] = useState([]);
@@ -325,12 +358,12 @@ const StaffManagement = () => {
 
     // Filter data
     const filteredTrainers = trainers.filter(trainer => {
-        const matchesSearch = 
+        const matchesSearch =
             trainer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             trainer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
             trainer.phone.includes(searchQuery) ||
             trainer.specialization.toLowerCase().includes(searchQuery.toLowerCase());
-        
+
         const matchesBranch = filterBranch === 'ALL' || trainer.branch_name === filterBranch;
         const matchesStatus = filterStatus === 'ALL' || trainer.status === filterStatus;
 
@@ -338,18 +371,30 @@ const StaffManagement = () => {
     });
 
     const filteredStaff = staff.filter(member => {
-        const matchesSearch = 
+        const matchesSearch =
             member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
             member.phone.includes(searchQuery) ||
             member.designation.toLowerCase().includes(searchQuery.toLowerCase()) ||
             member.department.toLowerCase().includes(searchQuery.toLowerCase());
-        
+
         const matchesBranch = filterBranch === 'ALL' || member.branch_name === filterBranch;
         const matchesStatus = filterStatus === 'ALL' || member.status === filterStatus;
 
         return matchesSearch && matchesBranch && matchesStatus;
     });
+
+    // Calculate pagination for staff (client-side)
+    const staffTotalPages = Math.ceil(filteredStaff.length / itemsPerPage);
+    const paginatedStaff = filteredStaff.slice(
+        (currentStaffPage - 1) * itemsPerPage,
+        currentStaffPage * itemsPerPage
+    );
+
+    // For trainers, we apply pagination to the already-paginated API data before filtering
+    // If user searches/filters, we'll need to fetch all trainers first (or paginate client-side)
+    // For now, we apply filters to the current page and show pagination info
+    const paginatedTrainers = filteredTrainers;
 
     // Get statistics
     const getStats = () => {
@@ -746,7 +791,7 @@ const StaffManagement = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {(activeTab === 'trainers' ? filteredTrainers : filteredStaff).length === 0 ? (
+                            {(activeTab === 'trainers' ? paginatedTrainers : paginatedStaff).length === 0 ? (
                                 <tr>
                                     <td colSpan={activeTab === 'trainers' ? '10' : '10'} className="staff-no-data">
                                         <i className="fas fa-inbox"></i>
@@ -754,7 +799,7 @@ const StaffManagement = () => {
                                     </td>
                                 </tr>
                             ) : (
-                                (activeTab === 'trainers' ? filteredTrainers : filteredStaff).map((item) => (
+                                (activeTab === 'trainers' ? paginatedTrainers : paginatedStaff).map((item) => (
                                     <tr key={activeTab === 'trainers' ? item.trainer_id : item.staff_id}>
                                         <td>#{activeTab === 'trainers' ? item.trainer_id : item.staff_id}</td>
                                         <td>
@@ -844,6 +889,55 @@ const StaffManagement = () => {
                     </table>
                 )}
             </div>
+
+            {/* Pagination Controls */}
+            {!isLoadingTrainers && !trainersError && (
+                <div className="staff-pagination">
+                    <div className="staff-pagination-info">
+                        {activeTab === 'trainers'
+                            ? `Page ${currentPage} of ${totalPages} • ${totalTrainers} Trainers`
+                            : `Page ${currentStaffPage} of ${staffTotalPages} • ${filteredStaff.length} Members`}
+                    </div>
+                    <div className="staff-pagination-controls">
+                        <button
+                            className="staff-pagination-btn"
+                            onClick={() => activeTab === 'trainers' ? handlePageChange(currentPage - 1) : setCurrentStaffPage(currentStaffPage - 1)}
+                            disabled={activeTab === 'trainers' ? currentPage === 1 : currentStaffPage === 1}
+                            title="Previous Page"
+                        >
+                            <i className="fas fa-chevron-left"></i>
+                            <span>Prev</span>
+                        </button>
+
+                        <div className="staff-pagination-numbers">
+                            {Array.from({
+                                length: activeTab === 'trainers' ? totalPages : staffTotalPages
+                            }, (_, i) => i + 1).map(page => (
+                                <button
+                                    key={page}
+                                    className={`staff-pagination-number ${
+                                        page === (activeTab === 'trainers' ? currentPage : currentStaffPage) ? 'active' : ''
+                                    }`}
+                                    onClick={() => activeTab === 'trainers' ? handlePageChange(page) : setCurrentStaffPage(page)}
+                                    title={`Go to page ${page}`}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                        </div>
+
+                        <button
+                            className="staff-pagination-btn"
+                            onClick={() => activeTab === 'trainers' ? handlePageChange(currentPage + 1) : setCurrentStaffPage(currentStaffPage + 1)}
+                            disabled={activeTab === 'trainers' ? currentPage === totalPages : currentStaffPage === staffTotalPages}
+                            title="Next Page"
+                        >
+                            <span>Next</span>
+                            <i className="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Details Modal */}
             {showDetailsModal && selectedItem && (
