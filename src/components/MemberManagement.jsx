@@ -109,7 +109,7 @@ const MemberManagement = () => {
   const API_BASE_URL =
     import.meta.env.VITE_API_URL ||
     import.meta.env.VITE_API_BASE_URL ||
-    "https://test-api.fitnessguru.org.in";
+    "https://api.fitnessguru.org.in";
 
   // Build full paths - check if they match your server structure
   const buildApiUrl = (endpoint) => {

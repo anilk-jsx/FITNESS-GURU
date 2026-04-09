@@ -1,123 +1,162 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './StaffManagement.css';
+import { tokenManager } from '../utils/tokenManager';
 
 const StaffManagement = () => {
     const [activeTab, setActiveTab] = useState('trainers'); // trainers, staff
     const [searchQuery, setSearchQuery] = useState('');
     const [filterBranch, setFilterBranch] = useState('ALL');
     const [filterStatus, setFilterStatus] = useState('ALL');
+    const [isLoadingTrainers, setIsLoadingTrainers] = useState(true);
+    const [trainersError, setTrainersError] = useState(null);
+    const [gymBranches, setGymBranches] = useState([]);
 
-    // Trainers state with sample data
-    const [trainers, setTrainers] = useState([
-        {
-            trainer_id: 1,
-            user_id: 2001,
-            name: 'Amit Sharma',
-            email: 'amit.sharma@fitnessguru.com',
-            phone: '9876543220',
-            branch_name: 'Koramangala Branch',
-            specialization: 'Strength Training, Bodybuilding',
-            experience_years: 8.5,
-            certifications: 'ACE Personal Trainer, NASM CPT',
-            bio: 'Experienced trainer specializing in strength training and bodybuilding. Helped 200+ clients achieve their fitness goals.',
-            total_clients: 25,
-            shift_name: 'Morning Shift',
-            availability_status: 'AVAILABLE',
-            profile_photo_url: null,
-            joining_date: '2020-03-15',
-            status: 'ACTIVE'
-        },
-        {
-            trainer_id: 2,
-            user_id: 2002,
-            name: 'Priya Menon',
-            email: 'priya.menon@fitnessguru.com',
-            phone: '9876543221',
-            branch_name: 'Whitefield Branch',
-            specialization: 'Yoga, Pilates, Flexibility Training',
-            experience_years: 6.0,
-            certifications: 'RYT 500, Pilates Mat Certification',
-            bio: 'Certified yoga instructor with expertise in therapeutic yoga and pilates.',
-            total_clients: 30,
-            shift_name: 'Evening Shift',
-            availability_status: 'AVAILABLE',
-            profile_photo_url: null,
-            joining_date: '2021-06-01',
-            status: 'ACTIVE'
-        },
-        {
-            trainer_id: 3,
-            user_id: 2003,
-            name: 'Vikram Singh',
-            email: 'vikram.singh@fitnessguru.com',
-            phone: '9876543222',
-            branch_name: 'Bangalore Main',
-            specialization: 'CrossFit, HIIT, Functional Training',
-            experience_years: 10.0,
-            certifications: 'CrossFit Level 2, NSCA CSCS',
-            bio: 'Elite CrossFit trainer with a decade of experience. Former athlete turned coach.',
-            total_clients: 20,
-            shift_name: 'Morning Shift',
-            availability_status: 'ON_BOOKING',
-            profile_photo_url: null,
-            joining_date: '2019-01-10',
-            status: 'ACTIVE'
-        },
-        {
-            trainer_id: 4,
-            user_id: 2004,
-            name: 'Sneha Reddy',
-            email: 'sneha.reddy@fitnessguru.com',
-            phone: '9876543223',
-            branch_name: 'Koramangala Branch',
-            specialization: 'Weight Loss, Cardio, Nutrition',
-            experience_years: 4.5,
-            certifications: 'ACE Personal Trainer, Precision Nutrition',
-            bio: 'Passionate about helping clients achieve sustainable weight loss through balanced fitness and nutrition.',
-            total_clients: 18,
-            shift_name: 'Evening Shift',
-            availability_status: 'AVAILABLE',
-            profile_photo_url: null,
-            joining_date: '2022-09-01',
-            status: 'ACTIVE'
-        },
-        {
-            trainer_id: 5,
-            user_id: 2005,
-            name: 'Rahul Kapoor',
-            email: 'rahul.kapoor@fitnessguru.com',
-            phone: '9876543224',
-            branch_name: 'Whitefield Branch',
-            specialization: 'Sports Performance, Athletic Training',
-            experience_years: 7.0,
-            certifications: 'NSCA CSCS, USA Weightlifting Level 1',
-            bio: 'Former national-level athlete specializing in sports performance and conditioning.',
-            total_clients: 15,
-            shift_name: 'Morning Shift',
-            availability_status: 'ON_BREAK',
-            profile_photo_url: null,
-            joining_date: '2020-08-15',
-            status: 'ACTIVE'
-        },
-        {
-            trainer_id: 6,
-            user_id: 2006,
-            name: 'Deepa Nair',
-            email: 'deepa.nair@fitnessguru.com',
-            phone: '9876543225',
-            branch_name: 'Bangalore Main',
-            specialization: 'Senior Fitness, Rehabilitation',
-            experience_years: 5.0,
-            certifications: 'ACE Senior Fitness Specialist, Rehabilitation',
-            bio: 'Specializing in senior fitness and post-injury rehabilitation programs.',
-            total_clients: 12,
-            shift_name: 'Morning Shift',
-            availability_status: 'OFF_DUTY',
-            profile_photo_url: null,
-            joining_date: '2021-11-20',
-            status: 'INACTIVE'
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
+
+    // Map shift ID to shift name - Only 2 shifts
+    const getShiftName = (shiftId) => {
+        const shiftMap = {
+            1: 'Morning Shift',
+            2: 'Evening Shift'
+        };
+        return shiftMap[shiftId] || 'NA';
+    };
+
+    // Convert API availability status to component format
+    const getAvailabilityStatus = (apiStatus) => {
+        const availabilityMap = {
+            'Available': 'AVAILABLE',
+            'On Break': 'ON_BREAK',
+            'Off Duty': 'OFF_DUTY',
+            'On Booking': 'ON_BOOKING',
+            'AVAILABLE': 'AVAILABLE',
+            'ON_BREAK': 'ON_BREAK',
+            'OFF_DUTY': 'OFF_DUTY',
+            'ON_BOOKING': 'ON_BOOKING'
+        };
+        return availabilityMap[apiStatus] || 'AVAILABLE';
+    };
+
+    // Convert API status to component format - Only Active and Inactive
+    const getStatus = (apiStatus) => {
+        if (apiStatus === 1 || apiStatus === 'Active' || apiStatus === 'ACTIVE') {
+            return 'ACTIVE';
         }
-    ]);
+        return 'INACTIVE';
+    };
+
+    // Fetch gym branches from API
+    const fetchGymBranches = useCallback(async () => {
+        try {
+            const url = `${API_BASE_URL}/api/gymBranchList?gym_id=1`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (data.status === 'success' && Array.isArray(data.data)) {
+                setGymBranches(data.data);
+                console.log('Gym branches fetched:', data.data);
+                return data.data;
+            } else {
+                console.error('Invalid gym branches response:', data);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error fetching gym branches:', error);
+            return [];
+        }
+    }, [API_BASE_URL]);
+
+    // Fetch trainers from API
+    const fetchTrainers = useCallback(async (branches = []) => {
+        try {
+            setIsLoadingTrainers(true);
+            setTrainersError(null);
+
+            const token = tokenManager.getAccessToken();
+            if (!token) {
+                setTrainersError('No authentication token found');
+                setIsLoadingTrainers(false);
+                return;
+            }
+
+            const url = `${API_BASE_URL}/api/trainer/getTrainers?page=1&limit=10&gym_id=1&status=Active`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (data.status === 'success' && Array.isArray(data.data)) {
+                // Transform trainers with current branch data
+                const transformedTrainers = data.data.map(apiTrainer => {
+                    const branch = branches.find(b => b.branch_id === apiTrainer.branch_id);
+                    const branchName = branch ? branch.branch_name : 'NA';
+
+                    return {
+                        trainer_id: apiTrainer.trainer_id || 'NA',
+                        user_id: apiTrainer.user_id || 'NA',
+                        name: apiTrainer.name || 'NA',
+                        email: apiTrainer.email || 'NA',
+                        phone: apiTrainer.phone || 'NA',
+                        branch_name: branchName,
+                        specialization: apiTrainer.specialization || 'NA',
+                        experience_years: apiTrainer.experience ? parseFloat(apiTrainer.experience) : 0,
+                        certifications: apiTrainer.certifications || 'NA',
+                        bio: apiTrainer.bio || 'NA',
+                        total_clients: 0,
+                        shift_name: getShiftName(apiTrainer.shift_id),
+                        availability_status: getAvailabilityStatus(apiTrainer.availability),
+                        profile_photo_url: apiTrainer.profile_photo || null,
+                        joining_date: apiTrainer.join_date || 'NA',
+                        status: getStatus(apiTrainer.status),
+                        gym_id: apiTrainer.gym_id || 'NA',
+                        branch_id: apiTrainer.branch_id || 'NA',
+                        shift_id: apiTrainer.shift_id || 'NA'
+                    };
+                });
+                setTrainers(transformedTrainers);
+                console.log('Trainers fetched and transformed:', transformedTrainers);
+            } else {
+                setTrainersError('Invalid API response format');
+            }
+        } catch (error) {
+            console.error('Error fetching trainers:', error);
+            setTrainersError(error.message || 'Failed to fetch trainers');
+        } finally {
+            setIsLoadingTrainers(false);
+        }
+    }, [API_BASE_URL]);
+
+    // Fetch gym branches first, then trainers
+    useEffect(() => {
+        const loadData = async () => {
+            const branches = await fetchGymBranches();
+            await fetchTrainers(branches);
+        };
+        loadData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Trainers state - will be populated from API
+    const [trainers, setTrainers] = useState([]);
 
     // Staff state with sample data
     const [staff, setStaff] = useState([
@@ -319,9 +358,9 @@ const StaffManagement = () => {
         const totalClients = trainers.reduce((sum, t) => sum + t.total_clients, 0);
         const availableTrainers = trainers.filter(t => t.availability_status === 'AVAILABLE').length;
         const fullTimeStaff = staff.filter(s => s.salary_type === 'FULL_TIME').length;
-        const onLeave = staff.filter(s => s.status === 'ON_LEAVE').length;
+        const inactiveStaff = staff.filter(s => s.status === 'INACTIVE').length;
 
-        return { activeTrainers, activeStaff, totalClients, availableTrainers, fullTimeStaff, onLeave };
+        return { activeTrainers, activeStaff, totalClients, availableTrainers, fullTimeStaff, inactiveStaff };
     };
 
     const stats = getStats();
@@ -589,10 +628,10 @@ const StaffManagement = () => {
                     </div>
                 </div>
                 <div className="staff-stat-item">
-                    <i className="fas fa-umbrella-beach"></i>
+                    <i className="fas fa-ban"></i>
                     <div>
-                        <span className="staff-stat-label">On Leave</span>
-                        <span className="staff-stat-value">{stats.onLeave}</span>
+                        <span className="staff-stat-label">Inactive Staff</span>
+                        <span className="staff-stat-value">{stats.inactiveStaff}</span>
                     </div>
                 </div>
             </div>
@@ -637,16 +676,16 @@ const StaffManagement = () => {
                 </div>
                 <select value={filterBranch} onChange={(e) => setFilterBranch(e.target.value)} className="staff-filter">
                     <option value="ALL">All Branches</option>
-                    <option value="Bangalore Main">Bangalore Main</option>
-                    <option value="Whitefield Branch">Whitefield Branch</option>
-                    <option value="Koramangala Branch">Koramangala Branch</option>
+                    {gymBranches.map((branch) => (
+                        <option key={branch.branch_id} value={branch.branch_name}>
+                            {branch.branch_name}
+                        </option>
+                    ))}
                 </select>
                 <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="staff-filter">
                     <option value="ALL">All Status</option>
                     <option value="ACTIVE">Active</option>
                     <option value="INACTIVE">Inactive</option>
-                    <option value="SUSPENDED">Suspended</option>
-                    {activeTab === 'staff' && <option value="ON_LEAVE">On Leave</option>}
                 </select>
                 {(filterBranch !== 'ALL' || filterStatus !== 'ALL') && (
                     <button 
@@ -664,128 +703,146 @@ const StaffManagement = () => {
 
             {/* Content Table */}
             <div className="staff-table-container">
-                <table className="staff-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name & Contact</th>
-                            <th>Branch</th>
-                            {activeTab === 'trainers' ? (
-                                <>
-                                    <th>Specialization</th>
-                                    <th>Experience</th>
-                                    <th>Clients</th>
-                                    <th>Availability</th>
-                                </>
-                            ) : (
-                                <>
-                                    <th>Designation</th>
-                                    <th>Department</th>
-                                    <th>Salary Type</th>
-                                    <th>Access Level</th>
-                                </>
-                            )}
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {(activeTab === 'trainers' ? filteredTrainers : filteredStaff).length === 0 ? (
+                {isLoadingTrainers && (
+                    <div className="staff-loading-state">
+                        <i className="fas fa-spinner fa-spin"></i>
+                        <p>Loading trainers...</p>
+                    </div>
+                )}
+                {trainersError && activeTab === 'trainers' && (
+                    <div className="staff-error-state">
+                        <i className="fas fa-exclamation-circle"></i>
+                        <p>{trainersError}</p>
+                        <button className="staff-btn-secondary" onClick={fetchTrainers}>
+                            <i className="fas fa-redo"></i>
+                            Retry
+                        </button>
+                    </div>
+                )}
+                {!isLoadingTrainers && !trainersError && (
+                    <table className="staff-table">
+                        <thead>
                             <tr>
-                                <td colSpan={activeTab === 'trainers' ? '10' : '10'} className="staff-no-data">
-                                    <i className="fas fa-inbox"></i>
-                                    <p>No {activeTab === 'trainers' ? 'trainers' : 'staff members'} found</p>
-                                </td>
+                                <th>ID</th>
+                                <th>Name & Contact</th>
+                                <th>Branch</th>
+                                {activeTab === 'trainers' ? (
+                                    <>
+                                        <th>Specialization</th>
+                                        <th>Experience</th>
+                                        <th>Clients</th>
+                                        <th>Availability</th>
+                                    </>
+                                ) : (
+                                    <>
+                                        <th>Designation</th>
+                                        <th>Department</th>
+                                        <th>Salary Type</th>
+                                        <th>Access Level</th>
+                                    </>
+                                )}
+                                <th>Status</th>
+                                <th>Actions</th>
                             </tr>
-                        ) : (
-                            (activeTab === 'trainers' ? filteredTrainers : filteredStaff).map((item) => (
-                                <tr key={activeTab === 'trainers' ? item.trainer_id : item.staff_id}>
-                                    <td>#{activeTab === 'trainers' ? item.trainer_id : item.staff_id}</td>
-                                    <td>
-                                        <div className="staff-user-info">
-                                            <strong>{item.name}</strong>
-                                            <span>{item.email}</span>
-                                            <span>{item.phone}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span className="staff-branch-tag">{item.branch_name}</span>
-                                        {item.shift_name && (
-                                            <span className="staff-shift-tag">{item.shift_name}</span>
-                                        )}
-                                    </td>
-                                    {activeTab === 'trainers' ? (
-                                        <>
-                                            <td>
-                                                <div className="staff-specialization">
-                                                    {item.specialization.length > 40 
-                                                        ? item.specialization.substring(0, 40) + '...' 
-                                                        : item.specialization}
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className="staff-experience">{item.experience_years} years</span>
-                                            </td>
-                                            <td>
-                                                <span className="staff-client-count">{item.total_clients}</span>
-                                            </td>
-                                            <td>
-                                                <span className={`staff-avail-badge ${getAvailabilityBadgeClass(item.availability_status)}`}>
-                                                    {item.availability_status.replace('_', ' ')}
-                                                </span>
-                                            </td>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <td>{item.designation}</td>
-                                            <td>{item.department}</td>
-                                            <td>
-                                                <span className={`staff-salary-badge ${getSalaryTypeBadgeClass(item.salary_type)}`}>
-                                                    {item.salary_type.replace('_', ' ')}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span className={`staff-access-badge ${getAccessLevelBadgeClass(item.access_level)}`}>
-                                                    {item.access_level}
-                                                </span>
-                                            </td>
-                                        </>
-                                    )}
-                                    <td>
-                                        <span className={`staff-status-badge ${getStatusBadgeClass(item.status)}`}>
-                                            {item.status.replace('_', ' ')}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div className="staff-action-buttons">
-                                            <button
-                                                className="staff-action-btn view"
-                                                onClick={() => handleViewDetails(item)}
-                                                title="View Details"
-                                            >
-                                                <i className="fas fa-eye"></i>
-                                            </button>
-                                            <button
-                                                className="staff-action-btn edit"
-                                                onClick={() => handleEdit(item)}
-                                                title="Edit"
-                                            >
-                                                <i className="fas fa-edit"></i>
-                                            </button>
-                                            <button
-                                                className="staff-action-btn delete"
-                                                onClick={() => handleDelete(item)}
-                                                title="Delete"
-                                            >
-                                                <i className="fas fa-trash"></i>
-                                            </button>
-                                        </div>
+                        </thead>
+                        <tbody>
+                            {(activeTab === 'trainers' ? filteredTrainers : filteredStaff).length === 0 ? (
+                                <tr>
+                                    <td colSpan={activeTab === 'trainers' ? '10' : '10'} className="staff-no-data">
+                                        <i className="fas fa-inbox"></i>
+                                        <p>No {activeTab === 'trainers' ? 'trainers' : 'staff members'} found</p>
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : (
+                                (activeTab === 'trainers' ? filteredTrainers : filteredStaff).map((item) => (
+                                    <tr key={activeTab === 'trainers' ? item.trainer_id : item.staff_id}>
+                                        <td>#{activeTab === 'trainers' ? item.trainer_id : item.staff_id}</td>
+                                        <td>
+                                            <div className="staff-user-info">
+                                                <strong>{item.name}</strong>
+                                                <span>{item.email}</span>
+                                                <span>{item.phone}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span className="staff-branch-tag">{item.branch_name}</span>
+                                            {item.shift_name && (
+                                                <span className="staff-shift-tag">{item.shift_name}</span>
+                                            )}
+                                        </td>
+                                        {activeTab === 'trainers' ? (
+                                            <>
+                                                <td>
+                                                    <div className="staff-specialization">
+                                                        {item.specialization.length > 40
+                                                            ? item.specialization.substring(0, 40) + '...'
+                                                            : item.specialization}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className="staff-experience">{item.experience_years} years</span>
+                                                </td>
+                                                <td>
+                                                    <span className="staff-client-count">{item.total_clients}</span>
+                                                </td>
+                                                <td>
+                                                    <span className={`staff-avail-badge ${getAvailabilityBadgeClass(item.availability_status)}`}>
+                                                        {item.availability_status.replace('_', ' ')}
+                                                    </span>
+                                                </td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <td>{item.designation}</td>
+                                                <td>{item.department}</td>
+                                                <td>
+                                                    <span className={`staff-salary-badge ${getSalaryTypeBadgeClass(item.salary_type)}`}>
+                                                        {item.salary_type.replace('_', ' ')}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span className={`staff-access-badge ${getAccessLevelBadgeClass(item.access_level)}`}>
+                                                        {item.access_level}
+                                                    </span>
+                                                </td>
+                                            </>
+                                        )}
+                                        <td>
+                                            <span className={`staff-status-badge ${getStatusBadgeClass(item.status)}`}>
+                                                {item.status.replace('_', ' ')}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div className="staff-action-buttons">
+                                                <button
+                                                    className="staff-action-btn view"
+                                                    onClick={() => handleViewDetails(item)}
+                                                    title="View Details"
+                                                >
+                                                    <i className="fas fa-eye"></i>
+                                                </button>
+                                                <button
+                                                    className="staff-action-btn edit"
+                                                    onClick={() => handleEdit(item)}
+                                                    title="Edit"
+                                                >
+                                                    <i className="fas fa-edit"></i>
+                                                </button>
+                                                <button
+                                                    className="staff-action-btn delete"
+                                                    onClick={() => handleDelete(item)}
+                                                    title="Delete"
+                                                >
+                                                    <i className="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                )}
             </div>
 
             {/* Details Modal */}
@@ -1046,9 +1103,12 @@ const StaffManagement = () => {
                                                 : setStaffFormData({ ...staffFormData, branch_id: parseInt(e.target.value) })}
                                             required
                                         >
-                                            <option value="1">1 - Bangalore Main</option>
-                                            <option value="2">2 - Whitefield Branch</option>
-                                            <option value="3">3 - Koramangala Branch</option>
+                                            <option value="">Select a Branch</option>
+                                            {gymBranches.map((branch) => (
+                                                <option key={branch.branch_id} value={branch.branch_id}>
+                                                    {branch.branch_id} - {branch.branch_name}
+                                                </option>
+                                            ))}
                                         </select>
                                     </div>
                                     <div className="staff-form-group">
@@ -1062,7 +1122,6 @@ const StaffManagement = () => {
                                         >
                                             <option value="1">1 - Morning Shift</option>
                                             <option value="2">2 - Evening Shift</option>
-                                            <option value="3">3 - Full Day</option>
                                         </select>
                                     </div>
                                     <div className="staff-form-group">
@@ -1234,8 +1293,6 @@ const StaffManagement = () => {
                                         >
                                             <option value="ACTIVE">Active</option>
                                             <option value="INACTIVE">Inactive</option>
-                                            <option value="SUSPENDED">Suspended</option>
-                                            {activeTab === 'staff' && <option value="ON_LEAVE">On Leave</option>}
                                         </select>
                                     </div>
                                 </div>

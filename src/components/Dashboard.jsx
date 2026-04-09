@@ -241,7 +241,7 @@ const Dashboard = () => {
           return;
         }
 
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://test-api.fitnessguru.org.in';
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
 
         // Get user ID from stored user data
         const storedUserData = tokenManager.getUserData();

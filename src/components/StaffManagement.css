@@ -962,3 +962,64 @@
     height: 32px;
   }
 }
+
+/* Loading and Error States */
+.staff-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  margin: 20px;
+}
+
+.staff-loading-state i {
+  font-size: 48px;
+  color: #ff6b35;
+  margin-bottom: 16px;
+  animation: spin 1s linear infinite;
+}
+
+.staff-loading-state p {
+  font-size: 16px;
+  color: #e0e0e0;
+  margin: 0;
+}
+
+.staff-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  margin: 20px;
+}
+
+.staff-error-state i {
+  font-size: 48px;
+  color: #ef4444;
+  margin-bottom: 16px;
+}
+
+.staff-error-state p {
+  font-size: 16px;
+  color: #fca5a5;
+  margin: 0 0 16px 0;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

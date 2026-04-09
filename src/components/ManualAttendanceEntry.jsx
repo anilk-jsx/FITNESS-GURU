@@ -215,7 +215,7 @@ const ManualAttendanceEntry = ({ onClose }) => {
             }
 
             // Using the provided API endpoint
-            const url = 'https://test-api.fitnessguru.org.in/api/users/list';
+            const url = 'https://api.fitnessguru.org.in/api/users/list';
 
             const response = await tokenManager.apiCall(url, {
                 method: 'GET',

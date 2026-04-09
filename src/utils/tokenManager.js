@@ -3,7 +3,7 @@
 
 class TokenManager {
   constructor() {
-    this.API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://test-api.fitnessguru.org.in';
+    this.API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
     this.isRefreshing = false;
     this.failedQueue = [];
     this.SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes

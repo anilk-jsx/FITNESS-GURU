@@ -52,7 +52,7 @@ export default function Signup() {
   const fetchBranches = async (gymId = 1) => {
     setBranchesLoading(true);
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://test-api.fitnessguru.org.in';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
       const response = await fetch(`${API_BASE_URL}/api/gymBranchList?gym_id=${gymId}`, {
         method: "GET",
         headers: {
@@ -183,7 +183,7 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://test-api.fitnessguru.org.in';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
       
       // Prepare data for addMember API with default values
       const memberData = {

@@ -26,7 +26,7 @@ const Contact = () => {
     setSubmitStatus(null)
 
     try {
-      const response = await fetch('https://test-api.fitnessguru.org.in/api/addContactUs', {
+      const response = await fetch('https://api.fitnessguru.org.in/api/addContactUs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api.php': {
-        target: 'https://test-api.fitnessguru.org.in',
+        target: 'https://api.fitnessguru.org.in',
         changeOrigin: true
       }
     }
