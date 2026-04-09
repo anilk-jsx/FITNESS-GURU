@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import tokenManager from '../../utils/tokenManager';
 import './Navbar.css';
 
-const Navbar = ({ userData = { name: 'John Doe', email: 'john.doe@example.com' } }) => {
+const Navbar = ({ userData }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -49,7 +49,7 @@ const Navbar = ({ userData = { name: 'John Doe', email: 'john.doe@example.com' }
           });
         }
       } catch (err) {
-        console.error('Logout error:', err);
+        // Silently handle logout error
       } finally {
         // Use tokenManager logout method
         tokenManager.logout();
@@ -84,24 +84,31 @@ const Navbar = ({ userData = { name: 'John Doe', email: 'john.doe@example.com' }
         >
           <div className="user-display" onClick={toggleDropdown}>
             <div className="user-avatar">
-              <img src="/avatar.png" alt={userData.name} className="avatar-image" />
+              <img
+                src="/avatar.png"
+                alt={userData?.name || 'User'}
+                onError={(e) => {
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData?.name || 'User')}&background=ff6b35&color=fff&size=40`;
+                }}
+                className="avatar-image"
+              />
             </div>
-            <span className="user-name">{userData.name}</span>
+            <span className="user-name">{userData?.name || 'User'}</span>
             <i className="fas fa-chevron-down dropdown-icon"></i>
           </div>
           
           <div className={`user-dropdown ${isDropdownOpen ? 'active' : ''}`}>
             <div className="dropdown-header">
               <div className="dropdown-avatar">
-                {userData.profilePhoto ? (
+                {userData?.profilePhoto ? (
                   <img src={userData.profilePhoto} alt={userData.name} />
                 ) : (
-                  <span>{getInitials(userData.name)}</span>
+                  <span>{getInitials(userData?.name || 'User')}</span>
                 )}
               </div>
               <div className="dropdown-info">
-                <div className="dropdown-name">{userData.name}</div>
-                <div className="dropdown-email">{userData.email}</div>
+                <div className="dropdown-name">{userData?.name || 'User'}</div>
+                <div className="dropdown-email">{userData?.email || 'Not provided'}</div>
               </div>
             </div>
             

@@ -292,7 +292,6 @@ const Dashboard = () => {
         );
 
         const sessionsData = await sessionsResponse.json();
-        console.log('Sessions response:', sessionsData);
 
         const sessions = sessionsData.status === 'success' ? (sessionsData.data.sessions || []) : [];
 
@@ -339,7 +338,6 @@ const Dashboard = () => {
         setError(null);
       } catch (err) {
         setError('Network error. Please try again.');
-        console.error('Dashboard data fetch error:', err);
       } finally {
         setLoading(false);
       }

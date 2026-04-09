@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../layout/DashboardLayout';
+import tokenManager from '../utils/tokenManager';
 import './Subscriptions.css';
 
 const Subscriptions = () => {
@@ -13,19 +14,89 @@ const Subscriptions = () => {
     start_date: ''
   });
   const [submittedFreezeData, setSubmittedFreezeData] = useState(null);
-  
-  const userData = {
-    name: 'John Doe',
-    email: 'john.doe@example.com'
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        setLoading(true);
+
+        if (!tokenManager.isAuthenticated()) {
+          setError('No authentication token found');
+          return;
+        }
+
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://test-api.fitnessguru.org.in';
+
+        // Get user ID from stored user data
+        const storedUserData = tokenManager.getUserData();
+        const userId = storedUserData?.userId || storedUserData?.id || storedUserData?.member_id || storedUserData?.user_id;
+
+        if (!userId) {
+          setError('User ID not found. Please login again.');
+          tokenManager.clearTokens();
+          window.location.href = '/login';
+          return;
+        }
+
+        // Fetch member profile
+        const profileResponse = await tokenManager.apiCall(
+          `${API_BASE_URL}/api/members/view?user_id=${userId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        const profileData = await profileResponse.json();
+
+        if (!profileResponse.ok || profileData.status !== 'success') {
+          if (profileResponse.status === 401) {
+            tokenManager.clearTokens();
+            window.location.href = '/login';
+          }
+          setError(profileData.message || 'Failed to fetch profile');
+          return;
+        }
+
+        const memberData = profileData.data;
+        setUserData(memberData);
+        setError(null);
+      } catch (err) {
+        setError('Network error. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  // Get current plan from user data
+  const getCurrentPlan = () => {
+    if (!userData) return null;
+
+    const planNames = {
+      1: 'Monthly Plan',
+      2: 'Quarterly Plan',
+      3: 'Yearly Plan'
+    };
+
+    return {
+      name: userData.plan_name || planNames[userData.membership_plan] || 'Standard Plan',
+      price: 0, // Plan price varies by selection
+      period: userData.duration_months === 1 ? 'monthly' : userData.duration_months === 3 ? 'quarterly' : 'annual',
+      status: userData.subscription_status === 1 ? 'Active' : 'Inactive',
+      expiryDate: userData.end_date ? new Date(userData.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'
+    };
   };
 
-  const currentPlan = {
-    name: 'Premium Membership',
-    price: 6499,
-    period: 'quarterly',
-    status: 'Active',
-    expiryDate: 'Nov 30, 2026'
-  };
+  const currentPlan = getCurrentPlan();
 
   const plans = {
     basic: {
@@ -194,7 +265,29 @@ const Subscriptions = () => {
   }, []);
 
   return (
-    <DashboardLayout userData={userData}>
+    <>
+      {loading ? (
+        <div className="subscription-loading">
+          <div className="loading-spinner"></div>
+          <p>Loading your subscription...</p>
+        </div>
+      ) : error ? (
+        <div className="subscription-error">
+          <i className="fas fa-exclamation-circle"></i>
+          <h3>Error Loading Subscription</h3>
+          <p>{error}</p>
+          <button onClick={() => window.location.reload()} className="retry-btn">
+            Retry
+          </button>
+        </div>
+      ) : !userData ? (
+        <div className="subscription-error">
+          <i className="fas fa-user-slash"></i>
+          <h3>No User Data</h3>
+          <p>Unable to load user information</p>
+        </div>
+      ) : (
+        <DashboardLayout userData={userData}>
       {/* Page Header */}
       <div className="page-header">
         <div className="page-nav">
@@ -561,6 +654,8 @@ const Subscriptions = () => {
         </div>
       )}
     </DashboardLayout>
+      )}
+    </>
   );
 };
 
