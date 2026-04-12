@@ -168,7 +168,7 @@ const StaffManagement = () => {
     }, [API_BASE_URL]);
 
     // Fetch staff from API
-    const fetchStaff = useCallback(async (page = 1) => {
+    const fetchStaff = useCallback(async (page = 1, branches = []) => {
         try {
             setIsLoadingStaff(true);
             setStaffError(null);
@@ -195,7 +195,7 @@ const StaffManagement = () => {
             if (data.status === 'success' && Array.isArray(data.data)) {
                 // Transform staff data to match component format
                 const transformedStaff = data.data.map(apiStaff => {
-                    const branch = gymBranches.find(b => b.branch_id === apiStaff.branch_id);
+                    const branch = branches.find(b => b.branch_id === apiStaff.branch_id);
                     const branchName = branch ? branch.branch_name : 'NA';
 
                     return {
@@ -228,13 +228,13 @@ const StaffManagement = () => {
         } finally {
             setIsLoadingStaff(false);
         }
-    }, [API_BASE_URL, gymBranches]);
+    }, [API_BASE_URL]);
 
     useEffect(() => {
         const loadData = async () => {
             const branches = await fetchGymBranches();
             await fetchTrainers(branches, currentPage);
-            await fetchStaff(currentStaffPage);
+            await fetchStaff(currentStaffPage, branches);
         };
         loadData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -264,7 +264,8 @@ const StaffManagement = () => {
     const handleStaffPageChange = async (page) => {
         if (page >= 1 && page <= totalStaffPages) {
             setCurrentStaffPage(page);
-            await fetchStaff(page);
+            const branches = gymBranches.length > 0 ? gymBranches : await fetchGymBranches();
+            await fetchStaff(page, branches);
         }
     };
 
@@ -1100,7 +1101,10 @@ const StaffManagement = () => {
                     <div className="staff-error-state">
                         <i className="fas fa-exclamation-circle"></i>
                         <p>{staffError}</p>
-                        <button className="staff-btn-secondary" onClick={() => fetchStaff(currentStaffPage)}>
+                        <button className="staff-btn-secondary" onClick={async () => {
+                            const branches = gymBranches.length > 0 ? gymBranches : await fetchGymBranches();
+                            await fetchStaff(currentStaffPage, branches);
+                        }}>
                             <i className="fas fa-redo"></i>
                             Retry
                         </button>
