@@ -1247,13 +1247,15 @@ const StaffManagement = () => {
                                                 >
                                                     <i className="fas fa-edit"></i>
                                                 </button>
-                                                <button
-                                                    className="staff-action-btn delete"
-                                                    onClick={() => handleDelete(item)}
-                                                    title="Delete"
-                                                >
-                                                    <i className="fas fa-trash"></i>
-                                                </button>
+                                                {activeTab === 'staff' && (
+                                                    <button
+                                                        className="staff-action-btn delete"
+                                                        onClick={() => handleDelete(item)}
+                                                        title="Delete"
+                                                    >
+                                                        <i className="fas fa-trash"></i>
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
