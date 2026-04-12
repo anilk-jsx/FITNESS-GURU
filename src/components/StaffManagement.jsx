@@ -77,7 +77,6 @@ const StaffManagement = () => {
 
             if (data.status === 'success' && Array.isArray(data.data)) {
                 setGymBranches(data.data);
-                console.log('Gym branches fetched:', data.data);
                 return data.data;
             } else {
                 console.error('Invalid gym branches response:', data);
@@ -153,8 +152,6 @@ const StaffManagement = () => {
                     setTotalPages(Math.ceil(data.pagination.total / 10) || 1);
                     setTotalTrainers(data.pagination.total || 0);
                 }
-
-                console.log('Trainers fetched and transformed:', transformedTrainers);
             } else {
                 setTrainersError('Invalid API response format');
             }
@@ -439,7 +436,6 @@ const StaffManagement = () => {
             formData.append('file', file);
             formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
 
-            console.log('📤 Uploading image to Cloudinary...');
             const response = await fetch(
                 `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
                 {
@@ -451,7 +447,6 @@ const StaffManagement = () => {
             const data = await response.json();
 
             if (data.secure_url) {
-                console.log('✅ Image uploaded successfully:', data.secure_url);
                 return data.secure_url;
             } else {
                 throw new Error('Failed to get image URL from Cloudinary');
@@ -489,7 +484,6 @@ const StaffManagement = () => {
                         profile_photo_url: imageUrl
                     });
                     showToast('✅ Image uploaded successfully!', 'success');
-                    console.log('✅ Trainer image URL set:', imageUrl);
                 } else {
                     showToast('❌ Failed to upload image. Please try again.', 'error');
                     setTrainerImagePreview(null);
@@ -547,7 +541,6 @@ const StaffManagement = () => {
                             profile_photo_url: imageUrl
                         });
                         showToast('✅ Image uploaded successfully!', 'success');
-                        console.log('✅ Dropped image URL set:', imageUrl);
                     } else {
                         showToast('❌ Failed to upload image. Please try again.', 'error');
                         setTrainerImagePreview(null);
@@ -585,12 +578,6 @@ const StaffManagement = () => {
                 profile_photo: formData.profile_photo_url || null,
                 status: formData.status === 'ACTIVE' ? 'Active' : 'Inactive'
             };
-
-            console.log('📤 Sending API Request');
-            console.log('URL:', `${API_BASE_URL}/api/trainer/addTrainer`);
-            console.log('Token Present:', !!token);
-            console.log('Payload Fields:', Object.keys(payload));
-
             const url = `${API_BASE_URL}/api/trainer/addTrainer`;
             const response = await fetch(url, {
                 method: 'POST',
@@ -601,7 +588,6 @@ const StaffManagement = () => {
                 body: JSON.stringify(payload)
             });
 
-            console.log('📥 Response Status:', response.status, response.statusText);
 
             let data;
             try {
@@ -613,12 +599,9 @@ const StaffManagement = () => {
                 throw new Error(`Invalid response format: ${response.statusText}`);
             }
 
-            console.log('📥 Response Data:', data);
 
             // Check if response indicates success (even if status code is not ok)
             if (data?.status === 'success' || data?.status === 'ok') {
-                showToast('✅ Trainer added successfully!', 'success');
-                console.log('✅ Trainer added successfully');
                 // Refresh trainers list
                 const branches = gymBranches.length > 0 ? gymBranches : await fetchGymBranches();
                 await fetchTrainers(branches, currentPage);
@@ -661,13 +644,6 @@ const StaffManagement = () => {
                 status: formData.status === 'ACTIVE' ? 'Active' : 'Inactive'
             };
 
-            console.log('📤 [EDIT TRAINER] Sending API Request');
-            console.log('Trainer ID:', trainerId);
-            console.log('URL:', `${API_BASE_URL}/api/trainer/updateTrainer/${trainerId}`);
-            console.log('Token Present:', !!token);
-            console.log('📋 Payload Being Sent:', payload);
-            console.log('Payload Fields:', Object.keys(payload));
-
             const url = `${API_BASE_URL}/api/trainer/updateTrainer/${trainerId}`;
             const response = await fetch(url, {
                 method: 'PUT',
@@ -678,7 +654,6 @@ const StaffManagement = () => {
                 body: JSON.stringify(payload)
             });
 
-            console.log('📥 Response Status:', response.status, response.statusText);
 
             let data;
             try {
@@ -690,12 +665,9 @@ const StaffManagement = () => {
                 throw new Error(`Invalid response format: ${response.statusText}`);
             }
 
-            console.log('📥 Response Data:', data);
 
             // Check if response indicates success
             if (data?.status === 'success' || data?.status === 'ok') {
-                showToast('✅ Trainer updated successfully!', 'success');
-                console.log('✅ Trainer updated successfully');
                 // Refresh trainers list
                 const branches = gymBranches.length > 0 ? gymBranches : await fetchGymBranches();
                 await fetchTrainers(branches, currentPage);
