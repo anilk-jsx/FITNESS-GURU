@@ -15,6 +15,10 @@ const StaffManagement = () => {
     const [totalTrainers, setTotalTrainers] = useState(0);
     const [itemsPerPage] = useState(10);
     const [currentStaffPage, setCurrentStaffPage] = useState(1);
+    const [isLoadingStaff, setIsLoadingStaff] = useState(true);
+    const [staffError, setStaffError] = useState(null);
+    const [totalStaffPages, setTotalStaffPages] = useState(1);
+    const [totalStaff, setTotalStaff] = useState(0);
 
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
 
@@ -163,11 +167,74 @@ const StaffManagement = () => {
         }
     }, [API_BASE_URL]);
 
-    // Fetch gym branches first, then trainers
+    // Fetch staff from API
+    const fetchStaff = useCallback(async (page = 1) => {
+        try {
+            setIsLoadingStaff(true);
+            setStaffError(null);
+
+            const token = tokenManager.getAccessToken();
+            if (!token) {
+                setStaffError('No authentication token found');
+                return;
+            }
+
+            const url = `${API_BASE_URL}/api/staff/getStaff?page=${page}&limit=${10}&gym_id=1`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+            setTotalStaffPages(data.pagination?.total_pages || 1);
+            setTotalStaff(data.pagination?.total || 0);
+
+            if (data.status === 'success' && Array.isArray(data.data)) {
+                // Transform staff data to match component format
+                const transformedStaff = data.data.map(apiStaff => {
+                    const branch = gymBranches.find(b => b.branch_id === apiStaff.branch_id);
+                    const branchName = branch ? branch.branch_name : 'NA';
+
+                    return {
+                        staff_id: apiStaff.staff_id || 'NA',
+                        user_id: apiStaff.user_id || 'NA',
+                        name: apiStaff.name || 'NA',
+                        email: apiStaff.email || 'NA',
+                        phone: apiStaff.phone || 'NA',
+                        branch_id: apiStaff.branch_id || 'NA',
+                        branch_name: branchName,
+                        shift_id: apiStaff.shift_id || 'NA',
+                        shift_name: getShiftName(apiStaff.shift_id),
+                        joining_date: apiStaff.join_date || 'NA',
+                        designation: apiStaff.designation || 'NA',
+                        department: apiStaff.department || 'NA',
+                        salary_monthly: apiStaff.salary_monthly || 0,
+                        salary_type: apiStaff.salary_type || 'FULL_TIME',
+                        access_level: apiStaff.access_level || 'STAFF',
+                        status: getStatus(apiStaff.status),
+                        gym_id: apiStaff.gym_id || 'NA'
+                    };
+                });
+                setStaff(transformedStaff);
+            } else {
+                setStaffError('Invalid API response format');
+            }
+        } catch (error) {
+            console.error('Error fetching staff:', error);
+            setStaffError(error.message || 'Failed to fetch staff');
+        } finally {
+            setIsLoadingStaff(false);
+        }
+    }, [API_BASE_URL, gymBranches]);
+
     useEffect(() => {
         const loadData = async () => {
             const branches = await fetchGymBranches();
             await fetchTrainers(branches, currentPage);
+            await fetchStaff(currentStaffPage);
         };
         loadData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -193,124 +260,19 @@ const StaffManagement = () => {
         }
     };
 
+    // Handle staff page change
+    const handleStaffPageChange = async (page) => {
+        if (page >= 1 && page <= totalStaffPages) {
+            setCurrentStaffPage(page);
+            await fetchStaff(page);
+        }
+    };
+
     // Trainers state - will be populated from API
     const [trainers, setTrainers] = useState([]);
 
-    // Staff state with sample data
-    const [staff, setStaff] = useState([
-        {
-            staff_id: 1,
-            user_id: 3001,
-            name: 'Ramesh Kumar',
-            email: 'ramesh.kumar@fitnessguru.com',
-            phone: '9876543230',
-            branch_name: 'Koramangala Branch',
-            designation: 'Front Desk Manager',
-            department: 'Operations',
-            shift_name: 'Morning Shift',
-            salary_monthly: 35000,
-            salary_type: 'FULL_TIME',
-            joining_date: '2021-01-15',
-            access_level: 'MEDIUM',
-            status: 'ACTIVE'
-        },
-        {
-            staff_id: 2,
-            user_id: 3002,
-            name: 'Anjali Desai',
-            email: 'anjali.desai@fitnessguru.com',
-            phone: '9876543231',
-            branch_name: 'Whitefield Branch',
-            designation: 'Receptionist',
-            department: 'Front Desk',
-            shift_name: 'Evening Shift',
-            salary_monthly: 25000,
-            salary_type: 'FULL_TIME',
-            joining_date: '2022-03-10',
-            access_level: 'LOW',
-            status: 'ACTIVE'
-        },
-        {
-            staff_id: 3,
-            user_id: 3003,
-            name: 'Suresh Babu',
-            email: 'suresh.babu@fitnessguru.com',
-            phone: '9876543232',
-            branch_name: 'Bangalore Main',
-            designation: 'Maintenance Supervisor',
-            department: 'Facilities',
-            shift_name: 'Full Day',
-            salary_monthly: 30000,
-            salary_type: 'FULL_TIME',
-            joining_date: '2020-06-01',
-            access_level: 'MEDIUM',
-            status: 'ACTIVE'
-        },
-        {
-            staff_id: 4,
-            user_id: 3004,
-            name: 'Lakshmi Iyer',
-            email: 'lakshmi.iyer@fitnessguru.com',
-            phone: '9876543233',
-            branch_name: 'Koramangala Branch',
-            designation: 'Nutritionist',
-            department: 'Health & Wellness',
-            shift_name: 'Morning Shift',
-            salary_monthly: 45000,
-            salary_type: 'FULL_TIME',
-            joining_date: '2021-09-15',
-            access_level: 'MEDIUM',
-            status: 'ACTIVE'
-        },
-        {
-            staff_id: 5,
-            user_id: 3005,
-            name: 'Arun Menon',
-            email: 'arun.menon@fitnessguru.com',
-            phone: '9876543234',
-            branch_name: 'Whitefield Branch',
-            designation: 'Housekeeping Staff',
-            department: 'Facilities',
-            shift_name: 'Morning Shift',
-            salary_monthly: 20000,
-            salary_type: 'PART_TIME',
-            joining_date: '2023-01-10',
-            access_level: 'LOW',
-            status: 'ACTIVE'
-        },
-        {
-            staff_id: 6,
-            user_id: 3006,
-            name: 'Divya Krishnan',
-            email: 'divya.krishnan@fitnessguru.com',
-            phone: '9876543235',
-            branch_name: 'Bangalore Main',
-            designation: 'Sales Executive',
-            department: 'Sales & Marketing',
-            shift_name: 'Full Day',
-            salary_monthly: 30000,
-            salary_type: 'FULL_TIME',
-            joining_date: '2022-07-20',
-            access_level: 'MEDIUM',
-            status: 'ON_LEAVE'
-        },
-        {
-            staff_id: 7,
-            user_id: 3007,
-            name: 'Karthik Rao',
-            email: 'karthik.rao@fitnessguru.com',
-            phone: '9876543236',
-            branch_name: 'Koramangala Branch',
-            designation: 'IT Support',
-            department: 'Technology',
-            shift_name: 'Full Day',
-            salary_monthly: 40000,
-            salary_type: 'CONTRACT',
-            joining_date: '2023-02-01',
-            access_level: 'HIGH',
-            status: 'ACTIVE'
-        }
-    ]);
+    // Staff state - populated from API
+    const [staff, setStaff] = useState([]);
 
     // Modal states
     const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -399,12 +361,8 @@ const StaffManagement = () => {
         return matchesSearch && matchesBranch && matchesStatus;
     });
 
-    // Calculate pagination for staff (client-side)
-    const staffTotalPages = Math.ceil(filteredStaff.length / itemsPerPage);
-    const paginatedStaff = filteredStaff.slice(
-        (currentStaffPage - 1) * itemsPerPage,
-        currentStaffPage * itemsPerPage
-    );
+    // Use server-side pagination for staff
+    const paginatedStaff = filteredStaff;
 
     // For trainers, we apply pagination to the already-paginated API data before filtering
     // If user searches/filters, we'll need to fetch all trainers first (or paginate client-side)
@@ -1122,10 +1080,10 @@ const StaffManagement = () => {
 
             {/* Content Table */}
             <div className="staff-table-container">
-                {isLoadingTrainers && (
+                {(activeTab === 'trainers' ? isLoadingTrainers : isLoadingStaff) && (
                     <div className="staff-loading-state">
                         <i className="fas fa-spinner fa-spin"></i>
-                        <p>Loading trainers...</p>
+                        <p>Loading {activeTab === 'trainers' ? 'trainers' : 'staff'}...</p>
                     </div>
                 )}
                 {trainersError && activeTab === 'trainers' && (
@@ -1138,7 +1096,17 @@ const StaffManagement = () => {
                         </button>
                     </div>
                 )}
-                {!isLoadingTrainers && !trainersError && (
+                {staffError && activeTab === 'staff' && (
+                    <div className="staff-error-state">
+                        <i className="fas fa-exclamation-circle"></i>
+                        <p>{staffError}</p>
+                        <button className="staff-btn-secondary" onClick={() => fetchStaff(currentStaffPage)}>
+                            <i className="fas fa-redo"></i>
+                            Retry
+                        </button>
+                    </div>
+                )}
+                {(activeTab === 'trainers' ? (!isLoadingTrainers && !trainersError) : (!isLoadingStaff && !staffError)) && (
                     <table className="staff-table">
                         <thead>
                             <tr>
@@ -1267,17 +1235,17 @@ const StaffManagement = () => {
             </div>
 
             {/* Pagination Controls */}
-            {!isLoadingTrainers && !trainersError && (
+            {(activeTab === 'trainers' ? (!isLoadingTrainers && !trainersError) : (!isLoadingStaff && !staffError)) && (
                 <div className="staff-pagination">
                     <div className="staff-pagination-info">
                         {activeTab === 'trainers'
                             ? `Page ${currentPage} of ${totalPages} • ${totalTrainers} Trainers`
-                            : `Page ${currentStaffPage} of ${staffTotalPages} • ${filteredStaff.length} Members`}
+                            : `Page ${currentStaffPage} of ${totalStaffPages} • ${filteredStaff.length} Members`}
                     </div>
                     <div className="staff-pagination-controls">
                         <button
                             className="staff-pagination-btn"
-                            onClick={() => activeTab === 'trainers' ? handlePageChange(currentPage - 1) : setCurrentStaffPage(currentStaffPage - 1)}
+                            onClick={() => activeTab === 'trainers' ? handlePageChange(currentPage - 1) : handleStaffPageChange(currentStaffPage - 1)}
                             disabled={activeTab === 'trainers' ? currentPage === 1 : currentStaffPage === 1}
                             title="Previous Page"
                         >
@@ -1287,14 +1255,14 @@ const StaffManagement = () => {
 
                         <div className="staff-pagination-numbers">
                             {Array.from({
-                                length: activeTab === 'trainers' ? totalPages : staffTotalPages
+                                length: activeTab === 'trainers' ? totalPages : totalStaffPages
                             }, (_, i) => i + 1).map(page => (
                                 <button
                                     key={page}
                                     className={`staff-pagination-number ${
                                         page === (activeTab === 'trainers' ? currentPage : currentStaffPage) ? 'active' : ''
                                     }`}
-                                    onClick={() => activeTab === 'trainers' ? handlePageChange(page) : setCurrentStaffPage(page)}
+                                    onClick={() => activeTab === 'trainers' ? handlePageChange(page) : handleStaffPageChange(page)}
                                     title={`Go to page ${page}`}
                                 >
                                     {page}
@@ -1304,8 +1272,8 @@ const StaffManagement = () => {
 
                         <button
                             className="staff-pagination-btn"
-                            onClick={() => activeTab === 'trainers' ? handlePageChange(currentPage + 1) : setCurrentStaffPage(currentStaffPage + 1)}
-                            disabled={activeTab === 'trainers' ? currentPage === totalPages : currentStaffPage === staffTotalPages}
+                            onClick={() => activeTab === 'trainers' ? handlePageChange(currentPage + 1) : handleStaffPageChange(currentStaffPage + 1)}
+                            disabled={activeTab === 'trainers' ? currentPage === totalPages : currentStaffPage === totalStaffPages}
                             title="Next Page"
                         >
                             <span>Next</span>
