@@ -1241,7 +1241,162 @@
   }
 }
 
+/* Trainer Header Layout - Side by Side */
+.staff-trainer-header {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.staff-photo-section {
+  flex-shrink: 0;
+}
+
+.staff-profile-photo-container {
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 3px solid #e2e8f0;
+}
+
+.staff-profile-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.staff-profile-photo-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+  color: white;
+}
+
+.staff-trainer-basic-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.staff-trainer-name {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.staff-trainer-specialization {
+  margin: 0;
+  font-size: 16px;
+  color: #667eea;
+  font-weight: 600;
+}
+
+.staff-trainer-quick-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.staff-quick-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
+}
+
+.staff-quick-info-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.staff-quick-info-value {
+  font-size: 14px;
+  color: #2d3748;
+  font-weight: 500;
+}
+
+/* Responsive - Stack on Tablet */
+@media (max-width: 768px) {
+  .staff-trainer-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .staff-photo-section {
+    flex-shrink: 1;
+  }
+
+  .staff-profile-photo-container {
+    width: 150px;
+    height: 150px;
+  }
+
+  .staff-profile-photo-placeholder {
+    font-size: 48px;
+  }
+
+  .staff-trainer-basic-info {
+    width: 100%;
+  }
+
+  .staff-trainer-quick-info {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Responsive - Mobile */
 @media (max-width: 480px) {
+  .staff-trainer-header {
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+  }
+
+  .staff-profile-photo-container {
+    width: 120px;
+    height: 120px;
+  }
+
+  .staff-profile-photo-placeholder {
+    font-size: 36px;
+  }
+
+  .staff-trainer-name {
+    font-size: 20px;
+  }
+
+  .staff-trainer-specialization {
+    font-size: 14px;
+  }
+
+  .staff-trainer-quick-info {
+    gap: 8px;
+  }
+
+  .staff-quick-info-item {
+    padding: 10px;
+    font-size: 12px;
+  }
+
   .staff-pagination {
     padding: 12px 16px;
   }
@@ -1275,3 +1430,4 @@
     padding: 6px 12px;
   }
 }
+

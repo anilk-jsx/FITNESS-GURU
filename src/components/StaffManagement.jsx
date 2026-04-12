@@ -953,36 +953,94 @@ const StaffManagement = () => {
                             </button>
                         </div>
                         <div className="staff-modal-body">
-                            {/* Personal Information */}
-                            <div className="staff-detail-section">
-                                <h3><i className="fas fa-user"></i> Personal Information</h3>
-                                <div className="staff-detail-grid">
-                                    <div className="staff-detail-item">
-                                        <label>Name</label>
-                                        <span>{selectedItem.name}</span>
+                            {/* Trainer Header with Photo and Basic Info */}
+                            {activeTab === 'trainers' && (
+                                <div className="staff-trainer-header">
+                                    {/* Profile Photo */}
+                                    <div className="staff-photo-section">
+                                        <div className="staff-profile-photo-container">
+                                            {selectedItem.profile_photo_url ? (
+                                                <img
+                                                    src={selectedItem.profile_photo_url}
+                                                    alt={selectedItem.name}
+                                                    className="staff-profile-photo"
+                                                />
+                                            ) : (
+                                                <div className="staff-profile-photo-placeholder">
+                                                    <i className="fas fa-user"></i>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="staff-detail-item">
-                                        <label>Email</label>
-                                        <span>{selectedItem.email}</span>
-                                    </div>
-                                    <div className="staff-detail-item">
-                                        <label>Phone</label>
-                                        <span>{selectedItem.phone}</span>
-                                    </div>
-                                    <div className="staff-detail-item">
-                                        <label>Branch</label>
-                                        <span>{selectedItem.branch_name}</span>
-                                    </div>
-                                    <div className="staff-detail-item">
-                                        <label>Shift</label>
-                                        <span>{selectedItem.shift_name}</span>
-                                    </div>
-                                    <div className="staff-detail-item">
-                                        <label>Joining Date</label>
-                                        <span>{selectedItem.joining_date}</span>
+
+                                    {/* Basic Information */}
+                                    <div className="staff-trainer-basic-info">
+                                        <h2 className="staff-trainer-name">{selectedItem.name}</h2>
+                                        <p className="staff-trainer-specialization">{selectedItem.specialization}</p>
+                                        <div className="staff-trainer-quick-info">
+                                            <div className="staff-quick-info-item">
+                                                <span className="staff-quick-info-label">Email</span>
+                                                <span className="staff-quick-info-value">{selectedItem.email}</span>
+                                            </div>
+                                            <div className="staff-quick-info-item">
+                                                <span className="staff-quick-info-label">Phone</span>
+                                                <span className="staff-quick-info-value">{selectedItem.phone}</span>
+                                            </div>
+                                            <div className="staff-quick-info-item">
+                                                <span className="staff-quick-info-label">Branch</span>
+                                                <span className="staff-quick-info-value">{selectedItem.branch_name}</span>
+                                            </div>
+                                            <div className="staff-quick-info-item">
+                                                <span className="staff-quick-info-label">Shift</span>
+                                                <span className="staff-quick-info-value">{selectedItem.shift_name}</span>
+                                            </div>
+                                            <div className="staff-quick-info-item">
+                                                <span className="staff-quick-info-label">Joining Date</span>
+                                                <span className="staff-quick-info-value">{selectedItem.joining_date}</span>
+                                            </div>
+                                            <div className="staff-quick-info-item">
+                                                <span className="staff-quick-info-label">Status</span>
+                                                <span className={`staff-status-badge ${getStatusBadgeClass(selectedItem.status)}`}>
+                                                    {selectedItem.status.replace('_', ' ')}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
+
+                            {/* Personal Information for Staff */}
+                            {activeTab !== 'trainers' && (
+                                <div className="staff-detail-section">
+                                    <h3><i className="fas fa-user"></i> Personal Information</h3>
+                                    <div className="staff-detail-grid">
+                                        <div className="staff-detail-item">
+                                            <label>Name</label>
+                                            <span>{selectedItem.name}</span>
+                                        </div>
+                                        <div className="staff-detail-item">
+                                            <label>Email</label>
+                                            <span>{selectedItem.email}</span>
+                                        </div>
+                                        <div className="staff-detail-item">
+                                            <label>Phone</label>
+                                            <span>{selectedItem.phone}</span>
+                                        </div>
+                                        <div className="staff-detail-item">
+                                            <label>Branch</label>
+                                            <span>{selectedItem.branch_name}</span>
+                                        </div>
+                                        <div className="staff-detail-item">
+                                            <label>Shift</label>
+                                            <span>{selectedItem.shift_name}</span>
+                                        </div>
+                                        <div className="staff-detail-item">
+                                            <label>Joining Date</label>
+                                            <span>{selectedItem.joining_date}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {activeTab === 'trainers' ? (
                                 <>
