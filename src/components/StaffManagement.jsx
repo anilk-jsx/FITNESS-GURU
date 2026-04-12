@@ -742,15 +742,12 @@ const StaffManagement = () => {
             }
 
             const payload = {
-                name: formData.name,
-                phone: formData.phone,
                 designation: formData.designation,
                 department: formData.department,
-                salary: parseFloat(formData.salary_monthly),
+                salary_monthly: parseFloat(formData.salary_monthly),
                 salary_type: formData.salary_type,
                 access_level: formData.access_level,
-                status: formData.status,
-                remark: formData.remark || ''
+                status: formData.status
             };
 
             console.log('📤 Updating Staff Payload:', payload);
@@ -1754,6 +1751,8 @@ const StaffManagement = () => {
                                                 ? setTrainerFormData({ ...trainerFormData, name: e.target.value })
                                                 : setStaffFormData({ ...staffFormData, name: e.target.value })}
                                             placeholder="Enter full name"
+                                            disabled={activeTab === 'staff' && showEditModal}
+                                            title={activeTab === 'staff' && showEditModal ? 'Name cannot be changed' : ''}
                                             required
                                         />
                                     </div>
@@ -1766,8 +1765,8 @@ const StaffManagement = () => {
                                                 ? setTrainerFormData({ ...trainerFormData, email: e.target.value })
                                                 : setStaffFormData({ ...staffFormData, email: e.target.value })}
                                             placeholder="email@example.com"
-                                            disabled={activeTab === 'trainers' && showEditModal}
-                                            title={activeTab === 'trainers' && showEditModal ? 'Email cannot be changed' : ''}
+                                            disabled={(activeTab === 'trainers' && showEditModal) || (activeTab === 'staff' && showEditModal)}
+                                            title={(activeTab === 'trainers' && showEditModal) || (activeTab === 'staff' && showEditModal) ? 'Email cannot be changed' : ''}
                                             required
                                         />
                                     </div>
@@ -1781,6 +1780,8 @@ const StaffManagement = () => {
                                                 : setStaffFormData({ ...staffFormData, phone: e.target.value })}
                                             placeholder="10-digit phone number"
                                             pattern="[0-9]{10}"
+                                            disabled={activeTab === 'staff' && showEditModal}
+                                            title={activeTab === 'staff' && showEditModal ? 'Phone cannot be changed' : ''}
                                             required
                                         />
                                     </div>
@@ -1794,8 +1795,8 @@ const StaffManagement = () => {
                                                     ? setTrainerFormData({ ...trainerFormData, password: e.target.value })
                                                     : setStaffFormData({ ...staffFormData, password: e.target.value })}
                                                 placeholder="Enter password"
-                                                disabled={activeTab === 'trainers' && showEditModal}
-                                                title={activeTab === 'trainers' && showEditModal ? 'Password cannot be changed via edit' : ''}
+                                                disabled={(activeTab === 'trainers' && showEditModal) || (activeTab === 'staff' && showEditModal)}
+                                                title={(activeTab === 'trainers' && showEditModal) || (activeTab === 'staff' && showEditModal) ? 'Password cannot be changed via edit' : ''}
                                                 required={showAddModal}
                                             />
                                             <button
@@ -1803,7 +1804,7 @@ const StaffManagement = () => {
                                                 className="staff-password-toggle"
                                                 onClick={() => setShowPassword(!showPassword)}
                                                 title={showPassword ? "Hide password" : "Show password"}
-                                                disabled={activeTab === 'trainers' && showEditModal}
+                                                disabled={(activeTab === 'trainers' && showEditModal) || (activeTab === 'staff' && showEditModal)}
                                             >
                                                 <i className={`fas fa-eye${showPassword ? '' : '-slash'}`}></i>
                                             </button>
@@ -1816,8 +1817,8 @@ const StaffManagement = () => {
                                             onChange={(e) => activeTab === 'trainers'
                                                 ? setTrainerFormData({ ...trainerFormData, branch_id: parseInt(e.target.value) })
                                                 : setStaffFormData({ ...staffFormData, branch_id: parseInt(e.target.value) })}
-                                            disabled={activeTab === 'trainers' && showEditModal}
-                                            title={activeTab === 'trainers' && showEditModal ? 'Branch cannot be changed' : ''}
+                                            disabled={(activeTab === 'trainers' && showEditModal) || (activeTab === 'staff' && showEditModal)}
+                                            title={(activeTab === 'trainers' && showEditModal) || (activeTab === 'staff' && showEditModal) ? 'Branch cannot be changed' : ''}
                                             required
                                         >
                                             <option value="">Select a Branch</option>
@@ -1835,8 +1836,8 @@ const StaffManagement = () => {
                                             onChange={(e) => activeTab === 'trainers'
                                                 ? setTrainerFormData({ ...trainerFormData, shift_id: parseInt(e.target.value) })
                                                 : setStaffFormData({ ...staffFormData, shift_id: parseInt(e.target.value) })}
-                                            disabled={activeTab === 'trainers' && showEditModal}
-                                            title={activeTab === 'trainers' && showEditModal ? 'Shift cannot be changed' : ''}
+                                            disabled={(activeTab === 'trainers' && showEditModal) || (activeTab === 'staff' && showEditModal)}
+                                            title={(activeTab === 'trainers' && showEditModal) || (activeTab === 'staff' && showEditModal) ? 'Shift cannot be changed' : ''}
                                             required
                                         >
                                             <option value="1">1 - Morning Shift</option>
@@ -1851,8 +1852,8 @@ const StaffManagement = () => {
                                             onChange={(e) => activeTab === 'trainers'
                                                 ? setTrainerFormData({ ...trainerFormData, joining_date: e.target.value })
                                                 : setStaffFormData({ ...staffFormData, joining_date: e.target.value })}
-                                            disabled={activeTab === 'trainers' && showEditModal}
-                                            title={activeTab === 'trainers' && showEditModal ? 'Joining date cannot be changed' : ''}
+                                            disabled={(activeTab === 'trainers' && showEditModal) || (activeTab === 'staff' && showEditModal)}
+                                            title={(activeTab === 'trainers' && showEditModal) || (activeTab === 'staff' && showEditModal) ? 'Joining date cannot be changed' : ''}
                                             required
                                         />
                                     </div>
@@ -2077,24 +2078,6 @@ const StaffManagement = () => {
                                 </>
                             )}
 
-                            {/* Additional Information */}
-                            {activeTab === 'staff' && showEditModal && (
-                                <div className="staff-form-section">
-                                    <h3>Additional Information</h3>
-                                    <div className="staff-form-grid">
-                                        <div className="staff-form-group">
-                                            <label>Remarks</label>
-                                            <textarea
-                                                value={staffFormData.remark}
-                                                onChange={(e) => setStaffFormData({ ...staffFormData, remark: e.target.value })}
-                                                placeholder="Add any remarks or notes about this staff member"
-                                                rows="4"
-                                                style={{ resize: 'vertical' }}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Status */}
                             <div className="staff-form-section">
