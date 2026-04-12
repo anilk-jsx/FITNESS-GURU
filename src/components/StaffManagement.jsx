@@ -102,7 +102,7 @@ const StaffManagement = () => {
                 return;
             }
 
-            const url = `${API_BASE_URL}/api/trainer/getTrainers?page=${page}&limit=${10}&gym_id=1&status=Active`;
+            const url = `${API_BASE_URL}/api/trainer/getTrainers?page=${page}&limit=${10}&gym_id=1`;
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -644,6 +644,83 @@ const StaffManagement = () => {
         }
     };
 
+    // Update trainer API call
+    const updateTrainerToAPI = async (trainerId, formData) => {
+        try {
+            const token = tokenManager.getAccessToken();
+            if (!token) {
+                showToast('❌ No authentication token found', 'error');
+                return false;
+            }
+
+            const payload = {
+                name: formData.name,
+                phone: formData.phone,
+                specialization: formData.specialization,
+                experience: parseFloat(formData.experience_years),
+                status: formData.status === 'ACTIVE' ? 'Active' : 'Inactive'
+            };
+
+            console.log('📤 [EDIT TRAINER] Sending API Request');
+            console.log('Trainer ID:', trainerId);
+            console.log('URL:', `${API_BASE_URL}/api/trainer/updateTrainer/${trainerId}`);
+            console.log('Token Present:', !!token);
+            console.log('📋 Payload Being Sent:', payload);
+            console.log('Payload Fields:', Object.keys(payload));
+
+            const url = `${API_BASE_URL}/api/trainer/updateTrainer/${trainerId}`;
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            console.log('📥 Response Status:', response.status, response.statusText);
+
+            let data;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                console.error('❌ Failed to parse response as JSON');
+                const text = await response.text();
+                console.error('Response Text:', text);
+                throw new Error(`Invalid response format: ${response.statusText}`);
+            }
+
+            console.log('📥 Response Data:', data);
+
+            // Check if response indicates success
+            if (data?.status === 'success' || data?.status === 'ok') {
+                showToast('✅ Trainer updated successfully!', 'success');
+                console.log('✅ Trainer updated successfully');
+                // Refresh trainers list
+                const branches = gymBranches.length > 0 ? gymBranches : await fetchGymBranches();
+                await fetchTrainers(branches, currentPage);
+                return true;
+            }
+
+            // Handle error responses
+            if (!response.ok || data?.status === 'error' || data?.status === 'failed') {
+                const errorMsg = data?.message || data?.error || data?.errors || `API error: ${response.status} ${response.statusText}`;
+                console.error('❌ API Error:', errorMsg);
+                console.error('Full Error Data:', data);
+                throw new Error(errorMsg);
+            }
+
+            // If we get here with unexpected status
+            console.warn('⚠️ Unexpected response:', data);
+            throw new Error('Unexpected response from server');
+        } catch (error) {
+            console.error('❌ Error in updateTrainerToAPI:', error.message);
+            console.error('Error Stack:', error.stack);
+            showToast(`❌ Failed to update trainer: ${error.message}`, 'error');
+            return false;
+        }
+    };
+
     // Handlers
     const handleViewDetails = (item) => {
         setSelectedItem(item);
@@ -721,6 +798,12 @@ const StaffManagement = () => {
                 joining_date: item.joining_date,
                 status: item.status
             });
+            // Set image preview when editing
+            if (item.profile_photo_url) {
+                setTrainerImagePreview(item.profile_photo_url);
+            } else {
+                setTrainerImagePreview(null);
+            }
         } else {
             setStaffFormData({
                 // User fields
@@ -840,15 +923,33 @@ const StaffManagement = () => {
         }
     };
 
-    const handleEditSubmit = (e) => {
+    const handleEditSubmit = async (e) => {
         e.preventDefault();
         if (activeTab === 'trainers') {
-            setTrainers(trainers.map(t =>
-                t.trainer_id === selectedItem.trainer_id
-                    ? { ...t, ...trainerFormData }
-                    : t
-            ));
-            showToast('✅ Trainer updated successfully!', 'success');
+            // Validate required fields
+            if (!trainerFormData.name) {
+                showToast('⚠️ Please enter trainer name', 'warning');
+                return;
+            }
+            if (!trainerFormData.phone) {
+                showToast('⚠️ Please enter phone number', 'warning');
+                return;
+            }
+            if (!trainerFormData.specialization) {
+                showToast('⚠️ Please enter specialization', 'warning');
+                return;
+            }
+            if (!trainerFormData.experience_years) {
+                showToast('⚠️ Please enter experience', 'warning');
+                return;
+            }
+
+            setIsSubmittingTrainer(true);
+            const success = await updateTrainerToAPI(selectedItem.trainer_id, trainerFormData);
+            setIsSubmittingTrainer(false);
+            if (success) {
+                setShowEditModal(false);
+            }
         } else {
             setStaff(staff.map(s =>
                 s.staff_id === selectedItem.staff_id
@@ -856,8 +957,8 @@ const StaffManagement = () => {
                     : s
             ));
             showToast('✅ Staff member updated successfully!', 'success');
+            setShowEditModal(false);
         }
-        setShowEditModal(false);
     };
 
     const handleStatusChange = (item, newStatus) => {
@@ -1508,6 +1609,8 @@ const StaffManagement = () => {
                                                 ? setTrainerFormData({ ...trainerFormData, email: e.target.value })
                                                 : setStaffFormData({ ...staffFormData, email: e.target.value })}
                                             placeholder="email@example.com"
+                                            disabled={activeTab === 'trainers' && showEditModal}
+                                            title={activeTab === 'trainers' && showEditModal ? 'Email cannot be changed' : ''}
                                             required
                                         />
                                     </div>
@@ -1534,6 +1637,8 @@ const StaffManagement = () => {
                                                     ? setTrainerFormData({ ...trainerFormData, password: e.target.value })
                                                     : setStaffFormData({ ...staffFormData, password: e.target.value })}
                                                 placeholder="Enter password"
+                                                disabled={activeTab === 'trainers' && showEditModal}
+                                                title={activeTab === 'trainers' && showEditModal ? 'Password cannot be changed via edit' : ''}
                                                 required={showAddModal}
                                             />
                                             <button
@@ -1541,6 +1646,7 @@ const StaffManagement = () => {
                                                 className="staff-password-toggle"
                                                 onClick={() => setShowPassword(!showPassword)}
                                                 title={showPassword ? "Hide password" : "Show password"}
+                                                disabled={activeTab === 'trainers' && showEditModal}
                                             >
                                                 <i className={`fas fa-eye${showPassword ? '' : '-slash'}`}></i>
                                             </button>
@@ -1553,6 +1659,8 @@ const StaffManagement = () => {
                                             onChange={(e) => activeTab === 'trainers'
                                                 ? setTrainerFormData({ ...trainerFormData, branch_id: parseInt(e.target.value) })
                                                 : setStaffFormData({ ...staffFormData, branch_id: parseInt(e.target.value) })}
+                                            disabled={activeTab === 'trainers' && showEditModal}
+                                            title={activeTab === 'trainers' && showEditModal ? 'Branch cannot be changed' : ''}
                                             required
                                         >
                                             <option value="">Select a Branch</option>
@@ -1570,6 +1678,8 @@ const StaffManagement = () => {
                                             onChange={(e) => activeTab === 'trainers'
                                                 ? setTrainerFormData({ ...trainerFormData, shift_id: parseInt(e.target.value) })
                                                 : setStaffFormData({ ...staffFormData, shift_id: parseInt(e.target.value) })}
+                                            disabled={activeTab === 'trainers' && showEditModal}
+                                            title={activeTab === 'trainers' && showEditModal ? 'Shift cannot be changed' : ''}
                                             required
                                         >
                                             <option value="1">1 - Morning Shift</option>
@@ -1584,6 +1694,8 @@ const StaffManagement = () => {
                                             onChange={(e) => activeTab === 'trainers'
                                                 ? setTrainerFormData({ ...trainerFormData, joining_date: e.target.value })
                                                 : setStaffFormData({ ...staffFormData, joining_date: e.target.value })}
+                                            disabled={activeTab === 'trainers' && showEditModal}
+                                            title={activeTab === 'trainers' && showEditModal ? 'Joining date cannot be changed' : ''}
                                             required
                                         />
                                     </div>
@@ -1623,6 +1735,8 @@ const StaffManagement = () => {
                                                 <select
                                                     value={trainerFormData.availability_status}
                                                     onChange={(e) => setTrainerFormData({ ...trainerFormData, availability_status: e.target.value })}
+                                                    disabled={showEditModal}
+                                                    title={showEditModal ? 'Availability cannot be changed' : ''}
                                                     required
                                                 >
                                                     <option value="AVAILABLE">Available</option>
@@ -1638,6 +1752,8 @@ const StaffManagement = () => {
                                                     value={trainerFormData.certifications}
                                                     onChange={(e) => setTrainerFormData({ ...trainerFormData, certifications: e.target.value })}
                                                     placeholder="e.g., ACE Personal Trainer, NASM CPT"
+                                                    disabled={showEditModal}
+                                                    title={showEditModal ? 'Certifications cannot be changed' : ''}
                                                     required
                                                 />
                                             </div>
@@ -1648,16 +1764,19 @@ const StaffManagement = () => {
                                                     onChange={(e) => setTrainerFormData({ ...trainerFormData, bio: e.target.value })}
                                                     rows="3"
                                                     placeholder="Brief professional bio..."
+                                                    disabled={showEditModal}
+                                                    title={showEditModal ? 'Bio cannot be changed' : ''}
                                                     required
                                                 />
                                             </div>
                                             <div className="staff-form-group staff-full-width">
                                                 <label>Profile Photo *</label>
                                                 <div
-                                                    className={`staff-image-upload-zone ${isDraggingImage ? 'dragging' : ''} ${trainerImagePreview ? 'has-image' : ''} ${isUploadingImage ? 'uploading' : ''}`}
-                                                    onDragOver={handleImageDragOver}
-                                                    onDragLeave={handleImageDragLeave}
-                                                    onDrop={handleImageDrop}
+                                                    className={`staff-image-upload-zone ${isDraggingImage ? 'dragging' : ''} ${trainerImagePreview ? 'has-image' : ''} ${isUploadingImage ? 'uploading' : ''} ${showEditModal ? 'disabled' : ''}`}
+                                                    onDragOver={showEditModal ? undefined : handleImageDragOver}
+                                                    onDragLeave={showEditModal ? undefined : handleImageDragLeave}
+                                                    onDrop={showEditModal ? undefined : handleImageDrop}
+                                                    title={showEditModal ? 'Profile photo cannot be changed' : ''}
                                                 >
                                                     <div className="staff-image-display-section">
                                                         <div className="staff-image-preview-box">
@@ -1670,12 +1789,22 @@ const StaffManagement = () => {
                                                             {trainerImagePreview && !isUploadingImage && (
                                                                 <>
                                                                     <img src={trainerImagePreview} alt="Preview" className="staff-image-preview-img" />
-                                                                    <div className="staff-image-overlay">
-                                                                        <label htmlFor="trainer-image-input" className="staff-image-change-btn">
-                                                                            <i className="fas fa-edit"></i>
-                                                                            Change
-                                                                        </label>
-                                                                    </div>
+                                                                    {!showEditModal && (
+                                                                        <div className="staff-image-overlay">
+                                                                            <label htmlFor="trainer-image-input" className="staff-image-change-btn">
+                                                                                <i className="fas fa-edit"></i>
+                                                                                Change
+                                                                            </label>
+                                                                        </div>
+                                                                    )}
+                                                                    {showEditModal && (
+                                                                        <div className="staff-image-overlay">
+                                                                            <div className="staff-image-readonly-badge">
+                                                                                <i className="fas fa-lock"></i>
+                                                                                <span>View Only</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
                                                                 </>
                                                             )}
                                                             {!trainerImagePreview && !isUploadingImage && (
@@ -1694,12 +1823,12 @@ const StaffManagement = () => {
                                                         accept="image/*"
                                                         onChange={handleTrainerImageUpload}
                                                         style={{ display: 'none' }}
-                                                        disabled={isUploadingImage}
+                                                        disabled={isUploadingImage || showEditModal}
                                                         onClick={(e) => e.stopPropagation()}
                                                     />
 
                                                     <div className="staff-image-actions">
-                                                        <label htmlFor="trainer-image-input" className={`staff-image-upload-label ${isUploadingImage ? 'disabled' : ''}`}>
+                                                        <label htmlFor="trainer-image-input" className={`staff-image-upload-label ${isUploadingImage ? 'disabled' : ''} ${showEditModal ? 'disabled' : ''}`} style={{ pointerEvents: showEditModal ? 'none' : 'auto', opacity: showEditModal ? 0.5 : 1 }}>
                                                             <i className="fas fa-plus"></i>
                                                             {isUploadingImage ? 'Uploading...' : trainerImagePreview ? 'Change' : 'Upload'}
                                                         </label>
@@ -1711,6 +1840,8 @@ const StaffManagement = () => {
                                                                     setTrainerImagePreview(null);
                                                                     setTrainerFormData({ ...trainerFormData, profile_photo_url: '' });
                                                                 }}
+                                                                disabled={showEditModal}
+                                                                style={{ opacity: showEditModal ? 0.5 : 1 }}
                                                             >
                                                                 <i className="fas fa-trash"></i>
                                                                 Remove
