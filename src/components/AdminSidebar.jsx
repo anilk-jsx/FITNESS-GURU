@@ -53,6 +53,16 @@ const AdminSidebar = ({
                     </NavLink>
                 </div>
                 <div className="nav-item">
+                    <NavLink 
+                        to="/admin-dashboard/staff"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
+                    >
+                        <i className="fas fa-user-tie"></i>
+                        Staff Management
+                    </NavLink>
+                </div>
+                <div className="nav-item">
                     <NavLink
                         to="/admin-dashboard/contacts"
                         className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
@@ -70,16 +80,6 @@ const AdminSidebar = ({
                     >
                         <i className="fas fa-credit-card"></i>
                         Subscription Management
-                    </NavLink>
-                </div>
-                <div className="nav-item">
-                    <NavLink 
-                        to="/admin-dashboard/staff"
-                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                        onClick={handleNavClick}
-                    >
-                        <i className="fas fa-user-tie"></i>
-                        Staff Management
                     </NavLink>
                 </div>
                 <div className="nav-item">

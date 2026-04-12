@@ -750,7 +750,6 @@ const StaffManagement = () => {
                 status: formData.status
             };
 
-            console.log('📤 Updating Staff Payload:', payload);
 
             const url = `${API_BASE_URL}/api/staff/updateStaff/${staffId}`;
             const response = await fetch(url, {
