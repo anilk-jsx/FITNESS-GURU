@@ -18,6 +18,14 @@ const StaffManagement = () => {
 
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
 
+    // Toast notification helper
+    const showToast = (message, type = 'info') => {
+        setToastMessage({ type, message, show: true });
+        setTimeout(() => {
+            setToastMessage({ type: '', message: '', show: false });
+        }, 4000);
+    };
+
     // Map shift ID to shift name - Only 2 shifts
     const getShiftName = (shiftId) => {
         const shiftMap = {
@@ -339,6 +347,8 @@ const StaffManagement = () => {
     const [trainerImagePreview, setTrainerImagePreview] = useState(null);
     const [isSubmittingTrainer, setIsSubmittingTrainer] = useState(false);
     const [isDraggingImage, setIsDraggingImage] = useState(false);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [toastMessage, setToastMessage] = useState({ type: '', message: '', show: false });
 
     // Password visibility state
     const [showPassword, setShowPassword] = useState(false);
@@ -464,25 +474,33 @@ const StaffManagement = () => {
                 };
                 reader.readAsDataURL(file);
 
+                // Start upload
+                setIsUploadingImage(true);
+                showToast('🖼️ Uploading image to Cloudinary...', 'info');
+
                 // Upload to Cloudinary
                 const imageUrl = await uploadToCloudinary(file);
+
+                setIsUploadingImage(false);
 
                 if (imageUrl) {
                     setTrainerFormData({
                         ...trainerFormData,
                         profile_photo_url: imageUrl
                     });
+                    showToast('✅ Image uploaded successfully!', 'success');
                     console.log('✅ Trainer image URL set:', imageUrl);
                 } else {
-                    alert('⚠️ Failed to upload image to Cloudinary. Please try again.');
+                    showToast('❌ Failed to upload image. Please try again.', 'error');
                     setTrainerImagePreview(null);
                 }
             } catch (error) {
                 console.error('Error uploading image:', error);
-                alert('Error uploading image. Please try again.');
+                setIsUploadingImage(false);
+                showToast('❌ Error uploading image. Please try again.', 'error');
             }
         } else {
-            alert('Please select a valid image file');
+            showToast('⚠️ Please select a valid image file', 'warning');
         }
     };
 
@@ -515,21 +533,28 @@ const StaffManagement = () => {
                 };
                 reader.readAsDataURL(file);
 
+                // Start upload
+                setIsUploadingImage(true);
+                showToast('🖼️ Uploading dropped image...', 'info');
+
                 // Upload to Cloudinary
                 uploadToCloudinary(file).then((imageUrl) => {
+                    setIsUploadingImage(false);
+
                     if (imageUrl) {
                         setTrainerFormData({
                             ...trainerFormData,
                             profile_photo_url: imageUrl
                         });
+                        showToast('✅ Image uploaded successfully!', 'success');
                         console.log('✅ Dropped image URL set:', imageUrl);
                     } else {
-                        alert('⚠️ Failed to upload image. Please try again.');
+                        showToast('❌ Failed to upload image. Please try again.', 'error');
                         setTrainerImagePreview(null);
                     }
                 });
             } else {
-                alert('Please drop an image file');
+                showToast('⚠️ Please drop an image file', 'warning');
             }
         }
     };
@@ -539,7 +564,7 @@ const StaffManagement = () => {
         try {
             const token = tokenManager.getAccessToken();
             if (!token) {
-                alert('❌ No authentication token found');
+                showToast('❌ No authentication token found', 'error');
                 return false;
             }
 
@@ -592,7 +617,7 @@ const StaffManagement = () => {
 
             // Check if response indicates success (even if status code is not ok)
             if (data?.status === 'success' || data?.status === 'ok') {
-                alert('✅ Trainer added successfully!');
+                showToast('✅ Trainer added successfully!', 'success');
                 console.log('✅ Trainer added successfully');
                 // Refresh trainers list
                 const branches = gymBranches.length > 0 ? gymBranches : await fetchGymBranches();
@@ -614,7 +639,7 @@ const StaffManagement = () => {
         } catch (error) {
             console.error('❌ Error in addTrainerToAPI:', error.message);
             console.error('Error Stack:', error.stack);
-            alert(`❌ Failed to add trainer: ${error.message}`);
+            showToast(`❌ Failed to add trainer: ${error.message}`, 'error');
             return false;
         }
     };
@@ -728,7 +753,7 @@ const StaffManagement = () => {
             } else {
                 setStaff(staff.filter(s => s.staff_id !== item.staff_id));
             }
-            alert(`${itemType} deleted successfully!`);
+            showToast(`✅ ${itemType} deleted successfully!`, 'success');
         }
     };
 
@@ -737,43 +762,43 @@ const StaffManagement = () => {
         if (activeTab === 'trainers') {
             // Validate required fields
             if (!trainerFormData.name) {
-                alert('Please enter trainer name');
+                showToast('⚠️ Please enter trainer name', 'warning');
                 return;
             }
             if (!trainerFormData.email) {
-                alert('Please enter email');
+                showToast('⚠️ Please enter email', 'warning');
                 return;
             }
             if (!trainerFormData.phone) {
-                alert('Please enter phone number');
+                showToast('⚠️ Please enter phone number', 'warning');
                 return;
             }
             if (!trainerFormData.password) {
-                alert('Please enter password');
+                showToast('⚠️ Please enter password', 'warning');
                 return;
             }
             if (!trainerFormData.branch_id) {
-                alert('Please select branch');
+                showToast('⚠️ Please select branch', 'warning');
                 return;
             }
             if (!trainerFormData.specialization) {
-                alert('Please enter specialization');
+                showToast('⚠️ Please enter specialization', 'warning');
                 return;
             }
             if (!trainerFormData.experience_years) {
-                alert('Please enter experience');
+                showToast('⚠️ Please enter experience', 'warning');
                 return;
             }
             if (!trainerFormData.certifications) {
-                alert('Please enter certifications');
+                showToast('⚠️ Please enter certifications', 'warning');
                 return;
             }
             if (!trainerFormData.bio) {
-                alert('Please enter bio');
+                showToast('⚠️ Please enter bio', 'warning');
                 return;
             }
             if (!trainerFormData.profile_photo_url) {
-                alert('Please upload profile photo');
+                showToast('⚠️ Please upload profile photo', 'warning');
                 return;
             }
 
@@ -810,7 +835,7 @@ const StaffManagement = () => {
                 salary_monthly: parseFloat(staffFormData.salary_monthly)
             };
             setStaff([newStaff, ...staff]);
-            alert('Staff member added successfully!');
+            showToast('✅ Staff member added successfully!', 'success');
             setShowAddModal(false);
         }
     };
@@ -823,14 +848,14 @@ const StaffManagement = () => {
                     ? { ...t, ...trainerFormData }
                     : t
             ));
-            alert('Trainer updated successfully!');
+            showToast('✅ Trainer updated successfully!', 'success');
         } else {
             setStaff(staff.map(s =>
                 s.staff_id === selectedItem.staff_id
                     ? { ...s, ...staffFormData, salary_monthly: parseFloat(staffFormData.salary_monthly) }
                     : s
             ));
-            alert('Staff member updated successfully!');
+            showToast('✅ Staff member updated successfully!', 'success');
         }
         setShowEditModal(false);
     };
@@ -849,7 +874,7 @@ const StaffManagement = () => {
                     : s
             ));
         }
-        alert(`Status updated to ${newStatus}!`);
+        showToast(`✅ Status updated to ${newStatus}!`, 'success');
     };
 
     // Get badge classes
@@ -893,6 +918,13 @@ const StaffManagement = () => {
 
     return (
         <div className="staff-management">
+            {/* Toast Notification */}
+            {toastMessage.show && (
+                <div className={`toast-notification toast-${toastMessage.type}`}>
+                    <p>{toastMessage.message}</p>
+                </div>
+            )}
+
             {/* Header */}
             <div className="staff-header">
                 <div>
@@ -1622,14 +1654,20 @@ const StaffManagement = () => {
                                             <div className="staff-form-group staff-full-width">
                                                 <label>Profile Photo *</label>
                                                 <div
-                                                    className={`staff-image-upload-zone ${isDraggingImage ? 'dragging' : ''} ${trainerImagePreview ? 'has-image' : ''}`}
+                                                    className={`staff-image-upload-zone ${isDraggingImage ? 'dragging' : ''} ${trainerImagePreview ? 'has-image' : ''} ${isUploadingImage ? 'uploading' : ''}`}
                                                     onDragOver={handleImageDragOver}
                                                     onDragLeave={handleImageDragLeave}
                                                     onDrop={handleImageDrop}
                                                 >
                                                     <div className="staff-image-display-section">
                                                         <div className="staff-image-preview-box">
-                                                            {trainerImagePreview ? (
+                                                            {isUploadingImage && (
+                                                                <div className="staff-upload-loading">
+                                                                    <div className="staff-spinner"></div>
+                                                                    <p>Uploading...</p>
+                                                                </div>
+                                                            )}
+                                                            {trainerImagePreview && !isUploadingImage && (
                                                                 <>
                                                                     <img src={trainerImagePreview} alt="Preview" className="staff-image-preview-img" />
                                                                     <div className="staff-image-overlay">
@@ -1639,7 +1677,8 @@ const StaffManagement = () => {
                                                                         </label>
                                                                     </div>
                                                                 </>
-                                                            ) : (
+                                                            )}
+                                                            {!trainerImagePreview && !isUploadingImage && (
                                                                 <div className="staff-image-placeholder">
                                                                     <i className="fas fa-cloud-upload-alt"></i>
                                                                     <p className="staff-upload-title">Upload Profile Photo</p>
@@ -1655,15 +1694,16 @@ const StaffManagement = () => {
                                                         accept="image/*"
                                                         onChange={handleTrainerImageUpload}
                                                         style={{ display: 'none' }}
+                                                        disabled={isUploadingImage}
                                                         onClick={(e) => e.stopPropagation()}
                                                     />
 
                                                     <div className="staff-image-actions">
-                                                        <label htmlFor="trainer-image-input" className="staff-image-upload-label">
+                                                        <label htmlFor="trainer-image-input" className={`staff-image-upload-label ${isUploadingImage ? 'disabled' : ''}`}>
                                                             <i className="fas fa-plus"></i>
-                                                            {trainerImagePreview ? 'Change' : 'Upload'}
+                                                            {isUploadingImage ? 'Uploading...' : trainerImagePreview ? 'Change' : 'Upload'}
                                                         </label>
-                                                        {trainerImagePreview && (
+                                                        {trainerImagePreview && !isUploadingImage && (
                                                             <button
                                                                 type="button"
                                                                 className="staff-image-remove-btn"
