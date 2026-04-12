@@ -193,7 +193,6 @@ const StaffManagement = () => {
             setTotalStaff(data.pagination?.total || 0);
 
             if (data.status === 'success' && Array.isArray(data.data)) {
-                console.log('📊 API Response - Raw Staff Data:', data.data);
 
                 // Transform staff data to match component format
                 const transformedStaff = data.data.map(apiStaff => {
@@ -213,7 +212,7 @@ const StaffManagement = () => {
                         joining_date: apiStaff.joining_date || apiStaff.join_date || 'NA',
                         designation: apiStaff.designation || 'NA',
                         department: apiStaff.department || 'NA',
-                        salary_monthly: apiStaff.salary_monthly || 0,
+                        salary_monthly: apiStaff.salary_monthly || apiStaff.salary || 0,
                         salary_type: apiStaff.salary_type || 'FULL_TIME',
                         access_level: apiStaff.access_level || 'STAFF',
                         status: getStatus(apiStaff.status),
@@ -221,7 +220,6 @@ const StaffManagement = () => {
                         remark: apiStaff.remark || apiStaff.remarks || apiStaff.notes || ''
                     };
 
-                    console.log('✨ Single Staff Transformed:', transformedData);
                     return transformedData;
                 });
                 setStaff(transformedStaff);
@@ -659,9 +657,154 @@ const StaffManagement = () => {
         }
     };
 
+    // Add staff API call
+    const addStaffToAPI = async (formData) => {
+        try {
+            const token = tokenManager.getAccessToken();
+            if (!token) {
+                showToast('❌ No authentication token found', 'error');
+                return false;
+            }
+
+            const payload = {
+                name: formData.name,
+                email: formData.email,
+                phone: formData.phone,
+                password: formData.password,
+                gym_id: formData.gym_id,
+                branch_id: formData.branch_id,
+                shift_id: formData.shift_id,
+                joining_date: formData.joining_date,
+                designation: formData.designation,
+                department: formData.department,
+                salary: parseFloat(formData.salary_monthly),
+                salary_type: formData.salary_type,
+                access_level: formData.access_level,
+                status: formData.status
+            };
+
+
+            const url = `${API_BASE_URL}/api/staff/addStaff`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            let data;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                console.error('❌ Failed to parse response as JSON');
+                const text = await response.text();
+                console.error('Response Text:', text);
+                throw new Error(`Invalid response format: ${response.statusText}`);
+            }
+
+            // Check if response indicates success (even if status code is not ok)
+            if (data?.status === 'success' || data?.status === 'ok') {
+                // Refresh staff list
+                const branches = gymBranches.length > 0 ? gymBranches : await fetchGymBranches();
+                await fetchStaff(currentStaffPage, branches);
+                showToast('✅ Staff member added successfully!', 'success');
+                return true;
+            }
+
+            // Handle error responses
+            if (!response.ok || data?.status === 'error' || data?.status === 'failed') {
+                const errorMsg = data?.message || data?.error || data?.errors || `API error: ${response.status} ${response.statusText}`;
+                console.error('❌ API Error:', errorMsg);
+                console.error('Full Error Data:', data);
+                throw new Error(errorMsg);
+            }
+
+            // If we get here with unexpected status
+            console.warn('⚠️ Unexpected response:', data);
+            throw new Error('Unexpected response from server');
+        } catch (error) {
+            console.error('❌ Error in addStaffToAPI:', error.message);
+            console.error('Error Stack:', error.stack);
+            showToast(`❌ Failed to add staff: ${error.message}`, 'error');
+            return false;
+        }
+    };
+
+    // Update staff API call
+    const updateStaffToAPI = async (staffId, formData) => {
+        try {
+            const token = tokenManager.getAccessToken();
+            if (!token) {
+                showToast('❌ No authentication token found', 'error');
+                return false;
+            }
+
+            const payload = {
+                name: formData.name,
+                phone: formData.phone,
+                designation: formData.designation,
+                department: formData.department,
+                salary: parseFloat(formData.salary_monthly),
+                salary_type: formData.salary_type,
+                access_level: formData.access_level,
+                status: formData.status,
+                remark: formData.remark || ''
+            };
+
+            console.log('📤 Updating Staff Payload:', payload);
+
+            const url = `${API_BASE_URL}/api/staff/updateStaff/${staffId}`;
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            let data;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                console.error('❌ Failed to parse response as JSON');
+                const text = await response.text();
+                console.error('Response Text:', text);
+                throw new Error(`Invalid response format: ${response.statusText}`);
+            }
+
+            // Check if response indicates success (even if status code is not ok)
+            if (data?.status === 'success' || data?.status === 'ok') {
+                // Refresh staff list
+                const branches = gymBranches.length > 0 ? gymBranches : await fetchGymBranches();
+                await fetchStaff(currentStaffPage, branches);
+                showToast('✅ Staff member updated successfully!', 'success');
+                return true;
+            }
+
+            // Handle error responses
+            if (!response.ok || data?.status === 'error' || data?.status === 'failed') {
+                const errorMsg = data?.message || data?.error || data?.errors || `API error: ${response.status} ${response.statusText}`;
+                console.error('❌ API Error:', errorMsg);
+                console.error('Full Error Data:', data);
+                throw new Error(errorMsg);
+            }
+
+            // If we get here with unexpected status
+            console.warn('⚠️ Unexpected response:', data);
+            throw new Error('Unexpected response from server');
+        } catch (error) {
+            console.error('❌ Error in updateStaffToAPI:', error.message);
+            console.error('Error Stack:', error.stack);
+            showToast(`❌ Failed to update staff: ${error.message}`, 'error');
+            return false;
+        }
+    };
+
     // Handlers
     const handleViewDetails = (item) => {
-        console.log('📋 View Staff Details - Selected Item:', item);
         setSelectedItem(item);
         setShowDetailsModal(true);
     };
@@ -852,15 +995,66 @@ const StaffManagement = () => {
                 });
             }
         } else {
-            const newStaff = {
-                staff_id: staff.length + 1,
-                user_id: 3000 + staff.length + 1,
-                ...staffFormData,
-                salary_monthly: parseFloat(staffFormData.salary_monthly)
-            };
-            setStaff([newStaff, ...staff]);
-            showToast('✅ Staff member added successfully!', 'success');
-            setShowAddModal(false);
+            // Validate required fields for staff
+            if (!staffFormData.name) {
+                showToast('⚠️ Please enter staff name', 'warning');
+                return;
+            }
+            if (!staffFormData.email) {
+                showToast('⚠️ Please enter email', 'warning');
+                return;
+            }
+            if (!staffFormData.phone) {
+                showToast('⚠️ Please enter phone number', 'warning');
+                return;
+            }
+            if (!staffFormData.password) {
+                showToast('⚠️ Please enter password', 'warning');
+                return;
+            }
+            if (!staffFormData.branch_id) {
+                showToast('⚠️ Please select branch', 'warning');
+                return;
+            }
+            if (!staffFormData.designation) {
+                showToast('⚠️ Please enter designation', 'warning');
+                return;
+            }
+            if (!staffFormData.department) {
+                showToast('⚠️ Please enter department', 'warning');
+                return;
+            }
+            if (!staffFormData.salary_monthly) {
+                showToast('⚠️ Please enter salary', 'warning');
+                return;
+            }
+
+            setIsSubmittingTrainer(true);
+            const success = await addStaffToAPI(staffFormData);
+            setIsSubmittingTrainer(false);
+            if (success) {
+                setShowAddModal(false);
+                setStaffFormData({
+                    // User fields
+                    name: '',
+                    email: '',
+                    phone: '',
+                    password: '',
+                    role: 'STAFF',
+                    gym_id: 1,
+                    branch_id: 1,
+                    // Staff fields
+                    designation: '',
+                    department: '',
+                    shift_id: 1,
+                    salary_monthly: '',
+                    salary_type: 'FULL_TIME',
+                    joining_date: new Date().toISOString().split('T')[0],
+                    access_level: 'LOW',
+                    status: 'ACTIVE',
+                    remark: ''
+                });
+            }
         }
     };
 
@@ -892,13 +1086,26 @@ const StaffManagement = () => {
                 setShowEditModal(false);
             }
         } else {
-            setStaff(staff.map(s =>
-                s.staff_id === selectedItem.staff_id
-                    ? { ...s, ...staffFormData, salary_monthly: parseFloat(staffFormData.salary_monthly) }
-                    : s
-            ));
-            showToast('✅ Staff member updated successfully!', 'success');
-            setShowEditModal(false);
+            // Validate required fields for staff
+            if (!staffFormData.designation) {
+                showToast('⚠️ Please enter designation', 'warning');
+                return;
+            }
+            if (!staffFormData.department) {
+                showToast('⚠️ Please enter department', 'warning');
+                return;
+            }
+            if (!staffFormData.salary_monthly) {
+                showToast('⚠️ Please enter salary', 'warning');
+                return;
+            }
+
+            setIsSubmittingTrainer(true);
+            const success = await updateStaffToAPI(selectedItem.staff_id, staffFormData);
+            setIsSubmittingTrainer(false);
+            if (success) {
+                setShowEditModal(false);
+            }
         }
     };
 
@@ -1074,6 +1281,8 @@ const StaffManagement = () => {
                     <option value="ALL">All Status</option>
                     <option value="ACTIVE">Active</option>
                     <option value="INACTIVE">Inactive</option>
+                    <option value="SUSPENDED">Suspended</option>
+                    <option value="ON_LEAVE">On Leave</option>
                 </select>
                 {(filterBranch !== 'ALL' || filterStatus !== 'ALL') && (
                     <button 
@@ -1869,7 +2078,7 @@ const StaffManagement = () => {
                             )}
 
                             {/* Additional Information */}
-                            {activeTab === 'staff' && (
+                            {activeTab === 'staff' && showEditModal && (
                                 <div className="staff-form-section">
                                     <h3>Additional Information</h3>
                                     <div className="staff-form-grid">
@@ -1900,8 +2109,19 @@ const StaffManagement = () => {
                                                 : setStaffFormData({ ...staffFormData, status: e.target.value })}
                                             required
                                         >
-                                            <option value="ACTIVE">Active</option>
-                                            <option value="INACTIVE">Inactive</option>
+                                            {activeTab === 'trainers' ? (
+                                                <>
+                                                    <option value="ACTIVE">Active</option>
+                                                    <option value="INACTIVE">Inactive</option>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <option value="ACTIVE">Active</option>
+                                                    <option value="INACTIVE">Inactive</option>
+                                                    <option value="SUSPENDED">Suspended</option>
+                                                    <option value="ON_LEAVE">On Leave</option>
+                                                </>
+                                            )}
                                         </select>
                                     </div>
                                 </div>
