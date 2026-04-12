@@ -335,6 +335,14 @@ const StaffManagement = () => {
         status: 'ACTIVE'
     });
 
+    // Image preview state
+    const [trainerImagePreview, setTrainerImagePreview] = useState(null);
+    const [isSubmittingTrainer, setIsSubmittingTrainer] = useState(false);
+    const [isDraggingImage, setIsDraggingImage] = useState(false);
+
+    // Password visibility state
+    const [showPassword, setShowPassword] = useState(false);
+
     // Form data for staff
     const [staffFormData, setStaffFormData] = useState({
         // User fields
@@ -410,6 +418,207 @@ const StaffManagement = () => {
 
     const stats = getStats();
 
+    // Cloudinary upload configuration
+    const CLOUDINARY_CLOUD_NAME = 'dbskq6d4i'; // Replace with your Cloudinary cloud name
+    const CLOUDINARY_UPLOAD_PRESET = 'trainer_uploads'; // Replace with your unsigned preset
+
+    // Upload image to Cloudinary
+    const uploadToCloudinary = async (file) => {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+            console.log('📤 Uploading image to Cloudinary...');
+            const response = await fetch(
+                `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+                {
+                    method: 'POST',
+                    body: formData
+                }
+            );
+
+            const data = await response.json();
+
+            if (data.secure_url) {
+                console.log('✅ Image uploaded successfully:', data.secure_url);
+                return data.secure_url;
+            } else {
+                throw new Error('Failed to get image URL from Cloudinary');
+            }
+        } catch (error) {
+            console.error('❌ Cloudinary upload error:', error);
+            return null;
+        }
+    };
+
+    // Handle trainer image upload
+    const handleTrainerImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            try {
+                // Show preview immediately
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    setTrainerImagePreview(event.target.result);
+                };
+                reader.readAsDataURL(file);
+
+                // Upload to Cloudinary
+                const imageUrl = await uploadToCloudinary(file);
+
+                if (imageUrl) {
+                    setTrainerFormData({
+                        ...trainerFormData,
+                        profile_photo_url: imageUrl
+                    });
+                    console.log('✅ Trainer image URL set:', imageUrl);
+                } else {
+                    alert('⚠️ Failed to upload image to Cloudinary. Please try again.');
+                    setTrainerImagePreview(null);
+                }
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                alert('Error uploading image. Please try again.');
+            }
+        } else {
+            alert('Please select a valid image file');
+        }
+    };
+
+    // Drag and drop handlers
+    const handleImageDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingImage(true);
+    };
+
+    const handleImageDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingImage(false);
+    };
+
+    const handleImageDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingImage(false);
+
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            if (file.type.startsWith('image/')) {
+                // Show preview immediately
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    setTrainerImagePreview(event.target.result);
+                };
+                reader.readAsDataURL(file);
+
+                // Upload to Cloudinary
+                uploadToCloudinary(file).then((imageUrl) => {
+                    if (imageUrl) {
+                        setTrainerFormData({
+                            ...trainerFormData,
+                            profile_photo_url: imageUrl
+                        });
+                        console.log('✅ Dropped image URL set:', imageUrl);
+                    } else {
+                        alert('⚠️ Failed to upload image. Please try again.');
+                        setTrainerImagePreview(null);
+                    }
+                });
+            } else {
+                alert('Please drop an image file');
+            }
+        }
+    };
+
+    // Add trainer API call
+    const addTrainerToAPI = async (formData) => {
+        try {
+            const token = tokenManager.getAccessToken();
+            if (!token) {
+                alert('❌ No authentication token found');
+                return false;
+            }
+
+            const payload = {
+                name: formData.name,
+                email: formData.email,
+                phone: formData.phone,
+                password: formData.password,
+                gym_id: formData.gym_id,
+                branch_id: formData.branch_id,
+                shift_id: formData.shift_id,
+                joining_date: formData.joining_date,
+                specialization: formData.specialization,
+                experience: parseFloat(formData.experience_years),
+                availability: formData.availability_status,
+                certifications: formData.certifications,
+                bio: formData.bio,
+                profile_photo: formData.profile_photo_url || null,
+                status: formData.status === 'ACTIVE' ? 'Active' : 'Inactive'
+            };
+
+            console.log('📤 Sending API Request');
+            console.log('URL:', `${API_BASE_URL}/api/trainer/addTrainer`);
+            console.log('Token Present:', !!token);
+            console.log('Payload Fields:', Object.keys(payload));
+
+            const url = `${API_BASE_URL}/api/trainer/addTrainer`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            console.log('📥 Response Status:', response.status, response.statusText);
+
+            let data;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                console.error('❌ Failed to parse response as JSON');
+                const text = await response.text();
+                console.error('Response Text:', text);
+                throw new Error(`Invalid response format: ${response.statusText}`);
+            }
+
+            console.log('📥 Response Data:', data);
+
+            // Check if response indicates success (even if status code is not ok)
+            if (data?.status === 'success' || data?.status === 'ok') {
+                alert('✅ Trainer added successfully!');
+                console.log('✅ Trainer added successfully');
+                // Refresh trainers list
+                const branches = gymBranches.length > 0 ? gymBranches : await fetchGymBranches();
+                await fetchTrainers(branches, currentPage);
+                return true;
+            }
+
+            // Handle error responses
+            if (!response.ok || data?.status === 'error' || data?.status === 'failed') {
+                const errorMsg = data?.message || data?.error || data?.errors || `API error: ${response.status} ${response.statusText}`;
+                console.error('❌ API Error:', errorMsg);
+                console.error('Full Error Data:', data);
+                throw new Error(errorMsg);
+            }
+
+            // If we get here with unexpected status
+            console.warn('⚠️ Unexpected response:', data);
+            throw new Error('Unexpected response from server');
+        } catch (error) {
+            console.error('❌ Error in addTrainerToAPI:', error.message);
+            console.error('Error Stack:', error.stack);
+            alert(`❌ Failed to add trainer: ${error.message}`);
+            return false;
+        }
+    };
+
     // Handlers
     const handleViewDetails = (item) => {
         setSelectedItem(item);
@@ -438,6 +647,8 @@ const StaffManagement = () => {
                 joining_date: new Date().toISOString().split('T')[0],
                 status: 'ACTIVE'
             });
+            setTrainerImagePreview(null);
+            setShowPassword(false);
         } else {
             setStaffFormData({
                 // User fields
@@ -521,18 +732,76 @@ const StaffManagement = () => {
         }
     };
 
-    const handleAddSubmit = (e) => {
+    const handleAddSubmit = async (e) => {
         e.preventDefault();
         if (activeTab === 'trainers') {
-            const newTrainer = {
-                trainer_id: trainers.length + 1,
-                user_id: 2000 + trainers.length + 1,
-                ...trainerFormData,
-                total_clients: 0,
-                profile_photo_url: null
-            };
-            setTrainers([newTrainer, ...trainers]);
-            alert('Trainer added successfully!');
+            // Validate required fields
+            if (!trainerFormData.name) {
+                alert('Please enter trainer name');
+                return;
+            }
+            if (!trainerFormData.email) {
+                alert('Please enter email');
+                return;
+            }
+            if (!trainerFormData.phone) {
+                alert('Please enter phone number');
+                return;
+            }
+            if (!trainerFormData.password) {
+                alert('Please enter password');
+                return;
+            }
+            if (!trainerFormData.branch_id) {
+                alert('Please select branch');
+                return;
+            }
+            if (!trainerFormData.specialization) {
+                alert('Please enter specialization');
+                return;
+            }
+            if (!trainerFormData.experience_years) {
+                alert('Please enter experience');
+                return;
+            }
+            if (!trainerFormData.certifications) {
+                alert('Please enter certifications');
+                return;
+            }
+            if (!trainerFormData.bio) {
+                alert('Please enter bio');
+                return;
+            }
+            if (!trainerFormData.profile_photo_url) {
+                alert('Please upload profile photo');
+                return;
+            }
+
+            setIsSubmittingTrainer(true);
+            const success = await addTrainerToAPI(trainerFormData);
+            setIsSubmittingTrainer(false);
+            if (success) {
+                setShowAddModal(false);
+                setTrainerImagePreview(null);
+                setTrainerFormData({
+                    name: '',
+                    email: '',
+                    phone: '',
+                    password: '',
+                    role: 'TRAINER',
+                    gym_id: 1,
+                    branch_id: 1,
+                    specialization: '',
+                    experience_years: '',
+                    certifications: '',
+                    bio: '',
+                    shift_id: 1,
+                    availability_status: 'AVAILABLE',
+                    profile_photo_url: '',
+                    joining_date: new Date().toISOString().split('T')[0],
+                    status: 'ACTIVE'
+                });
+            }
         } else {
             const newStaff = {
                 staff_id: staff.length + 1,
@@ -542,8 +811,8 @@ const StaffManagement = () => {
             };
             setStaff([newStaff, ...staff]);
             alert('Staff member added successfully!');
+            setShowAddModal(false);
         }
-        setShowAddModal(false);
     };
 
     const handleEditSubmit = (e) => {
@@ -1165,6 +1434,7 @@ const StaffManagement = () => {
                 <div className="staff-modal-overlay" onClick={() => {
                     setShowAddModal(false);
                     setShowEditModal(false);
+                    setShowPassword(false);
                 }}>
                     <div className="staff-modal staff-modal-large" onClick={(e) => e.stopPropagation()}>
                         <div className="staff-modal-header">
@@ -1175,6 +1445,7 @@ const StaffManagement = () => {
                             <button className="staff-modal-close" onClick={() => {
                                 setShowAddModal(false);
                                 setShowEditModal(false);
+                                setShowPassword(false);
                             }}>
                                 <i className="fas fa-times"></i>
                             </button>
@@ -1223,28 +1494,25 @@ const StaffManagement = () => {
                                     </div>
                                     <div className="staff-form-group">
                                         <label>{showAddModal ? 'Password *' : 'Password (leave blank to keep current)'}</label>
-                                        <input
-                                            type="password"
-                                            value={activeTab === 'trainers' ? trainerFormData.password : staffFormData.password}
-                                            onChange={(e) => activeTab === 'trainers'
-                                                ? setTrainerFormData({ ...trainerFormData, password: e.target.value })
-                                                : setStaffFormData({ ...staffFormData, password: e.target.value })}
-                                            placeholder="Enter password"
-                                            required={showAddModal}
-                                        />
-                                    </div>
-                                    <div className="staff-form-group">
-                                        <label>Gym ID *</label>
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            value={activeTab === 'trainers' ? trainerFormData.gym_id : staffFormData.gym_id}
-                                            onChange={(e) => activeTab === 'trainers'
-                                                ? setTrainerFormData({ ...trainerFormData, gym_id: parseInt(e.target.value) })
-                                                : setStaffFormData({ ...staffFormData, gym_id: parseInt(e.target.value) })}
-                                            placeholder="Gym ID"
-                                            required
-                                        />
+                                        <div className="staff-password-input-wrapper">
+                                            <input
+                                                type={showPassword ? "text" : "password"}
+                                                value={activeTab === 'trainers' ? trainerFormData.password : staffFormData.password}
+                                                onChange={(e) => activeTab === 'trainers'
+                                                    ? setTrainerFormData({ ...trainerFormData, password: e.target.value })
+                                                    : setStaffFormData({ ...staffFormData, password: e.target.value })}
+                                                placeholder="Enter password"
+                                                required={showAddModal}
+                                            />
+                                            <button
+                                                type="button"
+                                                className="staff-password-toggle"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                title={showPassword ? "Hide password" : "Show password"}
+                                            >
+                                                <i className={`fas fa-eye${showPassword ? '' : '-slash'}`}></i>
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="staff-form-group">
                                         <label>Branch ID *</label>
@@ -1352,13 +1620,64 @@ const StaffManagement = () => {
                                                 />
                                             </div>
                                             <div className="staff-form-group staff-full-width">
-                                                <label>Profile Photo URL</label>
-                                                <input
-                                                    type="text"
-                                                    value={trainerFormData.profile_photo_url}
-                                                    onChange={(e) => setTrainerFormData({ ...trainerFormData, profile_photo_url: e.target.value })}
-                                                    placeholder="https://example.com/photo.jpg"
-                                                />
+                                                <label>Profile Photo *</label>
+                                                <div
+                                                    className={`staff-image-upload-zone ${isDraggingImage ? 'dragging' : ''} ${trainerImagePreview ? 'has-image' : ''}`}
+                                                    onDragOver={handleImageDragOver}
+                                                    onDragLeave={handleImageDragLeave}
+                                                    onDrop={handleImageDrop}
+                                                >
+                                                    <div className="staff-image-display-section">
+                                                        <div className="staff-image-preview-box">
+                                                            {trainerImagePreview ? (
+                                                                <>
+                                                                    <img src={trainerImagePreview} alt="Preview" className="staff-image-preview-img" />
+                                                                    <div className="staff-image-overlay">
+                                                                        <label htmlFor="trainer-image-input" className="staff-image-change-btn">
+                                                                            <i className="fas fa-edit"></i>
+                                                                            Change
+                                                                        </label>
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <div className="staff-image-placeholder">
+                                                                    <i className="fas fa-cloud-upload-alt"></i>
+                                                                    <p className="staff-upload-title">Upload Profile Photo</p>
+                                                                    <p className="staff-upload-subtitle">Drag and drop or click to browse</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <input
+                                                        id="trainer-image-input"
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={handleTrainerImageUpload}
+                                                        style={{ display: 'none' }}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+
+                                                    <div className="staff-image-actions">
+                                                        <label htmlFor="trainer-image-input" className="staff-image-upload-label">
+                                                            <i className="fas fa-plus"></i>
+                                                            {trainerImagePreview ? 'Change' : 'Upload'}
+                                                        </label>
+                                                        {trainerImagePreview && (
+                                                            <button
+                                                                type="button"
+                                                                className="staff-image-remove-btn"
+                                                                onClick={() => {
+                                                                    setTrainerImagePreview(null);
+                                                                    setTrainerFormData({ ...trainerFormData, profile_photo_url: '' });
+                                                                }}
+                                                            >
+                                                                <i className="fas fa-trash"></i>
+                                                                Remove
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1454,11 +1773,21 @@ const StaffManagement = () => {
                                 <button type="button" className="staff-btn-secondary" onClick={() => {
                                     setShowAddModal(false);
                                     setShowEditModal(false);
-                                }}>
+                                    setShowPassword(false);
+                                }} disabled={isSubmittingTrainer && activeTab === 'trainers'}>
                                     Cancel
                                 </button>
-                                <button type="submit" className="staff-btn-primary">
-                                    {showAddModal ? 'Add' : 'Update'} {activeTab === 'trainers' ? 'Trainer' : 'Staff'}
+                                <button type="submit" className="staff-btn-primary" disabled={isSubmittingTrainer && activeTab === 'trainers'}>
+                                    {isSubmittingTrainer && activeTab === 'trainers' ? (
+                                        <>
+                                            <i className="fas fa-spinner fa-spin"></i>
+                                            {showAddModal ? 'Adding...' : 'Updating...'}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {showAddModal ? 'Add' : 'Update'} {activeTab === 'trainers' ? 'Trainer' : 'Staff'}
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </form>
