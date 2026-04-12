@@ -193,12 +193,14 @@ const StaffManagement = () => {
             setTotalStaff(data.pagination?.total || 0);
 
             if (data.status === 'success' && Array.isArray(data.data)) {
+                console.log('📊 API Response - Raw Staff Data:', data.data);
+
                 // Transform staff data to match component format
                 const transformedStaff = data.data.map(apiStaff => {
                     const branch = branches.find(b => b.branch_id === apiStaff.branch_id);
                     const branchName = branch ? branch.branch_name : 'NA';
 
-                    return {
+                    const transformedData = {
                         staff_id: apiStaff.staff_id || 'NA',
                         user_id: apiStaff.user_id || 'NA',
                         name: apiStaff.name || 'NA',
@@ -208,15 +210,19 @@ const StaffManagement = () => {
                         branch_name: branchName,
                         shift_id: apiStaff.shift_id || 'NA',
                         shift_name: getShiftName(apiStaff.shift_id),
-                        joining_date: apiStaff.join_date || 'NA',
+                        joining_date: apiStaff.joining_date || apiStaff.join_date || 'NA',
                         designation: apiStaff.designation || 'NA',
                         department: apiStaff.department || 'NA',
                         salary_monthly: apiStaff.salary_monthly || 0,
                         salary_type: apiStaff.salary_type || 'FULL_TIME',
                         access_level: apiStaff.access_level || 'STAFF',
                         status: getStatus(apiStaff.status),
-                        gym_id: apiStaff.gym_id || 'NA'
+                        gym_id: apiStaff.gym_id || 'NA',
+                        remark: apiStaff.remark || apiStaff.remarks || apiStaff.notes || ''
                     };
+
+                    console.log('✨ Single Staff Transformed:', transformedData);
+                    return transformedData;
                 });
                 setStaff(transformedStaff);
             } else {
@@ -331,7 +337,8 @@ const StaffManagement = () => {
         salary_type: 'FULL_TIME',
         joining_date: new Date().toISOString().split('T')[0],
         access_level: 'LOW',
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        remark: ''
     });
 
     // Filter data
@@ -654,6 +661,7 @@ const StaffManagement = () => {
 
     // Handlers
     const handleViewDetails = (item) => {
+        console.log('📋 View Staff Details - Selected Item:', item);
         setSelectedItem(item);
         setShowDetailsModal(true);
     };
@@ -700,7 +708,8 @@ const StaffManagement = () => {
                 salary_type: 'FULL_TIME',
                 joining_date: new Date().toISOString().split('T')[0],
                 access_level: 'LOW',
-                status: 'ACTIVE'
+                status: 'ACTIVE',
+                remark: ''
             });
         }
         setShowAddModal(true);
@@ -753,7 +762,8 @@ const StaffManagement = () => {
                 salary_type: item.salary_type,
                 joining_date: item.joining_date,
                 access_level: item.access_level,
-                status: item.status
+                status: item.status,
+                remark: item.remark || ''
             });
         }
         setShowEditModal(true);
@@ -1390,6 +1400,18 @@ const StaffManagement = () => {
                                 </div>
                             )}
 
+                            {activeTab !== 'trainers' && (
+                                <div className="staff-detail-section">
+                                    <h3><i className="fas fa-file-alt"></i> Additional Information</h3>
+                                    <div className="staff-detail-grid">
+                                        <div className="staff-detail-item staff-full-width">
+                                            <label>Remarks</label>
+                                            <span>{selectedItem.remark || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {activeTab === 'trainers' ? (
                                 <>
                                     {/* Professional Information */}
@@ -1864,6 +1886,25 @@ const StaffManagement = () => {
                                         </div>
                                     </div>
                                 </>
+                            )}
+
+                            {/* Additional Information */}
+                            {activeTab === 'staff' && (
+                                <div className="staff-form-section">
+                                    <h3>Additional Information</h3>
+                                    <div className="staff-form-grid">
+                                        <div className="staff-form-group">
+                                            <label>Remarks</label>
+                                            <textarea
+                                                value={staffFormData.remark}
+                                                onChange={(e) => setStaffFormData({ ...staffFormData, remark: e.target.value })}
+                                                placeholder="Add any remarks or notes about this staff member"
+                                                rows="4"
+                                                style={{ resize: 'vertical' }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                             )}
 
                             {/* Status */}
