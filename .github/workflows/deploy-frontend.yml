@@ -3,7 +3,7 @@ name: Deploy Frontend to Hostinger
 on:
   push:
     branches:
-      - test-react
+      - up-react
 
 jobs:
   build-and-deploy:
@@ -27,8 +27,8 @@ jobs:
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.TEST_FTP_USERNAME }}
-          password: ${{ secrets.TEST_FTP_PASSWORD }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
           local-dir: dist/
-          server-dir: ${{ secrets.TEST_FTP_TARGET }}/
+          server-dir: ${{ secrets.FTP_TARGET }}/
           dangerous-clean-slate: true
