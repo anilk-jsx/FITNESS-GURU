@@ -540,7 +540,12 @@ const MemberManagement = () => {
 
   // Handle limit changes
   const handleLimitChange = (newLimit) => {
-    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+    let actualLimit = newLimit;
+    // If "ALL" is selected (represented as string), use total or large number
+    if (newLimit === "ALL") {
+      actualLimit = pagination.total || 99999;
+    }
+    setPagination((prev) => ({ ...prev, limit: actualLimit, page: 1 }));
   };
 
   // Filter members based on search query (client-side filtering for current page)
@@ -1906,13 +1911,13 @@ const MemberManagement = () => {
         <div className="member-pagination-controls">
           <select
             className="member-pagination-limit"
-            value={pagination.limit}
-            onChange={(e) => handleLimitChange(parseInt(e.target.value))}
+            value={pagination.limit >= pagination.total && pagination.total > 0 ? "ALL" : pagination.limit}
+            onChange={(e) => handleLimitChange(e.target.value === "ALL" ? "ALL" : parseInt(e.target.value))}
           >
-            <option value={5}>5 per page</option>
             <option value={10}>10 per page</option>
-            <option value={20}>20 per page</option>
             <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
+            <option value="ALL">ALL</option>
           </select>
 
           <button
