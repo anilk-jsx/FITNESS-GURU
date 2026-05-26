@@ -92,6 +92,26 @@ const AdminSidebar = ({
                         Branch Management
                     </NavLink>
                 </div>
+                <div className="nav-item">
+                    <NavLink
+                        to="/admin-dashboard/fitness-assessments"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
+                    >
+                        <i className="fas fa-heartbeat"></i>
+                        Fitness Assessments
+                    </NavLink>
+                </div>
+                <div className="nav-item">
+                    <NavLink
+                        to="/admin-dashboard/mapping"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
+                    >
+                        <i className="fas fa-link"></i>
+                        User Trainer Mapping
+                    </NavLink>
+                </div>
             </div>
 
             <div className="logout-section">
