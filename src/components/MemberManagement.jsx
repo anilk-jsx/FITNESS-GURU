@@ -448,7 +448,26 @@ const MemberManagement = () => {
     }
   };
 
-  // Effect to fetch members on component mount and when filters/pagination change
+  // Ref to track previous search query
+  const prevSearchRef = React.useRef("");
+
+  // Effect to handle search query changes and fetch all members for global search
+  useEffect(() => {
+    const searchChanged = prevSearchRef.current !== searchQuery;
+    prevSearchRef.current = searchQuery;
+
+    if (searchChanged) {
+      if (searchQuery.trim() !== "") {
+        // Search activated - fetch all members by setting high limit and page 1
+        setPagination((prev) => ({ ...prev, page: 1, limit: 9999 }));
+      } else {
+        // Search cleared - reset to default pagination (10 per page, page 1)
+        setPagination((prev) => ({ ...prev, page: 1, limit: 10 }));
+      }
+    }
+  }, [searchQuery]);
+
+  // Effect to fetch members when filters/pagination change
   useEffect(() => {
     fetchMembers();
   }, [filters, pagination.page, pagination.limit]);
@@ -548,8 +567,9 @@ const MemberManagement = () => {
     setPagination((prev) => ({ ...prev, limit: actualLimit, page: 1 }));
   };
 
-  // Filter members based on search query (client-side filtering for current page)
+  // Return members as-is (API handles search filtering)
   const filteredMembers = members.filter((member) => {
+    if (!searchQuery) return true; // Return all if no search
     const query = searchQuery.toLowerCase();
     return (
       member.name?.toLowerCase().includes(query) ||
