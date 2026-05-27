@@ -194,7 +194,7 @@ export default function Signup() {
         password: form.password,
         gym_id: 1,
         branch_id: parseInt(form.branch),
-        status: 1,
+        status: 0,
         join_date: new Date().toISOString().split('T')[0],
         membership_plan: 1,
         dob: form.dob,

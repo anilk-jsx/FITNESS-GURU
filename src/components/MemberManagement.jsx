@@ -448,7 +448,26 @@ const MemberManagement = () => {
     }
   };
 
-  // Effect to fetch members on component mount and when filters/pagination change
+  // Ref to track previous search query
+  const prevSearchRef = React.useRef("");
+
+  // Effect to handle search query changes and fetch all members for global search
+  useEffect(() => {
+    const searchChanged = prevSearchRef.current !== searchQuery;
+    prevSearchRef.current = searchQuery;
+
+    if (searchChanged) {
+      if (searchQuery.trim() !== "") {
+        // Search activated - fetch all members by setting high limit and page 1
+        setPagination((prev) => ({ ...prev, page: 1, limit: 9999 }));
+      } else {
+        // Search cleared - reset to default pagination (10 per page, page 1)
+        setPagination((prev) => ({ ...prev, page: 1, limit: 10 }));
+      }
+    }
+  }, [searchQuery]);
+
+  // Effect to fetch members when filters/pagination change
   useEffect(() => {
     fetchMembers();
   }, [filters, pagination.page, pagination.limit]);
@@ -540,11 +559,17 @@ const MemberManagement = () => {
 
   // Handle limit changes
   const handleLimitChange = (newLimit) => {
-    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
+    let actualLimit = newLimit;
+    // If "ALL" is selected (represented as string), use total or large number
+    if (newLimit === "ALL") {
+      actualLimit = pagination.total || 99999;
+    }
+    setPagination((prev) => ({ ...prev, limit: actualLimit, page: 1 }));
   };
 
-  // Filter members based on search query (client-side filtering for current page)
+  // Return members as-is (API handles search filtering)
   const filteredMembers = members.filter((member) => {
+    if (!searchQuery) return true; // Return all if no search
     const query = searchQuery.toLowerCase();
     return (
       member.name?.toLowerCase().includes(query) ||
@@ -1906,13 +1931,13 @@ const MemberManagement = () => {
         <div className="member-pagination-controls">
           <select
             className="member-pagination-limit"
-            value={pagination.limit}
-            onChange={(e) => handleLimitChange(parseInt(e.target.value))}
+            value={pagination.limit >= pagination.total && pagination.total > 0 ? "ALL" : pagination.limit}
+            onChange={(e) => handleLimitChange(e.target.value === "ALL" ? "ALL" : parseInt(e.target.value))}
           >
-            <option value={5}>5 per page</option>
             <option value={10}>10 per page</option>
-            <option value={20}>20 per page</option>
             <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
+            <option value="ALL">ALL</option>
           </select>
 
           <button
