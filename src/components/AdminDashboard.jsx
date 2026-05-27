@@ -71,7 +71,6 @@ const AdminDashboard = () => {
     return (
         <div className="admin-dashboard">
             {/* Mobile Menu Toggle */}
-            <h1>Admin Dashboard</h1>
             <button 
                 className="mobile-menu-toggle" 
                 id="mobile-menu-toggle"
