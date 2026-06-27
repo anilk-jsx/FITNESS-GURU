@@ -89,7 +89,6 @@ function App() {
             <Testimonials />
             <Contact />
             <Footer />
-            <h1>HELLO WORLD</h1>
           </>
         } />
       </Routes>
