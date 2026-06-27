@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./FitnessAssessment.css";
 import tokenManager from "../utils/tokenManager";
+import MemberAssessmentDashboard from "./MemberAssessmentDashboard";
 
 // ─── Dummy assessment generator ───────────────────────────────────────────────
 const generateDummyAssessment = (userId, assessmentDate) => ({
@@ -542,6 +543,16 @@ const FitnessAssessment = () => {
   });
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  if (selectedPair) {
+    return (
+      <MemberAssessmentDashboard 
+        member={selectedPair.member} 
+        onBack={() => setSelectedPair(null)}
+        isAdmin={true}
+      />
+    );
+  }
+
   return (
     <div className="fa-container">
       {/* Page header */}

@@ -112,6 +112,16 @@ const AdminSidebar = ({
                         User Trainer Mapping
                     </NavLink>
                 </div>
+                <div className="nav-item">
+                    <NavLink
+                        to="/admin-dashboard/diet-plans"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
+                    >
+                        <i className="fas fa-seedling"></i>
+                        Diet Plans
+                    </NavLink>
+                </div>
             </div>
 
             <div className="logout-section">
