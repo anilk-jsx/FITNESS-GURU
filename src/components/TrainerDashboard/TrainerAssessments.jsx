@@ -1,7 +1,22 @@
 import React, { useState } from 'react';
 import './TrainerDashboard.css';
+import '../FitnessAssessment.css';
+import MemberAssessmentDashboard from '../MemberAssessmentDashboard';
 
 const TrainerAssessments = () => {
+  const getAvatarColor = (name) => {
+    const colors = [
+      '#ff6b35', '#764ba2', '#f093fb', '#f5576c',
+      '#4facfe', '#43e97b', '#fa709a', '#fee140',
+      '#a18cd1', '#fbc2eb'
+    ];
+    let hash = 0;
+    for (let i = 0; i < (name || '').length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   // Mock assessments logs
   const [assessments, setAssessments] = useState([
     { id: 1, name: 'Rajesh Kumar', date: '2024-08-15', weight: 82.5, bmi: 25.4, fat: 22.1, muscle: 38.4 },
@@ -29,6 +44,7 @@ const TrainerAssessments = () => {
   // Search and Sort
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClientChart, setSelectedClientChart] = useState('Rajesh Kumar');
+  const [selectedMemberForDashboard, setSelectedMemberForDashboard] = useState(null);
 
   // Filter list
   const filteredAssessments = assessments.filter(item => 
@@ -93,6 +109,27 @@ const TrainerAssessments = () => {
 
   // Data points for progress graph
   const chartData = assessments.filter(a => a.name === selectedClientChart).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  if (selectedMemberForDashboard) {
+    const memberObj = {
+      name: selectedMemberForDashboard,
+      user_id: selectedMemberForDashboard === 'Rajesh Kumar' ? 'M-1001' : 
+               selectedMemberForDashboard === 'Sneha Patel' ? 'M-1002' : 
+               selectedMemberForDashboard === 'Rahul Mehta' ? 'M-1003' : 'M-1004',
+      email: `${selectedMemberForDashboard.toLowerCase().replace(' ', '.')}@email.com`,
+      phone: '+91 98765 43210',
+      gender: selectedMemberForDashboard === 'Sneha Patel' || selectedMemberForDashboard === 'Ananya Roy' ? 'Female' : 'Male',
+      age: selectedMemberForDashboard === 'Sneha Patel' ? 24 : 29,
+      trainer: 'John Trainer'
+    };
+    return (
+      <MemberAssessmentDashboard 
+        member={memberObj}
+        onBack={() => setSelectedMemberForDashboard(null)}
+        isAdmin={false}
+      />
+    );
+  }
 
   return (
     <div className="trainer-page-container" style={{ padding: 0 }}>
@@ -243,56 +280,78 @@ const TrainerAssessments = () => {
         </div>
       </div>
 
-      {/* History Table */}
-      <div className="m-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 className="m-card-title" style={{ margin: 0 }}>Assessment Logs</h3>
-          <div className="table-search-input-wrapper" style={{ minWidth: '220px' }}>
-            <i className="fas fa-search table-search-icon"></i>
-            <input 
-              type="text" 
-              placeholder="Search by client name..." 
-              className="table-search-input"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+      {/* Clients Assessment Cards Directory */}
+      <div className="page-header" style={{ marginTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '24px' }}>
+        <div className="page-header-titles">
+          <h3>Assessment Directories</h3>
+          <p>Click on any member's card to view their complete assessment overview and progress history.</p>
         </div>
+        <div className="table-search-input-wrapper" style={{ minWidth: '240px' }}>
+          <i className="fas fa-search table-search-icon"></i>
+          <input 
+            type="text" 
+            placeholder="Search clients..." 
+            className="table-search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
 
-        <div className="table-responsive-wrapper">
-          <table className="m-table">
-            <thead>
-              <tr>
-                <th>Client Name</th>
-                <th>Assessment Date</th>
-                <th>Weight (kg)</th>
-                <th>BMI Value</th>
-                <th>Body Fat (%)</th>
-                <th>Muscle Mass (%)</th>
-                <th>Status Rating</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAssessments.map(item => (
-                <tr key={item.id}>
-                  <td style={{ fontWeight: 600 }}>{item.name}</td>
-                  <td>{item.date}</td>
-                  <td>{item.weight} kg</td>
-                  <td>{item.bmi}</td>
-                  <td>{item.fat}%</td>
-                  <td>{item.muscle}%</td>
-                  <td>
-                    {item.bmi < 25 ? (
-                      <span className="m-badge success">Normal Weight</span>
-                    ) : (
-                      <span className="m-badge warning">Overweight</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="fa-grid" id="fa-members-grid" style={{ marginTop: '16px', marginBottom: '24px' }}>
+        {clientNames.filter(name => name.toLowerCase().includes(searchQuery.toLowerCase())).map((clientName) => {
+          // Find matching logs
+          const clientLogs = assessments.filter(a => a.name === clientName);
+          const latestLog = clientLogs[0] || { weight: 70, date: '2024-05-15', bmi: 22.9 };
+          
+          const avatarColor = getAvatarColor(clientName);
+          const initials = clientName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+          const mockScore = clientName === 'Rajesh Kumar' ? 85 : clientName === 'Sneha Patel' ? 78 : clientName === 'Rahul Mehta' ? 65 : 70;
+
+          return (
+            <div
+              key={clientName}
+              className="fa-member-card"
+              onClick={() => setSelectedMemberForDashboard(clientName)}
+              style={{ cursor: 'pointer' }}
+            >
+              <div 
+                className="fa-card-image"
+                style={{
+                  background: `linear-gradient(145deg, ${avatarColor}ff 0%, ${avatarColor}88 100%)`,
+                }}
+              >
+                <span className="fa-card-initials">{initials}</span>
+                <div className="fa-card-hover-hint">
+                  <i className="fas fa-eye"></i> View Report
+                </div>
+              </div>
+
+              <div className="fa-card-overlay" style={{ background: 'rgba(20, 20, 22, 0.95)', borderTop: '1px solid rgba(255, 255, 255, 0.05)', padding: '12px 16px' }}>
+                <h3 className="fa-card-name" style={{ color: '#fff', fontSize: '1rem', fontWeight: 700, margin: '0 0 8px 0' }}>{clientName}</h3>
+                
+                <div className="fa-card-score-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '6px' }}>
+                  <span>Fitness Score</span>
+                  <span style={{ color: '#22c55e', fontWeight: 'bold' }}>{mockScore}/100</span>
+                </div>
+                <div className="fa-card-score-track" style={{ height: '5px', background: 'rgba(255, 255, 255, 0.06)', borderRadius: '3px', overflow: 'hidden', marginBottom: '8px' }}>
+                  <div 
+                    className="fa-card-score-fill" 
+                    style={{ 
+                      width: `${mockScore}%`, 
+                      height: '100%', 
+                      background: 'linear-gradient(90deg, #ff6b35, #f7931e)' 
+                    }}
+                  ></div>
+                </div>
+
+                <p className="fa-card-date" style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>
+                  <i className="fas fa-calendar-alt"></i> Latest: {latestLog.date}
+                </p>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* ADD ASSESSMENT MODAL */}
