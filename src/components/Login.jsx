@@ -42,6 +42,8 @@ export default function Login() {
 
         if (data.user.role === "ADMIN" || data.user.role === "OWNER") {
           navigate("/admin-dashboard");
+        } else if (data.user.role === "TRAINER") {
+          navigate("/trainer-dashboard");
         } else {
           navigate("/dashboard");
         }

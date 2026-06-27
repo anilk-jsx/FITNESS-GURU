@@ -217,7 +217,8 @@ const StaffManagement = () => {
                         access_level: apiStaff.access_level || 'STAFF',
                         status: getStatus(apiStaff.status),
                         gym_id: apiStaff.gym_id || 'NA',
-                        remark: apiStaff.remark || apiStaff.remarks || apiStaff.notes || ''
+                        remark: apiStaff.remark || apiStaff.remarks || apiStaff.notes || '',
+                        profile_photo_url: apiStaff.profile_photo || apiStaff.profile_photo_url || null
                     };
 
                     return transformedData;
@@ -1364,10 +1365,25 @@ const StaffManagement = () => {
                                     <tr key={activeTab === 'trainers' ? item.trainer_id : item.staff_id}>
                                         <td>#{activeTab === 'trainers' ? item.trainer_id : item.staff_id}</td>
                                         <td>
-                                            <div className="staff-user-info">
-                                                <strong>{item.name}</strong>
-                                                <span>{item.email}</span>
-                                                <span>{item.phone}</span>
+                                            <div className="staff-user-profile-wrapper">
+                                                <div className="staff-user-avatar">
+                                                    {item.profile_photo_url ? (
+                                                        <img 
+                                                            src={item.profile_photo_url} 
+                                                            alt={item.name} 
+                                                            className="staff-avatar-img"
+                                                        />
+                                                    ) : (
+                                                        <div className="staff-avatar-placeholder">
+                                                            <i className="fas fa-user"></i>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="staff-user-info">
+                                                    <strong>{item.name}</strong>
+                                                    <span>{item.email}</span>
+                                                    <span>{item.phone}</span>
+                                                </div>
                                             </div>
                                         </td>
                                         <td>

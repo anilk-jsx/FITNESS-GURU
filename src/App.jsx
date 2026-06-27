@@ -13,6 +13,7 @@ import BranchManagement from './components/BranchManagement';
 import ContactManagement from './components/ContactManagement';
 import FitnessAssessment from './components/FitnessAssessment';
 import SectionDivider from './components/SectionDivider';
+import AdminDietPlans from './components/AdminDietPlans';
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
@@ -27,6 +28,16 @@ import Footer from "./components/Footer";
 import Trainers from './components/Trainers';
 import Login from './components/Login';
 import UserTrainerMapping from './components/UserTrainerMapping';
+import TrainerDashboardLayout from './components/TrainerDashboard/TrainerDashboardLayout';
+import TrainerDashboardHome from './components/TrainerDashboard/TrainerDashboardHome';
+import TrainerClients from './components/TrainerDashboard/TrainerClients';
+import TrainerAssessments from './components/TrainerDashboard/TrainerAssessments';
+import TrainerWorkoutPlans from './components/TrainerDashboard/TrainerWorkoutPlans';
+import TrainerDietPlans from './components/TrainerDashboard/TrainerDietPlans';
+import TrainerAttendance from './components/TrainerDashboard/TrainerAttendance';
+import TrainerSchedule from './components/TrainerDashboard/TrainerSchedule';
+import TrainerNotifications from './components/TrainerDashboard/TrainerNotifications';
+import TrainerProfile from './components/TrainerDashboard/TrainerProfile';
 import ProtectedRoute from './utils/ProtectedRoute';
 import './App.css';
 
@@ -48,9 +59,22 @@ function App() {
           <Route path="contacts" element={<ContactManagement />} />
           <Route path="fitness-assessments" element={<FitnessAssessment />} />
           <Route path="mapping" element={<UserTrainerMapping />} />
+          <Route path="diet-plans" element={<AdminDietPlans />} />
         </Route>
         <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/trainer-dashboard" element={<ProtectedRoute trainerOnly><TrainerDashboardLayout /></ProtectedRoute>}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<TrainerDashboardHome />} />
+          <Route path="clients" element={<TrainerClients />} />
+          <Route path="assessments" element={<TrainerAssessments />} />
+          <Route path="workout-plans" element={<TrainerWorkoutPlans />} />
+          <Route path="diet-plans" element={<TrainerDietPlans />} />
+          <Route path="attendance" element={<TrainerAttendance />} />
+          <Route path="schedule" element={<TrainerSchedule />} />
+          <Route path="notifications" element={<TrainerNotifications />} />
+          <Route path="profile" element={<TrainerProfile />} />
+        </Route>
         <Route path="/*" element={
           <>
             <Navbar />
