@@ -7,22 +7,24 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 100);
-    };
+  const handleScroll = (e) => {
+    const target = e.target === document ? document.body : e.target;
+    const currentScroll = target.scrollTop;
+    setIsScrolled(currentScroll > 100);
+  };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  window.addEventListener('scroll', handleScroll, true);
+  return () => window.removeEventListener('scroll', handleScroll, true);
+}, []);
 
   const handleMobileMenuToggle = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
-    document.body.style.overflow = !isMobileMenuOpen ? 'hidden' : 'auto';
+    document.body.style.overflow = !isMobileMenuOpen ? 'hidden' : '';
   };
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
-    document.body.style.overflow = 'auto';
+    document.body.style.overflow = '';
   };
 
   const handleNavLinkClick = (sectionId) => {
@@ -39,7 +41,7 @@ const Navbar = () => {
         <nav>
           <a href="#" className="logo">
             <img src="/FGlogo.png" alt="FitnessGuru Logo" />
-            FITNESS GURU
+            FITNESS GURU <span>GOLD</span>
           </a>
           <ul className="nav-links">
             <li><a href="#home" onClick={(e) => { e.preventDefault(); handleNavLinkClick('home'); }}>Home</a></li>
@@ -65,7 +67,7 @@ const Navbar = () => {
         <div className="mobile-nav-header">
           <div className="mobile-nav-logo">
             <img src="/FGlogo.png" alt="FitnessGuru Logo" />
-            FITNESS GURU
+            FITNESS GURU 
           </div>
           <button className="mobile-close" onClick={closeMobileMenu}>
             &times;

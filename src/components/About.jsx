@@ -106,34 +106,38 @@ export default function About() {
   }, []);
 
   const handleScroll = useCallback(() => {
-    if (!sectionRef.current) return;
-    const rect = sectionRef.current.getBoundingClientRect();
-    const winH = window.innerHeight;
-    const raw = (-rect.top + winH * 0.35) / (rect.height - winH * 0.15);
-    const progress = Math.min(1, Math.max(0, raw));
+      if (!sectionRef.current) return;
+      
+      const rect = sectionRef.current.getBoundingClientRect();
+      const winH = window.innerHeight;
+      const totalDistance = rect.height;
+      const currentPassed = winH * 0.5 - rect.top; 
+      
+      const progress = Math.min(1, Math.max(0, currentPassed / totalDistance));
 
-    if (svgPathRef.current && pathLengthRef.current) {
-      svgPathRef.current.style.strokeDashoffset = `${
-        pathLengthRef.current * (1 - progress)
-      }`;
-    }
+      if (svgPathRef.current && pathLengthRef.current) {
+        svgPathRef.current.style.strokeDashoffset = `${
+          pathLengthRef.current * (1 - progress)
+        }`;
+      }
 
-    const next = new Set();
-    TIMELINE_EVENTS.forEach((_, i) => {
-      if (progress >= (i + 0.4) / TIMELINE_EVENTS.length) next.add(i);
-    });
-    setReachedCheckpoints((prev) => {
-      if (prev.size !== next.size) return next;
-      for (const v of next) if (!prev.has(v)) return next;
-      return prev;
-    });
-  }, []);
+      const next = new Set();
+      TIMELINE_EVENTS.forEach((_, i) => {
+        if (progress >= (i + 0.2) / TIMELINE_EVENTS.length) next.add(i);
+      });
+      
+      setReachedCheckpoints((prev) => {
+        if (prev.size !== next.size) return next;
+        for (const v of next) if (!prev.has(v)) return next;
+        return prev;
+      });
+    }, []);
 
   useEffect(() => {
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [handleScroll]);
+      window.addEventListener("scroll", handleScroll, true);
+      handleScroll();  
+      return () => window.removeEventListener("scroll", handleScroll, true);
+    }, [handleScroll]);
 
   return (
       <section id="about" className="tl-section" ref={sectionRef}>
