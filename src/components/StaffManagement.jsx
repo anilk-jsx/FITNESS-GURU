@@ -130,6 +130,42 @@ const StaffManagement = () => {
         return 'STAFF';
     };
 
+    const buildFormDataFromProfile = (profile, employeeFallback = {}) => {
+        const empDetails = profile?.employee_details || profile || {};
+        const userInfo = profile?.user_information || {};
+        const salaryInfo = profile?.salary_information || {};
+        const trainerInfo = profile?.trainer_profile || {};
+        const detectedType = detectOnboardType(profile);
+
+        return {
+            branch_id: userInfo.branch_id || empDetails.branch_id || employeeFallback.branch_id || '',
+            name: empDetails.full_name || empDetails.name || employeeFallback.full_name || employeeFallback.name || '',
+            email: empDetails.email || employeeFallback.email || '',
+            phone: empDetails.phone || employeeFallback.phone || '',
+            password: '',
+            designation: empDetails.designation || employeeFallback.designation || (detectedType === 'TRAINER' ? 'TRAINER' : 'RECEPTIONIST'),
+            employment_type: empDetails.employment_type || employeeFallback.employment_type || 'FULL_TIME',
+            salary_type: salaryInfo.salary_type || empDetails.salary_type || employeeFallback.salary_type || 'MONTHLY',
+            salary_amount: salaryInfo.salary_amount || empDetails.salary_amount || employeeFallback.salary_amount || 0.0,
+            joining_date: empDetails.joining_date || employeeFallback.joining_date || '',
+            profile_photo: empDetails.profile_photo || employeeFallback.profile_photo || '',
+            emergency_contact_name: empDetails.emergency_contact_name || employeeFallback.emergency_contact_name || '',
+            emergency_contact_phone: empDetails.emergency_contact_phone || employeeFallback.emergency_contact_phone || '',
+            address: empDetails.address || employeeFallback.address || '',
+            remarks: empDetails.remarks || employeeFallback.remarks || '',
+            specialization: trainerInfo.specialization || '',
+            experience: trainerInfo.experience || 0,
+            certifications: trainerInfo.certifications || '',
+            bio: trainerInfo.bio || '',
+            showcase_photo: trainerInfo.showcase_photo || '',
+            availability_status: trainerInfo.availability_status || 'AVAILABLE',
+            rating: trainerInfo.rating || 0.0,
+            instagram_url: trainerInfo.instagram_url || '',
+            facebook_url: trainerInfo.facebook_url || '',
+            linkedin_url: trainerInfo.linkedin_url || ''
+        };
+    };
+
     // Fetch branches list
     const fetchGymBranches = useCallback(async () => {
         try {
@@ -562,57 +598,27 @@ const StaffManagement = () => {
 
             if (result.status === 'success') {
                 const profile = result.data || {};
-                const empDetails = profile.employee_details || profile;
-                const userInfo = profile.user_information || {};
-                const salaryInfo = profile.salary_information || {};
-                const trainerInfo = profile.trainer_profile || {};
                 const detectedType = detectOnboardType(profile);
+                const formValues = buildFormDataFromProfile(profile, employee);
                 
                 setOnboardType(detectedType);
                 setSelectedEmployee({
                     ...profile,
                     employee_details: {
                         ...employee,
-                        ...empDetails
+                        ...(profile.employee_details || profile || {})
                     },
-                    user_information: userInfo,
-                    salary_information: salaryInfo,
-                    trainer_profile: trainerInfo,
+                    user_information: profile.user_information || {},
+                    salary_information: profile.salary_information || {},
+                    trainer_profile: profile.trainer_profile || {},
                     isTrainerProfile: detectedType === 'TRAINER'
                 });
 
-                setFormData({
-                    branch_id: userInfo.branch_id || empDetails.branch_id || employee.branch_id || '',
-                    name: empDetails.full_name || empDetails.name || employee.full_name || employee.name || '',
-                    email: empDetails.email || employee.email || '',
-                    phone: empDetails.phone || employee.phone || '',
-                    password: '', // Kept empty
-                    designation: empDetails.designation || (detectedType === 'TRAINER' ? 'TRAINER' : 'RECEPTIONIST'),
-                    employment_type: empDetails.employment_type || 'FULL_TIME',
-                    salary_type: salaryInfo.salary_type || empDetails.salary_type || 'MONTHLY',
-                    salary_amount: salaryInfo.salary_amount || empDetails.salary_amount || 0.00,
-                    joining_date: empDetails.joining_date || employee.joining_date || '',
-                    profile_photo: empDetails.profile_photo || employee.profile_photo || '',
-                    emergency_contact_name: empDetails.emergency_contact_name || '',
-                    emergency_contact_phone: empDetails.emergency_contact_phone || '',
-                    address: empDetails.address || '',
-                    remarks: empDetails.remarks || '',
-                    // Trainer details
-                    specialization: trainerInfo.specialization || '',
-                    experience: trainerInfo.experience || 0,
-                    certifications: trainerInfo.certifications || '',
-                    bio: trainerInfo.bio || '',
-                    showcase_photo: trainerInfo.showcase_photo || '',
-                    availability_status: trainerInfo.availability_status || 'AVAILABLE',
-                    rating: trainerInfo.rating || 0.0,
-                    instagram_url: trainerInfo.instagram_url || '',
-                    facebook_url: trainerInfo.facebook_url || '',
-                    linkedin_url: trainerInfo.linkedin_url || ''
-                });
+                setFormData(formValues);
 
                 setFormDocuments(profile.documents || employee.documents || []);
-                setProfileImagePreview((empDetails.profile_photo || employee.profile_photo) || null);
-                setShowcaseImagePreview(trainerInfo.showcase_photo || null);
+                setProfileImagePreview(formValues.profile_photo || null);
+                setShowcaseImagePreview(formValues.showcase_photo || null);
                 setShowEditModal(true);
             } else {
                 throw new Error(result.message);
@@ -639,14 +645,19 @@ const StaffManagement = () => {
 
             // 1. Update basic employee details
             const employeePayload = {
+                email: formData.email,
                 full_name: formData.name,
                 phone: formData.phone,
                 branch_id: parseInt(formData.branch_id),
+                designation: formData.designation,
+                employment_type: formData.employment_type,
+                salary_type: formData.salary_type,
                 salary_amount: parseFloat(formData.salary_amount) || 0.0,
+                joining_date: formData.joining_date,
+                profile_photo: formData.profile_photo,
                 address: formData.address,
                 emergency_contact_name: formData.emergency_contact_name,
                 emergency_contact_phone: formData.emergency_contact_phone,
-                profile_photo: formData.profile_photo,
                 remarks: formData.remarks
             };
 
@@ -658,6 +669,10 @@ const StaffManagement = () => {
                 },
                 body: JSON.stringify(employeePayload)
             });
+
+            if (!empResponse.ok) {
+                throw new Error(`Failed to update employee details (${empResponse.status})`);
+            }
 
             const empResult = await empResponse.json();
             if (empResult.status !== 'success') {
@@ -686,6 +701,10 @@ const StaffManagement = () => {
                     },
                     body: JSON.stringify(trainerPayload)
                 });
+
+                if (!trResponse.ok) {
+                    throw new Error(`Failed to update trainer details (${trResponse.status})`);
+                }
 
                 const trResult = await trResponse.json();
                 if (trResult.status !== 'success') {
