@@ -947,6 +947,8 @@ const StaffManagement = () => {
                         <tbody>
                             {employees.map((emp) => {
                                 const isTrainer = ['TRAINER', 'SENIOR_TRAINER', 'JUNIOR_TRAINER'].includes(emp.designation) || emp.role === 'TRAINER';
+                                const displayRole = emp.role || (isTrainer ? 'TRAINER' : 'STAFF');
+                                const showDesignation = emp.designation && emp.designation !== displayRole;
                                 return (
                                     <tr key={emp.employee_id}>
                                         <td className="font-code">
@@ -965,8 +967,6 @@ const StaffManagement = () => {
                                                 </div>
                                                 <div className="staff-user-info">
                                                     <strong>{emp.full_name || emp.name || 'N/A'}</strong>
-                                                    <span>{emp.email}</span>
-                                                    <span>{emp.phone}</span>
                                                 </div>
                                             </div>
                                         </td>
@@ -977,9 +977,11 @@ const StaffManagement = () => {
                                         </td>
                                         <td>
                                             <span className={`staff-role-badge ${isTrainer ? 'role-trainer' : 'role-staff'}`}>
-                                                {emp.role || (isTrainer ? 'TRAINER' : 'STAFF')}
+                                                {displayRole}
                                             </span>
-                                            <div className="text-designation">{emp.designation}</div>
+                                            {showDesignation && (
+                                                <div className="text-designation">{emp.designation}</div>
+                                            )}
                                         </td>
                                         {trainersOnly ? (
                                             <>
@@ -1001,7 +1003,9 @@ const StaffManagement = () => {
                                         ) : (
                                             <>
                                                 <td>
-                                                    <span className="emp-type-tag">{emp.employment_type?.replace('_', ' ')}</span>
+                                                    <span className="emp-type-tag employment-type-pill">
+                                                        {emp.employment_type?.replace('_', ' ') || 'N/A'}
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     <strong className="salary-amount">₹{(emp.salary_amount || 0).toLocaleString('en-IN')}</strong>
@@ -1013,16 +1017,9 @@ const StaffManagement = () => {
                                             </>
                                         )}
                                         <td>
-                                            <select 
-                                                className={`status-select-inline ${getStatusClass(emp.status)}`}
-                                                value={emp.status}
-                                                onChange={(e) => handleStatusUpdate(emp, e.target.value)}
-                                            >
-                                                <option value="ACTIVE">Active</option>
-                                                <option value="ON_LEAVE">On Leave</option>
-                                                <option value="INACTIVE">Inactive</option>
-                                                <option value="TERMINATED">Terminated</option>
-                                            </select>
+                                            <span className={`staff-status-badge ${getStatusClass(emp.status)}`}>
+                                                {(emp.status || 'INACTIVE').replace('_', ' ')}
+                                            </span>
                                         </td>
                                         <td>
                                             <div className="staff-action-buttons">
