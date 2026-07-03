@@ -1039,31 +1039,6 @@
     gap: 15px;
 }
 
-.doc-status-badge {
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-}
-
-.doc-status-badge.PENDING {
-    background: rgba(241, 196, 15, 0.2);
-    color: #f1c40f;
-    border: 1px solid rgba(241, 196, 15, 0.4);
-}
-
-.doc-status-badge.VERIFIED {
-    background: rgba(46, 204, 113, 0.2);
-    color: #2ecc71;
-    border: 1px solid rgba(46, 204, 113, 0.4);
-}
-
-.doc-status-badge.REJECTED {
-    background: rgba(231, 76, 60, 0.2);
-    color: #e74c3c;
-    border: 1px solid rgba(231, 76, 60, 0.4);
-}
-
 .btn-view-doc {
     display: flex;
     align-items: center;

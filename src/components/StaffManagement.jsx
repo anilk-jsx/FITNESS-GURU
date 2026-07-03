@@ -1286,9 +1286,6 @@ const StaffManagement = () => {
                                                                 </div>
                                                             </div>
                                                             <div className="doc-actions-panel">
-                                                                <span className={`doc-status-badge ${doc.verification_status}`}>
-                                                                    {doc.verification_status}
-                                                                </span>
                                                                 <a href={doc.document_url} target="_blank" rel="noopener noreferrer" className="btn-view-doc">
                                                                     <i className="fas fa-external-link-alt"></i> View File
                                                                 </a>
