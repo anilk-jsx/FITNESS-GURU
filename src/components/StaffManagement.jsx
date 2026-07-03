@@ -495,18 +495,28 @@ const StaffManagement = () => {
             if (!token) return;
 
             const isTrainer = ['TRAINER', 'SENIOR_TRAINER', 'JUNIOR_TRAINER'].includes(employee.designation) || employee.role === 'TRAINER';
-            const endpoint = isTrainer ? `/api/trainers/${employee.employee_id}` : `/api/employees/${employee.employee_id}`;
+            const fetchProfileDetails = async (endpoint) => {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
 
-            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+                if (!response.ok) return null;
+                return response.json();
+            };
 
-            if (!response.ok) throw new Error('Failed to load profile details for editing');
-            const result = await response.json();
+            const primaryEndpoint = isTrainer ? `/api/trainers/${employee.employee_id}` : `/api/employees/${employee.employee_id}`;
+            const fallbackEndpoint = isTrainer ? `/api/employees/${employee.employee_id}` : `/api/trainers/${employee.employee_id}`;
+
+            let result = await fetchProfileDetails(primaryEndpoint);
+            if (!result) {
+                result = await fetchProfileDetails(fallbackEndpoint);
+            }
+
+            if (!result) throw new Error('Failed to load profile details for editing');
 
             if (result.status === 'success') {
                 const profile = result.data;
