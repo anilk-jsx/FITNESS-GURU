@@ -148,6 +148,10 @@ const AdminDashboardHome = () => {
       <div className="admin-dashboard-section">
         <h2 className="admin-section-title">Quick Actions</h2>
         <div className="admin-quick-actions">
+          <button className="admin-action-btn" onClick={() => handleQuickAction('/admin-dashboard/pt-management')}>
+            <i className="fas fa-dumbbell"></i>
+            <span>PT Management</span>
+          </button>
           <button className="admin-action-btn" onClick={() => handleQuickAction('/admin-dashboard/members')}>
             <i className="fas fa-user-plus"></i>
             <span>Add Member</span>
@@ -159,10 +163,6 @@ const AdminDashboardHome = () => {
           <button className="admin-action-btn" onClick={() => handleQuickAction('/admin-dashboard/attendance')}>
             <i className="fas fa-calendar-check"></i>
             <span>View Attendance</span>
-          </button>
-          <button className="admin-action-btn" onClick={() => alert('Report generation coming soon!')}>
-            <i className="fas fa-file-alt"></i>
-            <span>Generate Report</span>
           </button>
         </div>
       </div>

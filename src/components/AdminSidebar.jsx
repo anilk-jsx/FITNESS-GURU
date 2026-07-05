@@ -114,6 +114,16 @@ const AdminSidebar = ({
                 </div>
                 <div className="nav-item">
                     <NavLink
+                        to="/admin-dashboard/pt-management"
+                        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
+                    >
+                        <i className="fas fa-dumbbell"></i>
+                        PT Management
+                    </NavLink>
+                </div>
+                <div className="nav-item">
+                    <NavLink
                         to="/admin-dashboard/diet-plans"
                         className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                         onClick={handleNavClick}

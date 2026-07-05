@@ -71,6 +71,7 @@ const TrainerDashboardLayout = () => {
 
   const menuItems = [
     { path: '/trainer-dashboard/dashboard', icon: 'fas fa-house', label: 'Dashboard' },
+    { path: '/trainer-dashboard/pt-roster', icon: 'fas fa-calendar-check', label: 'PT Roster & Sessions' },
     { path: '/trainer-dashboard/clients', icon: 'fas fa-users', label: 'Clients' },
     { path: '/trainer-dashboard/assessments', icon: 'fas fa-clipboard-list', label: 'Fitness Assessments' },
     { path: '/trainer-dashboard/workout-plans', icon: 'fas fa-dumbbell', label: 'Workout Plans' },
