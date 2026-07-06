@@ -68,7 +68,7 @@ const AdminSidebar = ({
             onClick={handleNavClick}
           >
             <i className="fas fa-user-tie"></i>
-            <span>Staff Management</span>
+            <span>Employee Management</span>
           </NavLink>
         </div>
 
