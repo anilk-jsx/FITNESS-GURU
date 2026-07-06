@@ -2,6 +2,23 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './StaffManagement.css';
 import { tokenManager } from '../utils/tokenManager';
 
+const STAFF_DESIGNATION_OPTIONS = [
+    { value: 'OWNER', label: 'Owner' },
+    { value: 'BRANCH_MANAGER', label: 'Branch Manager' },
+    { value: 'RECEPTIONIST', label: 'Receptionist' },
+    { value: 'ACCOUNTANT', label: 'Accountant' },
+    { value: 'NUTRITIONIST', label: 'Nutritionist' },
+    { value: 'HOUSEKEEPING', label: 'Housekeeping' },
+    { value: 'MAINTENANCE', label: 'Maintenance' },
+    { value: 'OTHER', label: 'Other Designation' }
+];
+
+const TRAINER_DESIGNATION_OPTIONS = [
+    { value: 'TRAINER', label: 'Trainer' },
+    { value: 'SENIOR_TRAINER', label: 'Senior Trainer' },
+    { value: 'JUNIOR_TRAINER', label: 'Junior Trainer' }
+];
+
 const StaffManagement = () => {
     // Component State
     const [employees, setEmployees] = useState([]);
@@ -41,7 +58,6 @@ const StaffManagement = () => {
         email: '',
         phone: '',
         password: '',
-        role: 'STAFF',
         designation: 'RECEPTIONIST',
         employment_type: 'FULL_TIME',
         salary_type: 'MONTHLY',
@@ -97,6 +113,57 @@ const StaffManagement = () => {
         setTimeout(() => {
             setToastMessage({ type: '', message: '', show: false });
         }, 4000);
+    };
+
+    const getDesignationOptions = (type) => (
+        type === 'TRAINER' ? TRAINER_DESIGNATION_OPTIONS : STAFF_DESIGNATION_OPTIONS
+    );
+
+    const detectOnboardType = (profile) => {
+        const designation = profile?.employee_details?.designation || profile?.designation || '';
+        const role = profile?.user_information?.role || profile?.role || '';
+
+        if (['TRAINER', 'SENIOR_TRAINER', 'JUNIOR_TRAINER'].includes(designation) || role === 'TRAINER') {
+            return 'TRAINER';
+        }
+
+        return 'STAFF';
+    };
+
+    const buildFormDataFromProfile = (profile, employeeFallback = {}) => {
+        const empDetails = profile?.employee_details || profile || {};
+        const userInfo = profile?.user_information || {};
+        const salaryInfo = profile?.salary_information || {};
+        const trainerInfo = profile?.trainer_profile || {};
+        const detectedType = detectOnboardType(profile);
+
+        return {
+            branch_id: userInfo.branch_id || empDetails.branch_id || employeeFallback.branch_id || '',
+            name: empDetails.full_name || empDetails.name || employeeFallback.full_name || employeeFallback.name || '',
+            email: empDetails.email || employeeFallback.email || '',
+            phone: empDetails.phone || employeeFallback.phone || '',
+            password: '',
+            designation: empDetails.designation || employeeFallback.designation || (detectedType === 'TRAINER' ? 'TRAINER' : 'RECEPTIONIST'),
+            employment_type: empDetails.employment_type || employeeFallback.employment_type || 'FULL_TIME',
+            salary_type: salaryInfo.salary_type || empDetails.salary_type || employeeFallback.salary_type || 'MONTHLY',
+            salary_amount: salaryInfo.salary_amount || empDetails.salary_amount || employeeFallback.salary_amount || 0.0,
+            joining_date: empDetails.joining_date || employeeFallback.joining_date || '',
+            profile_photo: empDetails.profile_photo || employeeFallback.profile_photo || '',
+            emergency_contact_name: empDetails.emergency_contact_name || employeeFallback.emergency_contact_name || '',
+            emergency_contact_phone: empDetails.emergency_contact_phone || employeeFallback.emergency_contact_phone || '',
+            address: empDetails.address || employeeFallback.address || '',
+            remarks: empDetails.remarks || employeeFallback.remarks || '',
+            specialization: trainerInfo.specialization || '',
+            experience: trainerInfo.experience || 0,
+            certifications: trainerInfo.certifications || '',
+            bio: trainerInfo.bio || '',
+            showcase_photo: trainerInfo.showcase_photo || '',
+            availability_status: trainerInfo.availability_status || 'AVAILABLE',
+            rating: trainerInfo.rating || 0.0,
+            instagram_url: trainerInfo.instagram_url || '',
+            facebook_url: trainerInfo.facebook_url || '',
+            linkedin_url: trainerInfo.linkedin_url || ''
+        };
     };
 
     // Fetch branches list
@@ -323,28 +390,40 @@ const StaffManagement = () => {
     const handleViewDetails = async (employee) => {
         try {
             setIsLoadingDetails(true);
-            setShowDetailsModal(true);
-            setSelectedEmployee(null);
-
             const token = tokenManager.getAccessToken();
-            if (!token) return;
+            if (!token) {
+                setShowDetailsModal(false);
+                setSelectedEmployee(null);
+                return;
+            }
 
             // Check if is a trainer based on designation or role
             const isTrainer = ['TRAINER', 'SENIOR_TRAINER', 'JUNIOR_TRAINER'].includes(employee.designation) || employee.role === 'TRAINER';
-            const endpoint = isTrainer ? `/api/trainers/${employee.employee_id}` : `/api/employees/${employee.employee_id}`;
+            const fetchProfileDetails = async (endpoint) => {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
 
-            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+                if (!response.ok) return null;
+                return response.json();
+            };
 
-            if (!response.ok) throw new Error('Failed to fetch profile details');
+            const primaryEndpoint = isTrainer ? `/api/trainers/${employee.employee_id}` : `/api/employees/${employee.employee_id}`;
+            const fallbackEndpoint = isTrainer ? `/api/employees/${employee.employee_id}` : `/api/trainers/${employee.employee_id}`;
 
-            const result = await response.json();
+            let result = await fetchProfileDetails(primaryEndpoint);
+            if (!result) {
+                result = await fetchProfileDetails(fallbackEndpoint);
+            }
+
+            if (!result) throw new Error('Failed to load profile details');
+
             if (result.status === 'success') {
+                setShowDetailsModal(true);
                 setSelectedEmployee({
                     ...result.data,
                     employee_details: {
@@ -360,6 +439,7 @@ const StaffManagement = () => {
             console.error('Error fetching details:', error);
             showToast(`❌ Details error: ${error.message}`, 'error');
             setShowDetailsModal(false);
+            setSelectedEmployee(null);
         } finally {
             setIsLoadingDetails(false);
         }
@@ -374,7 +454,6 @@ const StaffManagement = () => {
             email: '',
             phone: '',
             password: '',
-            role: 'STAFF',
             designation: 'RECEPTIONIST',
             employment_type: 'FULL_TIME',
             salary_type: 'MONTHLY',
@@ -424,6 +503,7 @@ const StaffManagement = () => {
                 email: formData.email,
                 phone: formData.phone,
                 password: formData.password,
+                role: onboardType,
                 designation: formData.designation,
                 employment_type: formData.employment_type,
                 salary_type: formData.salary_type,
@@ -458,8 +538,6 @@ const StaffManagement = () => {
                 payload.instagram_url = formData.instagram_url || null;
                 payload.facebook_url = formData.facebook_url || null;
                 payload.linkedin_url = formData.linkedin_url || null;
-            } else {
-                payload.role = formData.role;
             }
 
             const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -495,59 +573,52 @@ const StaffManagement = () => {
             if (!token) return;
 
             const isTrainer = ['TRAINER', 'SENIOR_TRAINER', 'JUNIOR_TRAINER'].includes(employee.designation) || employee.role === 'TRAINER';
-            const endpoint = isTrainer ? `/api/trainers/${employee.employee_id}` : `/api/employees/${employee.employee_id}`;
-
-            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) throw new Error('Failed to load profile details for editing');
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                const profile = result.data;
-                const empDetails = profile.employee_details;
-                
-                setOnboardType(isTrainer ? 'TRAINER' : 'STAFF');
-                setSelectedEmployee(profile);
-
-                setFormData({
-                    branch_id: profile.user_information?.branch_id || empDetails.branch_id || '',
-                    name: empDetails.full_name || empDetails.name || '',
-                    email: empDetails.email || '',
-                    phone: empDetails.phone || '',
-                    password: '', // Kept empty
-                    role: profile.user_information?.role || 'STAFF',
-                    designation: empDetails.designation || 'RECEPTIONIST',
-                    employment_type: empDetails.employment_type || 'FULL_TIME',
-                    salary_type: profile.salary_information?.salary_type || empDetails.salary_type || 'MONTHLY',
-                    salary_amount: profile.salary_information?.salary_amount || empDetails.salary_amount || 0.00,
-                    joining_date: empDetails.joining_date || '',
-                    profile_photo: empDetails.profile_photo || '',
-                    emergency_contact_name: empDetails.emergency_contact_name || '',
-                    emergency_contact_phone: empDetails.emergency_contact_phone || '',
-                    address: empDetails.address || '',
-                    remarks: empDetails.remarks || '',
-                    // Trainer details
-                    specialization: profile.trainer_profile?.specialization || '',
-                    experience: profile.trainer_profile?.experience || 0,
-                    certifications: profile.trainer_profile?.certifications || '',
-                    bio: profile.trainer_profile?.bio || '',
-                    showcase_photo: profile.trainer_profile?.showcase_photo || '',
-                    availability_status: profile.trainer_profile?.availability_status || 'AVAILABLE',
-                    rating: profile.trainer_profile?.rating || 0.0,
-                    instagram_url: profile.trainer_profile?.instagram_url || '',
-                    facebook_url: profile.trainer_profile?.facebook_url || '',
-                    linkedin_url: profile.trainer_profile?.linkedin_url || ''
+            const fetchProfileDetails = async (endpoint) => {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
 
-                setFormDocuments(profile.documents || []);
-                setProfileImagePreview(empDetails.profile_photo || null);
-                setShowcaseImagePreview(profile.trainer_profile?.showcase_photo || null);
+                if (!response.ok) return null;
+                return response.json();
+            };
+
+            const primaryEndpoint = isTrainer ? `/api/trainers/${employee.employee_id}` : `/api/employees/${employee.employee_id}`;
+            const fallbackEndpoint = isTrainer ? `/api/employees/${employee.employee_id}` : `/api/trainers/${employee.employee_id}`;
+
+            let result = await fetchProfileDetails(primaryEndpoint);
+            if (!result) {
+                result = await fetchProfileDetails(fallbackEndpoint);
+            }
+
+            if (!result) throw new Error('Failed to load profile details for editing');
+
+            if (result.status === 'success') {
+                const profile = result.data || {};
+                const detectedType = detectOnboardType(profile);
+                const formValues = buildFormDataFromProfile(profile, employee);
+                
+                setOnboardType(detectedType);
+                setSelectedEmployee({
+                    ...profile,
+                    employee_details: {
+                        ...employee,
+                        ...(profile.employee_details || profile || {})
+                    },
+                    user_information: profile.user_information || {},
+                    salary_information: profile.salary_information || {},
+                    trainer_profile: profile.trainer_profile || {},
+                    isTrainerProfile: detectedType === 'TRAINER'
+                });
+
+                setFormData(formValues);
+
+                setFormDocuments(profile.documents || employee.documents || []);
+                setProfileImagePreview(formValues.profile_photo || null);
+                setShowcaseImagePreview(formValues.showcase_photo || null);
                 setShowEditModal(true);
             } else {
                 throw new Error(result.message);
@@ -574,14 +645,19 @@ const StaffManagement = () => {
 
             // 1. Update basic employee details
             const employeePayload = {
+                email: formData.email,
                 full_name: formData.name,
                 phone: formData.phone,
                 branch_id: parseInt(formData.branch_id),
+                designation: formData.designation,
+                employment_type: formData.employment_type,
+                salary_type: formData.salary_type,
                 salary_amount: parseFloat(formData.salary_amount) || 0.0,
+                joining_date: formData.joining_date,
+                profile_photo: formData.profile_photo,
                 address: formData.address,
                 emergency_contact_name: formData.emergency_contact_name,
                 emergency_contact_phone: formData.emergency_contact_phone,
-                profile_photo: formData.profile_photo,
                 remarks: formData.remarks
             };
 
@@ -593,6 +669,10 @@ const StaffManagement = () => {
                 },
                 body: JSON.stringify(employeePayload)
             });
+
+            if (!empResponse.ok) {
+                throw new Error(`Failed to update employee details (${empResponse.status})`);
+            }
 
             const empResult = await empResponse.json();
             if (empResult.status !== 'success') {
@@ -621,6 +701,10 @@ const StaffManagement = () => {
                     },
                     body: JSON.stringify(trainerPayload)
                 });
+
+                if (!trResponse.ok) {
+                    throw new Error(`Failed to update trainer details (${trResponse.status})`);
+                }
 
                 const trResult = await trResponse.json();
                 if (trResult.status !== 'success') {
@@ -947,6 +1031,8 @@ const StaffManagement = () => {
                         <tbody>
                             {employees.map((emp) => {
                                 const isTrainer = ['TRAINER', 'SENIOR_TRAINER', 'JUNIOR_TRAINER'].includes(emp.designation) || emp.role === 'TRAINER';
+                                const displayRole = emp.role || (isTrainer ? 'TRAINER' : 'STAFF');
+                                const showDesignation = emp.designation && emp.designation !== displayRole;
                                 return (
                                     <tr key={emp.employee_id}>
                                         <td className="font-code">
@@ -965,8 +1051,6 @@ const StaffManagement = () => {
                                                 </div>
                                                 <div className="staff-user-info">
                                                     <strong>{emp.full_name || emp.name || 'N/A'}</strong>
-                                                    <span>{emp.email}</span>
-                                                    <span>{emp.phone}</span>
                                                 </div>
                                             </div>
                                         </td>
@@ -977,9 +1061,11 @@ const StaffManagement = () => {
                                         </td>
                                         <td>
                                             <span className={`staff-role-badge ${isTrainer ? 'role-trainer' : 'role-staff'}`}>
-                                                {emp.role || (isTrainer ? 'TRAINER' : 'STAFF')}
+                                                {displayRole}
                                             </span>
-                                            <div className="text-designation">{emp.designation}</div>
+                                            {showDesignation && (
+                                                <div className="text-designation">{emp.designation}</div>
+                                            )}
                                         </td>
                                         {trainersOnly ? (
                                             <>
@@ -1001,7 +1087,9 @@ const StaffManagement = () => {
                                         ) : (
                                             <>
                                                 <td>
-                                                    <span className="emp-type-tag">{emp.employment_type?.replace('_', ' ')}</span>
+                                                    <span className="emp-type-tag employment-type-pill">
+                                                        {emp.employment_type?.replace('_', ' ') || 'N/A'}
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     <strong className="salary-amount">₹{(emp.salary_amount || 0).toLocaleString('en-IN')}</strong>
@@ -1013,16 +1101,9 @@ const StaffManagement = () => {
                                             </>
                                         )}
                                         <td>
-                                            <select 
-                                                className={`status-select-inline ${getStatusClass(emp.status)}`}
-                                                value={emp.status}
-                                                onChange={(e) => handleStatusUpdate(emp, e.target.value)}
-                                            >
-                                                <option value="ACTIVE">Active</option>
-                                                <option value="ON_LEAVE">On Leave</option>
-                                                <option value="INACTIVE">Inactive</option>
-                                                <option value="TERMINATED">Terminated</option>
-                                            </select>
+                                            <span className={`staff-status-badge ${getStatusClass(emp.status)}`}>
+                                                {(emp.status || 'INACTIVE').replace('_', ' ')}
+                                            </span>
                                         </td>
                                         <td>
                                             <div className="staff-action-buttons">
@@ -1289,9 +1370,6 @@ const StaffManagement = () => {
                                                                 </div>
                                                             </div>
                                                             <div className="doc-actions-panel">
-                                                                <span className={`doc-status-badge ${doc.verification_status}`}>
-                                                                    {doc.verification_status}
-                                                                </span>
                                                                 <a href={doc.document_url} target="_blank" rel="noopener noreferrer" className="btn-view-doc">
                                                                     <i className="fas fa-external-link-alt"></i> View File
                                                                 </a>
@@ -1349,7 +1427,7 @@ const StaffManagement = () => {
                                             className={`toggle-option-btn ${onboardType === 'STAFF' ? 'active' : ''}`}
                                             onClick={() => {
                                                 setOnboardType('STAFF');
-                                                setFormData(prev => ({ ...prev, role: 'STAFF', designation: 'RECEPTIONIST' }));
+                                                setFormData(prev => ({ ...prev, designation: 'RECEPTIONIST' }));
                                             }}
                                         >
                                             <i className="fas fa-user-tie"></i> Administrative Staff
@@ -1359,7 +1437,7 @@ const StaffManagement = () => {
                                             className={`toggle-option-btn ${onboardType === 'TRAINER' ? 'active' : ''}`}
                                             onClick={() => {
                                                 setOnboardType('TRAINER');
-                                                setFormData(prev => ({ ...prev, role: 'TRAINER', designation: 'TRAINER' }));
+                                                setFormData(prev => ({ ...prev, designation: 'TRAINER' }));
                                             }}
                                         >
                                             <i className="fas fa-dumbbell"></i> Fitness Trainer
@@ -1440,21 +1518,6 @@ const StaffManagement = () => {
                                             ))}
                                         </select>
                                     </div>
-                                    {onboardType === 'STAFF' && (
-                                        <div className="staff-form-group">
-                                            <label>Application Role *</label>
-                                            <select
-                                                value={formData.role}
-                                                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                                disabled={showEditModal}
-                                                required
-                                            >
-                                                <option value="STAFF">Staff Access</option>
-                                                <option value="BRANCH_MANAGER">Branch Manager Access</option>
-                                                <option value="ADMIN">Administrator Access</option>
-                                            </select>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
 
@@ -1463,33 +1526,16 @@ const StaffManagement = () => {
                                 <h3><i className="fas fa-briefcase"></i> Position & Remuneration</h3>
                                 <div className="staff-form-grid">
                                     <div className="staff-form-group">
-                                        <label>Designation Role *</label>
-                                        {onboardType === 'TRAINER' ? (
-                                            <select
-                                                value={formData.designation}
-                                                onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                                                required
-                                            >
-                                                <option value="TRAINER">Trainer</option>
-                                                <option value="SENIOR_TRAINER">Senior Trainer</option>
-                                                <option value="JUNIOR_TRAINER">Junior Trainer</option>
-                                            </select>
-                                        ) : (
-                                            <select
-                                                value={formData.designation}
-                                                onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                                                required
-                                            >
-                                                <option value="OWNER">Owner</option>
-                                                <option value="BRANCH_MANAGER">Branch Manager</option>
-                                                <option value="RECEPTIONIST">Receptionist</option>
-                                                <option value="ACCOUNTANT">Accountant</option>
-                                                <option value="NUTRITIONIST">Nutritionist</option>
-                                                <option value="HOUSEKEEPING">Housekeeping</option>
-                                                <option value="MAINTENANCE">Maintenance</option>
-                                                <option value="OTHER">Other Designation</option>
-                                            </select>
-                                        )}
+                                        <label>Designation *</label>
+                                        <select
+                                            value={formData.designation}
+                                            onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                                            required
+                                        >
+                                            {getDesignationOptions(onboardType).map(option => (
+                                                <option key={option.value} value={option.value}>{option.label}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div className="staff-form-group">
                                         <label>Employment Classification *</label>
