@@ -14,6 +14,9 @@ import ContactManagement from './components/ContactManagement';
 import FitnessAssessment from './components/FitnessAssessment';
 import SectionDivider from './components/SectionDivider';
 import AdminDietPlans from './components/AdminDietPlans';
+import AdminPTManagement from './components/AdminPTManagement';
+import GymConfigurationManagement from './components/GymConfigurationManagement';
+import MemberPTModule from './components/MemberPTModule';
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
@@ -36,6 +39,7 @@ import TrainerWorkoutPlans from './components/TrainerDashboard/TrainerWorkoutPla
 import TrainerDietPlans from './components/TrainerDashboard/TrainerDietPlans';
 import TrainerAttendance from './components/TrainerDashboard/TrainerAttendance';
 import TrainerSchedule from './components/TrainerDashboard/TrainerSchedule';
+import TrainerPTRoster from './components/TrainerDashboard/TrainerPTRoster';
 import TrainerNotifications from './components/TrainerDashboard/TrainerNotifications';
 import TrainerProfile from './components/TrainerDashboard/TrainerProfile';
 import ProtectedRoute from './utils/ProtectedRoute';
@@ -48,6 +52,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/pt-sessions" element={<ProtectedRoute><MemberPTModule /></ProtectedRoute>} />
         <Route path="/admin-dashboard" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboardHome />} />
@@ -57,19 +62,23 @@ function App() {
           <Route path="staff" element={<StaffManagement />} />
           <Route path="branches" element={<BranchManagement />} />
           <Route path="contacts" element={<ContactManagement />} />
-          <Route path="fitness-assessments" element={<FitnessAssessment />} />
+          <Route path="fitness-assessments" element={<Navigate to="/admin-dashboard/pt-management?tab=assessments" replace />} />
           <Route path="mapping" element={<UserTrainerMapping />} />
-          <Route path="diet-plans" element={<AdminDietPlans />} />
+          <Route path="pt-management" element={<AdminPTManagement />} />
+          <Route path="gym-configuration" element={<GymConfigurationManagement />} />
+          <Route path="gym-shifts" element={<Navigate to="/admin-dashboard/gym-configuration?tab=shifts-slots" replace />} />
+          <Route path="diet-plans" element={<Navigate to="/admin-dashboard/pt-management?tab=diet-plans" replace />} />
         </Route>
         <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/trainer-dashboard" element={<ProtectedRoute trainerOnly><TrainerDashboardLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<TrainerDashboardHome />} />
+          <Route path="pt-roster" element={<TrainerPTRoster />} />
           <Route path="clients" element={<TrainerClients />} />
-          <Route path="assessments" element={<TrainerAssessments />} />
+          <Route path="assessments" element={<Navigate to="/trainer-dashboard/pt-roster?tab=assessments" replace />} />
           <Route path="workout-plans" element={<TrainerWorkoutPlans />} />
-          <Route path="diet-plans" element={<TrainerDietPlans />} />
+          <Route path="diet-plans" element={<Navigate to="/trainer-dashboard/pt-roster?tab=diet-plans" replace />} />
           <Route path="attendance" element={<TrainerAttendance />} />
           <Route path="schedule" element={<TrainerSchedule />} />
           <Route path="notifications" element={<TrainerNotifications />} />

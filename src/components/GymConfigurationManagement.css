@@ -1,0 +1,176 @@
+/* Gym Configuration Management Stylesheet */
+
+.gym-config-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.gym-config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background: #ffffff;
+  padding: 0.85rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.gym-config-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gym-config-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+/* Tab Navigation System */
+.gym-config-tabs {
+  display: flex;
+  gap: 8px;
+  background: #f8fafc;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  overflow-x: auto;
+}
+
+.gym-config-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.gym-config-tab-btn:hover {
+  color: #4f46e5;
+  background: rgba(79, 70, 229, 0.05);
+}
+
+.gym-config-tab-btn.active {
+  background: #ffffff;
+  color: #4f46e5;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Horizontal Swimlane Grid (Shifts Side-by-Side) */
+.shifts-horizontal-track {
+  display: flex;
+  flex-direction: row;
+  gap: 1.25rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+  align-items: stretch;
+}
+
+.shifts-horizontal-track::-webkit-scrollbar {
+  height: 8px;
+}
+
+.shifts-horizontal-track::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.shifts-horizontal-track::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.shift-column-card {
+  min-width: 350px;
+  max-width: 420px;
+  flex: 1 0 350px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  padding: 1.25rem;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+}
+
+/* Vertical Slot Timeline Stack Inside Column */
+.vertical-slot-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  padding-left: 20px;
+  margin-top: 1rem;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 6px;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  border-radius: 2px;
+  opacity: 0.35;
+}
+
+.vertical-slot-card {
+  position: relative;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.vertical-slot-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.timeline-dot-node {
+  position: absolute;
+  left: -20px;
+  top: 20px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive Overrides */
+@media (max-width: 768px) {
+  .shifts-horizontal-track {
+    flex-direction: column;
+    overflow-x: visible;
+  }
+
+  .shift-column-card {
+    min-width: 100%;
+    max-width: 100%;
+  }
+}

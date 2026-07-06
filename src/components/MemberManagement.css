@@ -9,19 +9,19 @@
 }
 
 .member-page-header {
-  margin-bottom: 2rem;
+  margin-bottom: 0.85rem;
 }
 
 .member-page-title {
-  font-size: 2rem;
-  color: #ffffff;
-  margin: 0 0 0.5rem 0;
-  font-weight: 700;
+  font-size: 1.25rem;
+  color: #0f172a;
+  margin: 0 0 0.2rem 0;
+  font-weight: 600;
 }
 
 .member-page-subtitle {
-  font-size: 1rem;
-  color: white;
+  font-size: 0.82rem;
+  color: #64748b;
   margin: 0;
 }
 

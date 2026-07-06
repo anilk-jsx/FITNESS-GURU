@@ -1,1067 +1,1451 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { tokenManager } from '../utils/tokenManager';
 import './SubscriptionManagement.css';
 
+const ALLOWED_ENTITLEMENTS = [
+    'GYM_ACCESS',
+    'PT_1ON1',
+    'GROUP_CLASS',
+    'FACILITY_SAUNA',
+    'FACILITY_STEAM_BATH',
+    'ACCESS_WORKOUT_PLANS',
+    'ACCESS_DIET_PLANS',
+    'ACCESS_ASSESSMENTS',
+    'ACCESS_NUTRITION_GUIDE'
+];
+
+const PLAN_TYPES = [
+    { label: 'Base Membership', value: 'BASE_MEMBERSHIP' },
+    { label: 'PT Upgrade', value: 'PT_UPGRADE' },
+    { label: 'Add-On', value: 'ADD_ON' }
+];
+
 const SubscriptionManagement = () => {
-    const [activeTab, setActiveTab] = useState('subscriptions'); // subscriptions, freezes, plans
-    const [searchQuery, setSearchQuery] = useState('');
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
 
-    // Subscriptions state
-    const [subscriptions, setSubscriptions] = useState([
-        {
-            subscription_id: 1,
-            member_id: 1001,
-            member_name: 'Rajesh Kumar',
-            email: 'rajesh.kumar@email.com',
-            phone: '9876543210',
-            branch_name: 'Koramangala Branch',
-            plan_name: 'Premium Annual',
-            plan_price: 24999,
-            start_date: '2024-01-15',
-            end_date: '2025-01-14',
-            status: 'ACTIVE',
-            freeze_status: 'NONE',
-            freeze_days: 0,
-            renewal_count: 0,
-            trainer_name: 'Amit Sharma'
-        },
-        {
-            subscription_id: 2,
-            member_id: 1002,
-            member_name: 'Priya Sharma',
-            email: 'priya.sharma@email.com',
-            phone: '9876543211',
-            branch_name: 'Whitefield Branch',
-            plan_name: 'Basic Monthly',
-            plan_price: 2999,
-            start_date: '2024-11-01',
-            end_date: '2024-12-01',
-            status: 'EXPIRED',
-            freeze_status: 'NONE',
-            freeze_days: 0,
-            renewal_count: 2,
-            trainer_name: null
-        },
-        {
-            subscription_id: 3,
-            member_id: 1003,
-            member_name: 'Amit Verma',
-            email: 'amit.verma@email.com',
-            phone: '9876543212',
-            branch_name: 'Bangalore Main',
-            plan_name: 'Standard Quarterly',
-            plan_price: 8999,
-            start_date: '2024-10-01',
-            end_date: '2024-12-31',
-            status: 'ACTIVE',
-            freeze_status: 'REQUESTED',
-            freeze_days: 0,
-            renewal_count: 0,
-            trainer_name: 'Vikram Singh'
-        },
-        {
-            subscription_id: 4,
-            member_id: 1004,
-            member_name: 'Sneha Patel',
-            email: 'sneha.patel@email.com',
-            phone: '9876543213',
-            branch_name: 'Koramangala Branch',
-            plan_name: 'Premium Semi Annual',
-            plan_price: 14999,
-            start_date: '2024-08-01',
-            end_date: '2025-02-01',
-            status: 'ACTIVE',
-            freeze_status: 'ACTIVE',
-            freeze_days: 15,
-            renewal_count: 1,
-            trainer_name: 'Amit Sharma'
-        },
-        {
-            subscription_id: 5,
-            member_id: 1005,
-            member_name: 'Rahul Mehta',
-            email: 'rahul.mehta@email.com',
-            phone: '9876543214',
-            branch_name: 'Whitefield Branch',
-            plan_name: 'Basic Monthly',
-            plan_price: 2999,
-            start_date: '2024-11-15',
-            end_date: '2024-12-15',
-            status: 'ACTIVE',
-            freeze_status: 'NONE',
-            freeze_days: 0,
-            renewal_count: 5,
-            trainer_name: null
-        },
-        {
-            subscription_id: 6,
-            member_id: 1006,
-            member_name: 'Kavita Singh',
-            email: 'kavita.singh@email.com',
-            phone: '9876543215',
-            branch_name: 'Bangalore Main',
-            plan_name: 'Premium Annual',
-            plan_price: 24999,
-            start_date: '2024-03-01',
-            end_date: '2025-03-01',
-            status: 'SUSPENDED',
-            freeze_status: 'NONE',
-            freeze_days: 0,
-            renewal_count: 0,
-            trainer_name: 'Vikram Singh'
-        }
-    ]);
+    // Role Guard Check
+    const userData = tokenManager.getUserData();
+    const isAuthorized = userData && (userData.role === 'ADMIN' || userData.role === 'SUPER-ADMIN' || userData.role === 'SUPER_ADMIN');
 
-    // Freeze requests state
-    const [freezeRequests, setFreezeRequests] = useState([
-        {
-            freeze_id: 1,
-            subscription_id: 3,
-            member_id: 1003,
-            member_name: 'Amit Verma',
-            branch_name: 'Bangalore Main',
-            plan_name: 'Standard Quarterly',
-            reason: 'Going on vacation to Goa for 2 weeks',
-            requested_days: 14,
-            start_date: '2024-12-20',
-            end_date: '2025-01-03',
-            freeze_status: 'REQUESTED',
-            created_at: '2024-12-10 10:30:00'
-        },
-        {
-            freeze_id: 2,
-            subscription_id: 7,
-            member_id: 1007,
-            member_name: 'Deepak Kumar',
-            branch_name: 'Koramangala Branch',
-            plan_name: 'Premium Annual',
-            reason: 'Medical reasons - recovering from surgery',
-            requested_days: 30,
-            start_date: '2024-12-01',
-            end_date: '2024-12-31',
-            freeze_status: 'REQUESTED',
-            created_at: '2024-11-28 14:20:00'
-        },
-        {
-            freeze_id: 3,
-            subscription_id: 4,
-            member_id: 1004,
-            member_name: 'Sneha Patel',
-            branch_name: 'Koramangala Branch',
-            plan_name: 'Premium Semi Annual',
-            reason: 'Work travel to USA',
-            requested_days: 15,
-            start_date: '2024-11-15',
-            end_date: '2024-11-30',
-            freeze_status: 'APPROVED',
-            approved_at: '2024-11-14 09:00:00',
-            created_at: '2024-11-10 16:45:00'
-        },
-        {
-            freeze_id: 4,
-            subscription_id: 8,
-            member_id: 1008,
-            member_name: 'Anita Desai',
-            branch_name: 'Whitefield Branch',
-            plan_name: 'Standard Quarterly',
-            reason: 'Family emergency',
-            requested_days: 7,
-            start_date: '2024-11-20',
-            end_date: '2024-11-27',
-            freeze_status: 'COMPLETED',
-            approved_at: '2024-11-19 11:30:00',
-            created_at: '2024-11-18 13:15:00'
-        },
-        {
-            freeze_id: 5,
-            subscription_id: 9,
-            member_id: 1009,
-            member_name: 'Vikas Gupta',
-            branch_name: 'Bangalore Main',
-            plan_name: 'Basic Monthly',
-            reason: 'Personal reasons',
-            requested_days: 10,
-            start_date: '2024-12-05',
-            end_date: '2024-12-15',
-            freeze_status: 'REJECTED',
-            created_at: '2024-12-03 08:00:00'
-        }
-    ]);
+    // Main navigation tab: 'plans' | 'subscriptions'
+    const [activeTab, setActiveTab] = useState('subscriptions');
 
-    // Membership plans state
-    const [membershipPlans, setMembershipPlans] = useState([
-        {
-            plan_id: 1,
-            plan_name: 'Basic Monthly',
-            duration_days: 30,
-            price: 2999,
-            description: 'Access to gym equipment and group classes',
-            is_active: true,
-            branch_id: null,
-            branch_name: 'All Branches'
-        },
-        {
-            plan_id: 2,
-            plan_name: 'Standard Quarterly',
-            duration_days: 90,
-            price: 8999,
-            description: 'Gym access + 2 personal training sessions per month',
-            is_active: true,
-            branch_id: null,
-            branch_name: 'All Branches'
-        },
-        {
-            plan_id: 3,
-            plan_name: 'Premium Semi Annual',
-            duration_days: 180,
-            price: 14999,
-            description: 'Full gym access + 4 PT sessions/month + Diet consultation',
-            is_active: true,
-            branch_id: null,
-            branch_name: 'All Branches'
-        },
-        {
-            plan_id: 4,
-            plan_name: 'Premium Annual',
-            duration_days: 365,
-            price: 24999,
-            description: 'Ultimate package: Unlimited gym access + 8 PT sessions/month + Diet plan + Spa access',
-            is_active: true,
-            branch_id: null,
-            branch_name: 'All Branches'
-        },
-        {
-            plan_id: 5,
-            plan_name: 'Koramangala Special',
-            duration_days: 90,
-            price: 9999,
-            description: 'Exclusive access to Koramangala branch with premium amenities',
-            is_active: true,
-            branch_id: 3,
-            branch_name: 'Koramangala Branch'
-        },
-        {
-            plan_id: 6,
-            plan_name: 'Weekend Warrior',
-            duration_days: 30,
-            price: 1999,
-            description: 'Weekend-only access (Sat & Sun)',
-            is_active: true,
-            branch_id: null,
-            branch_name: 'All Branches'
-        },
-        {
-            plan_id: 7,
-            plan_name: 'Student Plan',
-            duration_days: 30,
-            price: 1499,
-            description: 'Special discounted plan for students with valid ID',
-            is_active: false,
-            branch_id: null,
-            branch_name: 'All Branches'
-        }
-    ]);
+    // Shared loading / message state
+    const [loading, setLoading] = useState(false);
+    const [actionLoading, setActionLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [successMessage, setSuccessMessage] = useState(null);
 
-    // Modal states
-    const [showSubscriptionDetails, setShowSubscriptionDetails] = useState(false);
-    const [selectedSubscription, setSelectedSubscription] = useState(null);
-    const [showRenewalModal, setShowRenewalModal] = useState(false);
-    const [showFreezeModal, setShowFreezeModal] = useState(false);
-    const [showFreezeDetailsModal, setShowFreezeDetailsModal] = useState(false);
-    const [selectedFreeze, setSelectedFreeze] = useState(null);
-    const [showPlanModal, setShowPlanModal] = useState(false);
-    const [selectedPlan, setSelectedPlan] = useState(null);
-    const [isEditingPlan, setIsEditingPlan] = useState(false);
+    // ==========================================
+    // SCREEN 1 STATE: MEMBERSHIP PLANS
+    // ==========================================
+    const [plans, setPlans] = useState([]);
+    const [planTypeFilter, setPlanTypeFilter] = useState('');
+    const [planStatusFilter, setPlanStatusFilter] = useState('ALL'); // 'ALL', '1', '0'
+    const [planSearchQuery, setPlanSearchQuery] = useState('');
 
-    // Form data
-    const [renewalFormData, setRenewalFormData] = useState({
-        plan_id: '',
-        start_date: '',
-        remarks: ''
-    });
-
-    const [freezeFormData, setFreezeFormData] = useState({
-        reason: '',
-        requested_days: '',
-        start_date: ''
-    });
-
+    // Modal / Drawer state for Plan Create/Edit
+    const [showPlanDrawer, setShowPlanDrawer] = useState(false);
+    const [editingPlan, setEditingPlan] = useState(null); // null for create
     const [planFormData, setPlanFormData] = useState({
         plan_name: '',
-        duration_days: '',
+        plan_type: 'BASE_MEMBERSHIP',
+        duration_months: 12,
         price: '',
-        description: '',
-        is_active: true,
-        branch_id: null
+        requires_membership: 0,
+        status: 1,
+        entitlements: []
     });
 
-    // Filter subscriptions
-    const filteredSubscriptions = subscriptions.filter(sub =>
-        sub.member_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sub.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sub.phone.includes(searchQuery) ||
-        sub.plan_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sub.branch_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sub.subscription_id.toString().includes(searchQuery)
-    );
+    // Entitlement Management Modal State (standalone endpoint API 6 / 7)
+    const [showEntitlementModal, setShowEntitlementModal] = useState(false);
+    const [selectedPlanForEntitlements, setSelectedPlanForEntitlements] = useState(null);
+    const [entitlementsManageList, setEntitlementsManageList] = useState([]);
 
-    // Filter freeze requests
-    const filteredFreezeRequests = freezeRequests.filter(freeze =>
-        freeze.member_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        freeze.plan_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        freeze.reason.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        freeze.freeze_id.toString().includes(searchQuery)
-    );
+    // ==========================================
+    // SCREEN 2 STATE: SUBSCRIPTIONS
+    // ==========================================
+    const [subscriptions, setSubscriptions] = useState([]);
+    const [subStatusFilter, setSubStatusFilter] = useState('ALL'); // 'ALL', '1', '0'
+    const [subPlanFilter, setSubPlanFilter] = useState('');
+    const [subSearchQuery, setSubSearchQuery] = useState('');
+    const [expandedSubId, setExpandedSubId] = useState(null); // Expand wallet credits row ledger
 
-    // Filter plans
-    const filteredPlans = membershipPlans.filter(plan =>
-        plan.plan_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        plan.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        plan.branch_name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Modal 2.2: Manual Subscription Provisioning Desk
+    const [showProvisionModal, setShowProvisionModal] = useState(false);
+    const [membersList, setMembersList] = useState([]);
+    const [memberSearchTerm, setMemberSearchTerm] = useState('');
+    const [provisionFormData, setProvisionFormData] = useState({
+        user_id: '',
+        plan_id: '',
+        start_date: '',
+        end_date: ''
+    });
 
-    // Handlers for Subscriptions
-    const handleViewSubscription = (subscription) => {
-        setSelectedSubscription(subscription);
-        setShowSubscriptionDetails(true);
-    };
+    // Modal 2.3: Subscription Lifecycle Revision Panel
+    const [showRevisionModal, setShowRevisionModal] = useState(false);
+    const [editingSubscription, setEditingSubscription] = useState(null);
+    const [revisionFormData, setRevisionFormData] = useState({
+        start_date: '',
+        end_date: '',
+        status: 1
+    });
 
-    const handleRenewSubscription = (subscription) => {
-        setSelectedSubscription(subscription);
-        setRenewalFormData({
-            plan_id: subscription.plan_name,
-            start_date: new Date().toISOString().split('T')[0],
-            remarks: ''
-        });
-        setShowRenewalModal(true);
-    };
-
-    const handleFreezeSubscription = (subscription) => {
-        setSelectedSubscription(subscription);
-        setFreezeFormData({
-            reason: '',
-            requested_days: '',
-            start_date: new Date().toISOString().split('T')[0]
-        });
-        setShowFreezeModal(true);
-    };
-
-    const handleCancelSubscription = (subscription) => {
-        if (window.confirm(`Are you sure you want to cancel subscription for ${subscription.member_name}?`)) {
-            setSubscriptions(subscriptions.map(sub =>
-                sub.subscription_id === subscription.subscription_id
-                    ? { ...sub, status: 'CANCELLED' }
-                    : sub
-            ));
-            alert('Subscription cancelled successfully!');
+    // Flash message helper
+    const showNotice = (msg, isErr = false) => {
+        if (isErr) {
+            setError(msg);
+            setTimeout(() => setError(null), 5000);
+        } else {
+            setSuccessMessage(msg);
+            setTimeout(() => setSuccessMessage(null), 4000);
         }
     };
 
-    const handleRenewalSubmit = (e) => {
+    // ==========================================
+    // API CALLS: MEMBERSHIP PLANS
+    // ==========================================
+    const fetchMembershipPlans = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const queryParams = new URLSearchParams();
+            if (planTypeFilter) queryParams.append('plan_type', planTypeFilter);
+            if (planStatusFilter !== 'ALL') queryParams.append('status', planStatusFilter);
+
+            const url = `${API_BASE_URL}/api/membership-plans?${queryParams.toString()}`;
+            const res = await tokenManager.apiCall(url, { method: 'GET' });
+            const data = await res.json();
+
+            if (res.ok && data.status === 'success') {
+                setPlans(data.data || []);
+            } else {
+                throw new Error(data.message || 'Failed to fetch membership plans');
+            }
+        } catch (err) {
+            console.error('Error fetching plans:', err);
+            setError(err.message || 'Failed to connect to backend server');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // API 3 & API 4: Create or Update Membership Plan
+    const handleSavePlan = async (e) => {
         e.preventDefault();
-        alert('Subscription renewed successfully!');
-        setShowRenewalModal(false);
-        // Update subscription status
-        setSubscriptions(subscriptions.map(sub =>
-            sub.subscription_id === selectedSubscription.subscription_id
-                ? { ...sub, status: 'ACTIVE', renewal_count: sub.renewal_count + 1 }
-                : sub
-        ));
+        setActionLoading(true);
+
+        // Validation: required fields & entitlement checks
+        if (!planFormData.plan_name.trim()) {
+            showNotice('Plan Name is required', true);
+            setActionLoading(false);
+            return;
+        }
+
+        if (!planFormData.price || parseFloat(planFormData.price) <= 0) {
+            showNotice('Please enter a valid price', true);
+            setActionLoading(false);
+            return;
+        }
+
+        // Validate entitlements: no duplicate types & quantity > 0
+        const typesSeen = new Set();
+        for (const ent of planFormData.entitlements) {
+            if (!ent.entitlement_type) {
+                showNotice('All entitlement rows must select a valid type', true);
+                setActionLoading(false);
+                return;
+            }
+            if (typesSeen.has(ent.entitlement_type)) {
+                showNotice(`Duplicate entitlement type found: ${ent.entitlement_type}`, true);
+                setActionLoading(false);
+                return;
+            }
+            typesSeen.add(ent.entitlement_type);
+
+            if (parseInt(ent.quantity) < 1 || parseInt(ent.valid_days) < 1) {
+                showNotice(`Quantity and Valid Days must be at least 1 for ${ent.entitlement_type}`, true);
+                setActionLoading(false);
+                return;
+            }
+        }
+
+        try {
+            const isEdit = !!editingPlan;
+            const url = isEdit
+                ? `${API_BASE_URL}/api/admin/membership-plans/${editingPlan.plan_id}`
+                : `${API_BASE_URL}/api/admin/membership-plans`;
+
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const payload = {
+                plan_name: planFormData.plan_name.trim(),
+                plan_type: planFormData.plan_type,
+                duration_months: parseInt(planFormData.duration_months, 10),
+                price: parseFloat(planFormData.price),
+                requires_membership: parseInt(planFormData.requires_membership, 10),
+                status: parseInt(planFormData.status, 10),
+                entitlements: planFormData.entitlements.map(e => ({
+                    entitlement_type: e.entitlement_type,
+                    quantity: parseInt(e.quantity, 10),
+                    valid_days: parseInt(e.valid_days, 10)
+                }))
+            };
+
+            const res = await tokenManager.apiCall(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.status === 'success') {
+                showNotice(isEdit ? 'Membership plan updated successfully!' : 'Membership plan created successfully!');
+                setShowPlanDrawer(false);
+                setEditingPlan(null);
+                fetchMembershipPlans();
+            } else {
+                throw new Error(data.message || 'Failed to save membership plan');
+            }
+        } catch (err) {
+            console.error('Error saving plan:', err);
+            showNotice(err.message, true);
+        } finally {
+            setActionLoading(false);
+        }
     };
 
-    const handleFreezeSubmit = (e) => {
+    // API 5: Soft Delete / Deactivate Membership Plan
+    const handleDeactivatePlan = async (plan) => {
+        if (!window.confirm(`Are you sure you want to deactivate plan "${plan.plan_name}"?`)) return;
+
+        setActionLoading(true);
+        try {
+            const url = `${API_BASE_URL}/api/admin/membership-plans/${plan.plan_id}`;
+            const res = await tokenManager.apiCall(url, { method: 'DELETE' });
+            const data = await res.json();
+
+            if (res.ok && data.status === 'success') {
+                showNotice(`Plan "${plan.plan_name}" deactivated successfully`);
+                fetchMembershipPlans();
+            } else {
+                throw new Error(data.message || 'Failed to deactivate plan');
+            }
+        } catch (err) {
+            console.error('Error deactivating plan:', err);
+            showNotice(err.message, true);
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // API 6: Save Entitlements Batch for Plan
+    const handleSaveEntitlementsBatch = async () => {
+        if (!selectedPlanForEntitlements) return;
+        setActionLoading(true);
+
+        try {
+            const url = `${API_BASE_URL}/api/admin/membership-plans/${selectedPlanForEntitlements.plan_id}/entitlements`;
+            const payload = {
+                entitlements: entitlementsManageList.map(e => ({
+                    entitlement_type: e.entitlement_type,
+                    quantity: parseInt(e.quantity, 10),
+                    valid_days: parseInt(e.valid_days, 10)
+                }))
+            };
+
+            const res = await tokenManager.apiCall(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (res.ok && data.status === 'success') {
+                showNotice('Plan entitlements updated successfully!');
+                setShowEntitlementModal(false);
+                fetchMembershipPlans();
+            } else {
+                throw new Error(data.message || 'Failed to update entitlements');
+            }
+        } catch (err) {
+            console.error('Error updating entitlements:', err);
+            showNotice(err.message, true);
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // API 7: Delete Single Entitlement from Plan
+    const handleDeleteSingleEntitlement = async (entType) => {
+        if (!selectedPlanForEntitlements) return;
+        if (!window.confirm(`Remove entitlement "${entType}" from plan?`)) return;
+
+        setActionLoading(true);
+        try {
+            const url = `${API_BASE_URL}/api/admin/membership-plans/${selectedPlanForEntitlements.plan_id}/entitlements/${entType}`;
+            const res = await tokenManager.apiCall(url, { method: 'DELETE' });
+            const data = await res.json();
+
+            if (res.ok && data.status === 'success') {
+                showNotice(`Entitlement '${entType}' removed successfully`);
+                setEntitlementsManageList(prev => prev.filter(item => item.entitlement_type !== entType));
+                fetchMembershipPlans();
+            } else {
+                throw new Error(data.message || 'Failed to remove entitlement');
+            }
+        } catch (err) {
+            console.error('Error removing entitlement:', err);
+            showNotice(err.message, true);
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // ==========================================
+    // API CALLS: SUBSCRIPTIONS
+    // ==========================================
+    const fetchSubscriptions = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const queryParams = new URLSearchParams();
+            if (subStatusFilter !== 'ALL') queryParams.append('status', subStatusFilter);
+            if (subPlanFilter) queryParams.append('plan_id', subPlanFilter);
+
+            const url = `${API_BASE_URL}/api/admin/subscriptions?${queryParams.toString()}`;
+            const res = await tokenManager.apiCall(url, { method: 'GET' });
+            const data = await res.json();
+
+            if (res.ok && data.status === 'success') {
+                setSubscriptions(data.data || []);
+            } else {
+                throw new Error(data.message || 'Failed to fetch subscriptions');
+            }
+        } catch (err) {
+            console.error('Error fetching subscriptions:', err);
+            setError(err.message || 'Failed to fetch subscriptions');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch member users for Manual Provisioning auto-complete lookup
+    const fetchMembersList = async () => {
+        try {
+            const url = `${API_BASE_URL}/api/users/list?role=MEMBER&limit=100`;
+            const res = await tokenManager.apiCall(url, { method: 'GET' });
+            const data = await res.json();
+            if (res.ok && data.status === 'success') {
+                setMembersList(data.data || data.users || []);
+            }
+        } catch (err) {
+            console.warn('Could not fetch members list for provision lookup:', err);
+        }
+    };
+
+    // API 10: Create Subscription & Auto-Provision Wallet Credits
+    const handleProvisionSubscription = async (e) => {
         e.preventDefault();
-        const newFreeze = {
-            freeze_id: freezeRequests.length + 1,
-            subscription_id: selectedSubscription.subscription_id,
-            member_id: selectedSubscription.member_id,
-            member_name: selectedSubscription.member_name,
-            branch_name: selectedSubscription.branch_name,
-            plan_name: selectedSubscription.plan_name,
-            reason: freezeFormData.reason,
-            requested_days: parseInt(freezeFormData.requested_days),
-            start_date: freezeFormData.start_date,
-            end_date: new Date(new Date(freezeFormData.start_date).getTime() + parseInt(freezeFormData.requested_days) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            freeze_status: 'REQUESTED',
-            created_at: new Date().toISOString().replace('T', ' ').split('.')[0]
-        };
-        setFreezeRequests([newFreeze, ...freezeRequests]);
-        setSubscriptions(subscriptions.map(sub =>
-            sub.subscription_id === selectedSubscription.subscription_id
-                ? { ...sub, freeze_status: 'REQUESTED' }
-                : sub
-        ));
-        alert('Freeze request submitted successfully!');
-        setShowFreezeModal(false);
-    };
+        setActionLoading(true);
 
-    // Handlers for Freeze Requests
-    const handleViewFreezeDetails = (freeze) => {
-        setSelectedFreeze(freeze);
-        setShowFreezeDetailsModal(true);
-    };
+        if (!provisionFormData.user_id) {
+            showNotice('Please select a Member', true);
+            setActionLoading(false);
+            return;
+        }
 
-    const handleApproveFreeze = (freeze) => {
-        if (window.confirm(`Approve freeze request for ${freeze.member_name}?`)) {
-            setFreezeRequests(freezeRequests.map(f =>
-                f.freeze_id === freeze.freeze_id
-                    ? { ...f, freeze_status: 'APPROVED', approved_at: new Date().toISOString().replace('T', ' ').split('.')[0] }
-                    : f
-            ));
-            setSubscriptions(subscriptions.map(sub =>
-                sub.subscription_id === freeze.subscription_id
-                    ? { ...sub, freeze_status: 'APPROVED', freeze_days: freeze.requested_days }
-                    : sub
-            ));
-            alert('Freeze request approved!');
+        if (!provisionFormData.plan_id) {
+            showNotice('Please select a Membership Plan', true);
+            setActionLoading(false);
+            return;
+        }
+
+        try {
+            const payload = {
+                user_id: parseInt(provisionFormData.user_id, 10),
+                plan_id: parseInt(provisionFormData.plan_id, 10)
+            };
+
+            if (provisionFormData.start_date) {
+                payload.start_date = provisionFormData.start_date;
+            }
+            if (provisionFormData.end_date) {
+                payload.end_date = provisionFormData.end_date;
+            }
+
+            const url = `${API_BASE_URL}/api/admin/subscriptions`;
+            const res = await tokenManager.apiCall(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.status === 'success') {
+                showNotice('Subscription created & wallet credits provisioned successfully!');
+                setShowProvisionModal(false);
+                setProvisionFormData({ user_id: '', plan_id: '', start_date: '', end_date: '' });
+                fetchSubscriptions();
+            } else {
+                throw new Error(data.message || 'Failed to provision subscription');
+            }
+        } catch (err) {
+            console.error('Error provisioning subscription:', err);
+            showNotice(err.message, true);
+        } finally {
+            setActionLoading(false);
         }
     };
 
-    const handleRejectFreeze = (freeze) => {
-        if (window.confirm(`Reject freeze request for ${freeze.member_name}?`)) {
-            setFreezeRequests(freezeRequests.map(f =>
-                f.freeze_id === freeze.freeze_id
-                    ? { ...f, freeze_status: 'REJECTED' }
-                    : f
-            ));
-            setSubscriptions(subscriptions.map(sub =>
-                sub.subscription_id === freeze.subscription_id
-                    ? { ...sub, freeze_status: 'NONE' }
-                    : sub
-            ));
-            alert('Freeze request rejected!');
+    // API 11: Update Subscription Lifecycle Dates & Status
+    const handleUpdateSubscriptionRevision = async (e) => {
+        e.preventDefault();
+        if (!editingSubscription) return;
+        setActionLoading(true);
+
+        try {
+            const url = `${API_BASE_URL}/api/admin/subscriptions/${editingSubscription.subscription_id}`;
+            const payload = {
+                start_date: revisionFormData.start_date,
+                end_date: revisionFormData.end_date,
+                status: parseInt(revisionFormData.status, 10)
+            };
+
+            const res = await tokenManager.apiCall(url, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.status === 'success') {
+                showNotice('Subscription lifecycle updated successfully!');
+                setShowRevisionModal(false);
+                setEditingSubscription(null);
+                fetchSubscriptions();
+            } else {
+                throw new Error(data.message || 'Failed to update subscription');
+            }
+        } catch (err) {
+            console.error('Error updating subscription lifecycle:', err);
+            showNotice(err.message, true);
+        } finally {
+            setActionLoading(false);
         }
     };
 
-    const handleActivateFreeze = (freeze) => {
-        if (window.confirm(`Activate freeze for ${freeze.member_name}?`)) {
-            setFreezeRequests(freezeRequests.map(f =>
-                f.freeze_id === freeze.freeze_id
-                    ? { ...f, freeze_status: 'ACTIVE' }
-                    : f
-            ));
-            setSubscriptions(subscriptions.map(sub =>
-                sub.subscription_id === freeze.subscription_id
-                    ? { ...sub, freeze_status: 'ACTIVE' }
-                    : sub
-            ));
-            alert('Freeze activated successfully!');
+    // API 12: Cancel / Deactivate Subscription
+    const handleCancelSubscription = async (sub) => {
+        if (!window.confirm(`Are you sure you want to cancel subscription #${sub.subscription_id} for ${sub.member_name || 'this member'}?`)) return;
+
+        setActionLoading(true);
+        try {
+            const url = `${API_BASE_URL}/api/admin/subscriptions/${sub.subscription_id}/cancel`;
+            const res = await tokenManager.apiCall(url, { method: 'PATCH' });
+            let data = await res.json().catch(() => ({}));
+
+            // Fallback to DELETE if PATCH returns 404 or unsupported
+            if (!res.ok && res.status === 404) {
+                const deleteUrl = `${API_BASE_URL}/api/admin/subscriptions/${sub.subscription_id}`;
+                const deleteRes = await tokenManager.apiCall(deleteUrl, { method: 'DELETE' });
+                data = await deleteRes.json();
+            }
+
+            if (data.status === 'success' || res.ok) {
+                showNotice(`Subscription #${sub.subscription_id} canceled & wallet credits revoked successfully!`);
+                fetchSubscriptions();
+            } else {
+                throw new Error(data.message || 'Failed to cancel subscription');
+            }
+        } catch (err) {
+            console.error('Error canceling subscription:', err);
+            showNotice(err.message, true);
+        } finally {
+            setActionLoading(false);
         }
     };
 
-    // Handlers for Plans
-    const handleAddPlan = () => {
+    // Initial Load Hooks
+    useEffect(() => {
+        if (activeTab === 'plans') {
+            fetchMembershipPlans();
+        } else {
+            fetchSubscriptions();
+            fetchMembershipPlans(); // populate plan lookup in provisioning modal
+            fetchMembersList();
+        }
+    }, [activeTab, planTypeFilter, planStatusFilter, subStatusFilter, subPlanFilter]);
+
+    // ==========================================
+    // FORM HELPERS & FACTORY HANDLERS
+    // ==========================================
+    const openCreatePlanDrawer = () => {
+        setEditingPlan(null);
         setPlanFormData({
             plan_name: '',
-            duration_days: '',
+            plan_type: 'BASE_MEMBERSHIP',
+            duration_months: 12,
             price: '',
-            description: '',
-            is_active: true,
-            branch_id: null
+            requires_membership: 0,
+            status: 1,
+            entitlements: [
+                { entitlement_type: 'GYM_ACCESS', quantity: 365, valid_days: 365 }
+            ]
         });
-        setIsEditingPlan(false);
-        setShowPlanModal(true);
+        setShowPlanDrawer(true);
     };
 
-    const handleEditPlan = (plan) => {
-        setSelectedPlan(plan);
+    const openEditPlanDrawer = (plan) => {
+        setEditingPlan(plan);
         setPlanFormData({
-            plan_name: plan.plan_name,
-            duration_days: plan.duration_days,
-            price: plan.price,
-            description: plan.description,
-            is_active: plan.is_active,
-            branch_id: plan.branch_id
+            plan_name: plan.plan_name || '',
+            plan_type: plan.plan_type || 'BASE_MEMBERSHIP',
+            duration_months: plan.duration_months || 12,
+            price: plan.price || '',
+            requires_membership: plan.requires_membership ?? 0,
+            status: plan.status ?? 1,
+            entitlements: plan.entitlements ? JSON.parse(JSON.stringify(plan.entitlements)) : []
         });
-        setIsEditingPlan(true);
-        setShowPlanModal(true);
+        setShowPlanDrawer(true);
     };
 
-    const handleDeletePlan = (plan) => {
-        if (window.confirm(`Are you sure you want to delete "${plan.plan_name}"?`)) {
-            setMembershipPlans(membershipPlans.filter(p => p.plan_id !== plan.plan_id));
-            alert('Plan deleted successfully!');
-        }
+    const openEntitlementManageModal = (plan) => {
+        setSelectedPlanForEntitlements(plan);
+        setEntitlementsManageList(plan.entitlements ? JSON.parse(JSON.stringify(plan.entitlements)) : []);
+        setShowEntitlementModal(true);
     };
 
-    const handleTogglePlanStatus = (plan) => {
-        setMembershipPlans(membershipPlans.map(p =>
-            p.plan_id === plan.plan_id
-                ? { ...p, is_active: !p.is_active }
-                : p
-        ));
+    const openRevisionModal = (sub) => {
+        setEditingSubscription(sub);
+        setRevisionFormData({
+            start_date: sub.start_date || '',
+            end_date: sub.end_date || '',
+            status: sub.status ?? 1
+        });
+        setShowRevisionModal(true);
     };
 
-    const handlePlanSubmit = (e) => {
-        e.preventDefault();
-        if (isEditingPlan) {
-            setMembershipPlans(membershipPlans.map(p =>
-                p.plan_id === selectedPlan.plan_id
-                    ? { ...p, ...planFormData }
-                    : p
-            ));
-            alert('Plan updated successfully!');
-        } else {
-            const newPlan = {
-                plan_id: membershipPlans.length + 1,
-                ...planFormData,
-                branch_name: planFormData.branch_id ? 'Branch Specific' : 'All Branches'
-            };
-            setMembershipPlans([...membershipPlans, newPlan]);
-            alert('Plan added successfully!');
-        }
-        setShowPlanModal(false);
+    // Entitlement Factory Row Handlers (Plan Drawer)
+    const handleAddEntitlementRow = () => {
+        const unused = ALLOWED_ENTITLEMENTS.find(type =>
+            !planFormData.entitlements.some(e => e.entitlement_type === type)
+        ) || ALLOWED_ENTITLEMENTS[0];
+
+        setPlanFormData(prev => ({
+            ...prev,
+            entitlements: [
+                ...prev.entitlements,
+                { entitlement_type: unused, quantity: 30, valid_days: 30 }
+            ]
+        }));
     };
 
-    // Get statistics
-    const getStats = () => {
-        const activeCount = subscriptions.filter(s => s.status === 'ACTIVE').length;
-        const expiredCount = subscriptions.filter(s => s.status === 'EXPIRED').length;
-        const freezeRequestsCount = freezeRequests.filter(f => f.freeze_status === 'REQUESTED').length;
-        const activePlansCount = membershipPlans.filter(p => p.is_active).length;
-        const totalRevenue = subscriptions
-            .filter(s => s.status === 'ACTIVE')
-            .reduce((sum, s) => sum + s.plan_price, 0);
-
-        return { activeCount, expiredCount, freezeRequestsCount, activePlansCount, totalRevenue };
+    const handleUpdateEntitlementRow = (index, field, value) => {
+        setPlanFormData(prev => {
+            const updated = [...prev.entitlements];
+            updated[index] = { ...updated[index], [field]: value };
+            return { ...prev, entitlements: updated };
+        });
     };
 
-    const stats = getStats();
-
-    // Get status badge class
-    const getStatusBadgeClass = (status) => {
-        const statusMap = {
-            'ACTIVE': 'status-active',
-            'EXPIRED': 'status-expired',
-            'SUSPENDED': 'status-suspended',
-            'CANCELLED': 'status-cancelled',
-            'REQUESTED': 'status-requested',
-            'APPROVED': 'status-approved',
-            'COMPLETED': 'status-completed',
-            'REJECTED': 'status-rejected',
-            'NONE': 'status-none'
-        };
-        return statusMap[status] || '';
+    const handleRemoveEntitlementRow = (index) => {
+        setPlanFormData(prev => ({
+            ...prev,
+            entitlements: prev.entitlements.filter((_, i) => i !== index)
+        }));
     };
+
+    // Entitlement Factory Row Handlers (Standalone Entitlements Modal)
+    const handleAddManageEntitlementRow = () => {
+        const unused = ALLOWED_ENTITLEMENTS.find(type =>
+            !entitlementsManageList.some(e => e.entitlement_type === type)
+        ) || ALLOWED_ENTITLEMENTS[0];
+
+        setEntitlementsManageList(prev => [
+            ...prev,
+            { entitlement_type: unused, quantity: 30, valid_days: 30 }
+        ]);
+    };
+
+    const handleUpdateManageEntitlementRow = (index, field, value) => {
+        setEntitlementsManageList(prev => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], [field]: value };
+            return updated;
+        });
+    };
+
+    // Filter calculations
+    const filteredPlans = plans.filter(p =>
+        p.plan_name.toLowerCase().includes(planSearchQuery.toLowerCase()) ||
+        p.plan_type.toLowerCase().includes(planSearchQuery.toLowerCase())
+    );
+
+    const filteredSubscriptions = subscriptions.filter(sub => {
+        const query = subSearchQuery.toLowerCase();
+        const memberName = sub.member_name || '';
+        const memberEmail = sub.member_email || '';
+        const memberPhone = sub.member_phone || '';
+        const planName = sub.plan_name || '';
+        const subName = sub.subscription_name || '';
+        const subIdStr = (sub.subscription_id || '').toString();
+        const userIdStr = (sub.user_id || '').toString();
+
+        return memberName.toLowerCase().includes(query) ||
+            memberEmail.toLowerCase().includes(query) ||
+            memberPhone.includes(query) ||
+            planName.toLowerCase().includes(query) ||
+            subName.toLowerCase().includes(query) ||
+            subIdStr.includes(query) ||
+            userIdStr.includes(query);
+    });
+
+    const filteredMembersForLookup = membersList.filter(m => {
+        const term = memberSearchTerm.toLowerCase();
+        const name = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.name || '';
+        const email = m.email || '';
+        const phone = m.phone || m.phone_number || '';
+        return name.toLowerCase().includes(term) || email.toLowerCase().includes(term) || phone.includes(term);
+    });
+
+    // If unauthorized role, render access denied guardrail
+    if (!isAuthorized) {
+        return (
+            <div className="sub-management-unauthorized">
+                <div className="unauthorized-card">
+                    <i className="fas fa-user-lock"></i>
+                    <h2>Access Restricted</h2>
+                    <p>You require <strong>ADMIN</strong> or <strong>SUPER-ADMIN</strong> permissions to access Membership Plans & Subscriptions Management.</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="subscription-management">
-            {/* Header with Stats */}
+            {/* Page Header */}
             <div className="sub-header">
                 <div>
-                    <h1 className="sub-title">Subscription Management</h1>
-                    <p className="sub-subtitle">Manage member subscriptions, freeze requests, and membership plans</p>
+                    <h1 className="sub-title">Membership & Subscriptions Operations</h1>
+                    <p className="sub-subtitle">Manage membership plans, entitlement features, and member subscription lifecycles</p>
+                </div>
+                <div className="sub-header-actions">
+                    {activeTab === 'plans' ? (
+                        <button className="sub-btn sub-btn-primary" onClick={openCreatePlanDrawer}>
+                            <i className="fas fa-plus"></i> Create Membership Plan
+                        </button>
+                    ) : (
+                        <button className="sub-btn sub-btn-primary" onClick={() => setShowProvisionModal(true)}>
+                            <i className="fas fa-user-plus"></i> Provision Member Subscription
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {/* Statistics Cards */}
-            <div className="sub-stats-bar">
-                <div className="sub-stat-item">
+            {/* Global Notice Banners */}
+            {error && (
+                <div className="sub-alert sub-alert-danger">
+                    <i className="fas fa-exclamation-circle"></i>
+                    <span>{error}</span>
+                    <button onClick={() => setError(null)}>&times;</button>
+                </div>
+            )}
+            {successMessage && (
+                <div className="sub-alert sub-alert-success">
                     <i className="fas fa-check-circle"></i>
-                    <div>
-                        <span className="sub-stat-label">Active Subscriptions</span>
-                        <span className="sub-stat-value">{stats.activeCount}</span>
-                    </div>
+                    <span>{successMessage}</span>
+                    <button onClick={() => setSuccessMessage(null)}>&times;</button>
                 </div>
-                <div className="sub-stat-item">
-                    <i className="fas fa-clock"></i>
-                    <div>
-                        <span className="sub-stat-label">Expired</span>
-                        <span className="sub-stat-value">{stats.expiredCount}</span>
-                    </div>
-                </div>
-                <div className="sub-stat-item">
-                    <i className="fas fa-pause-circle"></i>
-                    <div>
-                        <span className="sub-stat-label">Pending Freezes</span>
-                        <span className="sub-stat-value">{stats.freezeRequestsCount}</span>
-                    </div>
-                </div>
-                <div className="sub-stat-item">
-                    <i className="fas fa-tags"></i>
-                    <div>
-                        <span className="sub-stat-label">Active Plans</span>
-                        <span className="sub-stat-value">{stats.activePlansCount}</span>
-                    </div>
-                </div>
-                <div className="sub-stat-item">
-                    <i className="fas fa-rupee-sign"></i>
-                    <div>
-                        <span className="sub-stat-label">Total Revenue</span>
-                        <span className="sub-stat-value">₹{stats.totalRevenue.toLocaleString('en-IN')}</span>
-                    </div>
-                </div>
-            </div>
+            )}
 
-            {/* Tab Navigation */}
+            {/* Navigation Tabs */}
             <div className="sub-tabs">
                 <button
                     className={`sub-tab ${activeTab === 'subscriptions' ? 'active' : ''}`}
                     onClick={() => setActiveTab('subscriptions')}
                 >
-                    <i className="fas fa-users"></i>
-                    Subscriptions
-                </button>
-                <button
-                    className={`sub-tab ${activeTab === 'freezes' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('freezes')}
-                >
-                    <i className="fas fa-pause-circle"></i>
-                    Freeze Requests
-                    {stats.freezeRequestsCount > 0 && (
-                        <span className="sub-badge">{stats.freezeRequestsCount}</span>
-                    )}
+                    <i className="fas fa-id-card"></i>
+                    Subscriptions Operations Desk
+                    <span className="sub-tab-count">{subscriptions.length}</span>
                 </button>
                 <button
                     className={`sub-tab ${activeTab === 'plans' ? 'active' : ''}`}
                     onClick={() => setActiveTab('plans')}
                 >
                     <i className="fas fa-tags"></i>
-                    Membership Plans
+                    Membership Plans & Entitlements Catalog
+                    <span className="sub-tab-count">{plans.length}</span>
                 </button>
             </div>
 
-            {/* Search Bar */}
-            <div className="sub-search-section">
-                <div className="sub-search-bar">
-                    <i className="fas fa-search"></i>
-                    <input
-                        type="text"
-                        placeholder={
-                            activeTab === 'subscriptions' ? 'Search by name, email, phone, plan...' :
-                            activeTab === 'freezes' ? 'Search freeze requests...' :
-                            'Search membership plans...'
-                        }
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    {searchQuery && (
-                        <button className="sub-clear-search" onClick={() => setSearchQuery('')}>
-                            <i className="fas fa-times"></i>
-                        </button>
-                    )}
-                </div>
-                {activeTab === 'plans' && (
-                    <button className="sub-add-btn" onClick={handleAddPlan}>
-                        <i className="fas fa-plus"></i>
-                        Add New Plan
-                    </button>
-                )}
-            </div>
-
-            {/* Content based on active tab */}
-            {activeTab === 'subscriptions' && (
-                <div className="sub-table-container">
-                    <table className="sub-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Member Details</th>
-                                <th>Plan Details</th>
-                                <th>Duration</th>
-                                <th>Status</th>
-                                <th>Freeze Status</th>
-                                <th>Renewals</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredSubscriptions.length === 0 ? (
-                                <tr>
-                                    <td colSpan="8" className="sub-no-data">
-                                        <i className="fas fa-inbox"></i>
-                                        <p>No subscriptions found</p>
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredSubscriptions.map((subscription) => (
-                                    <tr key={subscription.subscription_id}>
-                                        <td>#{subscription.subscription_id}</td>
-                                        <td>
-                                            <div className="sub-member-info">
-                                                <strong>{subscription.member_name}</strong>
-                                                <span>{subscription.email}</span>
-                                                <span>{subscription.phone}</span>
-                                                <span className="sub-branch-tag">{subscription.branch_name}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className="sub-plan-info">
-                                                <strong>{subscription.plan_name}</strong>
-                                                <span>₹{subscription.plan_price.toLocaleString('en-IN')}</span>
-                                                {subscription.trainer_name && (
-                                                    <span className="sub-trainer">Trainer: {subscription.trainer_name}</span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className="sub-date-info">
-                                                <span>{subscription.start_date}</span>
-                                                <span>to</span>
-                                                <span>{subscription.end_date}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className={`sub-status-badge ${getStatusBadgeClass(subscription.status)}`}>
-                                                {subscription.status}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span className={`sub-status-badge ${getStatusBadgeClass(subscription.freeze_status)}`}>
-                                                {subscription.freeze_status}
-                                            </span>
-                                            {subscription.freeze_days > 0 && (
-                                                <span className="sub-freeze-days">{subscription.freeze_days} days</span>
-                                            )}
-                                        </td>
-                                        <td>
-                                            <span className="sub-renewal-count">{subscription.renewal_count}x</span>
-                                        </td>
-                                        <td>
-                                            <div className="sub-action-buttons">
-                                                <button
-                                                    className="sub-action-btn view"
-                                                    onClick={() => handleViewSubscription(subscription)}
-                                                    title="View Details"
-                                                >
-                                                    <i className="fas fa-eye"></i>
-                                                </button>
-                                                <button
-                                                    className="sub-action-btn renew"
-                                                    onClick={() => handleRenewSubscription(subscription)}
-                                                    title="Renew"
-                                                    disabled={subscription.status === 'CANCELLED'}
-                                                >
-                                                    <i className="fas fa-redo"></i>
-                                                </button>
-                                                <button
-                                                    className="sub-action-btn freeze"
-                                                    onClick={() => handleFreezeSubscription(subscription)}
-                                                    title="Freeze"
-                                                    disabled={subscription.status !== 'ACTIVE' || subscription.freeze_status !== 'NONE'}
-                                                >
-                                                    <i className="fas fa-pause"></i>
-                                                </button>
-                                                <button
-                                                    className="sub-action-btn cancel"
-                                                    onClick={() => handleCancelSubscription(subscription)}
-                                                    title="Cancel"
-                                                    disabled={subscription.status === 'CANCELLED' || subscription.status === 'EXPIRED'}
-                                                >
-                                                    <i className="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
-            {activeTab === 'freezes' && (
-                <div className="sub-table-container">
-                    <table className="sub-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Member Details</th>
-                                <th>Plan</th>
-                                <th>Reason</th>
-                                <th>Duration</th>
-                                <th>Freeze Period</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredFreezeRequests.length === 0 ? (
-                                <tr>
-                                    <td colSpan="8" className="sub-no-data">
-                                        <i className="fas fa-inbox"></i>
-                                        <p>No freeze requests found</p>
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredFreezeRequests.map((freeze) => (
-                                    <tr key={freeze.freeze_id}>
-                                        <td>#{freeze.freeze_id}</td>
-                                        <td>
-                                            <div className="sub-member-info">
-                                                <strong>{freeze.member_name}</strong>
-                                                <span className="sub-branch-tag">{freeze.branch_name}</span>
-                                            </div>
-                                        </td>
-                                        <td>{freeze.plan_name}</td>
-                                        <td>
-                                            <div className="sub-reason">
-                                                {freeze.reason.length > 50 ? freeze.reason.substring(0, 50) + '...' : freeze.reason}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className="sub-duration-badge">{freeze.requested_days} days</span>
-                                        </td>
-                                        <td>
-                                            <div className="sub-date-info">
-                                                <span>{freeze.start_date}</span>
-                                                <span>to</span>
-                                                <span>{freeze.end_date}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className={`sub-status-badge ${getStatusBadgeClass(freeze.freeze_status)}`}>
-                                                {freeze.freeze_status}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div className="sub-action-buttons">
-                                                <button
-                                                    className="sub-action-btn view"
-                                                    onClick={() => handleViewFreezeDetails(freeze)}
-                                                    title="View Details"
-                                                >
-                                                    <i className="fas fa-eye"></i>
-                                                </button>
-                                                {freeze.freeze_status === 'REQUESTED' && (
-                                                    <>
-                                                        <button
-                                                            className="sub-action-btn approve"
-                                                            onClick={() => handleApproveFreeze(freeze)}
-                                                            title="Approve"
-                                                        >
-                                                            <i className="fas fa-check"></i>
-                                                        </button>
-                                                        <button
-                                                            className="sub-action-btn reject"
-                                                            onClick={() => handleRejectFreeze(freeze)}
-                                                            title="Reject"
-                                                        >
-                                                            <i className="fas fa-times"></i>
-                                                        </button>
-                                                    </>
-                                                )}
-                                                {freeze.freeze_status === 'APPROVED' && (
-                                                    <button
-                                                        className="sub-action-btn activate"
-                                                        onClick={() => handleActivateFreeze(freeze)}
-                                                        title="Activate"
-                                                    >
-                                                        <i className="fas fa-play"></i>
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
+            {/* ========================================================================= */}
+            {/* TAB 1: MEMBERSHIP PLANS CATALOG & WORKBENCH */}
+            {/* ========================================================================= */}
             {activeTab === 'plans' && (
-                <div className="sub-plans-grid">
-                    {filteredPlans.length === 0 ? (
-                        <div className="sub-no-data">
-                            <i className="fas fa-inbox"></i>
-                            <p>No membership plans found</p>
+                <div className="plans-workbench">
+                    {/* Filters & Search Toolbar */}
+                    <div className="sub-filter-bar">
+                        <div className="sub-search-box">
+                            <i className="fas fa-search"></i>
+                            <input
+                                type="text"
+                                placeholder="Search plans by name or type..."
+                                value={planSearchQuery}
+                                onChange={(e) => setPlanSearchQuery(e.target.value)}
+                            />
+                            {planSearchQuery && (
+                                <button className="clear-btn" onClick={() => setPlanSearchQuery('')}>&times;</button>
+                            )}
                         </div>
-                    ) : (
-                        filteredPlans.map((plan) => (
-                            <div key={plan.plan_id} className={`sub-plan-card ${!plan.is_active ? 'inactive' : ''}`}>
-                                <div className="sub-plan-header">
-                                    <h3>{plan.plan_name}</h3>
-                                    <span className={`sub-plan-status ${plan.is_active ? 'active' : 'inactive'}`}>
-                                        {plan.is_active ? 'Active' : 'Inactive'}
-                                    </span>
-                                </div>
-                                <div className="sub-plan-price">
-                                    <span className="price">₹{plan.price.toLocaleString('en-IN')}</span>
-                                    <span className="duration">{plan.duration_days} days</span>
-                                </div>
-                                <p className="sub-plan-description">{plan.description}</p>
-                                <div className="sub-plan-branch">
-                                    <i className="fas fa-map-marker-alt"></i>
-                                    {plan.branch_name}
-                                </div>
-                                <div className="sub-plan-actions">
-                                    <button
-                                        className="sub-plan-action-btn edit"
-                                        onClick={() => handleEditPlan(plan)}
-                                    >
-                                        <i className="fas fa-edit"></i>
-                                        Edit
-                                    </button>
-                                    <button
-                                        className="sub-plan-action-btn toggle"
-                                        onClick={() => handleTogglePlanStatus(plan)}
-                                    >
-                                        <i className={`fas fa-${plan.is_active ? 'pause' : 'play'}`}></i>
-                                        {plan.is_active ? 'Deactivate' : 'Activate'}
-                                    </button>
-                                    <button
-                                        className="sub-plan-action-btn delete"
-                                        onClick={() => handleDeletePlan(plan)}
-                                    >
-                                        <i className="fas fa-trash"></i>
-                                        Delete
-                                    </button>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-            )}
 
-            {/* Subscription Details Modal */}
-            {showSubscriptionDetails && selectedSubscription && (
-                <div className="sub-modal-overlay" onClick={() => setShowSubscriptionDetails(false)}>
-                    <div className="sub-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="sub-modal-header">
-                            <h2><i className="fas fa-id-card"></i> Subscription Details</h2>
-                            <button className="sub-modal-close" onClick={() => setShowSubscriptionDetails(false)}>
-                                <i className="fas fa-times"></i>
+                        <div className="sub-filter-controls">
+                            <select
+                                value={planTypeFilter}
+                                onChange={(e) => setPlanTypeFilter(e.target.value)}
+                                className="sub-select"
+                            >
+                                <option value="">All Plan Types</option>
+                                {PLAN_TYPES.map(pt => (
+                                    <option key={pt.value} value={pt.value}>{pt.label}</option>
+                                ))}
+                            </select>
+
+                            <select
+                                value={planStatusFilter}
+                                onChange={(e) => setPlanStatusFilter(e.target.value)}
+                                className="sub-select"
+                            >
+                                <option value="ALL">All Statuses</option>
+                                <option value="1">Active Only</option>
+                                <option value="0">Inactive Only</option>
+                            </select>
+
+                            <button className="sub-btn sub-btn-secondary" onClick={fetchMembershipPlans}>
+                                <i className="fas fa-sync-alt"></i> Refresh
                             </button>
                         </div>
-                        <div className="sub-modal-body">
-                            <div className="sub-detail-section">
-                                <h3><i className="fas fa-user"></i> Member Information</h3>
-                                <div className="sub-detail-grid">
-                                    <div className="sub-detail-item">
-                                        <label>Name</label>
-                                        <span>{selectedSubscription.member_name}</span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>Email</label>
-                                        <span>{selectedSubscription.email}</span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>Phone</label>
-                                        <span>{selectedSubscription.phone}</span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>Branch</label>
-                                        <span>{selectedSubscription.branch_name}</span>
-                                    </div>
-                                </div>
-                            </div>
+                    </div>
 
-                            <div className="sub-detail-section">
-                                <h3><i className="fas fa-credit-card"></i> Plan Information</h3>
-                                <div className="sub-detail-grid">
-                                    <div className="sub-detail-item">
-                                        <label>Plan Name</label>
-                                        <span>{selectedSubscription.plan_name}</span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>Price</label>
-                                        <span>₹{selectedSubscription.plan_price.toLocaleString('en-IN')}</span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>Start Date</label>
-                                        <span>{selectedSubscription.start_date}</span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>End Date</label>
-                                        <span>{selectedSubscription.end_date}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="sub-detail-section">
-                                <h3><i className="fas fa-info-circle"></i> Status Information</h3>
-                                <div className="sub-detail-grid">
-                                    <div className="sub-detail-item">
-                                        <label>Subscription Status</label>
-                                        <span className={`sub-status-badge ${getStatusBadgeClass(selectedSubscription.status)}`}>
-                                            {selectedSubscription.status}
-                                        </span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>Freeze Status</label>
-                                        <span className={`sub-status-badge ${getStatusBadgeClass(selectedSubscription.freeze_status)}`}>
-                                            {selectedSubscription.freeze_status}
-                                        </span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>Freeze Days</label>
-                                        <span>{selectedSubscription.freeze_days} days</span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>Renewal Count</label>
-                                        <span>{selectedSubscription.renewal_count} times</span>
-                                    </div>
-                                    {selectedSubscription.trainer_name && (
-                                        <div className="sub-detail-item">
-                                            <label>Personal Trainer</label>
-                                            <span>{selectedSubscription.trainer_name}</span>
+                    {/* Plans Cards Grid */}
+                    {loading ? (
+                        <div className="sub-loading-container">
+                            <i className="fas fa-spinner fa-spin"></i>
+                            <p>Loading Membership Plans & Entitlements...</p>
+                        </div>
+                    ) : filteredPlans.length === 0 ? (
+                        <div className="sub-empty-state">
+                            <i className="fas fa-box-open"></i>
+                            <h3>No Membership Plans Found</h3>
+                            <p>No plans match the selected filter criteria or none have been created yet.</p>
+                            <button className="sub-btn sub-btn-primary" onClick={openCreatePlanDrawer}>
+                                <i className="fas fa-plus"></i> Create First Plan
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="plans-grid">
+                            {filteredPlans.map(plan => (
+                                <div key={plan.plan_id} className={`plan-card ${plan.status === 0 ? 'inactive-plan' : ''}`}>
+                                    <div className="plan-card-header">
+                                        <div>
+                                            <span className={`plan-type-badge type-${plan.plan_type}`}>
+                                                {plan.plan_type ? plan.plan_type.replace('_', ' ') : 'BASE'}
+                                            </span>
+                                            <h3 className="plan-title">{plan.plan_name}</h3>
                                         </div>
-                                    )}
+                                        <span className={`status-pill ${plan.status === 1 ? 'status-active' : 'status-inactive'}`}>
+                                            {plan.status === 1 ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </div>
+
+                                    <div className="plan-card-pricing">
+                                        <span className="price-symbol">₹</span>
+                                        <span className="price-amount">{parseFloat(plan.price).toLocaleString('en-IN')}</span>
+                                        <span className="price-duration">/ {plan.duration_months} Months</span>
+                                    </div>
+
+                                    <div className="plan-meta-info">
+                                        <span><i className="fas fa-layer-group"></i> Gym ID: {plan.gym_id || 1}</span>
+                                        <span><i className="fas fa-building"></i> Branch ID: {plan.branch_id || 1}</span>
+                                        <span>
+                                            <i className="fas fa-lock"></i> Requires Base: {plan.requires_membership === 1 ? 'Yes' : 'No'}
+                                        </span>
+                                    </div>
+
+                                    {/* Inline Entitlements Tags */}
+                                    <div className="plan-entitlements-section">
+                                        <div className="entitlements-header">
+                                            <span>Configured Features & Entitlements</span>
+                                            <button
+                                                className="edit-entitlements-link"
+                                                onClick={() => openEntitlementManageModal(plan)}
+                                                title="Manage Entitlements API"
+                                            >
+                                                <i className="fas fa-cog"></i> Edit Array
+                                            </button>
+                                        </div>
+                                        <div className="entitlements-tags-list">
+                                            {plan.entitlements && plan.entitlements.length > 0 ? (
+                                                plan.entitlements.map((ent, idx) => (
+                                                    <span key={idx} className="entitlement-tag">
+                                                        <i className="fas fa-check-circle"></i>
+                                                        <strong>{ent.entitlement_type}</strong>
+                                                        <span className="ent-qty">{ent.quantity} qty ({ent.valid_days}d)</span>
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="no-entitlements">No entitlements configured</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="plan-card-actions">
+                                        <button className="sub-btn sub-btn-outline" onClick={() => openEditPlanDrawer(plan)}>
+                                            <i className="fas fa-edit"></i> Edit Plan
+                                        </button>
+                                        {plan.status === 1 ? (
+                                            <button className="sub-btn sub-btn-danger-outline" onClick={() => handleDeactivatePlan(plan)}>
+                                                <i className="fas fa-ban"></i> Deactivate
+                                            </button>
+                                        ) : (
+                                            <button className="sub-btn sub-btn-success-outline" onClick={() => openEditPlanDrawer(plan)}>
+                                                <i className="fas fa-check"></i> Reactivate
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* TAB 2: MASTER SUBSCRIPTIONS & OPERATIONS DESK */}
+            {/* ========================================================================= */}
+            {activeTab === 'subscriptions' && (
+                <div className="subscriptions-workbench">
+                    {/* Toolbar & Filters */}
+                    <div className="sub-filter-bar">
+                        <div className="sub-search-box">
+                            <i className="fas fa-search"></i>
+                            <input
+                                type="text"
+                                placeholder="Search by Member Name, Email, Phone, Plan, or Sub ID..."
+                                value={subSearchQuery}
+                                onChange={(e) => setSubSearchQuery(e.target.value)}
+                            />
+                            {subSearchQuery && (
+                                <button className="clear-btn" onClick={() => setSubSearchQuery('')}>&times;</button>
+                            )}
+                        </div>
+
+                        <div className="sub-filter-controls">
+                            <select
+                                value={subStatusFilter}
+                                onChange={(e) => setSubStatusFilter(e.target.value)}
+                                className="sub-select"
+                            >
+                                <option value="ALL">All Statuses</option>
+                                <option value="1">Active Subscriptions Only</option>
+                                <option value="0">Canceled / Inactive Only</option>
+                            </select>
+
+                            <select
+                                value={subPlanFilter}
+                                onChange={(e) => setSubPlanFilter(e.target.value)}
+                                className="sub-select"
+                            >
+                                <option value="">All Membership Plans</option>
+                                {plans.map(p => (
+                                    <option key={p.plan_id} value={p.plan_id}>{p.plan_name}</option>
+                                ))}
+                            </select>
+
+                            <button className="sub-btn sub-btn-secondary" onClick={fetchSubscriptions}>
+                                <i className="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Subscriptions Registry Table */}
+                    {loading ? (
+                        <div className="sub-loading-container">
+                            <i className="fas fa-spinner fa-spin"></i>
+                            <p>Loading Active Subscriptions & Wallet Credits...</p>
+                        </div>
+                    ) : filteredSubscriptions.length === 0 ? (
+                        <div className="sub-empty-state">
+                            <i className="fas fa-user-slash"></i>
+                            <h3>No Subscriptions Found</h3>
+                            <p>No subscription records match your search filter criteria.</p>
+                            <button className="sub-btn sub-btn-primary" onClick={() => setShowProvisionModal(true)}>
+                                <i className="fas fa-user-plus"></i> Provision New Subscription
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="sub-table-container">
+                            <table className="sub-table">
+                                <thead>
+                                    <tr>
+                                        <th>Sub ID</th>
+                                        <th>Member Details</th>
+                                        <th>Plan Name</th>
+                                        <th>Plan Type</th>
+                                        <th>Price & Duration</th>
+                                        <th>Validity Period</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredSubscriptions.map(sub => {
+                                        const isExpanded = expandedSubId === sub.subscription_id;
+                                        const credits = sub.wallet_credits || [];
+
+                                        // Robust Plan Information Resolution
+                                        const matchedPlan = plans.find(p => String(p.plan_id) === String(sub.plan_id) || String(p.id) === String(sub.plan_id));
+
+                                        const resolvedPlanName = sub.plan_name ||
+                                            sub.subscription_name ||
+                                            sub.plan?.plan_name ||
+                                            sub.plan?.name ||
+                                            sub.membership_plan?.plan_name ||
+                                            sub.membership_plan?.name ||
+                                            matchedPlan?.plan_name ||
+                                            (sub.plan_id ? `Membership Plan #${sub.plan_id}` : 'Gold Annual PT + Diet Combo');
+
+                                        const resolvedPlanType = sub.plan_type ||
+                                            sub.plan?.plan_type ||
+                                            sub.membership_plan?.plan_type ||
+                                            matchedPlan?.plan_type ||
+                                            'BASE_MEMBERSHIP';
+
+                                        const resolvedPrice = sub.plan_price ??
+                                            sub.price ??
+                                            sub.plan?.price ??
+                                            matchedPlan?.price ??
+                                            0;
+
+                                        const resolvedDuration = sub.duration_months ??
+                                            sub.duration ??
+                                            sub.plan?.duration_months ??
+                                            matchedPlan?.duration_months ??
+                                            0;
+
+                                        return (
+                                            <React.Fragment key={sub.subscription_id}>
+                                                <tr className={`sub-row ${isExpanded ? 'row-expanded' : ''}`}>
+                                                    <td>
+                                                        <span className="sub-id-badge">#{sub.subscription_id}</span>
+                                                    </td>
+                                                    <td>
+                                                        <div className="member-cell">
+                                                            <strong className="member-name">{sub.member_name || `User #${sub.user_id}`}</strong>
+                                                            <span className="member-email">{sub.member_email || '—'}</span>
+                                                            <span className="member-phone">{sub.member_phone || ''}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div className="plan-name-cell">
+                                                            <i className="fas fa-certificate plan-icon"></i>
+                                                            <strong className="plan-name-title">{resolvedPlanName}</strong>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span className={`plan-type-badge type-${resolvedPlanType}`}>
+                                                            {resolvedPlanType ? resolvedPlanType.replace('_', ' ') : 'BASE'}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div className="price-duration-cell">
+                                                            <span className="price-amount-text">₹{parseFloat(resolvedPrice).toLocaleString('en-IN')}</span>
+                                                            <span className="duration-months-text">{resolvedDuration} Months</span>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div className="date-cell">
+                                                            <span><i className="far fa-calendar-alt"></i> <strong>Start:</strong> {sub.start_date || '—'}</span>
+                                                            <span><i className="far fa-calendar-check"></i> <strong>End:</strong> {sub.end_date || '—'}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span className={`status-pill ${sub.status === 1 ? 'status-active' : 'status-canceled'}`}>
+                                                            {sub.status === 1 ? 'Active' : 'Canceled'}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div className="table-actions">
+                                                            <button
+                                                                className={`sub-btn sub-btn-xs ${isExpanded ? 'sub-btn-primary' : 'sub-btn-outline'}`}
+                                                                onClick={() => setExpandedSubId(isExpanded ? null : sub.subscription_id)}
+                                                                title="View Provisioned Wallet Credits"
+                                                            >
+                                                                <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-wallet'}`}></i>
+                                                                {isExpanded ? ' Hide Wallet' : ` Wallet (${credits.length})`}
+                                                            </button>
+
+                                                            <button
+                                                                className="sub-btn sub-btn-xs sub-btn-secondary"
+                                                                onClick={() => openRevisionModal(sub)}
+                                                                title="Edit Subscription Lifecycle & Dates"
+                                                            >
+                                                                <i className="fas fa-calendar-edit"></i> Revise
+                                                            </button>
+
+                                                            {sub.status === 1 && (
+                                                                <button
+                                                                    className="sub-btn sub-btn-xs sub-btn-danger"
+                                                                    onClick={() => handleCancelSubscription(sub)}
+                                                                    title="Cancel Subscription & Revoke Wallet Credits"
+                                                                >
+                                                                    <i className="fas fa-times-circle"></i> Cancel
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+
+                                                {/* Expanded Wallet Credit Ledger Panel */}
+                                                {isExpanded && (
+                                                    <tr className="ledger-expanded-row">
+                                                        <td colSpan="8">
+                                                            <div className="ledger-drawer">
+                                                                <div className="ledger-header">
+                                                                    <div>
+                                                                        <h4>
+                                                                            <i className="fas fa-wallet"></i> Provisioned Client Wallet Credits Ledger
+                                                                        </h4>
+                                                                        <div className="ledger-plan-details" style={{ marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                                            <span className={`plan-type-badge type-${resolvedPlanType}`}>
+                                                                                {resolvedPlanType ? resolvedPlanType.replace('_', ' ') : 'BASE'}
+                                                                            </span>
+                                                                            <strong style={{ color: '#1e1b4b', fontSize: '0.95rem' }}>
+                                                                                {resolvedPlanName}
+                                                                            </strong>
+                                                                            <span style={{ color: '#64748b', fontSize: '0.82rem' }}>— ₹{parseFloat(resolvedPrice).toLocaleString('en-IN')} / {resolvedDuration}m</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <span className="ledger-sub-meta">Subscription ID #{sub.subscription_id} | Member ID: {sub.user_id}</span>
+                                                                </div>
+
+                                                                {credits.length === 0 ? (
+                                                                    <p className="no-credits-msg">No active wallet credits provisioned for this subscription.</p>
+                                                                ) : (
+                                                                    <div className="credits-grid">
+                                                                        {credits.map((credit, cIdx) => (
+                                                                            <div key={credit.credit_id || cIdx} className={`credit-card ${credit.status === 0 ? 'credit-revoked' : ''}`}>
+                                                                                <div className="credit-card-header">
+                                                                                    <span className="credit-type">{credit.entitlement_type}</span>
+                                                                                    <span className={`credit-status ${credit.status === 1 ? 'active' : 'revoked'}`}>
+                                                                                        {credit.status === 1 ? 'Active' : 'Revoked'}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="credit-balances">
+                                                                                    <div className="balance-item">
+                                                                                        <span className="bal-label">Remaining:</span>
+                                                                                        <span className="bal-val val-remaining">{credit.remaining_quantity}</span>
+                                                                                    </div>
+                                                                                    <div className="balance-divider">/</div>
+                                                                                    <div className="balance-item">
+                                                                                        <span className="bal-label">Original:</span>
+                                                                                        <span className="bal-val val-original">{credit.original_quantity}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="credit-footer">
+                                                                                    <span><i className="far fa-clock"></i> Expires: {credit.expiration_date || sub.end_date || 'N/A'}</span>
+                                                                                    {credit.is_unlimited === 1 && (
+                                                                                        <span className="unlimited-badge">Unlimited</span>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* MODAL 1.2: UNIFIED PLAN CREATION & MODIFICATION DRAWER */}
+            {/* ========================================================================= */}
+            {showPlanDrawer && (
+                <div className="sub-modal-overlay">
+                    <div className="sub-modal-content plan-drawer-content">
+                        <div className="sub-modal-header">
+                            <h2>
+                                <i className={`fas ${editingPlan ? 'fa-edit' : 'fa-plus-circle'}`}></i>
+                                {editingPlan ? 'Edit Membership Plan & Entitlements' : 'Create New Membership Plan'}
+                            </h2>
+                            <button className="close-btn" onClick={() => setShowPlanDrawer(false)}>&times;</button>
+                        </div>
+
+                        <form onSubmit={handleSavePlan} className="sub-modal-form">
+                            <div className="form-grid-2">
+                                <div className="form-group">
+                                    <label>Plan Name <span className="req">*</span></label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Gold Annual PT + Diet Combo"
+                                        value={planFormData.plan_name}
+                                        onChange={(e) => setPlanFormData({ ...planFormData, plan_name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Plan Type <span className="req">*</span></label>
+                                    <select
+                                        value={planFormData.plan_type}
+                                        onChange={(e) => setPlanFormData({ ...planFormData, plan_type: e.target.value })}
+                                        required
+                                    >
+                                        {PLAN_TYPES.map(pt => (
+                                            <option key={pt.value} value={pt.value}>{pt.label}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
+
+                            <div className="form-grid-3">
+                                <div className="form-group">
+                                    <label>Duration (Months) <span className="req">*</span></label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="60"
+                                        value={planFormData.duration_months}
+                                        onChange={(e) => setPlanFormData({ ...planFormData, duration_months: e.target.value })}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Price (₹) <span className="req">*</span></label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="15000.00"
+                                        value={planFormData.price}
+                                        onChange={(e) => setPlanFormData({ ...planFormData, price: e.target.value })}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Status</label>
+                                    <select
+                                        value={planFormData.status}
+                                        onChange={(e) => setPlanFormData({ ...planFormData, status: parseInt(e.target.value, 10) })}
+                                    >
+                                        <option value={1}>1 - Active</option>
+                                        <option value={0}>0 - Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="form-group checkbox-group">
+                                <label className="checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        checked={planFormData.requires_membership === 1}
+                                        onChange={(e) => setPlanFormData({ ...planFormData, requires_membership: e.target.checked ? 1 : 0 })}
+                                    />
+                                    Requires Active Base Membership First
+                                </label>
+                            </div>
+
+                            {/* DYNAMIC ENTITLEMENT FACTORY ARRAY */}
+                            <div className="entitlement-factory-section">
+                                <div className="factory-header">
+                                    <h3>Configured Feature Entitlements</h3>
+                                    <button
+                                        type="button"
+                                        className="sub-btn sub-btn-xs sub-btn-primary"
+                                        onClick={handleAddEntitlementRow}
+                                    >
+                                        <i className="fas fa-plus"></i> Add Entitlement
+                                    </button>
+                                </div>
+
+                                {planFormData.entitlements.length === 0 ? (
+                                    <p className="no-factory-msg">No entitlements added. Click "+ Add Entitlement" to grant features.</p>
+                                ) : (
+                                    <div className="factory-rows-container">
+                                        {planFormData.entitlements.map((ent, idx) => (
+                                            <div key={idx} className="factory-row">
+                                                <div className="factory-col col-type">
+                                                    <label>Entitlement Type</label>
+                                                    <select
+                                                        value={ent.entitlement_type}
+                                                        onChange={(e) => handleUpdateEntitlementRow(idx, 'entitlement_type', e.target.value)}
+                                                    >
+                                                        {ALLOWED_ENTITLEMENTS.map(type => (
+                                                            <option key={type} value={type}>{type}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                <div className="factory-col col-qty">
+                                                    <label>Quantity</label>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={ent.quantity}
+                                                        onChange={(e) => handleUpdateEntitlementRow(idx, 'quantity', e.target.value)}
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div className="factory-col col-days">
+                                                    <label>Valid Days</label>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={ent.valid_days}
+                                                        onChange={(e) => handleUpdateEntitlementRow(idx, 'valid_days', e.target.value)}
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div className="factory-col col-action">
+                                                    <label>&nbsp;</label>
+                                                    <button
+                                                        type="button"
+                                                        className="remove-row-btn"
+                                                        onClick={() => handleRemoveEntitlementRow(idx)}
+                                                        title="Remove Row"
+                                                    >
+                                                        <i className="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="sub-modal-footer">
+                                <button type="button" className="sub-btn sub-btn-secondary" onClick={() => setShowPlanDrawer(false)}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="sub-btn sub-btn-primary" disabled={actionLoading}>
+                                    {actionLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-save"></i>}
+                                    {editingPlan ? ' Update Membership Plan' : ' Save Membership Plan'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* MODAL 6/7: STANDALONE ENTITLEMENTS MANAGEMENT MODAL */}
+            {/* ========================================================================= */}
+            {showEntitlementModal && selectedPlanForEntitlements && (
+                <div className="sub-modal-overlay">
+                    <div className="sub-modal-content">
+                        <div className="sub-modal-header">
+                            <h2>
+                                <i className="fas fa-cogs"></i> Manage Plan Entitlements
+                            </h2>
+                            <button className="close-btn" onClick={() => setShowEntitlementModal(false)}>&times;</button>
+                        </div>
+
+                        <div className="sub-modal-body">
+                            <p className="modal-sub-info">
+                                Modifying entitlements for: <strong>{selectedPlanForEntitlements.plan_name}</strong> (Plan ID: {selectedPlanForEntitlements.plan_id})
+                            </p>
+
+                            <div className="factory-header" style={{ marginTop: '1rem' }}>
+                                <h3>Active Entitlements List</h3>
+                                <button
+                                    type="button"
+                                    className="sub-btn sub-btn-xs sub-btn-primary"
+                                    onClick={handleAddManageEntitlementRow}
+                                >
+                                    <i className="fas fa-plus"></i> Add Entitlement
+                                </button>
+                            </div>
+
+                            <div className="factory-rows-container">
+                                {entitlementsManageList.map((ent, idx) => (
+                                    <div key={idx} className="factory-row">
+                                        <div className="factory-col col-type">
+                                            <label>Entitlement Type</label>
+                                            <select
+                                                value={ent.entitlement_type}
+                                                onChange={(e) => handleUpdateManageEntitlementRow(idx, 'entitlement_type', e.target.value)}
+                                            >
+                                                {ALLOWED_ENTITLEMENTS.map(type => (
+                                                    <option key={type} value={type}>{type}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="factory-col col-qty">
+                                            <label>Quantity</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={ent.quantity}
+                                                onChange={(e) => handleUpdateManageEntitlementRow(idx, 'quantity', e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="factory-col col-days">
+                                            <label>Valid Days</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={ent.valid_days}
+                                                onChange={(e) => handleUpdateManageEntitlementRow(idx, 'valid_days', e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="factory-col col-action">
+                                            <label>&nbsp;</label>
+                                            <button
+                                                type="button"
+                                                className="remove-row-btn"
+                                                onClick={() => handleDeleteSingleEntitlement(ent.entitlement_type)}
+                                                title="Delete single entitlement from API"
+                                            >
+                                                <i className="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="sub-modal-footer">
+                            <button className="sub-btn sub-btn-secondary" onClick={() => setShowEntitlementModal(false)}>
+                                Close
+                            </button>
+                            <button
+                                className="sub-btn sub-btn-primary"
+                                onClick={handleSaveEntitlementsBatch}
+                                disabled={actionLoading}
+                            >
+                                {actionLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-save"></i>}
+                                &nbsp;Save Entitlements Batch
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Renewal Modal */}
-            {showRenewalModal && selectedSubscription && (
-                <div className="sub-modal-overlay" onClick={() => setShowRenewalModal(false)}>
-                    <div className="sub-modal" onClick={(e) => e.stopPropagation()}>
+            {/* ========================================================================= */}
+            {/* MODAL 2.2: MANUAL SUBSCRIPTION PROVISIONING DESK */}
+            {/* ========================================================================= */}
+            {showProvisionModal && (
+                <div className="sub-modal-overlay">
+                    <div className="sub-modal-content">
                         <div className="sub-modal-header">
-                            <h2><i className="fas fa-redo"></i> Renew Subscription</h2>
-                            <button className="sub-modal-close" onClick={() => setShowRenewalModal(false)}>
-                                <i className="fas fa-times"></i>
-                            </button>
+                            <h2>
+                                <i className="fas fa-user-plus"></i> Manual Subscription Provisioning Desk
+                            </h2>
+                            <button className="close-btn" onClick={() => setShowProvisionModal(false)}>&times;</button>
                         </div>
-                        <form onSubmit={handleRenewalSubmit} className="sub-modal-body">
-                            <div className="sub-form-group">
-                                <label>Member</label>
-                                <input type="text" value={selectedSubscription.member_name} disabled />
-                            </div>
-                            <div className="sub-form-group">
-                                <label>Current Plan</label>
-                                <input type="text" value={`${selectedSubscription.plan_name} - ₹${selectedSubscription.plan_price}`} disabled />
-                            </div>
-                            <div className="sub-form-group">
-                                <label>New Plan *</label>
+
+                        <form onSubmit={handleProvisionSubscription} className="sub-modal-form">
+                            <p className="modal-sub-info">
+                                Select a member user and plan. The system will automatically populate client wallet credits.
+                            </p>
+
+                            {/* Member Search Lookup */}
+                            <div className="form-group">
+                                <label>Member Lookup / User ID <span className="req">*</span></label>
+                                <input
+                                    type="text"
+                                    placeholder="Type member name, email or phone to filter list below..."
+                                    value={memberSearchTerm}
+                                    onChange={(e) => setMemberSearchTerm(e.target.value)}
+                                    style={{ marginBottom: '0.5rem' }}
+                                />
                                 <select
-                                    value={renewalFormData.plan_id}
-                                    onChange={(e) => setRenewalFormData({ ...renewalFormData, plan_id: e.target.value })}
+                                    value={provisionFormData.user_id}
+                                    onChange={(e) => setProvisionFormData({ ...provisionFormData, user_id: e.target.value })}
+                                    required
+                                    size={filteredMembersForLookup.length > 0 ? Math.min(5, filteredMembersForLookup.length + 1) : 1}
+                                    className="member-select-list"
+                                >
+                                    <option value="">-- Select Member User --</option>
+                                    {filteredMembersForLookup.map(m => {
+                                        const uid = m.user_id || m.id;
+                                        const name = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.name || `User #${uid}`;
+                                        return (
+                                            <option key={uid} value={uid}>
+                                                #{uid} - {name} ({m.email || m.phone || 'Member'})
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                                {membersList.length === 0 && (
+                                    <small className="help-text">Directly enter numeric User ID if list is empty.</small>
+                                )}
+                            </div>
+
+                            {/* Plan Catalog Dropdown */}
+                            <div className="form-group">
+                                <label>Membership Plan Template <span className="req">*</span></label>
+                                <select
+                                    value={provisionFormData.plan_id}
+                                    onChange={(e) => setProvisionFormData({ ...provisionFormData, plan_id: e.target.value })}
                                     required
                                 >
-                                    <option value="">Select Plan</option>
-                                    {membershipPlans.filter(p => p.is_active).map(plan => (
-                                        <option key={plan.plan_id} value={plan.plan_id}>
-                                            {plan.plan_name} - ₹{plan.price} ({plan.duration_days} days)
+                                    <option value="">-- Select Active Membership Plan --</option>
+                                    {plans.filter(p => p.status === 1).map(p => (
+                                        <option key={p.plan_id} value={p.plan_id}>
+                                            {p.plan_name} — ₹{parseFloat(p.price).toLocaleString('en-IN')} ({p.duration_months} Months)
                                         </option>
                                     ))}
                                 </select>
                             </div>
-                            <div className="sub-form-group">
-                                <label>Start Date *</label>
-                                <input
-                                    type="date"
-                                    value={renewalFormData.start_date}
-                                    onChange={(e) => setRenewalFormData({ ...renewalFormData, start_date: e.target.value })}
-                                    required
-                                />
+
+                            {/* Optional Dates */}
+                            <div className="form-grid-2">
+                                <div className="form-group">
+                                    <label>Start Date <small>(Optional - defaults to today)</small></label>
+                                    <input
+                                        type="date"
+                                        value={provisionFormData.start_date}
+                                        onChange={(e) => setProvisionFormData({ ...provisionFormData, start_date: e.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>End Date <small>(Optional - defaults to start + duration)</small></label>
+                                    <input
+                                        type="date"
+                                        value={provisionFormData.end_date}
+                                        onChange={(e) => setProvisionFormData({ ...provisionFormData, end_date: e.target.value })}
+                                    />
+                                </div>
                             </div>
-                            <div className="sub-form-group">
-                                <label>Remarks</label>
-                                <textarea
-                                    value={renewalFormData.remarks}
-                                    onChange={(e) => setRenewalFormData({ ...renewalFormData, remarks: e.target.value })}
-                                    rows="3"
-                                    placeholder="Add any additional notes..."
-                                />
-                            </div>
-                            <div className="sub-modal-actions">
-                                <button type="button" className="sub-btn-secondary" onClick={() => setShowRenewalModal(false)}>
+
+                            <div className="sub-modal-footer">
+                                <button type="button" className="sub-btn sub-btn-secondary" onClick={() => setShowProvisionModal(false)}>
                                     Cancel
                                 </button>
-                                <button type="submit" className="sub-btn-primary">
-                                    Renew Subscription
+                                <button type="submit" className="sub-btn sub-btn-primary" disabled={actionLoading}>
+                                    {actionLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-check-circle"></i>}
+                                    &nbsp;Provision Membership & Auto-Credit Wallet
                                 </button>
                             </div>
                         </form>
@@ -1069,227 +1453,63 @@ const SubscriptionManagement = () => {
                 </div>
             )}
 
-            {/* Freeze Modal */}
-            {showFreezeModal && selectedSubscription && (
-                <div className="sub-modal-overlay" onClick={() => setShowFreezeModal(false)}>
-                    <div className="sub-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="sub-modal-header">
-                            <h2><i className="fas fa-pause"></i> Request Freeze</h2>
-                            <button className="sub-modal-close" onClick={() => setShowFreezeModal(false)}>
-                                <i className="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <form onSubmit={handleFreezeSubmit} className="sub-modal-body">
-                            <div className="sub-form-group">
-                                <label>Member</label>
-                                <input type="text" value={selectedSubscription.member_name} disabled />
-                            </div>
-                            <div className="sub-form-group">
-                                <label>Plan</label>
-                                <input type="text" value={selectedSubscription.plan_name} disabled />
-                            </div>
-                            <div className="sub-form-group">
-                                <label>Reason for Freeze *</label>
-                                <textarea
-                                    value={freezeFormData.reason}
-                                    onChange={(e) => setFreezeFormData({ ...freezeFormData, reason: e.target.value })}
-                                    rows="3"
-                                    placeholder="Please provide a reason for freeze request..."
-                                    required
-                                />
-                            </div>
-                            <div className="sub-form-group">
-                                <label>Requested Days *</label>
-                                <input
-                                    type="number"
-                                    value={freezeFormData.requested_days}
-                                    onChange={(e) => setFreezeFormData({ ...freezeFormData, requested_days: e.target.value })}
-                                    min="1"
-                                    max="90"
-                                    placeholder="Enter number of days (1-90)"
-                                    required
-                                />
-                            </div>
-                            <div className="sub-form-group">
-                                <label>Start Date *</label>
-                                <input
-                                    type="date"
-                                    value={freezeFormData.start_date}
-                                    onChange={(e) => setFreezeFormData({ ...freezeFormData, start_date: e.target.value })}
-                                    required
-                                />
-                            </div>
-                            <div className="sub-modal-actions">
-                                <button type="button" className="sub-btn-secondary" onClick={() => setShowFreezeModal(false)}>
-                                    Cancel
-                                </button>
-                                <button type="submit" className="sub-btn-primary">
-                                    Submit Freeze Request
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* Freeze Details Modal */}
-            {showFreezeDetailsModal && selectedFreeze && (
-                <div className="sub-modal-overlay" onClick={() => setShowFreezeDetailsModal(false)}>
-                    <div className="sub-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="sub-modal-header">
-                            <h2><i className="fas fa-pause-circle"></i> Freeze Request Details</h2>
-                            <button className="sub-modal-close" onClick={() => setShowFreezeDetailsModal(false)}>
-                                <i className="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div className="sub-modal-body">
-                            <div className="sub-detail-section">
-                                <h3><i className="fas fa-user"></i> Member Information</h3>
-                                <div className="sub-detail-grid">
-                                    <div className="sub-detail-item">
-                                        <label>Name</label>
-                                        <span>{selectedFreeze.member_name}</span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>Branch</label>
-                                        <span>{selectedFreeze.branch_name}</span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>Plan</label>
-                                        <span>{selectedFreeze.plan_name}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="sub-detail-section">
-                                <h3><i className="fas fa-info-circle"></i> Freeze Information</h3>
-                                <div className="sub-detail-grid">
-                                    <div className="sub-detail-item">
-                                        <label>Reason</label>
-                                        <span>{selectedFreeze.reason}</span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>Requested Days</label>
-                                        <span>{selectedFreeze.requested_days} days</span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>Start Date</label>
-                                        <span>{selectedFreeze.start_date}</span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>End Date</label>
-                                        <span>{selectedFreeze.end_date}</span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>Status</label>
-                                        <span className={`sub-status-badge ${getStatusBadgeClass(selectedFreeze.freeze_status)}`}>
-                                            {selectedFreeze.freeze_status}
-                                        </span>
-                                    </div>
-                                    <div className="sub-detail-item">
-                                        <label>Requested On</label>
-                                        <span>{selectedFreeze.created_at}</span>
-                                    </div>
-                                    {selectedFreeze.approved_at && (
-                                        <div className="sub-detail-item">
-                                            <label>Approved On</label>
-                                            <span>{selectedFreeze.approved_at}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Plan Add/Edit Modal */}
-            {showPlanModal && (
-                <div className="sub-modal-overlay" onClick={() => setShowPlanModal(false)}>
-                    <div className="sub-modal" onClick={(e) => e.stopPropagation()}>
+            {/* ========================================================================= */}
+            {/* MODAL 2.3: SUBSCRIPTION LIFECYCLE REVISION PANEL */}
+            {/* ========================================================================= */}
+            {showRevisionModal && editingSubscription && (
+                <div className="sub-modal-overlay">
+                    <div className="sub-modal-content">
                         <div className="sub-modal-header">
                             <h2>
-                                <i className={`fas fa-${isEditingPlan ? 'edit' : 'plus'}`}></i>
-                                {isEditingPlan ? 'Edit Plan' : 'Add New Plan'}
+                                <i className="fas fa-calendar-alt"></i> Subscription Lifecycle Revision Panel
                             </h2>
-                            <button className="sub-modal-close" onClick={() => setShowPlanModal(false)}>
-                                <i className="fas fa-times"></i>
-                            </button>
+                            <button className="close-btn" onClick={() => setShowRevisionModal(false)}>&times;</button>
                         </div>
-                        <form onSubmit={handlePlanSubmit} className="sub-modal-body">
-                            <div className="sub-form-group">
-                                <label>Plan Name *</label>
-                                <input
-                                    type="text"
-                                    value={planFormData.plan_name}
-                                    onChange={(e) => setPlanFormData({ ...planFormData, plan_name: e.target.value })}
-                                    placeholder="e.g., Premium Annual"
-                                    required
-                                />
-                            </div>
-                            <div className="sub-form-row">
-                                <div className="sub-form-group">
-                                    <label>Duration (Days) *</label>
+
+                        <form onSubmit={handleUpdateSubscriptionRevision} className="sub-modal-form">
+                            <p className="modal-sub-info">
+                                Revising Subscription <strong>#{editingSubscription.subscription_id}</strong> for Member: <strong>{editingSubscription.member_name || editingSubscription.user_id}</strong>
+                            </p>
+
+                            <div className="form-grid-2">
+                                <div className="form-group">
+                                    <label>Start Date <span className="req">*</span></label>
                                     <input
-                                        type="number"
-                                        value={planFormData.duration_days}
-                                        onChange={(e) => setPlanFormData({ ...planFormData, duration_days: e.target.value })}
-                                        min="1"
-                                        placeholder="e.g., 365"
+                                        type="date"
+                                        value={revisionFormData.start_date}
+                                        onChange={(e) => setRevisionFormData({ ...revisionFormData, start_date: e.target.value })}
                                         required
                                     />
                                 </div>
-                                <div className="sub-form-group">
-                                    <label>Price (₹) *</label>
+                                <div className="form-group">
+                                    <label>End Date <span className="req">*</span></label>
                                     <input
-                                        type="number"
-                                        value={planFormData.price}
-                                        onChange={(e) => setPlanFormData({ ...planFormData, price: e.target.value })}
-                                        min="0"
-                                        step="0.01"
-                                        placeholder="e.g., 24999"
+                                        type="date"
+                                        value={revisionFormData.end_date}
+                                        onChange={(e) => setRevisionFormData({ ...revisionFormData, end_date: e.target.value })}
                                         required
                                     />
                                 </div>
                             </div>
-                            <div className="sub-form-group">
-                                <label>Description *</label>
-                                <textarea
-                                    value={planFormData.description}
-                                    onChange={(e) => setPlanFormData({ ...planFormData, description: e.target.value })}
-                                    rows="3"
-                                    placeholder="Describe the plan features and benefits..."
-                                    required
-                                />
-                            </div>
-                            <div className="sub-form-group">
-                                <label>Branch (Optional)</label>
+
+                            <div className="form-group">
+                                <label>Subscription Status</label>
                                 <select
-                                    value={planFormData.branch_id || ''}
-                                    onChange={(e) => setPlanFormData({ ...planFormData, branch_id: e.target.value || null })}
+                                    value={revisionFormData.status}
+                                    onChange={(e) => setRevisionFormData({ ...revisionFormData, status: parseInt(e.target.value, 10) })}
                                 >
-                                    <option value="">All Branches</option>
-                                    <option value="1">Bangalore Main</option>
-                                    <option value="2">Whitefield Branch</option>
-                                    <option value="3">Koramangala Branch</option>
+                                    <option value={1}>1 - Active</option>
+                                    <option value={0}>0 - Canceled / Inactive</option>
                                 </select>
                             </div>
-                            <div className="sub-form-group">
-                                <label className="sub-checkbox-label">
-                                    <input
-                                        type="checkbox"
-                                        checked={planFormData.is_active}
-                                        onChange={(e) => setPlanFormData({ ...planFormData, is_active: e.target.checked })}
-                                    />
-                                    <span>Plan is active</span>
-                                </label>
-                            </div>
-                            <div className="sub-modal-actions">
-                                <button type="button" className="sub-btn-secondary" onClick={() => setShowPlanModal(false)}>
+
+                            <div className="sub-modal-footer">
+                                <button type="button" className="sub-btn sub-btn-secondary" onClick={() => setShowRevisionModal(false)}>
                                     Cancel
                                 </button>
-                                <button type="submit" className="sub-btn-primary">
-                                    {isEditingPlan ? 'Update Plan' : 'Add Plan'}
+                                <button type="submit" className="sub-btn sub-btn-primary" disabled={actionLoading}>
+                                    {actionLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-save"></i>}
+                                    &nbsp;Save Revision & Adjust Credit Lifecycles
                                 </button>
                             </div>
                         </form>

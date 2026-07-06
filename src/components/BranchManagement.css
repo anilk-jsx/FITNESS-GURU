@@ -11,21 +11,21 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
-    padding: 24px 32px 16px;
+    margin-bottom: 0.85rem;
+    padding: 0;
 }
 
 .branch-title {
-    font-size: 28px;
-    font-weight: 700;
-    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #0f172a;
     margin: 0;
 }
 
 .branch-subtitle {
-    font-size: 14px;
-    color: #ffffff;
-    margin: 4px 0 0 0;
+    font-size: 0.82rem;
+    color: #64748b;
+    margin: 2px 0 0 0;
 }
 
 .branch-add-btn {
