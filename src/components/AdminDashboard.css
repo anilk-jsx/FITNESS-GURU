@@ -2,19 +2,20 @@
 
 .admin-dashboard {
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #f8fafc;
     position: relative;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 /* Sidebar styles moved to AdminSidebar.css */
 
 /* Main Content */
 .admin-main-content {
-    margin-left: 280px;
-    padding: 2rem;
+    margin-left: 220px;
+    padding: 1rem 1.25rem 2rem 1.25rem;
     min-height: 100vh;
     position: relative;
+    box-sizing: border-box;
 }
 
 /* Top Avatar */
@@ -118,21 +119,21 @@
 
 /* Page Header */
 .admin-page-header {
-    margin-bottom: 3rem;
-    margin-top: 4rem;
+    margin-bottom: 0.85rem;
+    margin-top: 0.5rem;
 }
 
 .admin-page-title {
-    font-size: 2.5rem;
-    font-weight: 700;
+    font-size: 1.25rem;
+    font-weight: 600;
     color: white;
-    margin-bottom: 0.5rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 0.2rem;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .admin-page-subtitle {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.82rem;
     margin: 0;
 }
 
@@ -248,6 +249,7 @@
     text-transform: uppercase;
     letter-spacing: 2px;
 }
+
 /* Quick Actions */
 .admin-quick-actions {
     display: grid;
@@ -366,25 +368,25 @@
         margin-left: 260px;
         padding: 1.5rem;
     }
-    
+
     .admin-stats-grid {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 1.5rem;
     }
-    
+
     .admin-stat-card {
         padding: 1.5rem;
     }
-    
+
     .admin-dashboard-section {
         padding: 2rem;
     }
-    
+
     .admin-quick-actions {
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 1.25rem;
     }
-    
+
     .admin-dashboard-section {
         padding: 2rem;
     }
@@ -397,11 +399,11 @@
         margin-left: 0;
         padding: 1rem;
     }
-    
+
     .mobile-menu-toggle {
         display: block;
     }
-    
+
     .admin-page-header {
         margin-top: 3rem;
         margin-bottom: 2rem;
@@ -415,11 +417,11 @@
         grid-template-columns: 1fr;
         gap: 1rem;
     }
-    
+
     .admin-stat-card {
         padding: 1.25rem;
     }
-    
+
     .admin-stat-value {
         font-size: 2rem;
     }
@@ -428,7 +430,7 @@
         grid-template-columns: 1fr;
         gap: 1rem;
     }
-    
+
     .admin-dashboard-section {
         padding: 1.5rem;
     }
@@ -443,7 +445,7 @@
         min-height: 50px;
         font-size: 1rem;
     }
-    
+
     .admin-dashboard-section {
         padding: 1.5rem;
     }
@@ -463,11 +465,11 @@
     .admin-stat-card {
         padding: 1.25rem;
     }
-    
+
     .admin-stat-header {
         margin-bottom: 1rem;
     }
-    
+
     .admin-stat-icon {
         width: 45px;
         height: 45px;
@@ -480,13 +482,13 @@
     .admin-page-subtitle {
         font-size: 0.95rem;
     }
-    
+
     .admin-action-btn {
         padding: 1rem;
         font-size: 0.875rem;
         min-height: 48px;
     }
-    
+
     .admin-section-title {
         font-size: 1.1rem;
     }
@@ -883,6 +885,7 @@
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
@@ -893,6 +896,7 @@
         opacity: 0;
         transform: translateY(50px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -973,6 +977,7 @@
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -984,7 +989,18 @@
     animation: fadeInUp 0.6s ease forwards;
 }
 
-.admin-stat-card:nth-child(1) { animation-delay: 0.1s; }
-.admin-stat-card:nth-child(2) { animation-delay: 0.2s; }
-.admin-stat-card:nth-child(3) { animation-delay: 0.3s; }
-.admin-stat-card:nth-child(4) { animation-delay: 0.4s; }
+.admin-stat-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.admin-stat-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.admin-stat-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.admin-stat-card:nth-child(4) {
+    animation-delay: 0.4s;
+}

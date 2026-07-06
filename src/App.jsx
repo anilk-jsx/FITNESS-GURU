@@ -15,6 +15,7 @@ import FitnessAssessment from './components/FitnessAssessment';
 import SectionDivider from './components/SectionDivider';
 import AdminDietPlans from './components/AdminDietPlans';
 import AdminPTManagement from './components/AdminPTManagement';
+import GymConfigurationManagement from './components/GymConfigurationManagement';
 import MemberPTModule from './components/MemberPTModule';
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -61,10 +62,12 @@ function App() {
           <Route path="staff" element={<StaffManagement />} />
           <Route path="branches" element={<BranchManagement />} />
           <Route path="contacts" element={<ContactManagement />} />
-          <Route path="fitness-assessments" element={<FitnessAssessment />} />
+          <Route path="fitness-assessments" element={<Navigate to="/admin-dashboard/pt-management?tab=assessments" replace />} />
           <Route path="mapping" element={<UserTrainerMapping />} />
           <Route path="pt-management" element={<AdminPTManagement />} />
-          <Route path="diet-plans" element={<AdminDietPlans />} />
+          <Route path="gym-configuration" element={<GymConfigurationManagement />} />
+          <Route path="gym-shifts" element={<Navigate to="/admin-dashboard/gym-configuration?tab=shifts-slots" replace />} />
+          <Route path="diet-plans" element={<Navigate to="/admin-dashboard/pt-management?tab=diet-plans" replace />} />
         </Route>
         <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
@@ -73,9 +76,9 @@ function App() {
           <Route path="dashboard" element={<TrainerDashboardHome />} />
           <Route path="pt-roster" element={<TrainerPTRoster />} />
           <Route path="clients" element={<TrainerClients />} />
-          <Route path="assessments" element={<TrainerAssessments />} />
+          <Route path="assessments" element={<Navigate to="/trainer-dashboard/pt-roster?tab=assessments" replace />} />
           <Route path="workout-plans" element={<TrainerWorkoutPlans />} />
-          <Route path="diet-plans" element={<TrainerDietPlans />} />
+          <Route path="diet-plans" element={<Navigate to="/trainer-dashboard/pt-roster?tab=diet-plans" replace />} />
           <Route path="attendance" element={<TrainerAttendance />} />
           <Route path="schedule" element={<TrainerSchedule />} />
           <Route path="notifications" element={<TrainerNotifications />} />

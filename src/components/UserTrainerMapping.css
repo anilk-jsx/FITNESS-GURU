@@ -1,7 +1,7 @@
 /* User Trainer Mapping Styles — matches SubscriptionManagement design */
 
 .user-trainer-mapping {
-    padding: 2rem;
+    padding: 1rem 1.25rem;
     min-height: 100vh;
     animation: fadeInUp 0.5s ease;
 }
@@ -11,19 +11,19 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 0.85rem;
 }
 
 .utm-title {
-    font-size: 2rem;
-    color: white;
-    margin-bottom: 0.5rem;
-    font-weight: 700;
+    font-size: 1.25rem;
+    color: #0f172a;
+    margin-bottom: 0.2rem;
+    font-weight: 600;
 }
 
 .utm-subtitle {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 1rem;
+    color: #64748b;
+    font-size: 0.82rem;
 }
 
 /* Statistics Bar */

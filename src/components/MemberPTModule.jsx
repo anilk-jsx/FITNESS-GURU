@@ -1,9 +1,29 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import tokenManager from '../utils/tokenManager';
 import './MemberPTModule.css';
 
 const MemberPTModule = () => {
-  const [activeTab, setActiveTab] = useState('scheduler'); // 'scheduler', 'portfolio', 'diet-plan'
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get('tab');
+  const getNormalizedTab = (t) => {
+    if (t === 'portfolio' || t === 'assessments') return 'portfolio';
+    if (t === 'diet-plan' || t === 'diet-plans') return 'diet-plan';
+    return t || 'scheduler';
+  };
+
+  const [activeTab, setActiveTab] = useState(getNormalizedTab(rawTab)); // 'scheduler', 'portfolio', 'diet-plan'
+
+  useEffect(() => {
+    if (rawTab) {
+      setActiveTab(getNormalizedTab(rawTab));
+    }
+  }, [rawTab]);
+
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    setSearchParams({ tab: tabKey });
+  };
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
 
   // Active Wallet Credits
@@ -293,19 +313,19 @@ const MemberPTModule = () => {
       <div className="mpt-nav-tabs">
         <button
           className={`mpt-tab-btn ${activeTab === 'scheduler' ? 'active' : ''}`}
-          onClick={() => setActiveTab('scheduler')}
+          onClick={() => handleTabChange('scheduler')}
         >
           <i className="fas fa-calendar-alt"></i> 3.1 PT Session Scheduler
         </button>
         <button
           className={`mpt-tab-btn ${activeTab === 'portfolio' ? 'active' : ''}`}
-          onClick={() => setActiveTab('portfolio')}
+          onClick={() => handleTabChange('portfolio')}
         >
           <i className="fas fa-chart-line"></i> 3.3 Transformation History (Progress Portfolio)
         </button>
         <button
           className={`mpt-tab-btn ${activeTab === 'diet-plan' ? 'active' : ''}`}
-          onClick={() => setActiveTab('diet-plan')}
+          onClick={() => handleTabChange('diet-plan')}
         >
           <i className="fas fa-utensils"></i> Active Diet Plan
         </button>

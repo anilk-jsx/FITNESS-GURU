@@ -1,10 +1,31 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import tokenManager from '../../utils/tokenManager';
 import TrainerDietPlans from './TrainerDietPlans';
 import './TrainerPTRoster.css';
 
 const TrainerPTRoster = () => {
-  const [activeTab, setActiveTab] = useState('roster-desk'); // 'roster-desk', 'assessment-workbench', 'diet-plans'
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get('tab');
+  const normalizedTab = (rawTab === 'assessments' || rawTab === 'assessment-workbench')
+    ? 'assessment-workbench' 
+    : (rawTab || 'roster-desk');
+
+  const [activeTab, setActiveTab] = useState(normalizedTab); // 'roster-desk', 'assessment-workbench', 'diet-plans'
+
+  useEffect(() => {
+    if (rawTab) {
+      const target = (rawTab === 'assessments' || rawTab === 'assessment-workbench')
+        ? 'assessment-workbench' 
+        : rawTab;
+      setActiveTab(target);
+    }
+  }, [rawTab]);
+
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    setSearchParams({ tab: tabKey });
+  };
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
 
   // State for Daily Roster Date
@@ -288,23 +309,23 @@ const TrainerPTRoster = () => {
         </div>
       </div>
 
-      {/* Navigation Tabs Bar */}
+      {/* Navigation Tabs */}
       <div className="tr-nav-tabs">
         <button
           className={`tr-tab-btn ${activeTab === 'roster-desk' ? 'active' : ''}`}
-          onClick={() => setActiveTab('roster-desk')}
+          onClick={() => handleTabChange('roster-desk')}
         >
           <i className="fas fa-clock"></i> 2.1 Baseline Scheduling & Roster Desk
         </button>
         <button
           className={`tr-tab-btn ${activeTab === 'assessment-workbench' ? 'active' : ''}`}
-          onClick={() => setActiveTab('assessment-workbench')}
+          onClick={() => handleTabChange('assessment-workbench')}
         >
           <i className="fas fa-notes-medical"></i> 2.2 Multi-Metric Assessment Workbench
         </button>
         <button
           className={`tr-tab-btn ${activeTab === 'diet-plans' ? 'active' : ''}`}
-          onClick={() => setActiveTab('diet-plans')}
+          onClick={() => handleTabChange('diet-plans')}
         >
           <i className="fas fa-seedling"></i> Diet Plans Hub
         </button>

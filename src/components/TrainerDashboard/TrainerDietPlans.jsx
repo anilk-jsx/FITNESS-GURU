@@ -8,13 +8,13 @@ const TrainerDietPlans = () => {
 
   // 2. Members Directory
   const [members, setMembers] = useState([
-    { id: 'M-1001', name: 'Rahul Sharma', age: 28, weight: 70, height: 175, gender: 'Male', trainer: 'Raj Verma' },
-    { id: 'M-1002', name: 'Anita Verma', age: 26, weight: 58, height: 162, gender: 'Female', trainer: 'Amit Sharma' },
-    { id: 'M-1003', name: 'Vikram Singh', age: 31, weight: 82, height: 180, gender: 'Male', trainer: 'Raj Verma' },
-    { id: 'M-1004', name: 'Pooja Mehta', age: 24, weight: 54, height: 165, gender: 'Female', trainer: 'Raj Verma' },
-    { id: 'M-1005', name: 'Sandeep Kumar', age: 29, weight: 76, height: 172, gender: 'Male', trainer: 'Amit Sharma' },
-    { id: 'M-1006', name: 'Neha Gupta', age: 27, weight: 62, height: 160, gender: 'Female', trainer: 'Amit Sharma' },
-    { id: 'M-1007', name: 'Arjun Patel', age: 33, weight: 88, height: 185, gender: 'Male', trainer: 'Amit Sharma' }
+    { id: 'M-1001', name: 'Rahul Sharma', age: 28, weight: 70, height: 175, gender: 'Male', trainer: 'Raj Verma', pt_credits: 8, is_pt_active: true },
+    { id: 'M-1002', name: 'Anita Verma', age: 26, weight: 58, height: 162, gender: 'Female', trainer: 'Amit Sharma', pt_credits: 12, is_pt_active: true },
+    { id: 'M-1003', name: 'Vikram Singh', age: 31, weight: 82, height: 180, gender: 'Male', trainer: 'Raj Verma', pt_credits: 0, is_pt_active: false },
+    { id: 'M-1004', name: 'Pooja Mehta', age: 24, weight: 54, height: 165, gender: 'Female', trainer: 'Raj Verma', pt_credits: 16, is_pt_active: true },
+    { id: 'M-1005', name: 'Sandeep Kumar', age: 29, weight: 76, height: 172, gender: 'Male', trainer: 'Amit Sharma', pt_credits: 4, is_pt_active: true },
+    { id: 'M-1006', name: 'Neha Gupta', age: 27, weight: 62, height: 160, gender: 'Female', trainer: 'Amit Sharma', pt_credits: 0, is_pt_active: false },
+    { id: 'M-1007', name: 'Arjun Patel', age: 33, weight: 88, height: 185, gender: 'Male', trainer: 'Amit Sharma', pt_credits: 24, is_pt_active: true }
   ]);
 
   // Selected member inside directory sidebar
@@ -554,6 +554,15 @@ const TrainerDietPlans = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{selectedMember.name}</h2>
                         <span className="m-badge success" style={{ fontSize: '0.7rem' }}>Active Member</span>
+                        {selectedMember.pt_credits > 0 ? (
+                          <span className="m-badge success" style={{ fontSize: '0.7rem', background: 'rgba(34, 197, 94, 0.15)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+                            <i className="fas fa-dumbbell"></i> PT Active ({selectedMember.pt_credits} Credits)
+                          </span>
+                        ) : (
+                          <span className="m-badge danger" style={{ fontSize: '0.7rem', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                            <i className="fas fa-exclamation-triangle"></i> PT Inactive (0 Credits)
+                          </span>
+                        )}
                       </div>
                       <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
                         ID: {selectedMember.id} | {selectedMember.age} Years | {selectedMember.gender} | {selectedMember.weight} kg | {selectedMember.height} cm

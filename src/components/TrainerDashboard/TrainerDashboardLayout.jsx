@@ -71,11 +71,9 @@ const TrainerDashboardLayout = () => {
 
   const menuItems = [
     { path: '/trainer-dashboard/dashboard', icon: 'fas fa-house', label: 'Dashboard' },
-    { path: '/trainer-dashboard/pt-roster', icon: 'fas fa-calendar-check', label: 'PT Roster & Sessions' },
+    { path: '/trainer-dashboard/pt-roster', icon: 'fas fa-calendar-check', label: 'PT Roster & Management' },
     { path: '/trainer-dashboard/clients', icon: 'fas fa-users', label: 'Clients' },
-    { path: '/trainer-dashboard/assessments', icon: 'fas fa-clipboard-list', label: 'Fitness Assessments' },
     { path: '/trainer-dashboard/workout-plans', icon: 'fas fa-dumbbell', label: 'Workout Plans' },
-    { path: '/trainer-dashboard/diet-plans', icon: 'fas fa-seedling', label: 'Diet Plans' },
     { path: '/trainer-dashboard/attendance', icon: 'fas fa-calendar-check', label: 'Attendance' },
     { path: '/trainer-dashboard/schedule', icon: 'fas fa-calendar-alt', label: 'Schedule' },
     { path: '/trainer-dashboard/notifications', icon: 'fas fa-bell', label: 'Notifications' },
