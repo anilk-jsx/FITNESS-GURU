@@ -774,12 +774,12 @@ const StaffManagement = () => {
             <div className="staff-header">
                 <div>
                     <h1 className="staff-title">
-                        <i className="fas fa-user-friends"></i> Employees Management
+                        <i className="fas fa-user-friends"></i> Employee Management
                     </h1>
                     <p className="staff-subtitle">Onboard, manage documents, profiles and status of trainers and employees.</p>
                 </div>
                 <button className="staff-add-btn" onClick={handleAddNew}>
-                    <i className="fas fa-plus"></i> Onboard Member
+                    <i className="fas fa-plus"></i> Onboard Employee / Trainer
                 </button>
             </div>
 
