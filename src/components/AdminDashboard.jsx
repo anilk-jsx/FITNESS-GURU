@@ -89,31 +89,6 @@ const AdminDashboard = () => {
 
             {/* Main Content */}
             <div className="admin-main-content">
-                {/* Top Right Avatar */}
-                <div className="admin-top-avatar">
-                    AD
-                    <div className="admin-avatar-dropdown">
-                        <div className="admin-avatar-info">
-                            <div className="admin-avatar-name">Admin User</div>
-                            <div className="admin-avatar-email">admin@fitnessguru.com</div>
-                        </div>
-                        <div className="admin-avatar-actions">
-                            <button className="admin-avatar-link" onClick={() => showComingSoon('Admin Profile')}>
-                                <i className="fas fa-user-shield"></i>
-                                Admin Profile
-                            </button>
-                            <button className="admin-avatar-link" onClick={() => showComingSoon('System Settings')}>
-                                <i className="fas fa-cog"></i>
-                                System Settings
-                            </button>
-                            <button className="admin-avatar-link admin-logout-link" onClick={handleLogout}>
-                                <i className="fas fa-sign-out-alt"></i>
-                                Logout
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 {/* Nested Routes Content */}
                 <Outlet />
             </div>

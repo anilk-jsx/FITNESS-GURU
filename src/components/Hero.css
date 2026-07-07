@@ -408,7 +408,7 @@
 
   .btn-primary,
   .btn-secondary {
-    width: 220px;
+    width: 230px;
     text-align: center;
     padding: 1rem 2rem;
   }
@@ -433,7 +433,7 @@
   .btn-secondary {
     padding: 0.9rem 1.8rem;
     font-size: 1rem;
-    width: 200px;
+    width: 210px;
   }
 
   .hero-background {

@@ -1,21 +1,4 @@
 /* Header & Navigation */
-/* .header {
-    background: transparent;
-    padding: 1rem 0;
-    position: fixed;
-    width: 100%;
-    top: 0;
-    z-index: 1000;
-    transition: all 0.3s ease;
-    border: none;
-    box-shadow: none;
-}
-
-.header.scrolled {
-    background: rgba(46, 46, 46, 0.53);
-    backdrop-filter: blur(15px);
-    border: none;
-} */
 .header {
     background: transparent;
     padding: 1rem 0;
@@ -160,10 +143,14 @@ nav {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: #ff6b35;
+    color: white;
     font-size: 1.2rem;
     font-weight: bold;
     white-space: nowrap;
+}
+
+.mobile-nav-logo span{
+    color: rgba(228, 178, 76, 1);
 }
 
 .mobile-nav-logo img {
@@ -319,12 +306,12 @@ nav {
     }
 
     .logo {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         margin-right: 1rem;
     }
 
     .logo img {
-        width: 35px;
-        height: 35px;
+        width: 30px;
+        height: 30px;
     }
 }

@@ -324,7 +324,7 @@ const AttendanceManagement = () => {
                         title="Refresh Data for Current Date"
                     >
                         <i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`}></i>
-                        Refresh ({getCurrentLocalDate()})
+                        Refresh
                     </button>
                 </div>
             </div>

@@ -47,61 +47,68 @@ const AdminDashboardHome = () => {
   return (
     <div className="dash-container fade-in">
       {/* Top Controls Header Bar */}
-      <div className="dash-top-bar">
-        <div className="dash-title-wrap">
-          <h1 className="dash-page-title">Dashboard</h1>
-        </div>
-
-        <div className="dash-search-box">
-          <i className="fas fa-search dash-search-icon"></i>
-          <input
-            type="text"
-            placeholder="Search members, invoices, reports..."
-            className="dash-search-input"
-          />
-          <span className="dash-search-kbd">Ctrl + K</span>
-        </div>
-
-        <div className="dash-top-actions">
-          <div className="dash-icon-badge" title="Notifications">
-            <i className="far fa-bell"></i>
-            <span className="dash-dot-badge">12</span>
+      <div className="dash-header-section">
+        <div className="dash-header-main">
+          <div className="dash-title-wrap">
+            <h1 className="dash-page-title">Dashboard</h1>
+            <p className="dash-page-subtitle">Welcome back! Here's what's happening today.</p>
           </div>
-
-          <div className="dash-icon-badge" title="Messages">
-            <i className="far fa-comment-alt"></i>
-            <span className="dash-dot-badge">5</span>
-          </div>
-
-          <div className="dash-icon-badge" title="Calendar">
-            <i className="far fa-calendar-alt"></i>
-          </div>
-
-          <div className="dash-select-pill">
-            <i className="far fa-building"></i>
-            <select defaultValue="All Branches">
-              <option value="All Branches">All Branches</option>
-              <option value="Main Branch">Main Branch</option>
-              <option value="Downtown">Downtown Branch</option>
-            </select>
-          </div>
-
-          <div className="dash-select-pill">
-            <i className="far fa-calendar"></i>
-            <select defaultValue="10 May 2025 - 16 May 2025">
-              <option value="10 May 2025 - 16 May 2025">10 May 2025 - 16 May 2025</option>
-              <option value="This Month">This Month</option>
-              <option value="This Quarter">This Quarter</option>
-            </select>
-          </div>
-
-          <div className="dash-user-pill">
-            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80" alt="Admin" className="dash-user-img" />
-            <div className="dash-user-info">
-              <span className="dash-user-name">Admin User</span>
-              <span className="dash-user-role">Super Admin</span>
+          
+          <div className="dash-header-profile-wrap">
+            <div className="dash-header-notifications">
+              <div className="dash-icon-badge" title="Notifications">
+                <i className="far fa-bell"></i>
+                <span className="dash-dot-badge">12</span>
+              </div>
+              <div className="dash-icon-badge" title="Messages">
+                <i className="far fa-comment-alt"></i>
+                <span className="dash-dot-badge">5</span>
+              </div>
+              <div className="dash-icon-badge" title="Calendar">
+                <i className="far fa-calendar-alt"></i>
+              </div>
             </div>
-            <i className="fas fa-chevron-down dash-user-arrow"></i>
+            
+            <div className="dash-user-pill">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80" alt="Admin" className="dash-user-img" />
+              <div className="dash-user-info">
+                <span className="dash-user-name">Admin User</span>
+                <span className="dash-user-role">Super Admin</span>
+              </div>
+              <i className="fas fa-chevron-down dash-user-arrow"></i>
+            </div>
+          </div>
+        </div>
+
+        <div className="dash-header-toolbar">
+          <div className="dash-search-box">
+            <i className="fas fa-search dash-search-icon"></i>
+            <input
+              type="text"
+              placeholder="Search members, invoices, reports..."
+              className="dash-search-input"
+            />
+            <span className="dash-search-kbd">Ctrl + K</span>
+          </div>
+
+          <div className="dash-filter-actions">
+            <div className="dash-select-pill">
+              <i className="far fa-building"></i>
+              <select defaultValue="All Branches">
+                <option value="All Branches">All Branches</option>
+                <option value="Main Branch">Main Branch</option>
+                <option value="Downtown">Downtown Branch</option>
+              </select>
+            </div>
+
+            <div className="dash-select-pill">
+              <i className="far fa-calendar"></i>
+              <select defaultValue="10 May 2025 - 16 May 2025">
+                <option value="10 May 2025 - 16 May 2025">10 May 2025 - 16 May 2025</option>
+                <option value="This Month">This Month</option>
+                <option value="This Quarter">This Quarter</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -205,8 +212,8 @@ const AdminDashboardHome = () => {
         </div>
       </div>
 
-      {/* Row 2: 3 Cards (Revenue Chart, Membership Donut, Today's Schedule) */}
-      <div className="dash-grid-3col">
+      {/* Row 2 & 3: Main Dashboard Cards Grid */}
+      <div className="dash-main-cards-grid">
         {/* Card 1: Revenue Overview */}
         <div className="dash-card">
           <div className="dash-card-header">
@@ -391,72 +398,51 @@ const AdminDashboardHome = () => {
             View Full Schedule <i className="fas fa-arrow-right"></i>
           </a>
         </div>
-      </div>
 
-      {/* Row 3: 3 Cards (Check-ins, Top Trainers, Alerts) */}
-      <div className="dash-grid-3col">
-        {/* Card 1: Member Check-ins (Today) */}
+        {/* Card 4: Alerts & Notifications */}
         <div className="dash-card">
           <div className="dash-card-header">
-            <h3 className="dash-card-title">Member Check-ins (Today)</h3>
-            <a href="/admin-dashboard/attendance" className="header-link">View All <i className="fas fa-arrow-right"></i></a>
+            <h3 className="dash-card-title">Alerts & Notifications</h3>
+            <a href="/admin-dashboard/dashboard" className="header-link">View All <i className="fas fa-arrow-right"></i></a>
           </div>
 
-          <div className="dash-checkin-list">
-            <div className="checkin-item">
-              <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&q=80" alt="Rahul" className="user-avatar" />
-              <div className="user-info">
-                <span className="user-name">Rahul Sharma</span>
-                <span className="user-id">MEM10045</span>
+          <div className="dash-alerts-list">
+            <div className="alert-box alert-red">
+              <i className="fas fa-exclamation-triangle alert-icon"></i>
+              <div className="alert-content">
+                <span className="alert-title">68 Memberships expired</span>
+                <span className="alert-desc">Please renew them to avoid service interruption.</span>
               </div>
-              <span className="checkin-time">06:15 AM</span>
-              <span className="badge-checked">Checked In</span>
+              <a href="/admin-dashboard/subscriptions" className="alert-action">View</a>
             </div>
 
-            <div className="checkin-item">
-              <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80" alt="Priya" className="user-avatar" />
-              <div className="user-info">
-                <span className="user-name">Priya Patel</span>
-                <span className="user-id">MEM10046</span>
+            <div className="alert-box alert-orange">
+              <i className="fas fa-exclamation-circle alert-icon"></i>
+              <div className="alert-content">
+                <span className="alert-title">152 Memberships expiring soon</span>
+                <span className="alert-desc">Within the next 7 days.</span>
               </div>
-              <span className="checkin-time">06:18 AM</span>
-              <span className="badge-checked">Checked In</span>
+              <a href="/admin-dashboard/subscriptions" className="alert-action">View</a>
             </div>
 
-            <div className="checkin-item">
-              <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=80&q=80" alt="Amit" className="user-avatar" />
-              <div className="user-info">
-                <span className="user-name">Amit Verma</span>
-                <span className="user-id">MEM10047</span>
+            <div className="alert-box alert-blue">
+              <i className="fas fa-lock alert-icon"></i>
+              <div className="alert-content">
+                <span className="alert-title">12 Pending payments</span>
+                <span className="alert-desc">Total amount: ₹86,430</span>
               </div>
-              <span className="checkin-time">06:20 AM</span>
-              <span className="badge-checked">Checked In</span>
+              <a href="/admin-dashboard/subscriptions" className="alert-action">View</a>
             </div>
 
-            <div className="checkin-item">
-              <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=80&q=80" alt="Neha" className="user-avatar" />
-              <div className="user-info">
-                <span className="user-name">Neha Gupta</span>
-                <span className="user-id">MEM10048</span>
+            <div className="alert-box alert-green">
+              <i className="fas fa-shield-check alert-icon"></i>
+              <div className="alert-content">
+                <span className="alert-title">5 Assessment due</span>
+                <span className="alert-desc">Members have pending fitness assessments.</span>
               </div>
-              <span className="checkin-time">06:25 AM</span>
-              <span className="badge-checked">Checked In</span>
-            </div>
-
-            <div className="checkin-item">
-              <img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=80&q=80" alt="Vikram" className="user-avatar" />
-              <div className="user-info">
-                <span className="user-name">Vikram Singh</span>
-                <span className="user-id">MEM10049</span>
-              </div>
-              <span className="checkin-time">06:30 AM</span>
-              <span className="badge-checked">Checked In</span>
+              <a href="/admin-dashboard/pt-management?tab=assessments" className="alert-action">View</a>
             </div>
           </div>
-
-          <a href="/admin-dashboard/attendance" className="dash-card-footer-link">
-            View All Check-ins <i className="fas fa-arrow-right"></i>
-          </a>
         </div>
 
         {/* Card 2: Top Trainers (This Month) */}
@@ -519,115 +505,67 @@ const AdminDashboardHome = () => {
           </div>
         </div>
 
-        {/* Card 3: Alerts & Notifications */}
         <div className="dash-card">
           <div className="dash-card-header">
-            <h3 className="dash-card-title">Alerts & Notifications</h3>
-            <a href="/admin-dashboard/dashboard" className="header-link">View All <i className="fas fa-arrow-right"></i></a>
+            <h3 className="dash-card-title">Member Check-ins (Today)</h3>
+            <a href="/admin-dashboard/attendance" className="header-link">View All <i className="fas fa-arrow-right"></i></a>
           </div>
 
-          <div className="dash-alerts-list">
-            <div className="alert-box alert-red">
-              <i className="fas fa-exclamation-triangle alert-icon"></i>
-              <div className="alert-content">
-                <span className="alert-title">68 Memberships expired</span>
-                <span className="alert-desc">Please renew them to avoid service interruption.</span>
+          <div className="dash-checkin-list">
+            <div className="checkin-item">
+              <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&q=80" alt="Rahul" className="user-avatar" />
+              <div className="user-info">
+                <span className="user-name">Rahul Sharma</span>
+                <span className="user-id">MEM10045</span>
               </div>
-              <a href="/admin-dashboard/subscriptions" className="alert-action">View</a>
+              <span className="checkin-time">06:15 AM</span>
+              <span className="badge-checked">Checked In</span>
             </div>
 
-            <div className="alert-box alert-orange">
-              <i className="fas fa-exclamation-circle alert-icon"></i>
-              <div className="alert-content">
-                <span className="alert-title">152 Memberships expiring soon</span>
-                <span className="alert-desc">Within the next 7 days.</span>
+            <div className="checkin-item">
+              <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80" alt="Priya" className="user-avatar" />
+              <div className="user-info">
+                <span className="user-name">Priya Patel</span>
+                <span className="user-id">MEM10046</span>
               </div>
-              <a href="/admin-dashboard/subscriptions" className="alert-action">View</a>
+              <span className="checkin-time">06:18 AM</span>
+              <span className="badge-checked">Checked In</span>
             </div>
 
-            <div className="alert-box alert-blue">
-              <i className="fas fa-lock alert-icon"></i>
-              <div className="alert-content">
-                <span className="alert-title">12 Pending payments</span>
-                <span className="alert-desc">Total amount: ₹86,430</span>
+            <div className="checkin-item">
+              <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=80&q=80" alt="Amit" className="user-avatar" />
+              <div className="user-info">
+                <span className="user-name">Amit Verma</span>
+                <span className="user-id">MEM10047</span>
               </div>
-              <a href="/admin-dashboard/subscriptions" className="alert-action">View</a>
+              <span className="checkin-time">06:20 AM</span>
+              <span className="badge-checked">Checked In</span>
             </div>
 
-            <div className="alert-box alert-green">
-              <i className="fas fa-check-shield alert-icon"></i>
-              <div className="alert-content">
-                <span className="alert-title">5 Assessment due</span>
-                <span className="alert-desc">Members have pending fitness assessments.</span>
+            <div className="checkin-item">
+              <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=80&q=80" alt="Neha" className="user-avatar" />
+              <div className="user-info">
+                <span className="user-name">Neha Gupta</span>
+                <span className="user-id">MEM10048</span>
               </div>
-              <a href="/admin-dashboard/pt-management?tab=assessments" className="alert-action">View</a>
+              <span className="checkin-time">06:25 AM</span>
+              <span className="badge-checked">Checked In</span>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Row 4: Quick Insights */}
-      <div className="dash-quick-insights">
-        <div className="insights-header">
-          <h3 className="dash-card-title">Quick Insights</h3>
-          <a href="/admin-dashboard/dashboard" className="header-link">View Detailed Report <i className="fas fa-arrow-right"></i></a>
-        </div>
-
-        <div className="insights-grid">
-          <div className="insight-pill">
-            <div className="insight-icon icon-blue"><i className="far fa-user"></i></div>
-            <div>
-              <span className="insight-lbl">New Members (This Week)</span>
-              <div className="insight-val-flex">
-                <span className="insight-num">24</span>
-                <span className="trend-up"><i className="fas fa-arrow-up"></i> 20%</span>
+            <div className="checkin-item">
+              <img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=80&q=80" alt="Vikram" className="user-avatar" />
+              <div className="user-info">
+                <span className="user-name">Vikram Singh</span>
+                <span className="user-id">MEM10049</span>
               </div>
+              <span className="checkin-time">06:30 AM</span>
+              <span className="badge-checked">Checked In</span>
             </div>
           </div>
 
-          <div className="insight-pill">
-            <div className="insight-icon icon-purple"><i className="far fa-user-circle"></i></div>
-            <div>
-              <span className="insight-lbl">Trial Members</span>
-              <div className="insight-val-flex">
-                <span className="insight-num">18</span>
-                <span className="trend-down"><i className="fas fa-arrow-down"></i> 10%</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="insight-pill">
-            <div className="insight-icon icon-green"><i className="fas fa-boxes-stacked"></i></div>
-            <div>
-              <span className="insight-lbl">PT Packages Sold</span>
-              <div className="insight-val-flex">
-                <span className="insight-num">14</span>
-                <span className="trend-up"><i className="fas fa-arrow-up"></i> 27%</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="insight-pill">
-            <div className="insight-icon icon-purple"><i className="fas fa-calendar-check"></i></div>
-            <div>
-              <span className="insight-lbl">Classes Conducted</span>
-              <div className="insight-val-flex">
-                <span className="insight-num">32</span>
-                <span className="trend-up"><i className="fas fa-arrow-up"></i> 14%</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="insight-pill">
-            <div className="insight-icon icon-amber"><i className="far fa-lightbulb"></i></div>
-            <div>
-              <span className="insight-lbl">Avg. Member Retention</span>
-              <div className="insight-val-flex">
-                <span className="insight-num">82%</span>
-                <span className="trend-up"><i className="fas fa-arrow-up"></i> 6%</span>
-              </div>
-            </div>
-          </div>
+          <a href="/admin-dashboard/attendance" className="dash-card-footer-link">
+            View All Check-ins <i className="fas fa-arrow-right"></i>
+          </a>
         </div>
       </div>
     </div>

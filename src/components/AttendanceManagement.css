@@ -49,15 +49,15 @@
 }
 
 .att-title {
-  font-size: clamp(1.5rem, 4vw, 2rem);
-  color: white;
-  margin-bottom: 0.5rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  color: rgb(19, 20, 20);
+  margin: 0 0 0.2rem 0;
+  font-weight: 500;
 }
 
 .att-subtitle {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: clamp(0.85rem, 2vw, 1rem);
+  color: #64748b;
+  font-size: 0.82rem;
 }
 
 .att-manual-btn {
@@ -815,11 +815,123 @@
 
 .att-btn-secondary {
   background: #ecf0f1;
-  color: #2c3e50;
+  color: #aa784e;
 }
 
 .att-btn-secondary:hover {
   background: #bdc3c7;
+}
+
+.att-table-container::-webkit-scrollbar {
+  height: 10px;
+}
+
+.att-table-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.att-table-container::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 10px;
+}
+
+.att-table-container::-webkit-scrollbar-thumb:hover {
+  background: #764ba2;
+}
+
+/* Loading and Error States */
+.att-loading {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #667eea;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.att-loading i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  display: block;
+  color: #667eea;
+}
+
+.att-loading p {
+  font-size: 1rem;
+  margin: 0;
+  color: #6c757d;
+}
+
+.att-error {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #dc3545;
+  background: rgba(220, 53, 69, 0.05);
+}
+
+.att-error i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.att-error p {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  color: #dc3545;
+}
+
+.att-error button {
+  margin-top: 1rem;
+}
+
+/* Header Actions */
+.att-header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.att-btn-secondary {
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgb(232, 152, 55);
+  border: 2px solid rgb(232, 152, 55);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.att-btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgb(232, 152, 55);
+  transform: translateY(-2px);
+}
+
+.att-btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.att-btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+}
+
+/* Location Info Styles */
+.att-location-info {
+  font-size: 0.7rem;
+  color: #666;
+  margin-top: 0.2rem;
+}
+
+.att-location-info small {
+  opacity: 0.8;
 }
 
 /* Responsive Design */
@@ -934,6 +1046,7 @@
   .att-btn-primary,
   .att-btn-secondary {
     width: 100%;
+    font-size: 13px;
   }
 }
 
@@ -1126,117 +1239,4 @@
   .att-table-container {
     position: relative;
   }
-}
-
-/* Custom Scrollbar for All Sizes */
-.att-table-container::-webkit-scrollbar {
-  height: 10px;
-}
-
-.att-table-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-.att-table-container::-webkit-scrollbar-thumb {
-  background: #667eea;
-  border-radius: 10px;
-}
-
-.att-table-container::-webkit-scrollbar-thumb:hover {
-  background: #764ba2;
-}
-
-/* Loading and Error States */
-.att-loading {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #667eea;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.att-loading i {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  display: block;
-  color: #667eea;
-}
-
-.att-loading p {
-  font-size: 1rem;
-  margin: 0;
-  color: #6c757d;
-}
-
-.att-error {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #dc3545;
-  background: rgba(220, 53, 69, 0.05);
-}
-
-.att-error i {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  display: block;
-}
-
-.att-error p {
-  font-size: 1rem;
-  margin-bottom: 1rem;
-  color: #dc3545;
-}
-
-.att-error button {
-  margin-top: 1rem;
-}
-
-/* Header Actions */
-.att-header-actions {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.att-btn-secondary {
-  padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.att-btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-}
-
-.att-btn-secondary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.att-btn-sm {
-  padding: 0.5rem 1rem;
-  font-size: 0.8rem;
-}
-
-/* Location Info Styles */
-.att-location-info {
-  font-size: 0.7rem;
-  color: #666;
-  margin-top: 0.2rem;
-}
-
-.att-location-info small {
-  opacity: 0.8;
 }

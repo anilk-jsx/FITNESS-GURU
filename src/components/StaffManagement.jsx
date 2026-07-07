@@ -857,9 +857,7 @@ const StaffManagement = () => {
             {/* Title Header */}
             <div className="staff-header">
                 <div>
-                    <h1 className="staff-title">
-                        <i className="fas fa-user-friends"></i> Employee Management
-                    </h1>
+                    <h1 className="staff-title">Employee Management</h1>
                     <p className="staff-subtitle">Onboard, manage documents, profiles and status of trainers and employees.</p>
                 </div>
                 <button className="staff-add-btn" onClick={handleAddNew}>
@@ -1359,23 +1357,31 @@ const StaffManagement = () => {
                                             {(!selectedEmployee.documents || selectedEmployee.documents.length === 0) ? (
                                                 <p className="no-docs-text">No documents uploaded.</p>
                                             ) : (
-                                                <div className="docs-list-summary">
-                                                    {selectedEmployee.documents.map((doc, idx) => (
-                                                        <div key={idx} className="doc-summary-card">
-                                                            <div className="doc-summary-meta">
-                                                                <i className="fas fa-file-alt doc-icon"></i>
-                                                                <div className="doc-name-num">
-                                                                    <strong>{doc.document_name}</strong>
-                                                                    <span>({doc.document_type}) {doc.document_number ? `- ${doc.document_number}` : ''}</span>
-                                                                </div>
-                                                            </div>
-                                                            <div className="doc-actions-panel">
-                                                                <a href={doc.document_url} target="_blank" rel="noopener noreferrer" className="btn-view-doc">
-                                                                    <i className="fas fa-external-link-alt"></i> View File
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                <div className="docs-table-wrapper">
+                                                    <table className="docs-summary-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Category</th>
+                                                                <th>Document Label</th>
+                                                                <th>ID Number</th>
+                                                                <th>Action</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {selectedEmployee.documents.map((doc, idx) => (
+                                                                <tr key={idx}>
+                                                                    <td className="doc-type-cell">{doc.document_type}</td>
+                                                                    <td className="doc-name-cell">{doc.document_name}</td>
+                                                                    <td className="doc-number-cell">{doc.document_number || 'N/A'}</td>
+                                                                    <td className="doc-action-cell">
+                                                                        <a href={doc.document_url} target="_blank" rel="noopener noreferrer" className="btn-view-doc">
+                                                                            <i className="fas fa-external-link-alt"></i> View File
+                                                                        </a>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
                                                 </div>
                                             )}
                                         </div>

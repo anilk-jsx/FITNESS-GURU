@@ -1,157 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './BranchManagement.css';
+import { tokenManager } from '../utils/tokenManager';
+
+const API_BASE_URL = tokenManager.API_BASE_URL;
 
 const BranchManagement = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('ALL');
 
-    // Sample data for branches
-    const [branches, setBranches] = useState([
-        {
-            branch_id: 1,
-            gym_id: 1,
-            branch_name: 'Bangalore Main',
-            branch_code: 'BLR-MAIN',
-            address: '123, MG Road, Bangalore',
-            city: 'Bangalore',
-            state: 'Karnataka',
-            country: 'India',
-            pincode: '560001',
-            phone: '080-12345678',
-            email: 'bangalore.main@fitnessguru.com',
-            manager_name: 'Rajesh Kumar',
-            manager_phone: '9876543210',
-            capacity: 200,
-            facilities: 'Gym Equipment, Cardio Zone, Steam Room, Yoga Studio, Parking',
-            operating_hours: '5:00 AM - 11:00 PM',
-            monthly_rent: 150000,
-            staff_count: 15,
-            trainer_count: 8,
-            member_count: 180,
-            opening_date: '2020-01-15',
-            status: 'ACTIVE'
-        },
-        {
-            branch_id: 2,
-            gym_id: 1,
-            branch_name: 'Whitefield Branch',
-            branch_code: 'BLR-WF',
-            address: '45, ITPL Main Road, Whitefield, Bangalore',
-            city: 'Bangalore',
-            state: 'Karnataka',
-            country: 'India',
-            pincode: '560066',
-            phone: '080-87654321',
-            email: 'whitefield@fitnessguru.com',
-            manager_name: 'Priya Sharma',
-            manager_phone: '9876543211',
-            capacity: 150,
-            facilities: 'Gym Equipment, Cardio Zone, Aerobics Studio, Parking',
-            operating_hours: '6:00 AM - 10:00 PM',
-            monthly_rent: 120000,
-            staff_count: 12,
-            trainer_count: 6,
-            member_count: 135,
-            opening_date: '2021-03-20',
-            status: 'ACTIVE'
-        },
-        {
-            branch_id: 3,
-            gym_id: 1,
-            branch_name: 'Koramangala Branch',
-            branch_code: 'BLR-KRM',
-            address: '78, 100 Feet Road, Koramangala, Bangalore',
-            city: 'Bangalore',
-            state: 'Karnataka',
-            country: 'India',
-            pincode: '560034',
-            phone: '080-23456789',
-            email: 'koramangala@fitnessguru.com',
-            manager_name: 'Amit Verma',
-            manager_phone: '9876543212',
-            capacity: 180,
-            facilities: 'Gym Equipment, Cardio Zone, Zumba Studio, Steam Room, Sauna, Parking',
-            operating_hours: '5:30 AM - 11:00 PM',
-            monthly_rent: 140000,
-            staff_count: 14,
-            trainer_count: 7,
-            member_count: 165,
-            opening_date: '2020-09-10',
-            status: 'ACTIVE'
-        },
-        {
-            branch_id: 4,
-            gym_id: 1,
-            branch_name: 'Indiranagar Branch',
-            branch_code: 'BLR-INR',
-            address: '22, 100 Feet Road, Indiranagar, Bangalore',
-            city: 'Bangalore',
-            state: 'Karnataka',
-            country: 'India',
-            pincode: '560038',
-            phone: '080-34567890',
-            email: 'indiranagar@fitnessguru.com',
-            manager_name: 'Sneha Reddy',
-            manager_phone: '9876543213',
-            capacity: 120,
-            facilities: 'Gym Equipment, Cardio Zone, CrossFit Area, Parking',
-            operating_hours: '6:00 AM - 10:00 PM',
-            monthly_rent: 110000,
-            staff_count: 10,
-            trainer_count: 5,
-            member_count: 95,
-            opening_date: '2022-01-15',
-            status: 'ACTIVE'
-        },
-        {
-            branch_id: 5,
-            gym_id: 1,
-            branch_name: 'HSR Layout Branch',
-            branch_code: 'BLR-HSR',
-            address: '56, Sector 2, HSR Layout, Bangalore',
-            city: 'Bangalore',
-            state: 'Karnataka',
-            country: 'India',
-            pincode: '560102',
-            phone: '080-45678901',
-            email: 'hsr@fitnessguru.com',
-            manager_name: 'Vikram Singh',
-            manager_phone: '9876543214',
-            capacity: 100,
-            facilities: 'Gym Equipment, Cardio Zone, Yoga Studio',
-            operating_hours: '6:00 AM - 9:00 PM',
-            monthly_rent: 90000,
-            staff_count: 8,
-            trainer_count: 4,
-            member_count: 75,
-            opening_date: '2023-06-01',
-            status: 'UNDER_MAINTENANCE'
-        },
-        {
-            branch_id: 6,
-            gym_id: 1,
-            branch_name: 'Jayanagar Branch',
-            branch_code: 'BLR-JYN',
-            address: '34, 4th Block, Jayanagar, Bangalore',
-            city: 'Bangalore',
-            state: 'Karnataka',
-            country: 'India',
-            pincode: '560041',
-            phone: '080-56789012',
-            email: 'jayanagar@fitnessguru.com',
-            manager_name: 'Lakshmi Iyer',
-            manager_phone: '9876543215',
-            capacity: 90,
-            facilities: 'Gym Equipment, Cardio Zone, Pilates Studio',
-            operating_hours: '6:00 AM - 9:00 PM',
-            monthly_rent: 85000,
-            staff_count: 7,
-            trainer_count: 4,
-            member_count: 0,
-            opening_date: '2024-02-01',
-            status: 'INACTIVE'
-        }
-    ]);
+    // API data states
+    const [branches, setBranches] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     // Modal states
     const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -181,14 +41,116 @@ const BranchManagement = () => {
         status: 'ACTIVE'
     });
 
+    // Fetch branches from API
+    const fetchBranches = async () => {
+        try {
+            setLoading(true);
+            setError('');
+
+            const userData = tokenManager.getUserData();
+            let url = `${API_BASE_URL}/api/admin/gym-branches`;
+
+            // SUPER_ADMIN can query a specific gym's branches via gym_id param
+            if (userData && userData.role === 'SUPER_ADMIN' && userData.gym_id) {
+                url += `?gym_id=${userData.gym_id}`;
+            }
+
+            const response = await tokenManager.apiCall(url, {
+                method: 'GET'
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.status === 'success') {
+                // Map API response fields to component's expected shape
+                const mappedBranches = (data.data || []).map(branch => ({
+                    branch_id: branch.branch_id,
+                    gym_id: branch.gym_id,
+                    branch_name: branch.branch_name,
+                    branch_code: branch.branch_code || `BR-${branch.branch_id}`,
+                    address: [branch.address_line1, branch.address_line2].filter(Boolean).join(', '),
+                    address_line1: branch.address_line1,
+                    address_line2: branch.address_line2,
+                    city: branch.city_name || '',
+                    city_id: branch.city_id,
+                    district: branch.district_name || '',
+                    district_id: branch.district_id,
+                    state: branch.state_name || '',
+                    state_id: branch.state_id,
+                    country: 'India',
+                    pincode: branch.pincode || '',
+                    phone: branch.phone_number || '',
+                    alternate_phone: branch.alternate_phone || '',
+                    email: branch.email || '',
+                    manager_name: branch.manager_name || 'N/A',
+                    manager_phone: branch.manager_phone || 'N/A',
+                    capacity: branch.capacity || 0,
+                    facilities: branch.facilities || '',
+                    operating_hours: `${formatTime(branch.opening_time)} - ${formatTime(branch.closing_time)}`,
+                    opening_time: branch.opening_time,
+                    closing_time: branch.closing_time,
+                    latitude: branch.latitude,
+                    longitude: branch.longitude,
+                    monthly_rent: branch.monthly_rent || 0,
+                    staff_count: branch.staff_count || 0,
+                    trainer_count: branch.trainer_count || 0,
+                    member_count: branch.member_count || 0,
+                    opening_date: branch.opening_date || '',
+                    status: branch.status || 'ACTIVE',
+                    created_at: branch.created_at,
+                    updated_at: branch.updated_at
+                }));
+
+                setBranches(mappedBranches);
+            } else {
+                // Handle specific API error responses
+                if (response.status === 401) {
+                    setError(data.message || 'Authorization token missing or invalid');
+                } else if (response.status === 403) {
+                    setError(data.message || 'Access denied — admin privileges required');
+                } else if (response.status === 404) {
+                    setError(data.message || 'Admin user profile not found');
+                } else if (response.status === 400) {
+                    setError(data.message || 'No gym associated with this admin');
+                } else {
+                    setError(data.message || 'Failed to fetch gym branches');
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching gym branches:', err);
+            setError('Failed to fetch gym branches. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Helper to format time from HH:MM:SS to readable format
+    const formatTime = (timeStr) => {
+        if (!timeStr) return '';
+        try {
+            const [hours, minutes] = timeStr.split(':');
+            const h = parseInt(hours, 10);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const displayH = h % 12 || 12;
+            return `${displayH}:${minutes} ${ampm}`;
+        } catch {
+            return timeStr;
+        }
+    };
+
+    // Fetch branches on component mount
+    useEffect(() => {
+        fetchBranches();
+    }, []);
+
     // Filter branches
     const filteredBranches = branches.filter(branch => {
         const matchesSearch = 
-            branch.branch_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            branch.branch_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            branch.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            branch.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            branch.manager_name.toLowerCase().includes(searchQuery.toLowerCase());
+            (branch.branch_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (branch.branch_code || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (branch.address || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (branch.city || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (branch.manager_name || '').toLowerCase().includes(searchQuery.toLowerCase());
         
         const matchesStatus = filterStatus === 'ALL' || branch.status === filterStatus;
 
@@ -199,10 +161,10 @@ const BranchManagement = () => {
     const getStats = () => {
         const totalBranches = branches.length;
         const activeBranches = branches.filter(b => b.status === 'ACTIVE').length;
-        const totalMembers = branches.reduce((sum, b) => sum + b.member_count, 0);
-        const totalCapacity = branches.reduce((sum, b) => sum + b.capacity, 0);
-        const totalStaff = branches.reduce((sum, b) => sum + b.staff_count, 0);
-        const totalTrainers = branches.reduce((sum, b) => sum + b.trainer_count, 0);
+        const totalMembers = branches.reduce((sum, b) => sum + (b.member_count || 0), 0);
+        const totalCapacity = branches.reduce((sum, b) => sum + (b.capacity || 0), 0);
+        const totalStaff = branches.reduce((sum, b) => sum + (b.staff_count || 0), 0);
+        const totalTrainers = branches.reduce((sum, b) => sum + (b.trainer_count || 0), 0);
         const occupancyRate = totalCapacity > 0 ? ((totalMembers / totalCapacity) * 100).toFixed(1) : 0;
 
         return { totalBranches, activeBranches, totalMembers, totalCapacity, totalStaff, totalTrainers, occupancyRate };
@@ -419,6 +381,21 @@ const BranchManagement = () => {
             </div>
 
             {/* Branches Grid */}
+            {loading ? (
+                <div className="branch-no-data">
+                    <i className="fas fa-spinner fa-spin"></i>
+                    <p>Loading branches...</p>
+                </div>
+            ) : error ? (
+                <div className="branch-no-data">
+                    <i className="fas fa-exclamation-triangle"></i>
+                    <p>{error}</p>
+                    <button className="branch-add-btn" onClick={fetchBranches} style={{ marginTop: '12px' }}>
+                        <i className="fas fa-redo"></i>
+                        Retry
+                    </button>
+                </div>
+            ) : (
             <div className="branch-grid">
                 {filteredBranches.length === 0 ? (
                     <div className="branch-no-data">
@@ -467,12 +444,12 @@ const BranchManagement = () => {
                                 <div className="branch-capacity-bar">
                                     <div className="branch-capacity-info">
                                         <span>Capacity: {branch.member_count} / {branch.capacity}</span>
-                                        <span>{((branch.member_count / branch.capacity) * 100).toFixed(0)}%</span>
+                                        <span>{branch.capacity > 0 ? ((branch.member_count / branch.capacity) * 100).toFixed(0) : 0}%</span>
                                     </div>
                                     <div className="branch-capacity-progress">
                                         <div 
                                             className="branch-capacity-fill"
-                                            style={{ width: `${(branch.member_count / branch.capacity) * 100}%` }}
+                                            style={{ width: `${branch.capacity > 0 ? (branch.member_count / branch.capacity) * 100 : 0}%` }}
                                         ></div>
                                     </div>
                                 </div>
@@ -529,6 +506,7 @@ const BranchManagement = () => {
                     ))
                 )}
             </div>
+            )}
 
             {/* Details Modal */}
             {showDetailsModal && selectedBranch && (
@@ -586,6 +564,10 @@ const BranchManagement = () => {
                                         <span>{selectedBranch.state}</span>
                                     </div>
                                     <div className="branch-detail-item">
+                                        <label>District</label>
+                                        <span>{selectedBranch.district || 'N/A'}</span>
+                                    </div>
+                                    <div className="branch-detail-item">
                                         <label>Country</label>
                                         <span>{selectedBranch.country}</span>
                                     </div>
@@ -593,6 +575,12 @@ const BranchManagement = () => {
                                         <label>Pincode</label>
                                         <span>{selectedBranch.pincode}</span>
                                     </div>
+                                    {(selectedBranch.latitude || selectedBranch.longitude) && (
+                                        <div className="branch-detail-item">
+                                            <label>Coordinates</label>
+                                            <span>{selectedBranch.latitude}, {selectedBranch.longitude}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -604,6 +592,12 @@ const BranchManagement = () => {
                                         <label>Phone</label>
                                         <span>{selectedBranch.phone}</span>
                                     </div>
+                                    {selectedBranch.alternate_phone && (
+                                        <div className="branch-detail-item">
+                                            <label>Alternate Phone</label>
+                                            <span>{selectedBranch.alternate_phone}</span>
+                                        </div>
+                                    )}
                                     <div className="branch-detail-item">
                                         <label>Email</label>
                                         <span>{selectedBranch.email}</span>
@@ -637,7 +631,7 @@ const BranchManagement = () => {
                                     </div>
                                     <div className="branch-detail-item">
                                         <label>Occupancy Rate</label>
-                                        <span>{((selectedBranch.member_count / selectedBranch.capacity) * 100).toFixed(1)}%</span>
+                                        <span>{selectedBranch.capacity > 0 ? ((selectedBranch.member_count / selectedBranch.capacity) * 100).toFixed(1) : 0}%</span>
                                     </div>
                                     <div className="branch-detail-item">
                                         <label>Staff Count</label>
@@ -647,16 +641,41 @@ const BranchManagement = () => {
                                         <label>Trainer Count</label>
                                         <span>{selectedBranch.trainer_count}</span>
                                     </div>
-                                    <div className="branch-detail-item">
-                                        <label>Monthly Rent</label>
-                                        <span>₹{selectedBranch.monthly_rent.toLocaleString('en-IN')}</span>
-                                    </div>
-                                    <div className="branch-detail-item branch-full-width">
-                                        <label>Facilities</label>
-                                        <span>{selectedBranch.facilities}</span>
-                                    </div>
+                                    {selectedBranch.monthly_rent > 0 && (
+                                        <div className="branch-detail-item">
+                                            <label>Monthly Rent</label>
+                                            <span>₹{selectedBranch.monthly_rent.toLocaleString('en-IN')}</span>
+                                        </div>
+                                    )}
+                                    {selectedBranch.facilities && (
+                                        <div className="branch-detail-item branch-full-width">
+                                            <label>Facilities</label>
+                                            <span>{selectedBranch.facilities}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
+
+                            {/* Timestamps */}
+                            {(selectedBranch.created_at || selectedBranch.updated_at) && (
+                                <div className="branch-detail-section">
+                                    <h3><i className="fas fa-clock"></i> Timestamps</h3>
+                                    <div className="branch-detail-grid">
+                                        {selectedBranch.created_at && (
+                                            <div className="branch-detail-item">
+                                                <label>Created At</label>
+                                                <span>{new Date(selectedBranch.created_at).toLocaleString('en-IN')}</span>
+                                            </div>
+                                        )}
+                                        {selectedBranch.updated_at && (
+                                            <div className="branch-detail-item">
+                                                <label>Updated At</label>
+                                                <span>{new Date(selectedBranch.updated_at).toLocaleString('en-IN')}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Quick Actions */}
                             <div className="branch-detail-actions">
@@ -949,3 +968,4 @@ const BranchManagement = () => {
 };
 
 export default BranchManagement;
+
