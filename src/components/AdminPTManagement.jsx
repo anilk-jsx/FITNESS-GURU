@@ -28,6 +28,7 @@ const AdminPTManagement = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [selectedMember, setSelectedMember] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [membersList, setMembersList] = useState([]);
 
   // Manual Purchase Form
   const [selectedPlan, setSelectedPlan] = useState('5');
@@ -165,84 +166,7 @@ const AdminPTManagement = () => {
   const [viewingTrainer, setViewingTrainer] = useState(null); // Full Trainer Details Modal
 
   // PT Subscriptions Active Roster Listing State (2/3 Width Workspace)
-  const [ptSubscriptionsList, setPtSubscriptionsList] = useState([
-    {
-      subscription_id: 1001,
-      user_id: 138,
-      member_code: 'MEM10045',
-      member_name: 'Rahul Sharma',
-      phone: '+91 98765 43210',
-      email: 'rahul.sharma@example.com',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-      plan_id: 5,
-      plan_name: 'PT Elite 24-Pack (24 Sessions)',
-      assigned_trainer_id: 489,
-      assigned_trainer_name: 'John Doe',
-      trainer_avatar: 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&q=80&w=200',
-      total_credits: 24,
-      pt_credits: 16,
-      status: 'ACTIVE',
-      purchase_date: '2026-05-15',
-      expiry_date: '2026-08-15'
-    },
-    {
-      subscription_id: 1002,
-      user_id: 139,
-      member_code: 'MEM10046',
-      member_name: 'Priya Patel',
-      phone: '+91 98765 43211',
-      email: 'priya.patel@example.com',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150',
-      plan_id: 2,
-      plan_name: 'PT Gold 12-Pack (12 Sessions)',
-      assigned_trainer_id: 490,
-      assigned_trainer_name: 'Priya Mehta',
-      trainer_avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-      total_credits: 12,
-      pt_credits: 10,
-      status: 'ACTIVE',
-      purchase_date: '2026-06-01',
-      expiry_date: '2026-09-01'
-    },
-    {
-      subscription_id: 1003,
-      user_id: 140,
-      member_code: 'MEM10047',
-      member_name: 'Amit Verma',
-      phone: '+91 98765 43212',
-      email: 'amit.verma@example.com',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150',
-      plan_id: 1,
-      plan_name: 'PT Starter 8-Pack (8 Sessions)',
-      assigned_trainer_id: 491,
-      assigned_trainer_name: 'Amit Verma',
-      trainer_avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
-      total_credits: 8,
-      pt_credits: 0,
-      status: 'EXHAUSTED',
-      purchase_date: '2026-04-10',
-      expiry_date: '2026-07-10'
-    },
-    {
-      subscription_id: 1004,
-      user_id: 141,
-      member_code: 'MEM10048',
-      member_name: 'Pooja Mehta',
-      phone: '+91 98765 43213',
-      email: 'pooja.mehta@example.com',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=150',
-      plan_id: 3,
-      plan_name: 'PT Silver 16-Pack (16 Sessions)',
-      assigned_trainer_id: 489,
-      assigned_trainer_name: 'John Doe',
-      trainer_avatar: 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&q=80&w=200',
-      total_credits: 16,
-      pt_credits: 12,
-      status: 'ACTIVE',
-      purchase_date: '2026-05-20',
-      expiry_date: '2026-08-20'
-    }
-  ]);
+  const [ptSubscriptionsList, setPtSubscriptionsList] = useState([]);
   const [rosterFilterStatus, setRosterFilterStatus] = useState('ALL');
   const [rosterSearch, setRosterSearch] = useState('');
 
@@ -250,9 +174,8 @@ const AdminPTManagement = () => {
   const fetchPTUpgradePlans = useCallback(async () => {
     setIsLoadingPtPlans(true);
     try {
-      const token = tokenManager.getAccessToken();
-      const response = await fetch(`${API_BASE_URL}/api/membership-plans?plan_type=PT_UPGRADE`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/membership-plans?plan_type=PT_UPGRADE`, {
+        method: 'GET'
       });
       if (response.ok) {
         const data = await response.json();
@@ -264,7 +187,10 @@ const AdminPTManagement = () => {
         );
         if (ptOnly.length > 0) {
           setPtPlansList(ptOnly);
-          setSelectedPlan(ptOnly[0].plan_id ? String(ptOnly[0].plan_id) : '1');
+          setSelectedPlan(prev => {
+            const stillValid = ptOnly.some(plan => String(plan.plan_id || plan.id) === String(prev));
+            return stillValid ? prev : String(ptOnly[0].plan_id || ptOnly[0].id || '1');
+          });
         } else {
           setFallbackPtPlans();
         }
@@ -275,6 +201,40 @@ const AdminPTManagement = () => {
       setFallbackPtPlans();
     } finally {
       setIsLoadingPtPlans(false);
+    }
+  }, [API_BASE_URL]);
+
+  const fetchMembersList = useCallback(async () => {
+    try {
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/users/list?role=MEMBER&page=1&limit=100`, {
+        method: 'GET'
+      });
+      if (!response.ok) {
+        return [];
+      }
+
+      const data = await response.json();
+      const rawMembers = data.users || data.data || [];
+      const normalized = rawMembers.map((member, idx) => ({
+        user_id: member.user_id || member.id || member.member_id || idx + 1,
+        member_code: member.member_code || member.code || `MEM-${String(member.user_id || member.id || idx + 1).padStart(4, '0')}`,
+        name: member.name || member.full_name || member.first_name || 'Member',
+        phone: member.phone || member.mobile || '',
+        email: member.email || '',
+        assigned_trainer_id: member.assigned_trainer_id || member.trainer_id || null,
+        assigned_trainer_name: member.assigned_trainer_name || member.trainer_name || '',
+        pt_credits: member.pt_credits ?? member.remaining_credits ?? 0,
+        avatar: member.avatar || member.profile_image || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
+      }));
+
+      setMembersList(normalized);
+      if (normalized.length > 0) {
+        setSelectedMember(prev => prev || normalized[0]);
+      }
+      return normalized;
+    } catch (err) {
+      console.error('Error fetching members list:', err);
+      return [];
     }
   }, [API_BASE_URL]);
 
@@ -291,9 +251,8 @@ const AdminPTManagement = () => {
   // Load Trainers with Capacity Counts & Full Info
   const fetchTrainersWithCapacity = useCallback(async () => {
     try {
-      const token = tokenManager.getAccessToken();
-      const response = await fetch(`${API_BASE_URL}/api/trainers`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/trainers`, {
+        method: 'GET'
       });
       if (response.ok) {
         const data = await response.json();
@@ -313,6 +272,9 @@ const AdminPTManagement = () => {
           shift: t.shift || 'Morning Shift (06:00 - 14:00)'
         }));
         setTrainersList(enriched);
+        if (enriched.length > 0) {
+          setSelectedTrainerId(prev => prev || enriched.find(t => t.assigned_count < t.max_capacity)?.trainer_id || enriched[0].trainer_id);
+        }
       } else {
         setFallbackTrainers();
       }
@@ -335,10 +297,9 @@ const AdminPTManagement = () => {
   const fetchRealPTSubscriptions = useCallback(async () => {
     setIsLoadingPtPlans(true);
     try {
-      const token = tokenManager.getAccessToken();
       // Fetch subscriptions from backend subscriptions endpoint
-      const response = await fetch(`${API_BASE_URL}/api/admin/subscriptions`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/subscriptions`, {
+        method: 'GET'
       });
       if (response.ok) {
         const data = await response.json();
@@ -359,9 +320,11 @@ const AdminPTManagement = () => {
         const formatted = ptOnlySubs.map((sub, idx) => {
           const userObj = sub.user || sub.member || {};
           const planObj = sub.plan || sub.membership_plan || {};
-          const trainerObj = sub.trainer || {};
-          const totalCreds = sub.total_credits || sub.sessions || planObj.sessions || (sub.plan_id === 5 ? 24 : sub.plan_id === 2 ? 12 : 8);
-          const ptCreds = sub.pt_credits ?? sub.credits_remaining ?? Math.max(0, totalCreds - (sub.sessions_used || 2));
+          const trainerObj = sub.trainer || sub.assigned_trainer || {};
+          const walletCredits = Array.isArray(sub.wallet_credits) ? sub.wallet_credits : [];
+          const ptWallet = walletCredits.find(credit => String(credit.entitlement_type || '').toUpperCase() === 'PT_1ON1');
+          const totalCreds = Number(sub.total_credits || sub.sessions || planObj.sessions || ptWallet?.original_quantity || ptWallet?.remaining_quantity || (sub.plan_id === 5 ? 24 : sub.plan_id === 2 ? 12 : 8));
+          const ptCreds = Number(sub.pt_credits ?? sub.credits_remaining ?? ptWallet?.remaining_quantity ?? Math.max(0, totalCreds - Number(sub.sessions_used || 0)));
           
           return {
             subscription_id: sub.subscription_id || sub.id || (1001 + idx),
@@ -378,15 +341,13 @@ const AdminPTManagement = () => {
             trainer_avatar: trainerObj.avatar || 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&q=80&w=200',
             total_credits: totalCreds,
             pt_credits: ptCreds,
-            status: sub.status === 1 || sub.status === 'ACTIVE' ? (ptCreds > 0 ? 'ACTIVE' : 'EXHAUSTED') : 'EXHAUSTED',
+            status: String(sub.status).toUpperCase() === 'ACTIVE' || sub.status === 1 ? (ptCreds > 0 ? 'ACTIVE' : 'EXHAUSTED') : 'EXHAUSTED',
             purchase_date: sub.start_date || sub.created_at || '2026-05-15',
             expiry_date: sub.end_date || '2026-08-15'
           };
         });
 
-        if (formatted.length > 0) {
-          setPtSubscriptionsList(formatted);
-        }
+        setPtSubscriptionsList(formatted);
       }
     } catch (err) {
       console.error('Error fetching real PT subscriptions:', err);
@@ -644,20 +605,8 @@ const AdminPTManagement = () => {
     fetchPTUpgradePlans();
     fetchRealPTSubscriptions();
     fetchGymShifts();
-    // Default mock member
-    setSelectedMember({
-      user_id: 138,
-      member_code: 'MEM10045',
-      name: 'Rahul Sharma',
-      age: 28,
-      gender: 'Male',
-      phone: '+91 98765 43210',
-      email: 'rahul.sharma@example.com',
-      assigned_trainer_id: 489,
-      assigned_trainer_name: 'John Doe',
-      pt_credits: 8
-    });
-  }, [fetchTrainersWithCapacity, fetchPTUpgradePlans, fetchRealPTSubscriptions, fetchGymShifts]);
+    fetchMembersList();
+  }, [fetchTrainersWithCapacity, fetchPTUpgradePlans, fetchRealPTSubscriptions, fetchGymShifts, fetchMembersList]);
 
   // Search Members Handler
   const handleMemberSearch = async (query) => {
@@ -668,21 +617,16 @@ const AdminPTManagement = () => {
     }
     setIsSearching(true);
     try {
-      const token = tokenManager.getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/api/v1/admin/members/search?q=${encodeURIComponent(query)}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const sourceMembers = membersList.length > 0 ? membersList : await fetchMembersList();
+      const q = query.toLowerCase();
+      const results = sourceMembers.filter(member => {
+        const memberName = String(member.name || '').toLowerCase();
+        const memberCode = String(member.member_code || '').toLowerCase();
+        const memberPhone = String(member.phone || '').toLowerCase();
+        const memberId = String(member.user_id || '').toLowerCase();
+        return memberName.includes(q) || memberCode.includes(q) || memberPhone.includes(q) || memberId.includes(q);
       });
-      if (res.ok) {
-        const data = await res.json();
-        setSearchResults(data.data || []);
-      } else {
-        // Fallback search mock
-        setSearchResults([
-          { user_id: 138, member_code: 'MEM10045', name: 'Rahul Sharma', phone: '+91 98765 43210', email: 'rahul.sharma@example.com', age: 28, gender: 'Male', assigned_trainer_id: 489, assigned_trainer_name: 'John Doe', pt_credits: 8 },
-          { user_id: 139, member_code: 'MEM10046', name: 'Priya Patel', phone: '+91 98765 43211', email: 'priya.patel@example.com', age: 25, gender: 'Female', assigned_trainer_id: 490, assigned_trainer_name: 'Priya Mehta', pt_credits: 12 },
-          { user_id: 140, member_code: 'MEM10047', name: 'Amit Verma', phone: '+91 98765 43212', email: 'amit.verma@example.com', age: 31, gender: 'Male', assigned_trainer_id: 491, assigned_trainer_name: 'Amit Verma', pt_credits: 0 }
-        ].filter(m => m.name.toLowerCase().includes(query.toLowerCase()) || m.phone.includes(query) || m.member_code.toLowerCase().includes(query.toLowerCase())));
-      }
+      setSearchResults(results);
     } catch (err) {
       console.error('Search error:', err);
     } finally {
@@ -699,12 +643,10 @@ const AdminPTManagement = () => {
     }
     setIsProvisioning(true);
     try {
-      const token = tokenManager.getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/api/v1/admin/pt/manual-purchase`, {
+      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/pt/manual-purchase`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           user_id: selectedMember.user_id,
@@ -720,10 +662,10 @@ const AdminPTManagement = () => {
       if (res.ok && data.status === 'success') {
         showToast(data.message || 'Manual PT purchase processed and credits provisioned successfully!');
       } else {
-        showToast('Manual PT purchase processed and credits provisioned successfully!');
+        showToast(data.message || 'Failed to provision PT purchase', 'error');
+        return;
       }
 
-      // Update selected member's active PT credit balance
       setSelectedMember(prev => ({
         ...prev,
         pt_credits: (prev.pt_credits || 0) + addedSessions,
@@ -731,69 +673,9 @@ const AdminPTManagement = () => {
         assigned_trainer_name: assignedTrainer?.name || prev.assigned_trainer_name
       }));
 
-      // Upsert into PT Subscriptions Listing (2/3 Workspace)
-      setPtSubscriptionsList(prev => {
-        const existingIdx = prev.findIndex(s => s.user_id === selectedMember.user_id);
-        const newRecord = {
-          subscription_id: Date.now(),
-          user_id: selectedMember.user_id,
-          member_code: selectedMember.member_code,
-          member_name: selectedMember.name,
-          phone: selectedMember.phone,
-          email: selectedMember.email,
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-          plan_id: pkg.plan_id || 1,
-          plan_name: pkg.plan_name || 'PT Upgrade Package',
-          assigned_trainer_id: selectedTrainerId || 489,
-          assigned_trainer_name: assignedTrainer?.name || 'John Doe',
-          trainer_avatar: assignedTrainer?.avatar || 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&q=80&w=200',
-          total_credits: ((existingIdx >= 0 ? prev[existingIdx].total_credits : 0) + addedSessions),
-          pt_credits: ((existingIdx >= 0 ? prev[existingIdx].pt_credits : 0) + addedSessions),
-          status: 'ACTIVE',
-          purchase_date: new Date().toISOString().split('T')[0],
-          expiry_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        };
-
-        if (existingIdx >= 0) {
-          const updated = [...prev];
-          updated[existingIdx] = newRecord;
-          return updated;
-        }
-        return [newRecord, ...prev];
-      });
+      await Promise.all([fetchRealPTSubscriptions(), fetchTrainersWithCapacity()]);
     } catch (err) {
-      showToast('Manual purchase simulated and credits updated', 'success');
-      const pkg = ptPlansList.find(p => String(p.plan_id || p.id) === String(selectedPlan)) || { price: 4500, plan_name: 'PT Upgrade Plan', sessions: 12 };
-      const addedSessions = pkg.sessions || 12;
-      const assignedTrainer = trainersList.find(t => t.trainer_id === selectedTrainerId) || trainersList[0];
-
-      setSelectedMember(prev => ({
-        ...prev,
-        pt_credits: (prev.pt_credits || 0) + addedSessions
-      }));
-
-      setPtSubscriptionsList(prev => [
-        {
-          subscription_id: Date.now(),
-          user_id: selectedMember.user_id,
-          member_code: selectedMember.member_code,
-          member_name: selectedMember.name,
-          phone: selectedMember.phone,
-          email: selectedMember.email,
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-          plan_id: pkg.plan_id || 1,
-          plan_name: pkg.plan_name || 'PT Upgrade Package',
-          assigned_trainer_id: selectedTrainerId || 489,
-          assigned_trainer_name: assignedTrainer?.name || 'John Doe',
-          trainer_avatar: assignedTrainer?.avatar || 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&q=80&w=200',
-          total_credits: 24,
-          pt_credits: (selectedMember.pt_credits || 0) + addedSessions,
-          status: 'ACTIVE',
-          purchase_date: new Date().toISOString().split('T')[0],
-          expiry_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        },
-        ...prev
-      ]);
+      showToast(err.message || 'Manual PT purchase failed', 'error');
     } finally {
       setIsProvisioning(false);
     }
@@ -818,12 +700,10 @@ const AdminPTManagement = () => {
 
     setIsAssigning(true);
     try {
-      const token = tokenManager.getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/api/v1/admin/pt/assign-trainer`, {
+      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/pt/assign-trainer`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           member_id: selectedMember.user_id,
@@ -838,17 +718,12 @@ const AdminPTManagement = () => {
           assigned_trainer_id: selectedTrainerId,
           assigned_trainer_name: trainer?.name || 'Assigned Coach'
         }));
-        fetchTrainersWithCapacity();
+        await Promise.all([fetchTrainersWithCapacity(), fetchRealPTSubscriptions()]);
       } else {
         showToast(data.message || 'Error assigning trainer', 'error');
       }
     } catch (err) {
-      showToast('Trainer assigned successfully to member!');
-      setSelectedMember(prev => ({
-        ...prev,
-        assigned_trainer_id: selectedTrainerId,
-        assigned_trainer_name: trainer?.name || 'Assigned Coach'
-      }));
+      showToast(err.message || 'Trainer assignment failed', 'error');
     } finally {
       setIsAssigning(false);
     }
@@ -863,12 +738,10 @@ const AdminPTManagement = () => {
     }
     setIsGenerating(true);
     try {
-      const token = tokenManager.getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/api/v1/admin/pt/generate-schedule`, {
+      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/pt/generate-schedule`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           trainer_id: parseInt(genTrainerId),
@@ -1061,21 +934,35 @@ const AdminPTManagement = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {ptSubscriptionsList
-                      .filter(sub => {
-                        if (rosterFilterStatus === 'ACTIVE') return sub.pt_credits > 0;
-                        if (rosterFilterStatus === 'EXHAUSTED') return sub.pt_credits === 0;
-                        return true;
-                      })
-                      .filter(sub => {
-                        if (!rosterSearch) return true;
-                        const q = rosterSearch.toLowerCase();
-                        return sub.member_name.toLowerCase().includes(q) ||
-                          sub.member_code.toLowerCase().includes(q) ||
-                          sub.phone.includes(q);
-                      })
-                      .map(sub => {
-                        const percentUsed = Math.round(((sub.total_credits - sub.pt_credits) / sub.total_credits) * 100);
+                    {(() => {
+                      const filteredSubscriptions = ptSubscriptionsList
+                        .filter(sub => {
+                          if (rosterFilterStatus === 'ACTIVE') return sub.pt_credits > 0;
+                          if (rosterFilterStatus === 'EXHAUSTED') return sub.pt_credits === 0;
+                          return true;
+                        })
+                        .filter(sub => {
+                          if (!rosterSearch) return true;
+                          const q = rosterSearch.toLowerCase();
+                          return String(sub.member_name || '').toLowerCase().includes(q) ||
+                            String(sub.member_code || '').toLowerCase().includes(q) ||
+                            String(sub.phone || '').toLowerCase().includes(q);
+                        });
+
+                      if (filteredSubscriptions.length === 0) {
+                        return (
+                          <tr>
+                            <td colSpan="6" style={{ textAlign: 'center', padding: '1rem', color: '#64748b' }}>
+                              No PT subscriptions match the current filters.
+                            </td>
+                          </tr>
+                        );
+                      }
+
+                      return filteredSubscriptions.map(sub => {
+                        const percentUsed = sub.total_credits > 0
+                          ? Math.round(((sub.total_credits - sub.pt_credits) / sub.total_credits) * 100)
+                          : 0;
                         return (
                           <tr key={sub.subscription_id} style={{ background: selectedMember?.user_id === sub.user_id ? 'rgba(79, 70, 229, 0.05)' : 'transparent' }}>
                             <td>
@@ -1147,7 +1034,8 @@ const AdminPTManagement = () => {
                             </td>
                           </tr>
                         );
-                      })}
+                      });
+                    })()}
                   </tbody>
                 </table>
               </div>
