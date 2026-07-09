@@ -317,28 +317,43 @@ const AdminPTManagement = () => {
         });
 
         // Map real backend PT subscriptions with member, plan and credit data
+        // Per API doc: member_name, member_email, member_phone, user_id are at top-level of each subscription
         const formatted = ptOnlySubs.map((sub, idx) => {
           const userObj = sub.user || sub.member || {};
           const planObj = sub.plan || sub.membership_plan || {};
           const trainerObj = sub.trainer || sub.assigned_trainer || {};
           const walletCredits = Array.isArray(sub.wallet_credits) ? sub.wallet_credits : [];
           const ptWallet = walletCredits.find(credit => String(credit.entitlement_type || '').toUpperCase() === 'PT_1ON1');
-          const totalCreds = Number(sub.total_credits || sub.sessions || planObj.sessions || ptWallet?.original_quantity || ptWallet?.remaining_quantity || (sub.plan_id === 5 ? 24 : sub.plan_id === 2 ? 12 : 8));
-          const ptCreds = Number(sub.pt_credits ?? sub.credits_remaining ?? ptWallet?.remaining_quantity ?? Math.max(0, totalCreds - Number(sub.sessions_used || 0)));
-          
+          const totalCreds = Number(
+            ptWallet?.original_quantity ||
+            sub.total_credits || sub.sessions || planObj.sessions ||
+            ptWallet?.remaining_quantity ||
+            (sub.plan_id === 5 ? 24 : sub.plan_id === 2 ? 12 : 8)
+          );
+          const ptCreds = Number(
+            ptWallet?.remaining_quantity ??
+            sub.pt_credits ?? sub.credits_remaining ??
+            Math.max(0, totalCreds - Number(sub.sessions_used || 0))
+          );
+
+          // assigned_trainer_id from the subscription — will be cross-referenced against trainersList in render
+          const assignedTrainerId = sub.trainer_id || trainerObj.trainer_id || trainerObj.id || null;
+
           return {
             subscription_id: sub.subscription_id || sub.id || (1001 + idx),
-            user_id: sub.user_id || userObj.user_id || (138 + idx),
-            member_code: sub.member_code || userObj.member_code || `MEM100${45 + idx}`,
-            member_name: sub.user_name || userObj.name || userObj.full_name || sub.name || `Member #${sub.user_id || idx + 1}`,
-            phone: sub.phone || userObj.phone || '+91 98765 43210',
-            email: sub.email || userObj.email || 'member@fitnessguru.com',
-            avatar: userObj.avatar || userObj.profile_image || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150`,
+            // Per API doc: user_id, member_name, member_email are top-level fields
+            user_id: sub.user_id || userObj.user_id || userObj.id || (138 + idx),
+            member_code: sub.member_code || userObj.member_code || `MEM-${String(sub.user_id || idx + 1).padStart(4, '0')}`,
+            member_name: sub.member_name || sub.user_name || userObj.name || userObj.full_name || sub.name || `Member #${sub.user_id || idx + 1}`,
+            email: sub.member_email || sub.email || userObj.email || '',
+            phone: sub.member_phone || sub.phone || userObj.phone || '',
             plan_id: sub.plan_id || planObj.plan_id || 1,
-            plan_name: sub.subscription_name || planObj.plan_name || planObj.name || (sub.plan_id === 5 ? 'PT Elite 24-Pack (24 Sessions)' : 'PT Upgrade Package'),
-            assigned_trainer_id: sub.trainer_id || trainerObj.trainer_id || 489,
-            assigned_trainer_name: sub.trainer_name || trainerObj.name || 'John Doe',
-            trainer_avatar: trainerObj.avatar || 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&q=80&w=200',
+            plan_name: sub.plan_name || sub.subscription_name || planObj.plan_name || planObj.name || 'PT Upgrade Package',
+            plan_type: sub.plan_type || planObj.plan_type || 'PT_UPGRADE',
+            // assigned_trainer_id is stored; actual name/avatar will be cross-referenced from trainersList at render
+            assigned_trainer_id: assignedTrainerId,
+            assigned_trainer_name: sub.trainer_name || trainerObj.name || trainerObj.full_name || null,
+            trainer_avatar: trainerObj.avatar || trainerObj.profile_image || null,
             total_credits: totalCreds,
             pt_credits: ptCreds,
             status: String(sub.status).toUpperCase() === 'ACTIVE' || sub.status === 1 ? (ptCreds > 0 ? 'ACTIVE' : 'EXHAUSTED') : 'EXHAUSTED',
@@ -635,6 +650,7 @@ const AdminPTManagement = () => {
   };
 
   // API 1: Manual PT Purchase Execution
+  // Per PT API workflow: Step 1 = Manual Purchase (API 1), Step 2 = Assign Trainer (API 2)
   const handleManualPurchase = async (e) => {
     e.preventDefault();
     if (!selectedMember) {
@@ -643,11 +659,10 @@ const AdminPTManagement = () => {
     }
     setIsProvisioning(true);
     try {
+      // Step 1: POST /api/admin/pt/manual-purchase — Provisions subscription & wallet credits
       const res = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/pt/manual-purchase`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: selectedMember.user_id,
           plan_id: parseInt(selectedPlan),
@@ -655,22 +670,51 @@ const AdminPTManagement = () => {
         })
       });
       const data = await res.json();
-      const pkg = ptPlansList.find(p => String(p.plan_id || p.id) === String(selectedPlan)) || { price: 4500, plan_name: 'PT Upgrade Plan', sessions: 12 };
-      const addedSessions = pkg.sessions || (pkg.duration_months ? pkg.duration_months * 8 : 12);
-      const assignedTrainer = trainersList.find(t => t.trainer_id === selectedTrainerId) || trainersList[0];
 
-      if (res.ok && data.status === 'success') {
-        showToast(data.message || 'Manual PT purchase processed and credits provisioned successfully!');
-      } else {
+      if (!res.ok || data.status !== 'success') {
         showToast(data.message || 'Failed to provision PT purchase', 'error');
         return;
       }
 
+      showToast(data.message || 'Manual PT purchase processed and credits provisioned successfully!');
+
+      // Step 2: POST /api/admin/pt/assign-trainer — Assign trainer to the member (if one is selected)
+      if (selectedTrainerId) {
+        const trainer = trainersList.find(t => t.trainer_id === selectedTrainerId);
+        if (trainer && trainer.assigned_count >= trainer.max_capacity) {
+          showToast('Note: Selected trainer is at full capacity. Trainer NOT assigned.', 'error');
+        } else {
+          try {
+            const assignRes = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/pt/assign-trainer`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                member_id: selectedMember.user_id,
+                trainer_id: selectedTrainerId
+              })
+            });
+            const assignData = await assignRes.json();
+            if (assignRes.ok && assignData.status === 'success') {
+              showToast(`Trainer ${trainer?.name || ''} assigned successfully!`);
+              setSelectedMember(prev => ({
+                ...prev,
+                assigned_trainer_id: selectedTrainerId,
+                assigned_trainer_name: trainer?.name || 'Assigned Coach'
+              }));
+            } else {
+              showToast(assignData.message || 'Purchase successful, but trainer assignment failed.', 'error');
+            }
+          } catch (assignErr) {
+            showToast('Purchase successful, but trainer assignment encountered an error.', 'error');
+          }
+        }
+      }
+
+      const pkg = ptPlansList.find(p => String(p.plan_id || p.id) === String(selectedPlan)) || { price: 4500, plan_name: 'PT Upgrade Plan', sessions: 12 };
+      const addedSessions = pkg.sessions || (pkg.duration_months ? pkg.duration_months * 8 : 12);
       setSelectedMember(prev => ({
         ...prev,
-        pt_credits: (prev.pt_credits || 0) + addedSessions,
-        assigned_trainer_id: selectedTrainerId || prev.assigned_trainer_id,
-        assigned_trainer_name: assignedTrainer?.name || prev.assigned_trainer_name
+        pt_credits: (prev.pt_credits || 0) + addedSessions
       }));
 
       await Promise.all([fetchRealPTSubscriptions(), fetchTrainersWithCapacity()]);
@@ -963,26 +1007,60 @@ const AdminPTManagement = () => {
                         const percentUsed = sub.total_credits > 0
                           ? Math.round(((sub.total_credits - sub.pt_credits) / sub.total_credits) * 100)
                           : 0;
+
+                        // Cross-reference trainer from the live trainersList by assigned_trainer_id
+                        const matchedTrainer = sub.assigned_trainer_id
+                          ? trainersList.find(t => t.trainer_id === sub.assigned_trainer_id)
+                          : null;
+                        const trainerName = matchedTrainer?.name || sub.assigned_trainer_name || null;
+                        const trainerAvatarUrl = matchedTrainer?.avatar || sub.trainer_avatar || null;
+
                         return (
                           <tr key={sub.subscription_id} style={{ background: selectedMember?.user_id === sub.user_id ? 'rgba(79, 70, 229, 0.05)' : 'transparent' }}>
+                            {/* Member Details: show only Member ID, Member Name, Email */}
                             <td>
-                              <div className="member-cell">
-                                <img src={sub.avatar} alt={sub.member_name} className="mini-avatar" />
-                                <div>
-                                  <strong style={{ fontSize: '0.9rem', color: '#1e293b' }}>{sub.member_name}</strong>
-                                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{sub.member_code} • {sub.phone}</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <strong style={{ fontSize: '0.9rem', color: '#1e293b' }}>{sub.member_name}</strong>
+                                <div style={{ fontSize: '0.72rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <i className="fas fa-id-badge" style={{ color: '#6366f1', fontSize: '0.65rem' }}></i>
+                                  <span>ID: {sub.user_id}</span>
                                 </div>
+                                {sub.email && (
+                                  <div style={{ fontSize: '0.72rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <i className="fas fa-envelope" style={{ color: '#6366f1', fontSize: '0.65rem' }}></i>
+                                    <span style={{ wordBreak: 'break-all' }}>{sub.email}</span>
+                                  </div>
+                                )}
                               </div>
                             </td>
                             <td>
                               <strong style={{ fontSize: '0.85rem', color: '#4f46e5' }}>{sub.plan_name}</strong>
                               <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Purchased {sub.purchase_date}</div>
                             </td>
+                            {/* Assigned Coach: cross-referenced from trainersList */}
                             <td>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <img src={sub.trainer_avatar} alt={sub.assigned_trainer_name} style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
-                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>{sub.assigned_trainer_name}</span>
-                              </div>
+                              {trainerName ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  {trainerAvatarUrl ? (
+                                    <img
+                                      src={trainerAvatarUrl}
+                                      alt={trainerName}
+                                      style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #e2e8f0', flexShrink: 0 }}
+                                      onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                                    />
+                                  ) : null}
+                                  <div
+                                    style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#4f46e5)', display: trainerAvatarUrl ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                                  >
+                                    <i className="fas fa-user-tie" style={{ fontSize: '0.7rem', color: '#ffffff' }}></i>
+                                  </div>
+                                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>{trainerName}</span>
+                                </div>
+                              ) : (
+                                <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                                  <i className="fas fa-user-slash" style={{ marginRight: '4px' }}></i>Not Assigned
+                                </span>
+                              )}
                             </td>
                             <td>
                               <div>
@@ -990,12 +1068,12 @@ const AdminPTManagement = () => {
                                   {sub.pt_credits} / {sub.total_credits} Sessions
                                 </strong>
                                 <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '3px', marginTop: '4px', overflow: 'hidden' }}>
-                                  <div 
-                                    style={{ 
-                                      height: '100%', 
-                                      width: `${Math.min(100, Math.max(0, 100 - percentUsed))}%`, 
-                                      background: sub.pt_credits > 0 ? '#10b981' : '#ef4444' 
-                                    }} 
+                                  <div
+                                    style={{
+                                      height: '100%',
+                                      width: `${Math.min(100, Math.max(0, 100 - percentUsed))}%`,
+                                      background: sub.pt_credits > 0 ? '#10b981' : '#ef4444'
+                                    }}
                                   />
                                 </div>
                               </div>
@@ -1017,10 +1095,8 @@ const AdminPTManagement = () => {
                                     name: sub.member_name,
                                     phone: sub.phone,
                                     email: sub.email,
-                                    age: 28,
-                                    gender: 'Member',
                                     assigned_trainer_id: sub.assigned_trainer_id,
-                                    assigned_trainer_name: sub.assigned_trainer_name,
+                                    assigned_trainer_name: trainerName,
                                     pt_credits: sub.pt_credits
                                   });
                                   if (sub.assigned_trainer_id) {
