@@ -251,25 +251,25 @@ const AdminPTManagement = () => {
   // Load Trainers with Capacity Counts & Full Info
   const fetchTrainersWithCapacity = useCallback(async () => {
     try {
-      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/trainers`, {
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/trainers?limit=100`, {
         method: 'GET'
       });
       if (response.ok) {
         const data = await response.json();
         const rawTrainers = data.data || [];
         const enriched = rawTrainers.map(t => ({
-          trainer_id: t.id || t.trainer_id || t.user_id,
-          name: t.name || t.full_name || 'Coach',
-          code: t.employee_code || `TRN-${t.id || t.trainer_id || 101}`,
-          specialization: t.specialization || t.designation || 'Personal Trainer & Fitness Coach',
-          experience: t.experience || '5+ Years Experience',
-          rating: t.rating || '4.9 ★',
-          phone: t.phone || '+91 98765 00000',
-          email: t.email || 'coach@fitnessguru.com',
-          avatar: t.avatar || t.profile_image || 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?auto=format&fit=crop&q=80&w=200',
-          assigned_count: t.assigned_count ?? Math.floor(Math.random() * 8 + 6),
-          max_capacity: 15,
-          shift: t.shift || 'Morning Shift (06:00 - 14:00)'
+          trainer_id: t.employee_id || t.id,
+          name: t.full_name || t.name,
+          code: t.employee_code || `TRN-${t.employee_id || t.id}`,
+          specialization: t.specialization || 'N/A',
+          experience: t.experience || 'N/A',
+          rating: t.rating || '4.0 ★',
+          phone: t.phone || '',
+          email: t.email || '',
+          avatar: t.profile_photo || t.avatar || '',
+          assigned_count: t.assigned_clients_count || 0,
+          max_capacity: t.max_capacity || 15,
+          shift: t.shift_timing || 'General'
         }));
         setTrainersList(enriched);
         if (enriched.length > 0) {
@@ -1144,61 +1144,93 @@ const AdminPTManagement = () => {
                           opacity: isFull ? 0.75 : 1
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <img 
-                            src={trainer.avatar} 
-                            alt={trainer.name} 
-                            style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #6366f1' }} 
-                          />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <strong style={{ fontSize: '0.9rem', color: '#1e293b' }}>{trainer.name}</strong>
-                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f59e0b' }}>
-                                <i className="fas fa-star"></i> {trainer.rating}
-                              </span>
-                            </div>
-                            <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: '2px' }}>
-                              {trainer.specialization}
-                            </div>
-                          </div>
-                        </div>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                           {/* Trainer Avatar with fallback */}
+                           {trainer.avatar ? (
+                             <img
+                               src={trainer.avatar}
+                               alt={trainer.name}
+                               style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #6366f1', flexShrink: 0 }}
+                               onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                             />
+                           ) : null}
+                           <div
+                             style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', display: trainer.avatar ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '2px solid #6366f1' }}
+                           >
+                             <i className="fas fa-user-tie" style={{ color: '#fff', fontSize: '1rem' }}></i>
+                           </div>
+                           <div style={{ flex: 1, minWidth: 0 }}>
+                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px' }}>
+                               <strong style={{ fontSize: '0.88rem', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{trainer.name || '—'}</strong>
+                               {trainer.rating && trainer.rating !== '—' && (
+                                 <span style={{ fontSize: '0.73rem', fontWeight: 700, color: '#f59e0b', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                   {trainer.rating}
+                                 </span>
+                               )}
+                             </div>
+                             <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                               {trainer.specialization || 'Personal Trainer'}
+                             </div>
+                             <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center', flexWrap: 'wrap' }}>
+                               {trainer.code && (
+                                 <span style={{ fontSize: '0.68rem', color: '#6366f1', fontWeight: 600, background: '#eef2ff', padding: '1px 6px', borderRadius: '4px' }}>
+                                   {trainer.code}
+                                 </span>
+                               )}
+                               {trainer.experience && trainer.experience !== '—' && (
+                                 <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
+                                   <i className="fas fa-clock" style={{ marginRight: '2px' }}></i>{trainer.experience}
+                                 </span>
+                               )}
+                               {trainer.availability_status && (
+                                 <span style={{
+                                   fontSize: '0.65rem', fontWeight: 700, padding: '1px 6px', borderRadius: '4px',
+                                   background: trainer.availability_status === 'AVAILABLE' ? '#d1fae5' : trainer.availability_status === 'BUSY' ? '#fee2e2' : '#fef3c7',
+                                   color: trainer.availability_status === 'AVAILABLE' ? '#065f46' : trainer.availability_status === 'BUSY' ? '#991b1b' : '#92400e'
+                                 }}>
+                                   {trainer.availability_status.replace('_', ' ')}
+                                 </span>
+                               )}
+                             </div>
+                           </div>
+                         </div>
 
-                        {/* Capacity Progress Bar */}
-                        <div style={{ marginTop: '8px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748b', marginBottom: '2px' }}>
-                            <span>Clients: <strong>{trainer.assigned_count}/{trainer.max_capacity}</strong></span>
-                            <span style={{ color: isFull ? '#ef4444' : '#10b981', fontWeight: 700 }}>
-                              {isFull ? 'FULL' : `${15 - trainer.assigned_count} Free`}
-                            </span>
-                          </div>
-                          <div style={{ height: '5px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
-                            <div 
-                              style={{ 
-                                height: '100%', 
-                                width: `${capacityPercent}%`, 
-                                background: isFull ? '#ef4444' : capacityPercent > 80 ? '#f59e0b' : '#10b981'
-                              }} 
-                            />
-                          </div>
-                        </div>
+                         {/* Capacity Progress Bar */}
+                         <div style={{ marginTop: '8px' }}>
+                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748b', marginBottom: '2px' }}>
+                             <span>Clients: <strong>{trainer.assigned_count}/{trainer.max_capacity}</strong></span>
+                             <span style={{ color: isFull ? '#ef4444' : '#10b981', fontWeight: 700 }}>
+                               {isFull ? 'FULL' : `${trainer.max_capacity - trainer.assigned_count} Free`}
+                             </span>
+                           </div>
+                           <div style={{ height: '5px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
+                             <div
+                               style={{
+                                 height: '100%',
+                                 width: `${capacityPercent}%`,
+                                 background: isFull ? '#ef4444' : capacityPercent > 80 ? '#f59e0b' : '#10b981'
+                               }}
+                             />
+                           </div>
+                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '6px', borderTop: '1px dashed #f1f5f9' }}>
-                          <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                            <i className="fas fa-phone-alt"></i> {trainer.phone}
-                          </span>
-                          <button
-                            type="button"
-                            className="pt-btn pt-btn-secondary"
-                            style={{ padding: '2px 8px', fontSize: '0.72rem' }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setViewingTrainer(trainer);
-                            }}
-                          >
-                            Full Profile
-                          </button>
-                        </div>
-                      </div>
+                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '6px', borderTop: '1px dashed #f1f5f9' }}>
+                           <span style={{ fontSize: '0.7rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>
+                             {trainer.phone ? (<><i className="fas fa-phone-alt"></i> {trainer.phone}</>) : trainer.email ? (<><i className="fas fa-envelope"></i> {trainer.email}</>) : null}
+                           </span>
+                           <button
+                             type="button"
+                             className="pt-btn pt-btn-secondary"
+                             style={{ padding: '2px 8px', fontSize: '0.72rem' }}
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               setViewingTrainer(trainer);
+                             }}
+                           >
+                             Full Profile
+                           </button>
+                         </div>
+                       </div>
                     );
                   })}
                 </div>
@@ -1363,28 +1395,48 @@ const AdminPTManagement = () => {
 
       {/* FULL-WIDTH TRAINER DETAILS MODAL */}
       {viewingTrainer && (
-        <div className="pt-modal-backdrop">
+      <div className="pt-modal-backdrop">
           <div className="pt-modal-card full-width">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', paddingBottom: '1rem', borderBottom: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <img 
-                  src={viewingTrainer.avatar} 
-                  alt={viewingTrainer.name} 
-                  style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #6366f1' }}
-                />
+                {/* Trainer avatar with fallback */}
+                {viewingTrainer.avatar ? (
+                  <img
+                    src={viewingTrainer.avatar}
+                    alt={viewingTrainer.name}
+                    style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #6366f1', flexShrink: 0 }}
+                    onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                  />
+                ) : null}
+                <div
+                  style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', display: viewingTrainer.avatar ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', border: '3px solid #6366f1', flexShrink: 0 }}
+                >
+                  <i className="fas fa-user-tie" style={{ color: '#fff', fontSize: '1.5rem' }}></i>
+                </div>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: '#1e293b' }}>{viewingTrainer.name}</h2>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
-                    <span className="pt-badge code">{viewingTrainer.code}</span>
-                    <span className="pt-badge status-active">{viewingTrainer.specialization}</span>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f59e0b' }}>
-                      <i className="fas fa-star"></i> {viewingTrainer.rating}
-                    </span>
+                  <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: '#1e293b' }}>{viewingTrainer.name || '—'}</h2>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px', flexWrap: 'wrap' }}>
+                    {viewingTrainer.code && <span className="pt-badge code">{viewingTrainer.code}</span>}
+                    {viewingTrainer.specialization && <span className="pt-badge status-active">{viewingTrainer.specialization}</span>}
+                    {viewingTrainer.rating && viewingTrainer.rating !== '—' && (
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f59e0b' }}>
+                        {viewingTrainer.rating}
+                      </span>
+                    )}
+                    {viewingTrainer.availability_status && (
+                      <span style={{
+                        fontSize: '0.75rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px',
+                        background: viewingTrainer.availability_status === 'AVAILABLE' ? '#d1fae5' : viewingTrainer.availability_status === 'BUSY' ? '#fee2e2' : '#fef3c7',
+                        color: viewingTrainer.availability_status === 'AVAILABLE' ? '#065f46' : viewingTrainer.availability_status === 'BUSY' ? '#991b1b' : '#92400e'
+                      }}>
+                        {viewingTrainer.availability_status.replace('_', ' ')}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
-              <button 
-                className="pt-icon-btn" 
+              <button
+                className="pt-icon-btn"
                 onClick={() => setViewingTrainer(null)}
                 style={{ fontSize: '1.2rem', padding: '8px' }}
               >
@@ -1395,10 +1447,9 @@ const AdminPTManagement = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
               <div className="pt-card" style={{ background: '#f8fafc' }}>
                 <h4 style={{ margin: '0 0 10px 0', color: '#334155', fontSize: '0.95rem' }}><i className="fas fa-user-circle text-primary"></i> Professional Profile</h4>
-                <p style={{ margin: '0 0 6px 0', fontSize: '0.88rem' }}><strong>Experience:</strong> {viewingTrainer.experience}</p>
-                <p style={{ margin: '0 0 6px 0', fontSize: '0.88rem' }}><strong>Work Shift:</strong> {viewingTrainer.shift}</p>
-                <p style={{ margin: '0 0 6px 0', fontSize: '0.88rem' }}><strong>Phone:</strong> {viewingTrainer.phone}</p>
-                <p style={{ margin: 0, fontSize: '0.88rem' }}><strong>Email:</strong> {viewingTrainer.email}</p>
+                {viewingTrainer.experience && viewingTrainer.experience !== '—' && <p style={{ margin: '0 0 6px 0', fontSize: '0.88rem' }}><strong>Experience:</strong> {viewingTrainer.experience}</p>}
+                {viewingTrainer.phone && <p style={{ margin: '0 0 6px 0', fontSize: '0.88rem' }}><strong>Phone:</strong> {viewingTrainer.phone}</p>}
+                {viewingTrainer.email && <p style={{ margin: 0, fontSize: '0.88rem' }}><strong>Email:</strong> {viewingTrainer.email}</p>}
               </div>
 
               <div className="pt-card" style={{ background: '#f8fafc' }}>
