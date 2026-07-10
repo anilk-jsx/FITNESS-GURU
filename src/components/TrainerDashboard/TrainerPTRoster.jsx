@@ -55,10 +55,7 @@ const TrainerPTRoster = () => {
   const fetchPtSlots = useCallback(async () => {
     setIsSlotsLoading(true);
     try {
-      const token = tokenManager.getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/api/admin/pt-slots`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/pt-slots`);
       if (res.ok) {
         const data = await res.json();
         if (data.status === 'success' && Array.isArray(data.data)) {
@@ -88,52 +85,15 @@ const TrainerPTRoster = () => {
   // ─── WEEKLY AVAILABILITY TEMPLATE ─────────────────────────────────────────
   const [templateMatrix, setTemplateMatrix] = useState({});
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
-  const [isTemplateLoading, setIsTemplateLoading] = useState(false);
 
   const buildEmptyMatrix = () =>
     daysDef.reduce((acc, d) => { acc[d.day_id] = []; return acc; }, {});
 
-  // Reconstruct existing template from current week's roster
-  const fetchExistingTemplate = useCallback(async (slots) => {
-    setIsTemplateLoading(true);
-    try {
-      const token = tokenManager.getAccessToken();
-      const today = new Date();
-      const dow = today.getDay();
-      const diffToMon = dow === 0 ? -6 : 1 - dow;
-      const monday = new Date(today);
-      monday.setDate(today.getDate() + diffToMon);
-      const matrix = buildEmptyMatrix();
-      const slotIds = (slots || []).map(s => s.slot_id);
-      await Promise.all(
-        daysDef.map(async ({ day_id }) => {
-          const date = new Date(monday);
-          date.setDate(monday.getDate() + (day_id - 1));
-          const dateStr = toLocalDateString(date);
-          const res = await fetch(`${API_BASE_URL}/api/trainer/roster?date=${dateStr}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (!res.ok) return;
-          const data = await res.json();
-          if (data.status === 'success' && Array.isArray(data.data)) {
-            const activeSlots = data.data
-              .map(s => s.slot_id)
-              .filter(id => slotIds.includes(id));
-            matrix[day_id] = [...new Set(activeSlots)];
-          }
-        })
-      );
-      setTemplateMatrix(matrix);
-    } catch (_) {
-      setTemplateMatrix(buildEmptyMatrix());
-    } finally {
-      setIsTemplateLoading(false);
-    }
-  }, [API_BASE_URL]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Load slots then template on mount
+  // Load PT slots on mount; template starts empty (no GET endpoint available)
   useEffect(() => {
-    fetchPtSlots().then(slots => { fetchExistingTemplate(slots); });
+    fetchPtSlots().then(() => {
+      setTemplateMatrix(buildEmptyMatrix());
+    });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── DAILY ROSTER ──────────────────────────────────────────────────────────
@@ -200,10 +160,7 @@ const TrainerPTRoster = () => {
   const fetchTrainerRoster = useCallback(async (dateStr) => {
     setIsLoadingRoster(true);
     try {
-      const token = tokenManager.getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/api/trainer/roster?date=${dateStr}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/trainer/roster?date=${dateStr}`);
       if (res.ok) {
         const data = await res.json();
         if (data.status === 'success') {
@@ -240,10 +197,9 @@ const TrainerPTRoster = () => {
       slots: templateMatrix[dayId]
     }));
     try {
-      const token = tokenManager.getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/api/trainer/availability/template`, {
+      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/trainer/availability/template`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ days: daysPayload })
       });
       const data = await res.json();
@@ -271,10 +227,9 @@ const TrainerPTRoster = () => {
     if (!activeHandshakeSchedule) return;
     setIsCompletingSession(true);
     try {
-      const token = tokenManager.getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/api/trainer/session/complete`, {
+      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/trainer/session/complete`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           schedule_id: activeHandshakeSchedule.schedule_id,
           workout_summary: workoutSummary || 'Standard 1-on-1 PT Session completed.'
@@ -311,7 +266,6 @@ const TrainerPTRoster = () => {
     }
     setIsSavingAssessment(true);
     try {
-      const token = tokenManager.getAccessToken();
       const payload = {
         member_id: parseInt(workbenchMemberId),
         assessment_type: workbenchType,
@@ -337,9 +291,9 @@ const TrainerPTRoster = () => {
           overall: overallScore
         }
       };
-      const res = await fetch(`${API_BASE_URL}/api/trainer/assessment`, {
+      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/trainer/assessment`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
@@ -428,7 +382,7 @@ const TrainerPTRoster = () => {
               </h3>
               <p className="card-desc">Click chips to toggle your weekly repeating available time slots.</p>
 
-              {isSlotsLoading || isTemplateLoading ? (
+              {isSlotsLoading ? (
                 <div className="loader-box">
                   <i className="fas fa-spinner fa-spin"></i> Loading slots...
                 </div>
@@ -470,7 +424,7 @@ const TrainerPTRoster = () => {
                 type="button"
                 className="tr-btn tr-btn-success btn-block mt-4"
                 onClick={handleSaveTemplate}
-                disabled={isSavingTemplate || isSlotsLoading || isTemplateLoading}
+                disabled={isSavingTemplate || isSlotsLoading}
               >
                 {isSavingTemplate ? (
                   <><i className="fas fa-spinner fa-spin"></i> Saving Template...</>
