@@ -4,7 +4,7 @@ import tokenManager from '../../utils/tokenManager';
 import TrainerDietPlans from './TrainerDietPlans';
 import './TrainerPTRoster.css';
 
-// --- Helpers ---
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 const toLocalDateString = (date) => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -12,19 +12,47 @@ const toLocalDateString = (date) => {
   return `${y}-${m}-${d}`;
 };
 
+// Full status → human label mapping (all 9 lifecycle states from API doc)
+const STATUS_LABELS = {
+  AVAILABLE:         'Open Slot',
+  PENDING:           'Booked',
+  ATTENDED:          'Attended',
+  TRAINER_ABSENT:    'Trainer Absent',
+  MEMBER_NO_SHOW:    'No-Show',
+  DISPUTED:          'Disputed',
+  RESOLVED_BY_ADMIN: 'Resolved',
+  MUTUAL_ABSENCE:    'Mutual Absence',
+  EXPIRED_UNCLAIMED: 'Expired',
+};
+
+const STATUS_CLASSES = {
+  AVAILABLE:         'status-available',
+  PENDING:           'status-booked',
+  ATTENDED:          'status-attended',
+  TRAINER_ABSENT:    'status-trainer-absent',
+  MEMBER_NO_SHOW:    'status-no-show',
+  DISPUTED:          'status-disputed',
+  RESOLVED_BY_ADMIN: 'status-resolved',
+  MUTUAL_ABSENCE:    'status-mutual',
+  EXPIRED_UNCLAIMED: 'status-expired',
+};
+
+const getStatusLabel = (s) => STATUS_LABELS[s] || s || 'Unknown';
+const getStatusClass = (s) => STATUS_CLASSES[s] || '';
+
 const TrainerPTRoster = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
   const normalizedTab = (rawTab === 'assessments' || rawTab === 'assessment-workbench')
-    ? 'assessment-workbench' 
+    ? 'assessment-workbench'
     : (rawTab || 'roster-desk');
 
-  const [activeTab, setActiveTab] = useState(normalizedTab); // 'roster-desk', 'assessment-workbench', 'diet-plans'
+  const [activeTab, setActiveTab] = useState(normalizedTab);
 
   useEffect(() => {
     if (rawTab) {
       const target = (rawTab === 'assessments' || rawTab === 'assessment-workbench')
-        ? 'assessment-workbench' 
+        ? 'assessment-workbench'
         : rawTab;
       setActiveTab(target);
     }
@@ -34,10 +62,17 @@ const TrainerPTRoster = () => {
     setActiveTab(tabKey);
     setSearchParams({ tab: tabKey });
   };
+
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
 
-  // ─── SLOTS & DAYS ─────────────────────────────────────────────────────────
+  // ─── TOAST ───────────────────────────────────────────────────────────────
+  const [toast, setToast] = useState({ show: false, type: '', message: '' });
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, type, message });
+    setTimeout(() => setToast({ show: false, type: '', message: '' }), 4000);
+  };
 
+  // ─── DAYS DEFINITION ─────────────────────────────────────────────────────
   const daysDef = [
     { day_id: 1, label: 'Mon' },
     { day_id: 2, label: 'Tue' },
@@ -45,12 +80,24 @@ const TrainerPTRoster = () => {
     { day_id: 4, label: 'Thu' },
     { day_id: 5, label: 'Fri' },
     { day_id: 6, label: 'Sat' },
-    { day_id: 7, label: 'Sun' }
+    { day_id: 7, label: 'Sun' },
   ];
 
-  // Dynamic PT slots fetched from API
+  // ─── PT SLOTS (from API, with static fallback) ────────────────────────────
   const [ptSlots, setPtSlots] = useState([]);
   const [isSlotsLoading, setIsSlotsLoading] = useState(false);
+
+  const staticFallbackSlots = [
+    { slot_id: 1,  slot_name: 'Morning Slot 1', start_time: '06:00:00', end_time: '07:30:00' },
+    { slot_id: 2,  slot_name: 'Morning Slot 2', start_time: '07:30:00', end_time: '09:00:00' },
+    { slot_id: 3,  slot_name: 'Morning Slot 3', start_time: '08:30:00', end_time: '10:30:00' },
+    { slot_id: 4,  slot_name: 'Midday Slot 1',  start_time: '10:30:00', end_time: '12:00:00' },
+    { slot_id: 5,  slot_name: 'Midday Slot 2',  start_time: '12:30:00', end_time: '15:00:00' },
+    { slot_id: 6,  slot_name: 'Evening Slot 1', start_time: '15:00:00', end_time: '16:30:00' },
+    { slot_id: 7,  slot_name: 'Evening Slot 2', start_time: '16:30:00', end_time: '18:00:00' },
+    { slot_id: 8,  slot_name: 'Evening Slot 3', start_time: '18:00:00', end_time: '19:30:00' },
+    { slot_id: 9,  slot_name: 'Night Slot 1',   start_time: '19:30:00', end_time: '21:00:00' },
+  ];
 
   const fetchPtSlots = useCallback(async () => {
     setIsSlotsLoading(true);
@@ -58,105 +105,100 @@ const TrainerPTRoster = () => {
       const res = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/pt-slots`);
       if (res.ok) {
         const data = await res.json();
-        if (data.status === 'success' && Array.isArray(data.data)) {
+        if (data.status === 'success' && Array.isArray(data.data) && data.data.length > 0) {
           setPtSlots(data.data);
           setIsSlotsLoading(false);
           return data.data;
         }
       }
-    } catch (_) { /* fall through to fallback */ }
-    // Fallback static slots
-    const fallback = [
-      { slot_id: 1, slot_name: 'Morning Slot 1', start_time: '06:00:00', end_time: '07:30:00' },
-      { slot_id: 2, slot_name: 'Morning Slot 2', start_time: '07:30:00', end_time: '09:00:00' },
-      { slot_id: 3, slot_name: 'Morning Slot 3', start_time: '08:30:00', end_time: '10:30:00' },
-      { slot_id: 4, slot_name: 'Midday Slot 1',  start_time: '10:30:00', end_time: '12:00:00' },
-      { slot_id: 5, slot_name: 'Midday Slot 2',  start_time: '12:30:00', end_time: '15:00:00' },
-      { slot_id: 6, slot_name: 'Evening Slot 1', start_time: '15:00:00', end_time: '16:30:00' },
-      { slot_id: 7, slot_name: 'Evening Slot 2', start_time: '16:30:00', end_time: '18:00:00' },
-      { slot_id: 8, slot_name: 'Evening Slot 3', start_time: '18:00:00', end_time: '19:30:00' },
-      { slot_id: 9, slot_name: 'Night Slot 1',   start_time: '19:30:00', end_time: '21:00:00' }
-    ];
-    setPtSlots(fallback);
+    } catch (_) { /* fall through */ }
+    setPtSlots(staticFallbackSlots);
     setIsSlotsLoading(false);
-    return fallback;
-  }, [API_BASE_URL]);
+    return staticFallbackSlots;
+  }, [API_BASE_URL]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ─── WEEKLY AVAILABILITY TEMPLATE ─────────────────────────────────────────
-  const [templateMatrix, setTemplateMatrix] = useState({});
-  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
-
+  // ─── WEEKLY AVAILABILITY TEMPLATE ────────────────────────────────────────
+  // templateMatrix: { dayId (int): [slot_id, slot_id, ...] }
   const buildEmptyMatrix = () =>
     daysDef.reduce((acc, d) => { acc[d.day_id] = []; return acc; }, {});
 
-  // Load PT slots on mount; template starts empty (no GET endpoint available)
+  const [templateMatrix, setTemplateMatrix] = useState({});
+  const [isTemplateLoading, setIsTemplateLoading] = useState(false);
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+
+  // GET /api/trainer/availability/template
+  // Response: { data: { "1": [{slot_id, slot_name, start_time, end_time},...], "2": [], ... } }
+  const fetchAvailabilityTemplate = useCallback(async () => {
+    setIsTemplateLoading(true);
+    try {
+      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/trainer/availability/template`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'success' && data.data) {
+          // Convert API format { "1": [{slot_id: 16,...}] } → { 1: [16,...] }
+          const matrix = buildEmptyMatrix();
+          Object.entries(data.data).forEach(([dayStr, slots]) => {
+            const dayId = parseInt(dayStr);
+            if (matrix.hasOwnProperty(dayId)) {
+              matrix[dayId] = Array.isArray(slots) ? slots.map(s => s.slot_id) : [];
+            }
+          });
+          setTemplateMatrix(matrix);
+          setIsTemplateLoading(false);
+          return;
+        }
+      }
+    } catch (_) { /* fall through */ }
+    setTemplateMatrix(buildEmptyMatrix());
+    setIsTemplateLoading(false);
+  }, [API_BASE_URL]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load both slots & template on mount
   useEffect(() => {
-    fetchPtSlots().then(() => {
-      setTemplateMatrix(buildEmptyMatrix());
-    });
+    fetchPtSlots();
+    fetchAvailabilityTemplate();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ─── DAILY ROSTER ──────────────────────────────────────────────────────────
+  const toggleTemplateSlot = (dayId, slotId) => {
+    setTemplateMatrix(prev => {
+      const current = prev[dayId] || [];
+      const has = current.includes(slotId);
+      return { ...prev, [dayId]: has ? current.filter(id => id !== slotId) : [...current, slotId] };
+    });
+  };
+
+  // POST /api/trainer/availability/template
+  const handleSaveTemplate = async () => {
+    setIsSavingTemplate(true);
+    const daysPayload = Object.keys(templateMatrix).map(dayId => ({
+      day_of_week: parseInt(dayId),
+      slots: templateMatrix[dayId],
+    }));
+    try {
+      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/trainer/availability/template`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days: daysPayload }),
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        showToast('Weekly availability template updated successfully!');
+      } else {
+        showToast(data.message || 'Failed to save template.', 'error');
+      }
+    } catch (_) {
+      showToast('Could not reach server. Please try again.', 'error');
+    } finally {
+      setIsSavingTemplate(false);
+    }
+  };
+
+  // ─── DAILY ROSTER ─────────────────────────────────────────────────────────
   const [selectedDate, setSelectedDate] = useState(toLocalDateString(new Date()));
   const [rosterData, setRosterData] = useState([]);
   const [isLoadingRoster, setIsLoadingRoster] = useState(false);
 
-  // Active Handshake Modal (PIN Generator)
-  const [activeHandshakeSchedule, setActiveHandshakeSchedule] = useState(null);
-  const [workoutSummary, setWorkoutSummary] = useState('');
-  const [generatedPin, setGeneratedPin] = useState(null);
-  const [isCompletingSession, setIsCompletingSession] = useState(false);
-
-  // Assessment Workbench
-  const [rosterClients, setRosterClients] = useState([]);
-  const [workbenchMemberId, setWorkbenchMemberId] = useState('');
-  const [workbenchType, setWorkbenchType] = useState('PROGRESS');
-  const [vitals, setVitals] = useState({ systolic: '', diastolic: '', hr: '' });
-  const [circumferences, setCircumferences] = useState({ waist: '', lowerWaist: '', hip: '', chest: '', arms: '', thigh: '' });
-  const [scores, setScores] = useState({ bodyComp: '', vitals: '', flexibility: '', measurements: '', trainerScore: '' });
-  const [photos, setPhotos] = useState({ front: null, back: null, left: null, right: null });
-  const [isSavingAssessment, setIsSavingAssessment] = useState(false);
-
-  // Toast
-  const [toast, setToast] = useState({ show: false, type: '', message: '' });
-
-  const showToast = (message, type = 'success') => {
-    setToast({ show: true, type, message });
-    setTimeout(() => setToast({ show: false, type: '', message: '' }), 4000);
-  };
-
-  // Build roster client list from loaded roster data
-  useEffect(() => {
-    setRosterClients(prev => {
-      const existingIds = new Set(prev.map(c => c.member_id));
-      const newClients = rosterData
-        .filter(r => r.member_id && !existingIds.has(r.member_id))
-        .map(r => ({ member_id: r.member_id, member_name: r.member_name, member_email: r.member_email || '' }));
-      return [...prev, ...newClients];
-    });
-  }, [rosterData]);
-
-  // Status helpers
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case 'BOOKED':    return 'Upcoming';
-      case 'PENDING':   return 'Pending PIN';
-      case 'ATTENDED':  return 'Attended';
-      case 'AVAILABLE': return 'Open Slot';
-      default:          return status || 'Unknown';
-    }
-  };
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'BOOKED':    return 'status-booked';
-      case 'PENDING':   return 'status-pending';
-      case 'ATTENDED':  return 'status-attended';
-      case 'AVAILABLE': return 'status-available';
-      default:          return '';
-    }
-  };
-
-  // API 4: Query Trainer Booking Roster
+  // GET /api/trainer/roster?date=YYYY-MM-DD
   const fetchTrainerRoster = useCallback(async (dateStr) => {
     setIsLoadingRoster(true);
     try {
@@ -180,46 +222,41 @@ const TrainerPTRoster = () => {
     fetchTrainerRoster(selectedDate);
   }, [selectedDate, fetchTrainerRoster]);
 
-  // Toggle template slot
-  const toggleTemplateSlot = (dayId, slotId) => {
-    setTemplateMatrix(prev => {
-      const current = prev[dayId] || [];
-      const has = current.includes(slotId);
-      return { ...prev, [dayId]: has ? current.filter(id => id !== slotId) : [...current, slotId] };
+  // Build assessment client list from roster
+  const [rosterClients, setRosterClients] = useState([]);
+  useEffect(() => {
+    setRosterClients(prev => {
+      const existingIds = new Set(prev.map(c => c.member_id));
+      const newClients = rosterData
+        .filter(r => r.member_id && !existingIds.has(r.member_id))
+        .map(r => ({ member_id: r.member_id, member_name: r.member_name, member_email: r.member_email || '' }));
+      return [...prev, ...newClients];
     });
-  };
+  }, [rosterData]);
 
-  // API 3: Save Trainer Weekly Repeating Template
-  const handleSaveTemplate = async () => {
-    setIsSavingTemplate(true);
-    const daysPayload = Object.keys(templateMatrix).map(dayId => ({
-      day_of_week: parseInt(dayId),
-      slots: templateMatrix[dayId]
-    }));
-    try {
-      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/trainer/availability/template`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ days: daysPayload })
-      });
-      const data = await res.json();
-      if (res.ok && data.status === 'success') {
-        showToast('Weekly availability template updated successfully!');
-      } else {
-        showToast(data.message || 'Failed to save template.', 'error');
-      }
-    } catch (_) {
-      showToast('Could not reach server. Please try again.', 'error');
-    } finally {
-      setIsSavingTemplate(false);
-    }
-  };
+  // ─── API T1: INITIATE SESSION COMPLETION (PIN GENERATOR) ─────────────────
+  // POST /api/trainer/session/complete  body: { schedule_id }
+  const [activeHandshakeSchedule, setActiveHandshakeSchedule] = useState(null);
+  const [generatedPin, setGeneratedPin] = useState(null);
+  const [isCompletingSession, setIsCompletingSession] = useState(false);
 
-  // API 7: Initiate Session Completion (Generate PIN)
   const handleInitiateHandshake = (schedule) => {
     setActiveHandshakeSchedule(schedule);
-    setWorkoutSummary('');
     setGeneratedPin(null);
+  };
+
+  // Reads body as text first so the raw server response is always visible in the console,
+  // then parses as JSON. Returns null if body is empty or unparseable.
+  const safeJson = async (res) => {
+    try {
+      const text = await res.text();
+      console.log(`[API ${res.status}] raw body:`, text || '(empty)');
+      if (!text || !text.trim()) return null;
+      return JSON.parse(text);
+    } catch (e) {
+      console.warn('[safeJson] parse error:', e);
+      return null;
+    }
   };
 
   const handleGeneratePinSubmit = async (e) => {
@@ -230,34 +267,140 @@ const TrainerPTRoster = () => {
       const res = await tokenManager.apiCall(`${API_BASE_URL}/api/trainer/session/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          schedule_id: activeHandshakeSchedule.schedule_id,
-          workout_summary: workoutSummary || 'Standard 1-on-1 PT Session completed.'
-        })
+        body: JSON.stringify({ schedule_id: activeHandshakeSchedule.schedule_id }),
       });
-      const data = await res.json();
-      if (res.ok && data.status === 'success') {
-        setGeneratedPin(data.verification_pin);
-        showToast('Completion handshake initiated! Share PIN with member.');
+      const data = await safeJson(res);
+
+      if (res.ok) {
+        // Server returned 200 — extract PIN wherever it is in the response shape
+        // API doc: { status: 'success', schedule_id, verification_pin }
+        const pin = data?.verification_pin ?? data?.data?.verification_pin ?? null;
+        if (pin !== null && pin !== undefined) {
+          setGeneratedPin(pin);
+          showToast('Completion handshake initiated! Share PIN with member.');
+        } else if (data?.status === 'success' || data === null) {
+          // 200 but no pin in body — server may have already set it;
+          // re-fetch roster to pull the actual pin from the schedule row
+          showToast('Session marked complete. Fetching PIN from roster...', 'success');
+          try {
+            const rosterRes = await tokenManager.apiCall(`${API_BASE_URL}/api/trainer/roster?date=${selectedDate}`);
+            const rosterData = await safeJson(rosterRes);
+            const updated = rosterData?.data?.find(s => s.schedule_id === activeHandshakeSchedule.schedule_id);
+            if (updated?.verification_pin) {
+              setGeneratedPin(updated.verification_pin);
+            } else {
+              // PIN not in roster yet — just show success and close
+              showToast('Session completed! The member will receive the PIN in their app.', 'success');
+              closeHandshakeModal();
+            }
+          } catch (_) {
+            showToast('Session completed! Close this modal and refresh.', 'success');
+            closeHandshakeModal();
+          }
+        } else {
+          showToast(data?.message || `Failed (${res.status}). Please try again.`, 'error');
+          console.error('[Complete Session] unexpected 200 body:', data);
+        }
       } else {
-        showToast(data.message || 'Failed to generate PIN.', 'error');
+        const msg = data?.message || `Server error (${res.status}). Please try again.`;
+        showToast(msg, 'error');
+        console.error('[Complete Session]', res.status, data);
       }
-    } catch (_) {
-      showToast('Network error. Could not generate PIN.', 'error');
+    } catch (err) {
+      console.error('[Complete Session] threw:', err);
+      showToast(`Request failed: ${err?.message || 'Unknown error'}`, 'error');
     } finally {
       setIsCompletingSession(false);
     }
   };
 
-  // Close handshake modal & refresh roster
   const closeHandshakeModal = () => {
     setActiveHandshakeSchedule(null);
     setGeneratedPin(null);
-    setWorkoutSummary('');
     fetchTrainerRoster(selectedDate);
   };
 
-  // Save Assessment — real API call
+  // ─── API T2: RELEASE SESSION (SOFT CANCEL) ───────────────────────────────
+  // POST /api/trainer/session/release  body: { schedule_id }
+  const [isReleasing, setIsReleasing] = useState(false);
+
+  const handleReleaseSession = async (schedule) => {
+    if (!window.confirm(`Release booking for ${schedule.member_name}? This returns the slot to AVAILABLE without any credit penalty.`)) return;
+    setIsReleasing(true);
+    try {
+      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/trainer/session/release`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schedule_id: schedule.schedule_id }),
+      });
+      const data = await safeJson(res);
+      if (res.ok && data?.status === 'success') {
+        showToast('Session released. Slot is now AVAILABLE.');
+        fetchTrainerRoster(selectedDate);
+      } else {
+        const msg = data?.message || `Server error (${res.status}).`;
+        showToast(msg, 'error');
+        console.error('[Release Session]', res.status, data);
+      }
+    } catch (err) {
+      console.error('[Release Session] threw:', err);
+      showToast(`Request failed: ${err?.message || 'Unknown error'}`, 'error');
+    } finally {
+      setIsReleasing(false);
+    }
+  };
+
+  // ─── API T3: FLAG CLIENT NO-SHOW ─────────────────────────────────────────
+  // POST /api/trainer/session/no-show  body: { schedule_id, reason }
+  const [noShowModal, setNoShowModal] = useState(null); // schedule object
+  const [noShowReason, setNoShowReason] = useState('');
+  const [isSubmittingNoShow, setIsSubmittingNoShow] = useState(false);
+
+  const handleNoShowSubmit = async (e) => {
+    e.preventDefault();
+    if (!noShowModal) return;
+    setIsSubmittingNoShow(true);
+    try {
+      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/trainer/session/no-show`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          schedule_id: noShowModal.schedule_id,
+          reason: noShowReason || 'Client did not attend session.',
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        showToast('No-show flagged. 1 client credit consumed.');
+        setNoShowModal(null);
+        setNoShowReason('');
+        fetchTrainerRoster(selectedDate);
+      } else {
+        showToast(data.message || 'Failed to flag no-show.', 'error');
+      }
+    } catch (_) {
+      showToast('Network error. Could not flag no-show.', 'error');
+    } finally {
+      setIsSubmittingNoShow(false);
+    }
+  };
+
+  // ─── ASSESSMENT WORKBENCH ─────────────────────────────────────────────────
+  const [workbenchMemberId, setWorkbenchMemberId] = useState('');
+  const [workbenchType, setWorkbenchType] = useState('PROGRESS');
+  const [vitals, setVitals] = useState({ systolic: '', diastolic: '', hr: '' });
+  const [circumferences, setCircumferences] = useState({ waist: '', lowerWaist: '', hip: '', chest: '', arms: '', thigh: '' });
+  const [scores, setScores] = useState({ bodyComp: '', vitals: '', flexibility: '', measurements: '', trainerScore: '' });
+  const [photos, setPhotos] = useState({ front: null, back: null, left: null, right: null });
+  const [isSavingAssessment, setIsSavingAssessment] = useState(false);
+
+  const overallScore =
+    (parseInt(scores.bodyComp) || 0) +
+    (parseInt(scores.vitals) || 0) +
+    (parseInt(scores.flexibility) || 0) +
+    (parseInt(scores.measurements) || 0) +
+    (parseInt(scores.trainerScore) || 0);
+
   const handleSaveAssessment = async (e) => {
     e.preventDefault();
     if (!workbenchMemberId) {
@@ -272,7 +415,7 @@ const TrainerPTRoster = () => {
         vitals: {
           systolic: parseInt(vitals.systolic) || null,
           diastolic: parseInt(vitals.diastolic) || null,
-          heart_rate: parseInt(vitals.hr) || null
+          heart_rate: parseInt(vitals.hr) || null,
         },
         circumferences: {
           waist: parseFloat(circumferences.waist) || null,
@@ -280,7 +423,7 @@ const TrainerPTRoster = () => {
           hip: parseFloat(circumferences.hip) || null,
           chest: parseFloat(circumferences.chest) || null,
           arms: parseFloat(circumferences.arms) || null,
-          thigh: parseFloat(circumferences.thigh) || null
+          thigh: parseFloat(circumferences.thigh) || null,
         },
         scores: {
           body_composition: parseInt(scores.bodyComp) || null,
@@ -288,13 +431,13 @@ const TrainerPTRoster = () => {
           flexibility: parseInt(scores.flexibility) || null,
           measurements: parseInt(scores.measurements) || null,
           trainer_score: parseInt(scores.trainerScore) || null,
-          overall: overallScore
-        }
+          overall: overallScore,
+        },
       };
       const res = await tokenManager.apiCall(`${API_BASE_URL}/api/trainer/assessment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (res.ok && (data.status === 'success' || res.status === 201)) {
@@ -313,7 +456,6 @@ const TrainerPTRoster = () => {
     }
   };
 
-  // Photo Upload
   const handlePhotoUpload = (view, e) => {
     const file = e.target.files[0];
     if (file) {
@@ -323,12 +465,7 @@ const TrainerPTRoster = () => {
     }
   };
 
-  const overallScore = (parseInt(scores.bodyComp) || 0)
-    + (parseInt(scores.vitals) || 0)
-    + (parseInt(scores.flexibility) || 0)
-    + (parseInt(scores.measurements) || 0)
-    + (parseInt(scores.trainerScore) || 0);
-
+  // ─── RENDER ───────────────────────────────────────────────────────────────
   return (
     <div className="trainer-roster-container">
       {/* Toast */}
@@ -343,38 +480,32 @@ const TrainerPTRoster = () => {
       <div className="tr-header">
         <div>
           <h1 className="tr-title">
-            <i className="fas fa-calendar-check text-primary"></i> PT Roster & Assessment Workbench
+            <i className="fas fa-calendar-check text-primary"></i> PT Roster &amp; Assessment Workbench
           </h1>
-          <p className="tr-subtitle">Manage weekly repeating shifts, execute session completion PIN handshakes, and record client multi-metric assessments.</p>
+          <p className="tr-subtitle">
+            Manage weekly repeating shifts, execute session completion PIN handshakes, flag no-shows, and record client assessments.
+          </p>
         </div>
       </div>
 
       {/* Navigation Tabs */}
       <div className="tr-nav-tabs">
-        <button
-          className={`tr-tab-btn ${activeTab === 'roster-desk' ? 'active' : ''}`}
-          onClick={() => handleTabChange('roster-desk')}
-        >
-          <i className="fas fa-clock"></i> 2.1 Baseline Scheduling & Roster Desk
+        <button className={`tr-tab-btn ${activeTab === 'roster-desk' ? 'active' : ''}`} onClick={() => handleTabChange('roster-desk')}>
+          <i className="fas fa-clock"></i> 2.1 Baseline Scheduling &amp; Roster Desk
         </button>
-        <button
-          className={`tr-tab-btn ${activeTab === 'assessment-workbench' ? 'active' : ''}`}
-          onClick={() => handleTabChange('assessment-workbench')}
-        >
+        <button className={`tr-tab-btn ${activeTab === 'assessment-workbench' ? 'active' : ''}`} onClick={() => handleTabChange('assessment-workbench')}>
           <i className="fas fa-notes-medical"></i> 2.2 Multi-Metric Assessment Workbench
         </button>
-        <button
-          className={`tr-tab-btn ${activeTab === 'diet-plans' ? 'active' : ''}`}
-          onClick={() => handleTabChange('diet-plans')}
-        >
+        <button className={`tr-tab-btn ${activeTab === 'diet-plans' ? 'active' : ''}`} onClick={() => handleTabChange('diet-plans')}>
           <i className="fas fa-seedling"></i> Diet Plans Hub
         </button>
       </div>
 
-      {/* TAB 1: SCREEN 2.1 WEEKLY BASELINE SCHEDULING & ROSTER DESK */}
+      {/* ══ TAB 1: SCREEN 2.1 WEEKLY BASELINE SCHEDULING & ROSTER DESK ══ */}
       {activeTab === 'roster-desk' && (
         <div className="tr-tab-content fade-in">
           <div className="tr-grid-roster">
+
             {/* WEEKLY AVAILABILITY TEMPLATE GRID */}
             <div className="tr-card">
               <h3 className="card-title">
@@ -382,9 +513,9 @@ const TrainerPTRoster = () => {
               </h3>
               <p className="card-desc">Click chips to toggle your weekly repeating available time slots.</p>
 
-              {isSlotsLoading ? (
+              {isSlotsLoading || isTemplateLoading ? (
                 <div className="loader-box">
-                  <i className="fas fa-spinner fa-spin"></i> Loading slots...
+                  <i className="fas fa-spinner fa-spin"></i> Loading template...
                 </div>
               ) : (
                 <div className="template-matrix-wrapper">
@@ -424,13 +555,12 @@ const TrainerPTRoster = () => {
                 type="button"
                 className="tr-btn tr-btn-success btn-block mt-4"
                 onClick={handleSaveTemplate}
-                disabled={isSavingTemplate || isSlotsLoading}
+                disabled={isSavingTemplate || isSlotsLoading || isTemplateLoading}
               >
-                {isSavingTemplate ? (
-                  <><i className="fas fa-spinner fa-spin"></i> Saving Template...</>
-                ) : (
-                  <><i className="fas fa-save"></i> Save Core Repeating Shifts</>
-                )}
+                {isSavingTemplate
+                  ? <><i className="fas fa-spinner fa-spin"></i> Saving Template...</>
+                  : <><i className="fas fa-save"></i> Save Core Repeating Shifts</>
+                }
               </button>
             </div>
 
@@ -458,12 +588,16 @@ const TrainerPTRoster = () => {
                 <div className="empty-roster-state">
                   <i className="fas fa-calendar-times"></i>
                   <p>No sessions scheduled for this date.</p>
-                  <span>Slots will appear here once schedule is generated by admin.</span>
+                  <span>Slots appear once the admin generates a PT schedule for this week.</span>
                 </div>
               ) : (
                 <div className="roster-list-stack mt-3">
                   {rosterData.map(item => (
-                    <div key={item.schedule_id} className={`roster-slot-card status-border-${item.session_status?.toLowerCase()}`}>
+                    <div
+                      key={item.schedule_id}
+                      className={`roster-slot-card status-border-${item.session_status?.toLowerCase().replace(/_/g, '-')}`}
+                    >
+                      {/* Time */}
                       <div className="roster-time-col">
                         <i className="far fa-clock"></i>
                         <span>
@@ -471,6 +605,7 @@ const TrainerPTRoster = () => {
                         </span>
                       </div>
 
+                      {/* Member info */}
                       <div className="roster-info-col">
                         {item.member_name ? (
                           <>
@@ -483,23 +618,58 @@ const TrainerPTRoster = () => {
                         )}
                       </div>
 
+                      {/* Status + Actions */}
                       <div className="roster-action-col">
                         <span className={`status-tag ${getStatusClass(item.session_status)}`}>
                           {getStatusLabel(item.session_status)}
                         </span>
 
-                        {item.member_name && item.session_status === 'BOOKED' && (
-                          <button
-                            className="tr-btn tr-btn-outline-primary btn-sm"
-                            onClick={() => handleInitiateHandshake(item)}
-                          >
-                            <i className="fas fa-handshake"></i> Complete Session
-                          </button>
+                        {/* PENDING → 3 actions: Complete (T1), Release (T2), No-Show (T3) */}
+                        {item.member_name && item.session_status === 'PENDING' && (
+                          <div className="action-btn-group">
+                            <button
+                              className="tr-btn tr-btn-outline-primary btn-sm"
+                              onClick={() => handleInitiateHandshake(item)}
+                              title="Generate PIN for session completion"
+                            >
+                              <i className="fas fa-key"></i> Complete
+                            </button>
+                            <button
+                              className="tr-btn tr-btn-outline-warning btn-sm"
+                              onClick={() => handleReleaseSession(item)}
+                              disabled={isReleasing}
+                              title="Release slot back to AVAILABLE (no credit penalty)"
+                            >
+                              <i className="fas fa-undo"></i> Release
+                            </button>
+                            <button
+                              className="tr-btn tr-btn-outline-danger btn-sm"
+                              onClick={() => { setNoShowModal(item); setNoShowReason(''); }}
+                              title="Flag client no-show (consumes 1 credit)"
+                            >
+                              <i className="fas fa-user-slash"></i> No-Show
+                            </button>
+                          </div>
                         )}
 
-                        {item.member_name && item.session_status === 'PENDING' && (
-                          <span className="pending-info-tag">
-                            <i className="fas fa-hourglass-half"></i> Awaiting member PIN
+                        {/* MEMBER_NO_SHOW → awaiting member dispute or admin resolution */}
+                        {item.session_status === 'MEMBER_NO_SHOW' && (
+                          <span className="pending-info-tag pending-info-warning">
+                            <i className="fas fa-exclamation-triangle"></i> Awaiting member response
+                          </span>
+                        )}
+
+                        {/* DISPUTED → awaiting admin arbitration */}
+                        {item.session_status === 'DISPUTED' && (
+                          <span className="pending-info-tag pending-info-danger">
+                            <i className="fas fa-gavel"></i> Disputed — Admin review pending
+                          </span>
+                        )}
+
+                        {/* TRAINER_ABSENT → member reported absence */}
+                        {item.session_status === 'TRAINER_ABSENT' && (
+                          <span className="pending-info-tag pending-info-warning">
+                            <i className="fas fa-door-open"></i> Absence reported by member
                           </span>
                         )}
                       </div>
@@ -512,7 +682,7 @@ const TrainerPTRoster = () => {
         </div>
       )}
 
-      {/* SCREEN 2.3 ACTIVE ATTENDANCE HANDSHAKE MODAL POPOVER */}
+      {/* ══ MODAL: SESSION COMPLETION HANDSHAKE (API T1) ══ */}
       {activeHandshakeSchedule && (
         <div className="tr-modal-backdrop">
           <div className="tr-modal-card">
@@ -536,34 +706,21 @@ const TrainerPTRoster = () => {
                   <div><strong>Date:</strong> {activeHandshakeSchedule.session_date}</div>
                 </div>
 
-                <div className="form-group">
-                  <label>Workout Summary &amp; Trainer Notes</label>
-                  <textarea
-                    className="tr-textarea"
-                    rows="3"
-                    placeholder="Assisted bench press: 3x10. Squats: 4x8..."
-                    value={workoutSummary}
-                    onChange={(e) => setWorkoutSummary(e.target.value)}
-                    required
-                  />
-                </div>
+                <p className="modal-help-text">
+                  <i className="fas fa-info-circle"></i> A 4-digit PIN will be generated and must be shown to the member. They enter it in their app to confirm attendance and deduct 1 credit.
+                </p>
 
-                <button
-                  type="submit"
-                  className="tr-btn tr-btn-primary btn-block"
-                  disabled={isCompletingSession}
-                >
-                  {isCompletingSession ? (
-                    <><i className="fas fa-spinner fa-spin"></i> Generating PIN...</>
-                  ) : (
-                    <><i className="fas fa-key"></i> Generate Validation Code PIN</>
-                  )}
+                <button type="submit" className="tr-btn tr-btn-primary btn-block" disabled={isCompletingSession}>
+                  {isCompletingSession
+                    ? <><i className="fas fa-spinner fa-spin"></i> Generating PIN...</>
+                    : <><i className="fas fa-key"></i> Generate Validation PIN</>
+                  }
                 </button>
               </form>
             ) : (
               <div className="pin-generated-display text-center fade-in">
                 <p className="pin-title">Share Validation Code with Member</p>
-                <p className="pin-subtitle">Show this code to the member to complete the session</p>
+                <p className="pin-subtitle">Show this PIN to the member — they enter it in their app to finalise attendance</p>
 
                 <div className="pin-digits-flex">
                   {String(generatedPin).padStart(4, '0').split('').map((digit, idx) => (
@@ -574,14 +731,11 @@ const TrainerPTRoster = () => {
                 <div className="pin-info-notice">
                   <i className="fas fa-info-circle text-info"></i>
                   <span>
-                    Please show this validation code to the member. Have them enter it into their mobile app screen to officially finalize attendance and deduct their session token credit.
+                    Once the member enters this PIN in their mobile app, the session status changes to <strong>ATTENDED</strong> and 1 credit is deducted from their wallet automatically.
                   </span>
                 </div>
 
-                <button
-                  className="tr-btn tr-btn-secondary btn-block mt-4"
-                  onClick={closeHandshakeModal}
-                >
+                <button className="tr-btn tr-btn-secondary btn-block mt-4" onClick={closeHandshakeModal}>
                   Close &amp; Refresh Roster
                 </button>
               </div>
@@ -590,7 +744,58 @@ const TrainerPTRoster = () => {
         </div>
       )}
 
-      {/* TAB 2: SCREEN 2.2 COMPREHENSIVE MULTI-METRIC ASSESSMENT WORKBENCH */}
+      {/* ══ MODAL: FLAG NO-SHOW (API T3) ══ */}
+      {noShowModal && (
+        <div className="tr-modal-backdrop">
+          <div className="tr-modal-card">
+            <div className="modal-header-flex">
+              <h3 className="modal-title">
+                <i className="fas fa-user-slash text-danger"></i> Flag Client No-Show
+              </h3>
+              <button className="close-btn" onClick={() => setNoShowModal(null)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <form onSubmit={handleNoShowSubmit} className="form-stack mt-3">
+              <div className="session-summary-banner">
+                <div><strong>Client:</strong> {noShowModal.member_name}</div>
+                <div>
+                  <strong>Time:</strong>{' '}
+                  {noShowModal.start_time?.substring(0, 5)} – {noShowModal.end_time?.substring(0, 5)}
+                </div>
+                <div><strong>Date:</strong> {noShowModal.session_date}</div>
+              </div>
+
+              <div className="no-show-warning-box">
+                <i className="fas fa-exclamation-triangle"></i>
+                <span>This will <strong>immediately deduct 1 credit</strong> from the client's wallet. The member can contest this via their app, which will create a <strong>DISPUTED</strong> case for admin resolution.</span>
+              </div>
+
+              <div className="form-group">
+                <label>Trainer Notes / Reason for No-Show</label>
+                <textarea
+                  className="tr-textarea"
+                  rows="3"
+                  placeholder="e.g. Client did not attend. I was present at the session location from 10:00–10:30 AM."
+                  value={noShowReason}
+                  onChange={(e) => setNoShowReason(e.target.value)}
+                  required
+                />
+              </div>
+
+              <button type="submit" className="tr-btn tr-btn-danger btn-block" disabled={isSubmittingNoShow}>
+                {isSubmittingNoShow
+                  ? <><i className="fas fa-spinner fa-spin"></i> Submitting...</>
+                  : <><i className="fas fa-user-slash"></i> Confirm No-Show &amp; Deduct Credit</>
+                }
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══ TAB 2: SCREEN 2.2 COMPREHENSIVE MULTI-METRIC ASSESSMENT WORKBENCH ══ */}
       {activeTab === 'assessment-workbench' && (
         <div className="tr-tab-content fade-in">
           <form onSubmit={handleSaveAssessment} className="tr-card">
@@ -618,11 +823,7 @@ const TrainerPTRoster = () => {
 
               <div className="wb-type-select">
                 <label>Assessment Type</label>
-                <select
-                  className="tr-select"
-                  value={workbenchType}
-                  onChange={(e) => setWorkbenchType(e.target.value)}
-                >
+                <select className="tr-select" value={workbenchType} onChange={(e) => setWorkbenchType(e.target.value)}>
                   <option value="INITIAL">INITIAL</option>
                   <option value="PROGRESS">PROGRESS</option>
                   <option value="FINAL">FINAL</option>
@@ -636,9 +837,9 @@ const TrainerPTRoster = () => {
             </div>
 
             <div className="tr-grid-workbench mt-4">
-              {/* Left Column: Metrics Input Sections */}
+              {/* Left Column */}
               <div className="metrics-col">
-                {/* SECTION A: VITAL SIGNS */}
+                {/* SECTION A */}
                 <div className="wb-section-box">
                   <h4 className="wb-section-title">Section A: Vital Signs</h4>
                   <div className="wb-inputs-grid-3">
@@ -660,7 +861,7 @@ const TrainerPTRoster = () => {
                   </div>
                 </div>
 
-                {/* SECTION B: CIRCUMFERENCES (cm) */}
+                {/* SECTION B */}
                 <div className="wb-section-box mt-3">
                   <h4 className="wb-section-title">Section B: Circumferences (cm)</h4>
                   <div className="wb-inputs-grid-3">
@@ -670,7 +871,7 @@ const TrainerPTRoster = () => {
                       { key: 'hip', label: 'Hip' },
                       { key: 'chest', label: 'Chest' },
                       { key: 'arms', label: 'Arms' },
-                      { key: 'thigh', label: 'Thigh' }
+                      { key: 'thigh', label: 'Thigh' },
                     ].map(({ key, label }) => (
                       <div key={key} className="form-group">
                         <label>{label}</label>
@@ -682,7 +883,7 @@ const TrainerPTRoster = () => {
                   </div>
                 </div>
 
-                {/* SECTION C: SYSTEM SCORES (out of 100) */}
+                {/* SECTION C */}
                 <div className="wb-section-box mt-3">
                   <h4 className="wb-section-title">Section C: System Scores (out of 100)</h4>
                   <div className="wb-inputs-grid-3">
@@ -715,11 +916,10 @@ const TrainerPTRoster = () => {
                 </div>
               </div>
 
-              {/* Right Column: Transformation Photos Upload Grid */}
+              {/* Right Column: Photos */}
               <div className="photos-col">
                 <div className="wb-section-box h-100">
                   <h4 className="wb-section-title">Transformation Photos</h4>
-
                   <div className="photos-upload-grid">
                     {['front', 'back', 'left', 'right'].map(view => (
                       <div key={view} className="photo-upload-box">
@@ -737,12 +937,8 @@ const TrainerPTRoster = () => {
                           </div>
                         ) : (
                           <label className="photo-drop-zone">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="display-none"
-                              onChange={(e) => handlePhotoUpload(view, e)}
-                            />
+                            <input type="file" accept="image/*" className="display-none"
+                              onChange={(e) => handlePhotoUpload(view, e)} />
                             <i className="fas fa-cloud-upload-alt"></i>
                             <span>Upload {view.charAt(0).toUpperCase() + view.slice(1)} View</span>
                           </label>
@@ -751,16 +947,11 @@ const TrainerPTRoster = () => {
                     ))}
                   </div>
 
-                  <button
-                    type="submit"
-                    className="tr-btn tr-btn-primary btn-block mt-4"
-                    disabled={isSavingAssessment}
-                  >
-                    {isSavingAssessment ? (
-                      <><i className="fas fa-spinner fa-spin"></i> Compiling...</>
-                    ) : (
-                      <><i className="fas fa-check-double"></i> Compile and Save Full Assessment</>
-                    )}
+                  <button type="submit" className="tr-btn tr-btn-primary btn-block mt-4" disabled={isSavingAssessment}>
+                    {isSavingAssessment
+                      ? <><i className="fas fa-spinner fa-spin"></i> Compiling...</>
+                      : <><i className="fas fa-check-double"></i> Compile and Save Full Assessment</>
+                    }
                   </button>
                 </div>
               </div>
@@ -769,7 +960,7 @@ const TrainerPTRoster = () => {
         </div>
       )}
 
-      {/* TAB 3: EMBEDDED DIET PLANS HUB */}
+      {/* ══ TAB 3: DIET PLANS HUB ══ */}
       {activeTab === 'diet-plans' && (
         <div className="tr-tab-content fade-in">
           <TrainerDietPlans />
