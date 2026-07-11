@@ -137,6 +137,17 @@ const AdminSidebar = ({
             <span>Gym Configuration</span>
           </NavLink>
         </div>
+
+        <div className="nav-item">
+          <NavLink 
+            to="/admin-dashboard/store-management"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            onClick={handleNavClick}
+          >
+            <i className="fas fa-store"></i>
+            <span>Store & Inventory</span>
+          </NavLink>
+        </div>
       </div>
 
       {/* Bottom Profile Card & Logout Section */}

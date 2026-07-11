@@ -187,6 +187,13 @@ const Dashboard = () => {
       title: 'Freeze Request',
       subtitle: 'Pause your membership',
       link: '/subscriptions?action=freeze'
+    },
+    {
+      icon: 'fas fa-shopping-bag',
+      color: 'orange',
+      title: 'Store Shop',
+      subtitle: 'Buy supplements & gear',
+      link: '/store'
     }
   ];
 
