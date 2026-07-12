@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { tokenManager } from '../utils/tokenManager';
 import './SubscriptionManagement.css';
 
@@ -43,8 +44,20 @@ const SubscriptionManagement = () => {
     const userData = tokenManager.getUserData();
     const isAuthorized = userData && (userData.role === 'ADMIN' || userData.role === 'SUPER-ADMIN' || userData.role === 'SUPER_ADMIN');
 
-    // Main navigation tab: 'plans' | 'subscriptions'
-    const [activeTab, setActiveTab] = useState('subscriptions');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const tabParam = searchParams.get('tab');
+    const [activeTab, setActiveTab] = useState(tabParam || 'subscriptions');
+
+    useEffect(() => {
+        if (tabParam && (tabParam === 'subscriptions' || tabParam === 'plans')) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
+
+    const handleTabChange = (tab) => {
+        setSearchParams({ tab });
+        setActiveTab(tab);
+    };
 
     // Shared loading / message state
     const [loading, setLoading] = useState(false);
@@ -682,7 +695,7 @@ const SubscriptionManagement = () => {
             <div className="sub-tabs">
                 <button
                     className={`sub-tab ${activeTab === 'subscriptions' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('subscriptions')}
+                    onClick={() => handleTabChange('subscriptions')}
                 >
                     <i className="fas fa-id-card"></i>
                     Subscriptions Operations Desk
@@ -690,7 +703,7 @@ const SubscriptionManagement = () => {
                 </button>
                 <button
                     className={`sub-tab ${activeTab === 'plans' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('plans')}
+                    onClick={() => handleTabChange('plans')}
                 >
                     <i className="fas fa-tags"></i>
                     Subscriptions & Entitlements Catalog

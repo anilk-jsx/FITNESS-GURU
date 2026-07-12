@@ -1,14 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import tokenManager from '../utils/tokenManager';
 import './AdminPayrollManagement.css';
 
 const AdminPayrollManagement = () => {
     // Current theme and API settings
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
-    const [activeTab, setActiveTab] = useState('salaries'); // 'salaries' or 'commissions'
+    const [searchParams, setSearchParams] = useSearchParams();
+    const tabParam = searchParams.get('tab');
+    const [activeTab, setActiveTab] = useState(tabParam || 'salaries'); // 'salaries' or 'commissions'
+
+    useEffect(() => {
+        if (tabParam && (tabParam === 'salaries' || tabParam === 'commissions')) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [offlineMode, setOfflineMode] = useState(false);
 
     // Dropdown options lists
     const [branches, setBranches] = useState([]);
@@ -88,193 +96,6 @@ const AdminPayrollManagement = () => {
     });
     const [payEarlyResult, setPayEarlyResult] = useState(null);
 
-    // --- MOCK DATA FOR OFFLINE/DEVELOPMENT FALLBACK ---
-    const MOCK_BRANCHES = [
-        { branch_id: 1, branch_name: "Downtown Elite Gym" },
-        { branch_id: 2, branch_name: "North Branch Health Club" },
-        { branch_id: 3, branch_name: "Westside Strength Studio" }
-    ];
-
-    const MOCK_TRAINERS = [
-        { employee_id: 4, name: "Amit Kumar", role: "TRAINER" },
-        { employee_id: 5, name: "Suresh Raina", role: "TRAINER" },
-        { employee_id: 6, name: "Pooja Hegde", role: "TRAINER" }
-    ];
-
-    const MOCK_PAYROLLS = [
-        {
-            payroll_id: 18,
-            gym_id: 1,
-            branch_id: 1,
-            employee: {
-                employee_id: 4,
-                name: "Amit Kumar",
-                role: "TRAINER",
-                phone: "9876543210"
-            },
-            pay_period: {
-                month: 7,
-                year: 2026,
-                display_name: "July 2026"
-            },
-            breakdown: {
-                base_salary: "15000.00",
-                commission_amount: "28000.00",
-                bonus: "2000.00",
-                deductions: "0.00"
-            },
-            net_payable: "45000.00",
-            includes_commission: true,
-            status: "DRAFT",
-            created_at: "2026-07-01 00:05:12",
-            paid_at: null
-        },
-        {
-            payroll_id: 19,
-            gym_id: 1,
-            branch_id: 1,
-            employee: {
-                employee_id: 8,
-                name: "Sneha Verma",
-                role: "RECEPTIONIST",
-                phone: "9876543211"
-            },
-            pay_period: {
-                month: 7,
-                year: 2026,
-                display_name: "July 2026"
-            },
-            breakdown: {
-                base_salary: "18000.00",
-                commission_amount: "0.00",
-                bonus: "0.00",
-                deductions: "500.00"
-            },
-            net_payable: "17500.00",
-            includes_commission: false,
-            status: "DRAFT",
-            created_at: "2026-07-01 00:05:12",
-            paid_at: null
-        },
-        {
-            payroll_id: 20,
-            gym_id: 1,
-            branch_id: 2,
-            employee: {
-                employee_id: 5,
-                name: "Suresh Raina",
-                role: "TRAINER",
-                phone: "9988776655"
-            },
-            pay_period: {
-                month: 7,
-                year: 2026,
-                display_name: "July 2026"
-            },
-            breakdown: {
-                base_salary: "20000.00",
-                commission_amount: "12000.00",
-                bonus: "1000.00",
-                deductions: "200.00"
-            },
-            net_payable: "32800.00",
-            includes_commission: true,
-            status: "PAID",
-            created_at: "2026-06-30 18:22:15",
-            paid_at: "2026-07-05 10:00:00"
-        },
-        {
-            payroll_id: 21,
-            gym_id: 1,
-            branch_id: 3,
-            employee: {
-                employee_id: 12,
-                name: "Karan Johar",
-                role: "MANAGER",
-                phone: "9123456789"
-            },
-            pay_period: {
-                month: 6,
-                year: 2026,
-                display_name: "June 2026"
-            },
-            breakdown: {
-                base_salary: "45000.00",
-                commission_amount: "0.00",
-                bonus: "5000.00",
-                deductions: "1000.00"
-            },
-            net_payable: "49000.00",
-            includes_commission: false,
-            status: "APPROVED",
-            created_at: "2026-06-01 09:00:00",
-            paid_at: null
-        }
-    ];
-
-    const MOCK_COMMISSIONS = [
-        {
-            commission_id: 88,
-            gym_id: 1,
-            branch_id: 1,
-            trainer_id: 4,
-            trainer_name: "Amit Kumar",
-            invoice_id: 101,
-            invoice_number: "INV-2026-0091",
-            client_name: "Rahul Sharma",
-            commission_amount: "7000.00",
-            status: "UNPAID",
-            payroll_id: null,
-            earned_at: "2026-07-01 00:01:00",
-            paid_at: null
-        },
-        {
-            commission_id: 89,
-            gym_id: 1,
-            branch_id: 1,
-            trainer_id: 4,
-            trainer_name: "Amit Kumar",
-            invoice_id: 102,
-            invoice_number: "INV-2026-0092",
-            client_name: "Pooja Shah",
-            commission_amount: "14000.00",
-            status: "UNPAID",
-            payroll_id: null,
-            earned_at: "2026-07-02 12:15:00",
-            paid_at: null
-        },
-        {
-            commission_id: 90,
-            gym_id: 1,
-            branch_id: 2,
-            trainer_id: 5,
-            trainer_name: "Suresh Raina",
-            invoice_id: 103,
-            invoice_number: "INV-2026-0095",
-            client_name: "Karan Patel",
-            commission_amount: "12000.00",
-            status: "PAID",
-            payroll_id: 20,
-            earned_at: "2026-06-25 15:30:00",
-            paid_at: "2026-07-05 10:00:00"
-        },
-        {
-            commission_id: 91,
-            gym_id: 1,
-            branch_id: 3,
-            trainer_id: 6,
-            trainer_name: "Pooja Hegde",
-            invoice_id: 104,
-            invoice_number: "INV-2026-0099",
-            client_name: "Anita Desai",
-            commission_amount: "8000.00",
-            status: "VOIDED",
-            payroll_id: null,
-            earned_at: "2026-06-15 10:00:00",
-            paid_at: null
-        }
-    ];
-
     // Fetch Branches & Trainers on Mount
     useEffect(() => {
         const fetchMetadata = async () => {
@@ -284,9 +105,7 @@ const AdminPayrollManagement = () => {
                 if (branchRes.ok) {
                     const data = await branchRes.json();
                     const branchesData = data.data || data;
-                    setBranches(Array.isArray(branchesData) ? branchesData : MOCK_BRANCHES);
-                } else {
-                    setBranches(MOCK_BRANCHES);
+                    setBranches(Array.isArray(branchesData) ? branchesData : []);
                 }
 
                 // Fetch trainers
@@ -294,14 +113,10 @@ const AdminPayrollManagement = () => {
                 if (trainerRes.ok) {
                     const data = await trainerRes.json();
                     const trainersData = data.data || data;
-                    setTrainers(Array.isArray(trainersData) ? trainersData : MOCK_TRAINERS);
-                } else {
-                    setTrainers(MOCK_TRAINERS);
+                    setTrainers(Array.isArray(trainersData) ? trainersData : []);
                 }
             } catch (err) {
-                console.warn("Using metadata mock fallbacks", err);
-                setBranches(MOCK_BRANCHES);
-                setTrainers(MOCK_TRAINERS);
+                console.error("Failed to load metadata dropdowns:", err);
             }
         };
 
@@ -347,7 +162,6 @@ const AdminPayrollManagement = () => {
                         filtered_total_deductions: "0.00",
                         filtered_grand_net_payable: "0.00"
                     });
-                    setOfflineMode(false);
                 } else {
                     throw new Error(data.message || 'Failed to fetch payroll runs');
                 }
@@ -355,63 +169,26 @@ const AdminPayrollManagement = () => {
                 throw new Error(`API returned HTTP ${res.status}`);
             }
         } catch (err) {
-            console.warn("Using Salaries Offline Mode fallback:", err);
-            setOfflineMode(true);
-            
-            // Client side mock filtering
-            let filtered = [...MOCK_PAYROLLS];
-            if (salaryFilters.status) filtered = filtered.filter(p => p.status === salaryFilters.status);
-            if (salaryFilters.role) filtered = filtered.filter(p => p.employee.role === salaryFilters.role);
-            if (salaryFilters.branch_id) filtered = filtered.filter(p => p.branch_id === parseInt(salaryFilters.branch_id));
-            if (salaryFilters.employee_id) filtered = filtered.filter(p => p.employee.employee_id === parseInt(salaryFilters.employee_id));
-            if (salaryFilters.includes_commission) filtered = filtered.filter(p => p.includes_commission);
-
-            // Time frame filtering mock-up
-            if (salaryFilters.time_frame === 'current_month') {
-                filtered = filtered.filter(p => p.pay_period.month === 7 && p.pay_period.year === 2026);
-            } else if (salaryFilters.time_frame === 'previous_month') {
-                filtered = filtered.filter(p => p.pay_period.month === 6 && p.pay_period.year === 2026);
-            }
-
-            // Exclude explicit calendar values if shortcut isn't set, or override
-            if (salaryFilters.pay_month) filtered = filtered.filter(p => p.pay_period.month === parseInt(salaryFilters.pay_month));
-            if (salaryFilters.pay_year) filtered = filtered.filter(p => p.pay_period.year === parseInt(salaryFilters.pay_year));
-
-            // Pagination calculation
-            const page = salaryFilters.page;
-            const limit = salaryFilters.limit;
-            const totalRecords = filtered.length;
-            const totalPages = Math.ceil(totalRecords / limit) || 1;
-            const paginatedPayrolls = filtered.slice((page - 1) * limit, page * limit);
-
-            // Metrics calculation
-            let totalBase = 0, totalComm = 0, totalBonus = 0, totalDeduct = 0, grandNet = 0;
-            filtered.forEach(p => {
-                totalBase += parseFloat(p.breakdown.base_salary);
-                totalComm += parseFloat(p.breakdown.commission_amount);
-                totalBonus += parseFloat(p.breakdown.bonus);
-                totalDeduct += parseFloat(p.breakdown.deductions);
-                grandNet += parseFloat(p.net_payable);
-            });
-
-            setSalariesList(paginatedPayrolls);
-            setSalariesPagination({
-                current_page: page,
-                limit,
-                total_records: totalRecords,
-                total_pages: totalPages
-            });
+            console.error("Error fetching salaries:", err);
+            setError("Payroll runs list is currently unavailable due to network connection failure.");
+            setSalariesList([]);
             setSalariesMetrics({
-                filtered_total_base_salary: totalBase.toFixed(2),
-                filtered_total_commissions: totalComm.toFixed(2),
-                filtered_total_bonuses: totalBonus.toFixed(2),
-                filtered_total_deductions: totalDeduct.toFixed(2),
-                filtered_grand_net_payable: grandNet.toFixed(2)
+                filtered_total_base_salary: "0.00",
+                filtered_total_commissions: "0.00",
+                filtered_total_bonuses: "0.00",
+                filtered_total_deductions: "0.00",
+                filtered_grand_net_payable: "0.00"
+            });
+            setSalariesPagination({
+                current_page: 1,
+                limit: 20,
+                total_records: 0,
+                total_pages: 1
             });
         } finally {
             setLoading(false);
         }
-    }, [salaryFilters]);
+    }, [salaryFilters, API_BASE_URL]);
 
     // Fetch PT Commissions List
     const fetchCommissions = useCallback(async () => {
@@ -446,7 +223,6 @@ const AdminPayrollManagement = () => {
                     setCommissionsMetrics(data.data.summary_metrics || {
                         filtered_total_commission_amount: "0.00"
                     });
-                    setOfflineMode(false);
                 } else {
                     throw new Error(data.message || 'Failed to fetch trainer commissions');
                 }
@@ -454,58 +230,22 @@ const AdminPayrollManagement = () => {
                 throw new Error(`API returned HTTP ${res.status}`);
             }
         } catch (err) {
-            console.warn("Using Commissions Offline Mode fallback:", err);
-            setOfflineMode(true);
-
-            // Client side mock filtering
-            let filtered = [...MOCK_COMMISSIONS];
-            if (commissionFilters.status) filtered = filtered.filter(c => c.status === commissionFilters.status);
-            if (commissionFilters.trainer_id) filtered = filtered.filter(c => c.trainer_id === parseInt(commissionFilters.trainer_id));
-            if (commissionFilters.branch_id) filtered = filtered.filter(c => c.branch_id === parseInt(commissionFilters.branch_id));
-
-            // Time frame filter mock-up
-            if (commissionFilters.time_frame === 'current_month') {
-                filtered = filtered.filter(c => c.earned_at.includes('2026-07'));
-            } else if (commissionFilters.time_frame === 'previous_month') {
-                filtered = filtered.filter(c => c.earned_at.includes('2026-06'));
-            }
-
-            // Calendar month/year
-            if (commissionFilters.month) {
-                const padMonth = commissionFilters.month.toString().padStart(2, '0');
-                filtered = filtered.filter(c => c.earned_at.includes(`-${padMonth}-`));
-            }
-            if (commissionFilters.year) {
-                filtered = filtered.filter(c => c.earned_at.includes(`${commissionFilters.year}-`));
-            }
-
-            // Pagination calculation
-            const page = commissionFilters.page;
-            const limit = commissionFilters.limit;
-            const totalRecords = filtered.length;
-            const totalPages = Math.ceil(totalRecords / limit) || 1;
-            const paginatedCommissions = filtered.slice((page - 1) * limit, page * limit);
-
-            // Metrics calculation
-            let totalComm = 0;
-            filtered.forEach(c => {
-                totalComm += parseFloat(c.commission_amount);
-            });
-
-            setCommissionsList(paginatedCommissions);
-            setCommissionsPagination({
-                current_page: page,
-                limit,
-                total_records: totalRecords,
-                total_pages: totalPages
-            });
+            console.error("Error fetching commissions:", err);
+            setError("Trainer commissions audit list is currently unavailable due to network connection failure.");
+            setCommissionsList([]);
             setCommissionsMetrics({
-                filtered_total_commission_amount: totalComm.toFixed(2)
+                filtered_total_commission_amount: "0.00"
+            });
+            setCommissionsPagination({
+                current_page: 1,
+                limit: 20,
+                total_records: 0,
+                total_pages: 1
             });
         } finally {
             setLoading(false);
         }
-    }, [commissionFilters]);
+    }, [commissionFilters, API_BASE_URL]);
 
     // Trigger loading of data based on active tab
     useEffect(() => {
@@ -518,6 +258,7 @@ const AdminPayrollManagement = () => {
 
     // Handle tab switching
     const handleTabChange = (tab) => {
+        setSearchParams({ tab });
         setActiveTab(tab);
     };
 
@@ -634,63 +375,8 @@ const AdminPayrollManagement = () => {
                 throw new Error(result.message || 'Salary disbursement failed.');
             }
         } catch (err) {
-            console.warn("Disbursement API failed, simulating response offline:", err);
-            
-            // Calculate simulation
-            const baseSalary = parseFloat(selectedPayroll.breakdown.base_salary);
-            const bonus = parseFloat(disbursePayload.bonus) || 0;
-            const deductions = parseFloat(disbursePayload.deductions) || 0;
-            const ptComm = disbursePayload.include_pt_commissions ? parseFloat(selectedPayroll.breakdown.commission_amount) : 0;
-            const totalPayable = baseSalary + bonus - deductions + ptComm;
-
-            const entries = [];
-            let currentId = 615;
-
-            if ((baseSalary + bonus - deductions) > 0) {
-                entries.push({
-                    ledger_id: currentId++,
-                    category: "PAYROLL",
-                    description: `Staff Base Salary & Bonus - ${selectedPayroll.pay_period.display_name}`,
-                    amount: (baseSalary + bonus - deductions).toFixed(2)
-                });
-            }
-
-            if (disbursePayload.include_pt_commissions && ptComm > 0) {
-                entries.push({
-                    ledger_id: currentId++,
-                    category: "PAYROLL",
-                    description: `Trainer PT Package Commissions - ${selectedPayroll.pay_period.display_name}`,
-                    amount: ptComm.toFixed(2)
-                });
-            }
-
-            setDisburseResult({
-                payroll_id: selectedPayroll.payroll_id,
-                employee_id: selectedPayroll.employee.employee_id,
-                employee_name: selectedPayroll.employee.name,
-                total_disbursed: totalPayable.toFixed(2),
-                payment_method: disbursePayload.payment_method,
-                ledger_entries_created: entries,
-                commissions_locked_count: disbursePayload.include_pt_commissions && ptComm > 0 ? 3 : 0
-            });
-
-            // Update local mock list state
-            setSalariesList(prev => prev.map(p => {
-                if (p.payroll_id === selectedPayroll.payroll_id) {
-                    return {
-                        ...p,
-                        status: 'PAID',
-                        breakdown: {
-                            ...p.breakdown,
-                            bonus: bonus.toFixed(2),
-                            deductions: deductions.toFixed(2)
-                        },
-                        net_payable: totalPayable.toFixed(2),
-                        paid_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
-                    };
-                }
-                return p;
-            }));
+            console.error("Disbursement API failed:", err);
+            setError("Salary disbursement service is currently unavailable due to network connection failure.");
         } finally {
             setLoading(false);
         }
@@ -741,27 +427,8 @@ const AdminPayrollManagement = () => {
                 throw new Error(result.message || 'PT commission payout failed.');
             }
         } catch (err) {
-            console.warn("Early Payout API failed, simulating response offline:", err);
-
-            setPayEarlyResult({
-                commission_id: selectedCommission.commission_id,
-                trainer_id: selectedCommission.trainer_id,
-                amount_paid: parseFloat(selectedCommission.commission_amount).toFixed(2),
-                payment_method: payEarlyPayload.payment_method,
-                ledger_reference_id: Math.floor(Math.random() * 800) + 200
-            });
-
-            // Update local mock list state
-            setCommissionsList(prev => prev.map(c => {
-                if (c.commission_id === selectedCommission.commission_id) {
-                    return {
-                        ...c,
-                        status: 'PAID',
-                        paid_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
-                    };
-                }
-                return c;
-            }));
+            console.error("Early Payout API failed:", err);
+            setError("Early commission payout service is currently unavailable due to network connection failure.");
         } finally {
             setLoading(false);
         }
@@ -786,13 +453,6 @@ const AdminPayrollManagement = () => {
                 </button>
             </div>
 
-            {/* Offline alert banner */}
-            {offlineMode && (
-                <div className="payroll-error">
-                    <i className="fas fa-wifi-slash"></i>
-                    <span>Offline Sandbox Mode: API endpoints returned errors or server connection failed. Showing interactive test client with simulated database adjustments.</span>
-                </div>
-            )}
 
             {/* Tab Section Header */}
             <div className="payroll-tabs">

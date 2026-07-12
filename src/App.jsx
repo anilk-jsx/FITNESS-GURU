@@ -10,6 +10,7 @@ import SubscriptionManagement from './components/SubscriptionManagement';
 import AttendanceManagement from './components/AttendanceManagement';
 import StaffManagement from './components/StaffManagement';
 import AdminPayrollManagement from './components/AdminPayrollManagement';
+import AdminFinanceManagement from './components/AdminFinanceManagement';
 import BranchManagement from './components/BranchManagement';
 import ContactManagement from './components/ContactManagement';
 import FitnessAssessment from './components/FitnessAssessment';
@@ -65,6 +66,7 @@ function App() {
           <Route path="attendance" element={<AttendanceManagement />} />
           <Route path="staff" element={<StaffManagement />} />
           <Route path="payroll" element={<AdminPayrollManagement />} />
+          <Route path="finance" element={<AdminFinanceManagement />} />
           <Route path="branches" element={<BranchManagement />} />
           <Route path="contacts" element={<ContactManagement />} />
           <Route path="fitness-assessments" element={<Navigate to="/admin-dashboard/pt-management?tab=assessments" replace />} />

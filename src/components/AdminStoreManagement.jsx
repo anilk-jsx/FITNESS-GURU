@@ -1,9 +1,25 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import tokenManager from '../utils/tokenManager';
 import './AdminStoreManagement.css';
 
 const AdminStoreManagement = () => {
-  const [activeTab, setActiveTab] = useState('stocks'); // 'stocks', 'pos', 'restock'
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam || 'stocks'); // 'stocks', 'pos', 'restock'
+
+  useEffect(() => {
+    if (tabParam && (tabParam === 'stocks' || tabParam === 'pos' || tabParam === 'restock')) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
+  const handleTabChange = (tab) => {
+    setSearchParams({ tab });
+    setActiveTab(tab);
+    if (typeof setPosSuccessData === 'function') setPosSuccessData(null);
+    if (typeof setRestockSuccessData === 'function') setRestockSuccessData(null);
+  };
   
   // API URL
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
@@ -736,19 +752,19 @@ const AdminStoreManagement = () => {
       <div className="store-mgmt-tabs">
         <button 
           className={`store-tab-btn ${activeTab === 'stocks' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('stocks'); setPosSuccessData(null); setRestockSuccessData(null); }}
+          onClick={() => handleTabChange('stocks')}
         >
           <i className="fas fa-boxes"></i> Inventory Stock
         </button>
         <button 
           className={`store-tab-btn ${activeTab === 'pos' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('pos'); setPosSuccessData(null); setRestockSuccessData(null); }}
+          onClick={() => handleTabChange('pos')}
         >
           <i className="fas fa-cash-register"></i> POS Desk Checkout
         </button>
         <button 
           className={`store-tab-btn ${activeTab === 'restock' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('restock'); setPosSuccessData(null); setRestockSuccessData(null); }}
+          onClick={() => handleTabChange('restock')}
         >
           <i className="fas fa-truck-loading"></i> Vendor Procurement
         </button>
