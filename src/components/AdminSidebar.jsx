@@ -71,6 +71,18 @@ const AdminSidebar = ({
 
         <div className="nav-item">
           <NavLink 
+            to="/admin-dashboard/payroll"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            onClick={handleNavClick}
+          >
+            <i className="fas fa-file-invoice-dollar"></i>
+            <span>Payroll Management</span>
+          </NavLink>
+        </div>
+
+
+        <div className="nav-item">
+          <NavLink 
             to="/admin-dashboard/contacts"
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
             onClick={handleNavClick}
