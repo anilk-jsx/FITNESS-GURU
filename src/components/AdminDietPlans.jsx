@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './TrainerDashboard/TrainerDashboard.css';
+import './AdminPTManagement.css';
 
 const AdminDietPlans = () => {
   // Members List (All members, in Admin Panel)
@@ -140,7 +140,8 @@ const AdminDietPlans = () => {
   ]);
 
   // Selected plan in list view
-  const [selectedPlanId, setSelectedPlanId] = useState(1);
+  const [selectedPlanId, setSelectedPlanId] = useState(null);
+  const [openPreviewAccordion, setOpenPreviewAccordion] = useState('overview'); // 'overview' | 'meals' | 'guidelines'
 
   // Active view tabs (All, Active, Expired/Completed, Drafts)
   const [currentTab, setCurrentTab] = useState('All');
@@ -191,8 +192,8 @@ const AdminDietPlans = () => {
 
   const [formErrors, setFormErrors] = useState({});
 
-  const filteredMembers = members.filter(m => 
-    m.name.toLowerCase().includes(searchMemberQuery.toLowerCase()) || 
+  const filteredMembers = members.filter(m =>
+    m.name.toLowerCase().includes(searchMemberQuery.toLowerCase()) ||
     m.id.toLowerCase().includes(searchMemberQuery.toLowerCase())
   );
 
@@ -207,7 +208,7 @@ const AdminDietPlans = () => {
     return true;
   });
 
-  const selectedPlan = dietPlans.find(p => p.id === selectedPlanId) || memberPlans[0];
+  const selectedPlan = dietPlans.find(p => p.id === selectedPlanId);
 
   // Helper toggle section
   const toggleSection = (idx) => {
@@ -228,7 +229,7 @@ const AdminDietPlans = () => {
     setDietPlans(prev => prev.map(p => {
       const targetPlan = prev.find(x => x.id === id);
       if (!targetPlan) return p;
-      
+
       if (p.memberId === targetPlan.memberId) {
         if (p.id === id) {
           return { ...p, status: 'Active' };
@@ -480,130 +481,147 @@ const AdminDietPlans = () => {
   };
 
   return (
-    <div className="trainer-page-container" style={{ padding: '30px' }}>
-      
+    <div className="admin-pt-container" style={{ padding: 0 }}>
       {/* -------------------- VIEW 1: HISTORY LIST & METRICS -------------------- */}
       {viewMode === 'list' && (
         <>
-          <div className="page-header" style={{ marginBottom: '30px' }}>
-            <div className="page-header-titles">
-              <h1>Diet Plans</h1>
-              <p>Admin Portal: Manage, edit, and assign diet plan macros globally.</p>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '24px', minHeight: '650px' }}>
-            
+          <div className="pt-purchase-layout" style={{ gridTemplateColumns: '280px 1fr', gap: '1.5rem', marginTop: '0.5rem', alignItems: 'start' }}>
             {/* Sidebar Member directory */}
-            <div className="clients-list-panel" style={{ height: 'auto', alignSelf: 'stretch' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'white', marginBottom: '10px' }}>Members</h3>
-              <div className="search-box-wrapper">
-                <i className="fas fa-search search-icon"></i>
-                <input 
-                  type="text" 
-                  placeholder="Search members..." 
-                  className="client-search-input"
+            <div className="pt-card flex-col" style={{ gap: '1rem', alignSelf: 'start' }}>
+              <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>
+                <i className="fas fa-users text-accent" style={{ marginRight: '6px' }}></i> Members Directory
+              </h3>
+              <div style={{ position: 'relative' }}>
+                <i className="fas fa-search" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '0.85rem' }}></i>
+                <input
+                  type="text"
+                  placeholder="Search members by name or ID..."
+                  className="pt-input"
+                  style={{ paddingLeft: '34px' }}
                   value={searchMemberQuery}
                   onChange={(e) => setSearchMemberQuery(e.target.value)}
                 />
               </div>
-              <div className="clients-list-scrollable" style={{ marginTop: '12px' }}>
-                {filteredMembers.map(m => (
-                  <div 
-                    key={m.id}
-                    className={`client-row-item ${selectedMemberId === m.id ? 'selected' : ''}`}
-                    onClick={() => { setSelectedMemberId(m.id); setViewMode('list'); }}
-                  >
-                    <div className="profile-avatar" style={{ width: '32px', height: '32px', fontSize: '0.85rem' }}>
-                      {m.name.split(' ').map(n=>n[0]).join('')}
+              <div style={{ marginTop: '4px', maxHeight: filteredMembers.length > 7 ? '435px' : 'none', overflowY: filteredMembers.length > 7 ? 'auto' : 'visible', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {filteredMembers.map(m => {
+                  const isSelected = selectedMemberId === m.id;
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => { setSelectedMemberId(m.id); setSelectedPlanId(null); setViewMode('list'); }}
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: '10px',
+                        border: isSelected ? '2px solid #4f46e5' : '1px solid #e2e8f0',
+                        background: isSelected ? 'rgba(79, 70, 229, 0.04)' : '#ffffff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <div style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        background: isSelected ? '#4f46e5' : '#e2e8f0',
+                        color: isSelected ? '#ffffff' : '#4f46e5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.85rem',
+                        fontWeight: 700
+                      }}>
+                        {m.name.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</div>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>{m.id}</div>
+                      </div>
+                      {dietPlans.some(p => p.memberId === m.id && p.status === 'Active') && (
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%'}}></span>
+                      )}
                     </div>
-                    <div className="client-brief-info">
-                      <h4>{m.name}</h4>
-                      <p className="client-sub-txt">{m.id}</p>
-                    </div>
-                    {dietPlans.some(p => p.memberId === m.id && p.status === 'Active') && (
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', alignSelf: 'center' }}></span>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
             {/* Main view panel */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               {/* Selected Member Header Card */}
               {selectedMember && (
-                <div className="m-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px' }}>
+                <div className="pt-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #1e1b4b, #312e81)', color: '#ffffff', padding: '16px 20px', borderRadius: '14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div className="profile-avatar" style={{ width: '56px', height: '56px', fontSize: '1.4rem' }}>
-                      {selectedMember.name.split(' ').map(n=>n[0]).join('')}
+                    <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', fontWeight: 700 }}>
+                      {selectedMember.name.split(' ').map(n => n[0]).join('')}
                     </div>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{selectedMember.name}</h2>
-                        <span className="m-badge success" style={{ fontSize: '0.7rem' }}>Active Member</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: 'white' }}>{selectedMember.name}</h2>
+                        <span className="pt-badge status-active" style={{ background: 'rgba(16, 185, 129, 0.25)', color: '#34d399', fontSize: '0.7rem' }}>Active Member</span>
                         {selectedMember.pt_credits > 0 ? (
-                          <span className="m-badge success" style={{ fontSize: '0.7rem', background: 'rgba(34, 197, 94, 0.15)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+                          <span className="pt-badge" style={{ background: 'rgba(251, 191, 36, 0.25)', color: '#fbbf24', fontSize: '0.7rem', border: '1px solid rgba(251, 191, 36, 0.3)' }}>
                             <i className="fas fa-dumbbell"></i> PT Active ({selectedMember.pt_credits} Credits)
                           </span>
                         ) : (
-                          <span className="m-badge danger" style={{ fontSize: '0.7rem', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                            <i className="fas fa-exclamation-triangle"></i> PT Inactive (0 Credits)
+                          <span className="pt-badge" style={{ background: 'rgba(239, 68, 68, 0.25)', color: '#f87171', fontSize: '0.7rem', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                            <i className="fas fa-exclamation-triangle"></i> PT Inactive
                           </span>
                         )}
                       </div>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
-                        ID: {selectedMember.id} | {selectedMember.age} Years | {selectedMember.gender} | {selectedMember.weight} kg | {selectedMember.height} cm
+                      <p style={{ color: '#c7d2fe', fontSize: '0.8rem', margin: '6px 0 0 0' }}>
+                        ID: {selectedMember.id} • {selectedMember.age} Years • {selectedMember.gender} • {selectedMember.weight} kg • {selectedMember.height} cm
                       </p>
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ fontSize: '0.85rem', textAlign: 'right' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>Assigned Trainer</span>
-                      <div style={{ fontWeight: 600 }}>{selectedMember.trainer}</div>
+                    <div style={{ fontSize: '0.8rem', textAlign: 'right' }}>
+                      <span style={{ color: '#c7d2fe' }}>Assigned Trainer</span>
+                      <div style={{ fontWeight: 600, color: '#ffffff', marginTop: '2px' }}>{selectedMember.trainer}</div>
                     </div>
-                    <div className="profile-avatar" style={{ width: '36px', height: '36px', fontSize: '0.9rem', background: '#3b82f6' }}>
-                      {selectedMember.trainer.split(' ').map(n=>n[0]).join('')}
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#6366f1', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700 }}>
+                      {selectedMember.trainer.split(' ').map(n => n[0]).join('')}
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Grid split of Diet plans history + Active details */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '24px' }}>
-                
+              <div style={{ display: 'grid', gridTemplateColumns: selectedPlan ? '1.8fr 1fr' : '1fr', gap: '1.5rem', alignItems: 'start', transition: 'all 0.3s ease-out' }}>
                 {/* Diet Plans History Table */}
-                <div className="m-card" style={{ padding: '20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h3 className="m-card-title" style={{ margin: 0 }}>Diet Plans</h3>
-                    <button className="btn-primary" onClick={triggerCreateView}>
+                <div className="pt-card flex-col" style={{ gap: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>Diet Plan Records</h3>
+                    <button className="pt-btn pt-btn-primary" style={{ padding: '8px 14px', fontSize: '0.8rem' }} onClick={triggerCreateView}>
                       <i className="fas fa-plus"></i> Create Diet Plan
                     </button>
                   </div>
 
                   {/* Status filter tabs */}
-                  <div className="trainer-tabs-container" style={{ marginBottom: '16px' }}>
-                    {['All Diet Plans', 'Active Plans', 'Expired Plans', 'Drafts'].map(tab => (
-                      <button 
-                        key={tab}
-                        className={`btn-pagination ${currentTab === tab ? 'active' : ''}`}
-                        style={{
-                          background: currentTab === tab ? 'var(--primary-light)' : 'transparent',
-                          color: currentTab === tab ? 'var(--primary-color)' : 'var(--text-secondary)',
-                          border: currentTab === tab ? '1px solid var(--primary-color)' : '1px solid var(--border-color)',
-                          padding: '6px 12px',
-                          borderRadius: '20px',
-                          fontSize: '0.8rem'
-                        }}
-                        onClick={() => setCurrentTab(tab)}
-                      >
-                        {tab}
-                      </button>
-                    ))}
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '4px 0 8px 0' }}>
+                    {['All Diet Plans', 'Active Plans', 'Expired Plans', 'Drafts'].map(tab => {
+                      const isTabActive = (tab === 'All Diet Plans' && currentTab === 'All') ||
+                        (tab === 'Active Plans' && currentTab === 'Active') ||
+                        (tab === 'Expired Plans' && currentTab === 'Expired Plans') ||
+                        (tab === 'Drafts' && currentTab === 'Drafts');
+                      return (
+                        <button
+                          key={tab}
+                          type="button"
+                          className={`pt-filter-btn ${isTabActive ? 'active' : ''}`}
+                          style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                          onClick={() => setCurrentTab(tab === 'All Diet Plans' ? 'All' : tab === 'Active Plans' ? 'Active' : tab === 'Expired Plans' ? 'Expired Plans' : 'Drafts')}
+                        >
+                          {tab}
+                        </button>
+                      );
+                    })}
                   </div>
 
-                  <div className="table-responsive-wrapper">
-                    <table className="m-table">
+                  <div className="table-responsive" style={{ border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+                    <table className="pt-table">
                       <thead>
                         <tr>
                           <th>Goal / Plan</th>
@@ -616,33 +634,37 @@ const AdminDietPlans = () => {
                       <tbody>
                         {filteredPlans.length > 0 ? (
                           filteredPlans.map(p => (
-                            <tr key={p.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedPlanId(p.id)}>
+                            <tr
+                              key={p.id}
+                              style={{ cursor: 'pointer', background: selectedPlanId === p.id ? 'rgba(79, 70, 229, 0.03)' : 'transparent' }}
+                              onClick={() => setSelectedPlanId(selectedPlanId === p.id ? null : p.id)}
+                            >
                               <td>
-                                <div style={{ fontWeight: 600 }}>{p.planName}</div>
-                                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{p.goal} (By: {p.trainerName})</span>
+                                <div style={{ fontWeight: 600, color: '#334155' }}>{p.planName}</div>
+                                <span style={{ fontSize: '0.78rem', color: '#64748b' }}>{p.goal} (By: {p.trainerName})</span>
                               </td>
-                              <td>{p.duration} Days</td>
-                              <td>
-                                <span style={{ fontSize: '0.8rem' }}>{p.startDate} to {p.endDate}</span>
+                              <td style={{ fontWeight: 600 }}>{p.duration} Days</td>
+                              <td style={{ fontSize: '0.8rem', color: '#475569' }}>
+                                <span>{p.startDate} to {p.endDate}</span>
                               </td>
                               <td>
-                                <span className={`m-badge ${p.status === 'Active' ? 'success' : (p.status === 'Draft' ? 'warning' : 'primary')}`}>
-                                  {p.status}
+                                <span className={`type-badge ${p.status === 'Active' ? 'score-excellent' : p.status === 'Draft' ? 'score-average' : 'score-good'}`} style={{ fontSize: '0.75rem', padding: '3px 8px' }}>
+                                  {p.status.toUpperCase()}
                                 </span>
                               </td>
                               <td onClick={(e) => e.stopPropagation()}>
-                                <div className="m-table-actions">
-                                  <button className="btn-icon" title="Edit Plan" onClick={() => triggerEditView(p)}>
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                  <button className="pt-icon-btn" style={{ color: '#4f46e5' }} title="Edit Plan" onClick={() => triggerEditView(p)}>
                                     <i className="far fa-edit"></i>
                                   </button>
-                                  <button className="btn-icon" title="Clone/Copy" onClick={() => handleClonePlan(p)}>
+                                  <button className="pt-icon-btn" style={{ color: '#10b981' }} title="Clone/Copy" onClick={() => handleClonePlan(p)}>
                                     <i className="far fa-clone"></i>
                                   </button>
-                                  <button className="btn-icon" style={{ color: 'var(--danger)' }} title="Delete" onClick={() => handleDeletePlan(p.id)}>
+                                  <button className="pt-icon-btn text-danger" title="Delete" onClick={() => handleDeletePlan(p.id)}>
                                     <i className="far fa-trash-alt"></i>
                                   </button>
                                   {p.status !== 'Active' && p.status !== 'Completed' && (
-                                    <button className="btn-secondary" style={{ padding: '2px 8px', fontSize: '0.75rem' }} onClick={() => handleActivatePlan(p.id)}>
+                                    <button className="pt-btn pt-btn-secondary" style={{ padding: '2px 8px', fontSize: '0.75rem', borderRadius: '6px' }} onClick={() => handleActivatePlan(p.id)}>
                                       Activate
                                     </button>
                                   )}
@@ -652,7 +674,7 @@ const AdminDietPlans = () => {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                            <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
                               No plans matching current filter.
                             </td>
                           </tr>
@@ -662,57 +684,152 @@ const AdminDietPlans = () => {
                   </div>
                 </div>
 
-                {/* Right Details Card */}
-                <div>
-                  {selectedPlan ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                      <div className="m-card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                          <h4 style={{ fontSize: '1rem', fontWeight: 700 }}>{selectedPlan.planName}</h4>
-                          <span className={`m-badge ${selectedPlan.status === 'Active' ? 'success' : 'primary'}`} style={{ fontSize: '0.65rem' }}>{selectedPlan.status}</span>
+                {/* Right Details Panel (collapsible accordion) */}
+                {selectedPlan && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {/* Panel Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '4px' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Plan Preview Details</span>
+                      <button
+                        onClick={() => setSelectedPlanId(null)}
+                        className="pt-icon-btn"
+                        style={{
+                          background: '#f1f5f9',
+                          borderRadius: '50%',
+                          width: '28px',
+                          height: '28px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                        title="Close Preview"
+                      >
+                        <i className="fas fa-times" style={{ color: '#475569', fontSize: '0.9rem' }}></i>
+                      </button>
+                    </div>
+
+                    {/* Accordion 1: Plan Overview */}
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div
+                        onClick={() => setOpenPreviewAccordion(openPreviewAccordion === 'overview' ? null : 'overview')}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '12px 14px',
+                          cursor: 'pointer',
+                          background: 'linear-gradient(to right, #f8fafc, #f1f5f9)',
+                          border: '1px solid #cbd5e1',
+                          borderLeft: '4px solid #4f46e5',
+                          borderRadius: openPreviewAccordion === 'overview' ? '8px 8px 0 0' : '8px',
+                          transition: 'all 0.2s ease',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                          fontWeight: 600
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>
+                            <i className="fas fa-file-alt"></i>
+                          </div>
+                          <h4 style={{ fontSize: '0.85rem', margin: 0, fontWeight: 600, color: '#334155' }}>
+                            {selectedPlan.planName}
+                          </h4>
                         </div>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Duration: {selectedPlan.duration} Days ({selectedPlan.startDate} to {selectedPlan.endDate})</p>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>Created By: {selectedPlan.trainerName} | Created On: {selectedPlan.createdOn}</p>
-                        
-                        <h4 style={{ fontSize: '0.95rem', margin: '20px 0 12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>Overview Metrics</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div className="kpi-icon-box primary" style={{ width: '36px', height: '36px', fontSize: '0.9rem' }}><i className="fas fa-tint"></i></div>
-                            <div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Water Intake</div>
-                              <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{selectedPlan.waterIntake} Liters / Day</div>
+                        <i className={`fas ${openPreviewAccordion === 'overview' ? 'fa-chevron-up' : 'fa-chevron-down'}`} style={{ color: '#64748b', fontSize: '0.75rem' }}></i>
+                      </div>
+                      {openPreviewAccordion === 'overview' && (
+                        <div style={{ padding: '14px', border: '1px solid #cbd5e1', borderTop: 'none', borderRadius: '0 0 8px 8px', background: '#ffffff', display: 'flex', flexDirection: 'column', gap: '0.75rem', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 600 }}>Duration: {selectedPlan.duration} Days</span>
+                            <span className={`type-badge ${selectedPlan.status === 'Active' ? 'score-excellent' : 'score-good'}`} style={{ fontSize: '0.72rem', padding: '3px 8px' }}>{selectedPlan.status.toUpperCase()}</span>
+                          </div>
+                          <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0 }}>Dates: {selectedPlan.startDate} to {selectedPlan.endDate}</p>
+                          <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0 }}>Created By: {selectedPlan.trainerName} on {selectedPlan.createdOn}</p>
+
+                          <h4 style={{ fontSize: '0.82rem', margin: '8px 0 2px 0', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', color: '#334155', fontWeight: 600 }}>Overview Metrics</h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#f8fafc', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.95rem' }}><i className="fas fa-tint"></i></div>
+                              <div>
+                                <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Water Intake</div>
+                                <strong style={{ fontSize: '0.82rem', color: '#334155' }}>{selectedPlan.waterIntake} Liters / Day</strong>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#f8fafc', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#f5f3ff', color: '#6d28d9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.95rem' }}><i className="fas fa-moon"></i></div>
+                              <div>
+                                <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Sleep Duration</div>
+                                <strong style={{ fontSize: '0.82rem', color: '#334155' }}>{selectedPlan.sleepHours} Hours / Night</strong>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#f8fafc', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.95rem' }}><i className="fas fa-bullseye"></i></div>
+                              <div>
+                                <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Assigned Goal</div>
+                                <strong style={{ fontSize: '0.82rem', color: '#334155' }}>{selectedPlan.goal}</strong>
+                              </div>
                             </div>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div className="kpi-icon-box secondary" style={{ width: '36px', height: '36px', fontSize: '0.9rem' }}><i className="fas fa-moon"></i></div>
-                            <div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sleep Duration</div>
-                              <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{selectedPlan.sleepHours} Hours / Night</div>
+
+                          {selectedPlan.trainerComments && (
+                            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '10px', marginTop: '4px' }}>
+                              <strong style={{ fontSize: '0.8rem', color: '#334155' }}>Coach comments:</strong>
+                              <p style={{ fontSize: '0.75rem', color: '#475569', marginTop: '2px', margin: 0, fontStyle: 'italic' }}>
+                                "{selectedPlan.trainerComments}"
+                              </p>
                             </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Accordion 2: Meal Timeline Plan */}
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div
+                        onClick={() => setOpenPreviewAccordion(openPreviewAccordion === 'meals' ? null : 'meals')}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '12px 14px',
+                          cursor: 'pointer',
+                          background: 'linear-gradient(to right, #f8fafc, #f1f5f9)',
+                          border: '1px solid #cbd5e1',
+                          borderLeft: '4px solid #6366f1',
+                          borderRadius: openPreviewAccordion === 'meals' ? '8px 8px 0 0' : '8px',
+                          transition: 'all 0.2s ease',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                          fontWeight: 600
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>
+                            <i className="fas fa-clock"></i>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div className="kpi-icon-box success" style={{ width: '36px', height: '36px', fontSize: '0.9rem' }}><i className="fas fa-bullseye"></i></div>
-                            <div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Assigned Goal</div>
-                              <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{selectedPlan.goal}</div>
-                            </div>
-                          </div>
+                          <h4 style={{ fontSize: '0.85rem', margin: 0, fontWeight: 600, color: '#334155' }}>
+                            Meal Timeline Plan
+                          </h4>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ background: '#e2e8f0', color: '#475569', padding: '1px 6px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700 }}>
+                            {selectedPlan.meals?.length || 0}
+                          </span>
+                          <i className={`fas ${openPreviewAccordion === 'meals' ? 'fa-chevron-up' : 'fa-chevron-down'}`} style={{ color: '#64748b', fontSize: '0.75rem' }}></i>
                         </div>
                       </div>
-
-                      {/* Meals Timeline preview card */}
-                      <div className="m-card">
-                        <h3 className="m-card-title">Meal Timeline Plan</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+                      {openPreviewAccordion === 'meals' && (
+                        <div style={{ padding: '14px', border: '1px solid #cbd5e1', borderTop: 'none', borderRadius: '0 0 8px 8px', background: '#ffffff', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
                           {selectedPlan.meals && selectedPlan.meals.length > 0 ? (
                             selectedPlan.meals.map((meal, index) => (
-                              <div key={index} className="schedule-card-item" style={{ alignItems: 'flex-start' }}>
-                                <div className="schedule-card-time" style={{ background: 'var(--primary-light)', color: 'var(--primary-color)', width: '70px', height: '44px' }}>
-                                  <span style={{ fontSize: '0.78rem', fontWeight: 'bold' }}>{meal.mealTime}</span>
+                              <div key={index} style={{ display: 'flex', gap: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px' }}>
+                                <div style={{ background: '#e0e7ff', color: '#4f46e5', width: '65px', height: '38px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 'bold', flexShrink: 0 }}>
+                                  {meal.mealTime}
                                 </div>
-                                <div className="schedule-card-info" style={{ paddingTop: '2px' }}>
-                                  <h4 style={{ fontSize: '0.9rem' }}>{meal.mealTitle}</h4>
-                                  <ul className="meal-items-list-bullet" style={{ marginTop: '4px', fontSize: '0.8rem' }}>
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0f172a' }}>{meal.mealTitle}</div>
+                                  <ul style={{ paddingLeft: '16px', margin: '4px 0 0 0', fontSize: '0.78rem', color: '#475569' }}>
                                     {meal.mealItems.map((item, itemIdx) => (
                                       <li key={itemIdx}>{item.food} - {item.quantity} {item.unit}</li>
                                     ))}
@@ -721,114 +838,133 @@ const AdminDietPlans = () => {
                               </div>
                             ))
                           ) : (
-                            <p style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '0.85rem' }}>No meals defined in this plan.</p>
+                            <p style={{ fontStyle: 'italic', color: '#64748b', fontSize: '0.8rem', margin: 0 }}>No meals defined in this plan.</p>
                           )}
                         </div>
-                      </div>
+                      )}
+                    </div>
 
-                      {/* Recommendations and comments */}
-                      <div className="m-card">
-                        <h3 className="m-card-title">Trainer Guidelines</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '12px' }}>
+                    {/* Accordion 3: Trainer Guidelines */}
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div
+                        onClick={() => setOpenPreviewAccordion(openPreviewAccordion === 'guidelines' ? null : 'guidelines')}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '12px 14px',
+                          cursor: 'pointer',
+                          background: 'linear-gradient(to right, #f8fafc, #f1f5f9)',
+                          border: '1px solid #cbd5e1',
+                          borderLeft: '4px solid #6366f1',
+                          borderRadius: openPreviewAccordion === 'guidelines' ? '10px 10px 0 0' : '10px',
+                          transition: 'all 0.2s ease',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                          fontWeight: 600
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>
+                            <i className="fas fa-list-ol"></i>
+                          </div>
+                          <h4 style={{ fontSize: '0.85rem', margin: 0, fontWeight: 600, color: '#334155' }}>
+                            Trainer Guidelines
+                          </h4>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ background: '#e2e8f0', color: '#475569', padding: '1px 6px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700 }}>
+                            {selectedPlan.recommendations?.sections?.length || 0}
+                          </span>
+                          <i className={`fas ${openPreviewAccordion === 'guidelines' ? 'fa-chevron-up' : 'fa-chevron-down'}`} style={{ color: '#64748b', fontSize: '0.75rem' }}></i>
+                        </div>
+                      </div>
+                      {openPreviewAccordion === 'guidelines' && (
+                        <div style={{ padding: '14px', border: '1px solid #cbd5e1', borderTop: 'none', borderRadius: '0 0 10px 10px', background: '#ffffff', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
                           {selectedPlan.recommendations?.sections?.map((section, secIdx) => (
-                            <div key={secIdx} className="recommendation-section-card">
-                              <div className="section-card-header" onClick={() => toggleSection(secIdx)}>
-                                <div className="section-card-title-group">
-                                  <div className="section-card-icon-circle"><i className={`fas ${section.icon || 'fa-apple-alt'}`}></i></div>
-                                  <h4 style={{ fontSize: '0.9rem' }}>{section.title}</h4>
+                            <div key={secIdx} className="recommendation-section-card" style={{ border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden' }}>
+                              <div
+                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f1f5f9', cursor: 'pointer' }}
+                                onClick={() => toggleSection(secIdx)}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem' }}>
+                                    <i className={`fas ${section.icon || 'fa-apple-alt'}`}></i>
+                                  </div>
+                                  <h4 style={{ fontSize: '0.8rem', margin: 0, fontWeight: 600, color: '#334155' }}>{section.title}</h4>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                  <span className="section-card-badge">{section.items?.length || 0}</span>
-                                  <i className={`fas ${expandedSections[secIdx] ? 'fa-chevron-up' : 'fa-chevron-down'}`} style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}></i>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ background: '#e2e8f0', color: '#475569', padding: '1px 6px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700 }}>{section.items?.length || 0}</span>
+                                  <i className={`fas ${expandedSections[secIdx] ? 'fa-chevron-up' : 'fa-chevron-down'}`} style={{ color: '#64748b', fontSize: '0.75rem' }}></i>
                                 </div>
                               </div>
                               {expandedSections[secIdx] && (
-                                <div className="section-card-body">
-                                  <ul className="section-items-list">
+                                <div style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderTop: 'none', borderRadius: '0 0 8px 8px', background: '#f8fafc' }}>
+                                  <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '0.8rem', color: '#475569' }}>
                                     {section.items?.map((item, itemIdx) => (
-                                      <li key={itemIdx} className="section-item-li">{item}</li>
+                                      <li key={itemIdx} style={{ marginBottom: '4px' }}>{item}</li>
                                     ))}
                                   </ul>
                                 </div>
                               )}
                             </div>
                           ))}
-
-                          {selectedPlan.trainerComments && (
-                            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '10px' }}>
-                              <strong style={{ fontSize: '0.88rem' }}>Coach comments:</strong>
-                              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px', fontStyle: 'italic' }}>
-                                "{selectedPlan.trainerComments}"
-                              </p>
-                            </div>
-                          )}
                         </div>
-                      </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="m-card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      Select a diet plan to preview details.
-                    </div>
-                  )}
-                </div>
-
+                  </div>
+                )}
               </div>
-
             </div>
-
           </div>
         </>
       )}
 
       {/* -------------------- VIEW 2: FORM BUILDER (CREATE / EDIT) -------------------- */}
       {(viewMode === 'create' || viewMode === 'edit') && (
-        <div style={{ animation: 'viewFadeIn 0.3s ease-out' }}>
+        <div style={{ marginTop: '0.5rem' }}>
           {/* Header */}
-          <div className="page-header" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <button className="btn-icon" onClick={() => setViewMode('list')} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '50%' }}>
-                <i className="fas fa-arrow-left"></i>
-              </button>
-              <div>
-                <h1 style={{ fontSize: '1.6rem' }}>{viewMode === 'create' ? 'Create Diet Plan' : 'Edit Diet Plan'}</h1>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Configure detailed meal splits and recommendations globally for {selectedMember?.name}.</p>
-              </div>
+          <div className="pt-card" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.25rem', padding: '14px 20px' }}>
+            <button className="pt-icon-btn" onClick={() => setViewMode('list')} style={{ background: '#f1f5f9', borderRadius: '50%', padding: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="fas fa-arrow-left" style={{ color: '#475569' }}></i>
+            </button>
+            <div>
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>{viewMode === 'create' ? 'Create Diet Plan' : 'Edit Diet Plan'}</h2>
+              <p style={{ color: '#64748b', fontSize: '0.8rem', margin: '2px 0 0 0' }}>Configure detailed meal splits and recommendations globally for {selectedMember?.name}.</p>
             </div>
           </div>
 
           {/* Builder Form Grid */}
           <div className="diet-builder-grid">
-            
             {/* Column 1: Member Info & Plan Details */}
-            <div className="m-card">
-              <h3 className="m-card-title" style={{ fontSize: '1.05rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>Plan Details</h3>
-              
+            <div className="pt-card flex-col" style={{ gap: '12px' }}>
+              <h3 style={{ margin: 0, fontSize: '0.95rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', color: '#0f172a', fontWeight: 700 }}>Plan Details</h3>
+
               {/* Member static details */}
-              <div className="static-info-card" style={{ marginTop: '14px' }}>
-                <strong style={{ fontSize: '0.85rem', display: 'block', marginBottom: '10px' }}>Target Member Info</strong>
-                <div className="static-info-row"><span>Name:</span><strong>{selectedMember?.name}</strong></div>
-                <div className="static-info-row"><span>Age:</span><strong>{selectedMember?.age} Years</strong></div>
-                <div className="static-info-row"><span>Weight:</span><strong>{selectedMember?.weight} kg</strong></div>
-                <div className="static-info-row"><span>Height:</span><strong>{selectedMember?.height} cm</strong></div>
+              <div className="static-info-card" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px' }}>
+                <strong style={{ fontSize: '0.8rem', display: 'block', marginBottom: '6px', color: '#334155' }}>Target Member Info</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}><span style={{ color: '#64748b' }}>Name:</span><strong style={{ color: '#1e293b' }}>{selectedMember?.name}</strong></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}><span style={{ color: '#64748b' }}>Age:</span><strong style={{ color: '#1e293b' }}>{selectedMember?.age} Years</strong></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}><span style={{ color: '#64748b' }}>Weight:</span><strong style={{ color: '#1e293b' }}>{selectedMember?.weight} kg</strong></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}><span style={{ color: '#64748b' }}>Height:</span><strong style={{ color: '#1e293b' }}>{selectedMember?.height} cm</strong></div>
               </div>
 
               {/* Form Metadata */}
               <div className="form-group">
-                <label className="form-label">Plan Name *</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Plan Name *</label>
+                <input
+                  type="text"
+                  className="pt-input"
                   placeholder="e.g. Lean Bulk Diet"
                   value={planForm.planName}
                   onChange={(e) => setPlanForm({ ...planForm, planName: e.target.value })}
                 />
-                {formErrors.planName && <div className="form-error-msg">{formErrors.planName}</div>}
+                {formErrors.planName && <div className="form-error-msg" style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '2px' }}>{formErrors.planName}</div>}
               </div>
 
               <div className="form-group">
-                <label className="form-label">Goal *</label>
-                <select 
-                  className="form-select"
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Goal *</label>
+                <select
+                  className="pt-select"
                   value={planForm.goal}
                   onChange={(e) => setPlanForm({ ...planForm, goal: e.target.value })}
                 >
@@ -841,9 +977,9 @@ const AdminDietPlans = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Creator Trainer *</label>
-                <select 
-                  className="form-select"
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Creator Trainer *</label>
+                <select
+                  className="pt-select"
                   value={planForm.trainerName}
                   onChange={(e) => setPlanForm({ ...planForm, trainerName: e.target.value })}
                 >
@@ -853,56 +989,56 @@ const AdminDietPlans = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Duration (Days) *</label>
-                <input 
-                  type="number" 
-                  className="form-input" 
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Duration (Days) *</label>
+                <input
+                  type="number"
+                  className="pt-input"
                   placeholder="e.g. 45"
                   value={planForm.duration}
                   onChange={(e) => setPlanForm({ ...planForm, duration: e.target.value })}
                 />
-                {formErrors.duration && <div className="form-error-msg">{formErrors.duration}</div>}
+                {formErrors.duration && <div className="form-error-msg" style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '2px' }}>{formErrors.duration}</div>}
               </div>
 
-              <div className="form-row">
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">
-                  <label className="form-label">Start Date *</label>
-                  <input 
-                    type="date" 
-                    className="form-input" 
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Start Date *</label>
+                  <input
+                    type="date"
+                    className="pt-input"
                     value={planForm.startDate}
                     onChange={(e) => setPlanForm({ ...planForm, startDate: e.target.value })}
                   />
-                  {formErrors.startDate && <div className="form-error-msg">{formErrors.startDate}</div>}
+                  {formErrors.startDate && <div className="form-error-msg" style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '2px' }}>{formErrors.startDate}</div>}
                 </div>
                 <div className="form-group">
-                  <label className="form-label">End Date *</label>
-                  <input 
-                    type="date" 
-                    className="form-input" 
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>End Date *</label>
+                  <input
+                    type="date"
+                    className="pt-input"
                     value={planForm.endDate}
                     onChange={(e) => setPlanForm({ ...planForm, endDate: e.target.value })}
                   />
-                  {formErrors.endDate && <div className="form-error-msg">{formErrors.endDate}</div>}
+                  {formErrors.endDate && <div className="form-error-msg" style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '2px' }}>{formErrors.endDate}</div>}
                 </div>
               </div>
 
-              <div className="form-row">
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">
-                  <label className="form-label">Water Intake (L/Day)</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Water Intake (L/Day)</label>
+                  <input
+                    type="text"
+                    className="pt-input"
                     placeholder="e.g. 4.0"
                     value={planForm.waterIntake}
                     onChange={(e) => setPlanForm({ ...planForm, waterIntake: e.target.value })}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Sleep (Hours/Night)</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Sleep (Hours/Night)</label>
+                  <input
+                    type="text"
+                    className="pt-input"
                     placeholder="e.g. 8"
                     value={planForm.sleepHours}
                     onChange={(e) => setPlanForm({ ...planForm, sleepHours: e.target.value })}
@@ -912,47 +1048,47 @@ const AdminDietPlans = () => {
             </div>
 
             {/* Column 2: Diet Plan Meals Timeline */}
-            <div className="m-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '14px' }}>
-                <h3 className="m-card-title" style={{ margin: 0, fontSize: '1.05rem' }}>Diet Plan Meals</h3>
-                <button type="button" className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={openAddMeal}>
+            <div className="pt-card flex-col" style={{ gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                <h3 style={{ margin: 0, fontSize: '0.95rem', color: '#0f172a', fontWeight: 700 }}>Diet Plan Meals</h3>
+                <button type="button" className="pt-btn pt-btn-secondary" style={{ padding: '6px 12px', fontSize: '0.78rem', borderRadius: '8px' }} onClick={openAddMeal}>
                   <i className="fas fa-plus"></i> Add Meal
                 </button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
                 {mealsList.length > 0 ? (
                   mealsList.map((meal, index) => (
-                    <div key={index} className="schedule-card-item" style={{ alignItems: 'flex-start', background: 'rgba(255,255,255,0.01)', position: 'relative' }}>
-                      <div className="schedule-card-time" style={{ background: 'var(--primary-light)', color: 'var(--primary-color)', width: '70px', height: '44px' }}>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 'bold' }}>{meal.mealTime}</span>
+                    <div key={index} style={{ display: 'flex', gap: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px', position: 'relative' }}>
+                      <div style={{ background: '#e0e7ff', color: '#4f46e5', width: '65px', height: '38px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 'bold', flexShrink: 0 }}>
+                        {meal.mealTime}
                       </div>
-                      <div className="schedule-card-info" style={{ paddingRight: '60px' }}>
-                        <h4 style={{ fontSize: '0.92rem' }}>{meal.mealTitle}</h4>
-                        <ul className="meal-items-list-bullet" style={{ marginTop: '4px', fontSize: '0.82rem' }}>
+                      <div style={{ paddingRight: '60px', minWidth: 0, flex: 1 }}>
+                        <h4 style={{ fontSize: '0.88rem', margin: 0, fontWeight: 600, color: '#0f172a' }}>{meal.mealTitle}</h4>
+                        <ul style={{ paddingLeft: '16px', margin: '4px 0 0 0', fontSize: '0.78rem', color: '#475569' }}>
                           {meal.mealItems.map((item, itemIdx) => (
                             <li key={itemIdx}>{item.food} - {item.quantity} {item.unit}</li>
                           ))}
                         </ul>
-                        {meal.notes && <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px', fontStyle: 'italic' }}>Notes: {meal.notes}</p>}
+                        {meal.notes && <p style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '4px', margin: '4px 0 0 0', fontStyle: 'italic' }}>Notes: {meal.notes}</p>}
                       </div>
-                      
+
                       {/* Action buttons inside card */}
-                      <div style={{ position: 'absolute', right: '12px', top: '12px', display: 'flex', gap: '4px' }}>
-                        <button type="button" className="btn-icon" style={{ width: '24px', height: '24px', fontSize: '0.75rem' }} onClick={() => openEditMeal(index)}>
+                      <div style={{ position: 'absolute', right: '8px', top: '8px', display: 'flex', gap: '2px' }}>
+                        <button type="button" className="pt-icon-btn" style={{ width: '22px', height: '22px', fontSize: '0.75rem' }} onClick={() => openEditMeal(index)}>
                           <i className="far fa-edit"></i>
                         </button>
-                        <button type="button" className="btn-icon" style={{ width: '24px', height: '24px', fontSize: '0.75rem' }} onClick={() => handleDuplicateMeal(index)}>
+                        <button type="button" className="pt-icon-btn" style={{ width: '22px', height: '22px', fontSize: '0.75rem' }} onClick={() => handleDuplicateMeal(index)}>
                           <i className="far fa-clone"></i>
                         </button>
-                        <button type="button" className="btn-icon" style={{ width: '24px', height: '24px', fontSize: '0.75rem', color: 'var(--danger)' }} onClick={() => handleDeleteMeal(index)}>
+                        <button type="button" className="pt-icon-btn text-danger" style={{ width: '22px', height: '22px', fontSize: '0.75rem' }} onClick={() => handleDeleteMeal(index)}>
                           <i className="far fa-trash-alt"></i>
                         </button>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div style={{ border: '1px dashed var(--border-color)', borderRadius: '12px', padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                  <div style={{ border: '1px dashed #cbd5e1', borderRadius: '12px', padding: '30px', textAlign: 'center', color: '#64748b', fontSize: '0.82rem' }}>
                     No meals scheduled yet. Click "+ Add Meal" above to build a diet split.
                   </div>
                 )}
@@ -960,28 +1096,28 @@ const AdminDietPlans = () => {
             </div>
 
             {/* Column 3: Recommendations & Comments */}
-            <div className="m-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '14px' }}>
-                <h3 className="m-card-title" style={{ margin: 0, fontSize: '1.05rem' }}>Recommendations</h3>
-                <button type="button" className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={openAddRecSection}>
+            <div className="pt-card flex-col" style={{ gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                <h3 style={{ margin: 0, fontSize: '0.95rem', color: '#0f172a', fontWeight: 700 }}>Recommendations</h3>
+                <button type="button" className="pt-btn pt-btn-secondary" style={{ padding: '6px 12px', fontSize: '0.78rem', borderRadius: '8px' }} onClick={openAddRecSection}>
                   <i className="fas fa-plus"></i> Add Section
                 </button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {recsSections.map((sec, index) => (
-                  <div key={index} className="recommendation-section-card">
-                    <div className="section-card-header" style={{ padding: '10px 14px' }}>
-                      <div className="section-card-title-group">
-                        <div className="section-card-icon-circle" style={{ width: '28px', height: '28px', fontSize: '0.8rem' }}><i className={`fas ${sec.icon}`}></i></div>
-                        <h4 style={{ fontSize: '0.85rem' }}>{sec.title}</h4>
+                  <div key={index} style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', background: '#ffffff' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f8fafc' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem' }}><i className={`fas ${sec.icon}`}></i></div>
+                        <h4 style={{ fontSize: '0.8rem', margin: 0, fontWeight: 600, color: '#334155' }}>{sec.title}</h4>
                       </div>
-                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        <span className="section-card-badge" style={{ fontSize: '0.7rem' }}>{sec.items.length}</span>
-                        <button type="button" className="btn-icon" style={{ width: '22px', height: '22px', fontSize: '0.7rem' }} onClick={() => openEditRecSection(index)}>
+                      <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+                        <span style={{ background: '#e2e8f0', color: '#475569', padding: '1px 6px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700, marginRight: '4px' }}>{sec.items.length}</span>
+                        <button type="button" className="pt-icon-btn" style={{ width: '22px', height: '22px', fontSize: '0.7rem' }} onClick={() => openEditRecSection(index)}>
                           <i className="far fa-edit"></i>
                         </button>
-                        <button type="button" className="btn-icon" style={{ width: '22px', height: '22px', fontSize: '0.7rem', color: 'var(--danger)' }} onClick={() => handleDeleteRecSection(index)}>
+                        <button type="button" className="pt-icon-btn text-danger" style={{ width: '22px', height: '22px', fontSize: '0.7rem' }} onClick={() => handleDeleteRecSection(index)}>
                           <i className="far fa-trash-alt"></i>
                         </button>
                       </div>
@@ -991,10 +1127,11 @@ const AdminDietPlans = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Trainer Comments</label>
-                <textarea 
-                  rows="4" 
-                  className="form-textarea"
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Trainer Comments</label>
+                <textarea
+                  rows="4"
+                  className="pt-input"
+                  style={{ minHeight: '80px', resize: 'vertical' }}
                   placeholder="Follow this plan strictly. Review progress in 15 days..."
                   value={planForm.trainerComments}
                   onChange={(e) => setPlanForm({ ...planForm, trainerComments: e.target.value })}
@@ -1002,33 +1139,32 @@ const AdminDietPlans = () => {
               </div>
 
               {/* Action row */}
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                <button type="button" className="btn-secondary" onClick={() => setViewMode('list')}>Cancel</button>
-                <button type="button" className="btn-secondary" onClick={() => handleSavePlanForm('Draft')}>Save as Draft</button>
-                <button type="button" className="btn-primary" onClick={() => handleSavePlanForm('Active')}>Save & Assign Plan</button>
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px', display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: 'auto' }}>
+                <button type="button" className="pt-btn pt-btn-secondary" style={{ padding: '8px 14px', fontSize: '0.8rem' }} onClick={() => setViewMode('list')}>Cancel</button>
+                <button type="button" className="pt-btn pt-btn-secondary" style={{ padding: '8px 14px', fontSize: '0.8rem' }} onClick={() => handleSavePlanForm('Draft')}>Save as Draft</button>
+                <button type="button" className="pt-btn pt-btn-primary" style={{ padding: '8px 16px', fontSize: '0.8rem' }} onClick={() => handleSavePlanForm('Active')}>Save & Assign Plan</button>
               </div>
             </div>
-
           </div>
         </div>
       )}
 
       {/* -------------------- MEAL MODAL -------------------- */}
       {isMealModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-container large" style={{ maxWidth: '650px' }}>
-            <div className="modal-header">
-              <h3>{editingMealIndex !== null ? 'Edit Meal' : 'Add Meal'}</h3>
-              <button className="modal-close-btn" onClick={() => setIsMealModalOpen(false)}>&times;</button>
+        <div className="pt-modal-backdrop">
+          <div className="pt-modal-card" style={{ maxWidth: '600px', padding: '16px 20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', paddingBottom: '0.75rem', borderBottom: '1px solid #e2e8f0' }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0f172a' }}>{editingMealIndex !== null ? 'Edit Meal' : 'Add Meal'}</h3>
+              <button className="pt-icon-btn" onClick={() => setIsMealModalOpen(false)} style={{ fontSize: '1.2rem' }}>&times;</button>
             </div>
             <form onSubmit={handleMealSubmit}>
-              <div className="modal-body">
-                <div className="form-row">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div className="form-group">
-                    <label className="form-label">Meal Title *</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Meal Title *</label>
+                    <input
+                      type="text"
+                      className="pt-input"
                       placeholder="e.g. Breakfast, Pre Workout"
                       value={mealForm.mealTitle}
                       onChange={(e) => setMealForm({ ...mealForm, mealTitle: e.target.value })}
@@ -1036,10 +1172,10 @@ const AdminDietPlans = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Meal Time *</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Meal Time *</label>
+                    <input
+                      type="text"
+                      className="pt-input"
                       placeholder="e.g. 08:30 AM"
                       value={mealForm.mealTime}
                       onChange={(e) => setMealForm({ ...mealForm, mealTime: e.target.value })}
@@ -1048,97 +1184,100 @@ const AdminDietPlans = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
-                  <strong style={{ fontSize: '0.88rem' }}>Food Items *</strong>
-                  <button type="button" className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.78rem' }} onClick={addFoodItemRow}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                  <strong style={{ fontSize: '0.82rem', color: '#334155' }}>Food Items *</strong>
+                  <button type="button" className="pt-btn pt-btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem', borderRadius: '8px' }} onClick={addFoodItemRow}>
                     <i className="fas fa-plus"></i> Add Item
                   </button>
                 </div>
 
-                <table className="food-items-table">
-                  <thead>
-                    <tr>
-                      <th>Food Item</th>
-                      <th>Quantity</th>
-                      <th>Unit</th>
-                      <th style={{ width: '50px' }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mealForm.mealItems.map((item, idx) => (
-                      <tr key={idx}>
-                        <td>
-                          <input 
-                            type="text" 
-                            className="form-input" 
-                            placeholder="e.g. Rolled Oats"
-                            value={item.food}
-                            onChange={(e) => {
-                              const updated = [...mealForm.mealItems];
-                              updated[idx].food = e.target.value;
-                              setMealForm({ ...mealForm, mealItems: updated });
-                            }}
-                            required
-                          />
-                        </td>
-                        <td>
-                          <input 
-                            type="text" 
-                            className="form-input" 
-                            placeholder="e.g. 100"
-                            value={item.quantity}
-                            onChange={(e) => {
-                              const updated = [...mealForm.mealItems];
-                              updated[idx].quantity = e.target.value;
-                              setMealForm({ ...mealForm, mealItems: updated });
-                            }}
-                            required
-                          />
-                        </td>
-                        <td>
-                          <select 
-                            className="form-select"
-                            value={item.unit}
-                            onChange={(e) => {
-                              const updated = [...mealForm.mealItems];
-                              updated[idx].unit = e.target.value;
-                              setMealForm({ ...mealForm, mealItems: updated });
-                            }}
-                          >
-                            <option value="g">g</option>
-                            <option value="ml">ml</option>
-                            <option value="pcs">pcs</option>
-                            <option value="slices">slices</option>
-                            <option value="glass">glass</option>
-                            <option value="scoop">scoop</option>
-                          </select>
-                        </td>
-                        <td>
-                          {mealForm.mealItems.length > 1 && (
-                            <button type="button" className="btn-icon" style={{ color: 'var(--danger)' }} onClick={() => removeFoodItemRow(idx)}>
-                              <i className="far fa-trash-alt"></i>
-                            </button>
-                          )}
-                        </td>
+                <div className="table-responsive" style={{ border: '1px solid #e2e8f0', borderRadius: '10px' }}>
+                  <table className="pt-table">
+                    <thead>
+                      <tr>
+                        <th style={{ padding: '8px 12px' }}>Food Item</th>
+                        <th style={{ padding: '8px 12px' }}>Quantity</th>
+                        <th style={{ padding: '8px 12px' }}>Unit</th>
+                        <th style={{ width: '40px', padding: '8px 12px' }}></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {mealForm.mealItems.map((item, idx) => (
+                        <tr key={idx}>
+                          <td style={{ padding: '6px 8px' }}>
+                            <input
+                              type="text"
+                              className="pt-input"
+                              placeholder="e.g. Rolled Oats"
+                              value={item.food}
+                              onChange={(e) => {
+                                const updated = [...mealForm.mealItems];
+                                updated[idx].food = e.target.value;
+                                setMealForm({ ...mealForm, mealItems: updated });
+                              }}
+                              required
+                            />
+                          </td>
+                          <td style={{ padding: '6px 8px' }}>
+                            <input
+                              type="text"
+                              className="pt-input"
+                              placeholder="e.g. 100"
+                              value={item.quantity}
+                              onChange={(e) => {
+                                const updated = [...mealForm.mealItems];
+                                updated[idx].quantity = e.target.value;
+                                setMealForm({ ...mealForm, mealItems: updated });
+                              }}
+                              required
+                            />
+                          </td>
+                          <td style={{ padding: '6px 8px' }}>
+                            <select
+                              className="pt-select"
+                              value={item.unit}
+                              onChange={(e) => {
+                                const updated = [...mealForm.mealItems];
+                                updated[idx].unit = e.target.value;
+                                setMealForm({ ...mealForm, mealItems: updated });
+                              }}
+                            >
+                              <option value="g">g</option>
+                              <option value="ml">ml</option>
+                              <option value="pcs">pcs</option>
+                              <option value="slices">slices</option>
+                              <option value="glass">glass</option>
+                              <option value="scoop">scoop</option>
+                            </select>
+                          </td>
+                          <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                            {mealForm.mealItems.length > 1 && (
+                              <button type="button" className="pt-icon-btn text-danger" style={{ padding: '4px' }} onClick={() => removeFoodItemRow(idx)}>
+                                <i className="far fa-trash-alt"></i>
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
                 <div className="form-group">
-                  <label className="form-label">Notes (Optional)</label>
-                  <textarea 
-                    rows="3" 
-                    className="form-textarea" 
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Notes (Optional)</label>
+                  <textarea
+                    rows="3"
+                    className="pt-input"
+                    style={{ minHeight: '60px', resize: 'vertical' }}
                     placeholder="e.g. Take with 1 glass warm water"
                     value={mealForm.notes}
                     onChange={(e) => setMealForm({ ...mealForm, notes: e.target.value })}
                   ></textarea>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={() => setIsMealModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn-primary">Save Meal</button>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid #e2e8f0', paddingTop: '12px', marginTop: '12px' }}>
+                <button type="button" className="pt-btn pt-btn-secondary" style={{ padding: '8px 14px', fontSize: '0.8rem' }} onClick={() => setIsMealModalOpen(false)}>Cancel</button>
+                <button type="submit" className="pt-btn pt-btn-primary" style={{ padding: '8px 16px', fontSize: '0.8rem' }}>Save Meal</button>
               </div>
             </form>
           </div>
@@ -1147,19 +1286,19 @@ const AdminDietPlans = () => {
 
       {/* -------------------- RECOMMENDATIONS MODAL -------------------- */}
       {isRecModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-container">
-            <div className="modal-header">
-              <h3>{editingRecIndex !== null ? 'Edit Section' : 'Add Section'}</h3>
-              <button className="modal-close-btn" onClick={() => setIsRecModalOpen(false)}>&times;</button>
+        <div className="pt-modal-backdrop">
+          <div className="pt-modal-card" style={{ maxWidth: '480px', padding: '16px 20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', paddingBottom: '0.75rem', borderBottom: '1px solid #e2e8f0' }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0f172a' }}>{editingRecIndex !== null ? 'Edit Section' : 'Add Section'}</h3>
+              <button className="pt-icon-btn" onClick={() => setIsRecModalOpen(false)} style={{ fontSize: '1.2rem' }}>&times;</button>
             </div>
             <form onSubmit={handleRecSubmit}>
-              <div className="modal-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div className="form-group">
-                  <label className="form-label">Section Title *</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>Section Title *</label>
+                  <input
+                    type="text"
+                    className="pt-input"
                     placeholder="e.g. Foods to Avoid, Daily Activities"
                     value={recForm.title}
                     onChange={(e) => setRecForm({ ...recForm, title: e.target.value })}
@@ -1168,7 +1307,7 @@ const AdminDietPlans = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Section Icon</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>Section Icon</label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
                     {[
                       { val: 'fa-ban', icon: 'fa-ban' },
@@ -1178,19 +1317,21 @@ const AdminDietPlans = () => {
                       { val: 'fa-lightbulb', icon: 'fa-lightbulb' },
                       { val: 'fa-tint', icon: 'fa-tint' }
                     ].map(item => (
-                      <button 
+                      <button
                         key={item.val}
-                        type="button" 
-                        className="btn-secondary"
+                        type="button"
+                        className="pt-btn pt-btn-secondary"
                         style={{
-                          padding: '10px 0',
-                          background: recForm.icon === item.val ? 'var(--primary-color)' : 'transparent',
-                          color: recForm.icon === item.val ? 'white' : 'var(--text-secondary)',
-                          borderColor: recForm.icon === item.val ? 'var(--primary-color)' : 'var(--border-color)',
+                          padding: '8px 0',
+                          background: recForm.icon === item.val ? '#4f46e5' : 'transparent',
+                          color: recForm.icon === item.val ? 'white' : '#475569',
+                          borderColor: recForm.icon === item.val ? '#4f46e5' : '#cbd5e1',
                           fontSize: '1rem',
                           display: 'flex',
                           justifyContent: 'center',
-                          alignItems: 'center'
+                          alignItems: 'center',
+                          height: '38px',
+                          borderRadius: '8px'
                         }}
                         onClick={() => setRecForm({ ...recForm, icon: item.val })}
                       >
@@ -1200,19 +1341,19 @@ const AdminDietPlans = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
-                  <strong style={{ fontSize: '0.88rem' }}>Bullet Recommendations *</strong>
-                  <button type="button" className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.78rem' }} onClick={addRecItemRow}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                  <strong style={{ fontSize: '0.82rem', color: '#334155' }}>Bullet Recommendations *</strong>
+                  <button type="button" className="pt-btn pt-btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem', borderRadius: '8px' }} onClick={addRecItemRow}>
                     <i className="fas fa-plus"></i> Add Item
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '2px' }}>
                   {recForm.items.map((item, idx) => (
                     <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <input 
-                        type="text" 
-                        className="form-input" 
+                      <input
+                        type="text"
+                        className="pt-input"
                         placeholder="e.g. Avoid carbonated soda"
                         value={item}
                         onChange={(e) => {
@@ -1223,7 +1364,7 @@ const AdminDietPlans = () => {
                         required
                       />
                       {recForm.items.length > 1 && (
-                        <button type="button" className="btn-icon" style={{ color: 'var(--danger)' }} onClick={() => removeRecItemRow(idx)}>
+                        <button type="button" className="pt-icon-btn text-danger" style={{ padding: '4px' }} onClick={() => removeRecItemRow(idx)}>
                           <i className="far fa-trash-alt"></i>
                         </button>
                       )}
@@ -1231,15 +1372,14 @@ const AdminDietPlans = () => {
                   ))}
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={() => setIsRecModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn-primary">Save Section</button>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid #e2e8f0', paddingTop: '12px', marginTop: '12px' }}>
+                <button type="button" className="pt-btn pt-btn-secondary" style={{ padding: '8px 14px', fontSize: '0.8rem' }} onClick={() => setIsRecModalOpen(false)}>Cancel</button>
+                <button type="submit" className="pt-btn pt-btn-primary" style={{ padding: '8px 16px', fontSize: '0.8rem' }}>Save Section</button>
               </div>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 };

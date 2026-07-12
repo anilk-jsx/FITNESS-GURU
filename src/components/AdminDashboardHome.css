@@ -7,6 +7,7 @@
   width: 100%;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: #1e293b;
+  animation: fadeInUp 0.5s ease;
 }
 
 /* Top Header Control Section */
@@ -291,6 +292,10 @@
   font-size: 0.72rem;
   color: #64748b;
   font-weight: 600;
+}
+
+.dash-select-pill{
+  padding: 12px 12px;
 }
 
 .dash-kpi-val {
@@ -1053,6 +1058,7 @@
   .dash-container {
     gap: 0.75rem;
     padding: 0.25rem;
+    margin-top: 55px;
   }
 
   .dash-page-title {
@@ -1215,8 +1221,29 @@
   }
 }
 
+@media (max-width: 520px){
+  .dash-select-pill select{
+    font-size: 12px;
+  }
+
+  .dash-select-pill{
+    font-size: 10px;
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 468px){
+  .dash-select-pill select{
+    font-size: 10px;
+  }
+}
+
 /* Extra Small Screens (max-width: 400px) */
 @media (max-width: 400px) {
+
+  .dash-container{
+    margin-top: 55px;
+  }
 
   .dash-header-main {
     flex-direction: column;
@@ -1225,18 +1252,16 @@
   }
 
   .dash-title-wrap {
-    align-items: center;
-    text-align: center;
+    align-items:flex-start;
+    text-align: left;
   }
-
-  /* .dash-header-profile-wrap {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  } */
 
   .dash-header-notifications {
     justify-content: center;
+  }
+
+  .dash-select-pill{
+    gap: 0;
   }
 
   .dash-select-pill,

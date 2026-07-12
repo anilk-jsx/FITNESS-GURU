@@ -1208,14 +1208,21 @@
     margin-bottom: 1rem;
 }
 
-.doc-summary-card,
-.onboard-toggle-section {
+.doc-summary-card {
     padding: 0.95rem;
     border-radius: 14px;
+    gap: 0.85rem;
 }
 
-.doc-summary-card {
-    gap: 0.85rem;
+.onboard-toggle-section {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .doc-summary-meta,
@@ -1233,14 +1240,63 @@
 }
 
 .toggle-options-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
+    width: 100%;
 }
 
 .toggle-option-btn {
-    min-height: 44px;
-    padding: 11px 16px;
+    min-height: 48px;
+    padding: 12px 20px;
     border-radius: 12px;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #475569;
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+}
+
+.toggle-option-btn:hover {
+    border-color: #cbd5e1;
+    color: #1e293b;
+    background: #f8fafc;
+    transform: translateY(-1px);
+}
+
+.toggle-option-btn i {
+    font-size: 1.1rem;
+    color: #94a3b8;
+    transition: all 0.25s ease;
+}
+
+.toggle-option-btn:hover i {
+    color: #64748b;
+    transform: scale(1.1);
+}
+
+.toggle-option-btn.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    border-color: #2563eb;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.toggle-option-btn.active i {
+    color: #ffffff;
+}
+
+.toggle-option-btn.active:hover {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    border-color: #1d4ed8;
+    transform: translateY(0);
 }
 
 .staff-form-section {
@@ -1714,9 +1770,12 @@
     }
 
     .staff-modal-actions,
-    .profile-modal-actions-bar,
-    .toggle-options-group {
+    .profile-modal-actions-bar {
         flex-direction: column;
+    }
+
+    .toggle-options-group {
+        grid-template-columns: 1fr;
     }
 }
 

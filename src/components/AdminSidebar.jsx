@@ -21,9 +21,6 @@ const AdminSidebar = ({
           <img src="/FGlogo.png" alt="FITNESS GURU Logo" />
           <span className="logo-title">FITNESS GURU</span>
         </a>
-        <button className="sidebar-toggle-btn" aria-label="Toggle Sidebar">
-          <i className="fas fa-bars"></i>
-        </button>
       </div>
 
       {/* Navigation Menu with Original Items, Icons & Names */}
@@ -105,7 +102,7 @@ const AdminSidebar = ({
           </NavLink>
         </div>
 
-        <div className="nav-item">
+        {/* <div className="nav-item">
           <NavLink 
             to="/admin-dashboard/mapping"
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
@@ -114,7 +111,7 @@ const AdminSidebar = ({
             <i className="fas fa-link"></i>
             <span>User Trainer Mapping</span>
           </NavLink>
-        </div>
+        </div> */}
 
         <div className="nav-item">
           <NavLink 

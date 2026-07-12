@@ -4,6 +4,22 @@ import DashboardLayout from '../layout/DashboardLayout';
 import tokenManager from '../utils/tokenManager';
 import './Subscriptions.css';
 
+const ENTITLEMENT_LABELS = {
+  'GYM_ACCESS': 'Gym Access',
+  'PT_1ON1': 'Personal Training (1-on-1)',
+  'GROUP_CLASS': 'Group Classes',
+  'FACILITY_SAUNA': 'Sauna Access',
+  'FACILITY_STEAM_BATH': 'Steam Bath Access',
+  'ACCESS_WORKOUT_PLANS': 'Workout Plans Access',
+  'ACCESS_DIET_PLANS': 'Diet Plans Access',
+  'ACCESS_ASSESSMENTS': 'Fitness Assessments',
+  'ACCESS_NUTRITION_GUIDE': 'Nutrition Guide Access'
+};
+
+const formatEntitlementType = (type) => {
+  return ENTITLEMENT_LABELS[type] || (type ? type.replace(/_/g, ' ') : '');
+};
+
 const Subscriptions = () => {
   const [currentPricing, setCurrentPricing] = useState('quarterly');
   const [showUpgradePlans, setShowUpgradePlans] = useState(false);
@@ -371,7 +387,7 @@ const Subscriptions = () => {
           <div className="wallet-credits-grid mt-3">
             {activeSubscription.wallet_credits.map((credit, idx) => (
               <div key={idx} className="credit-item-box">
-                <div className="credit-type-lbl"><i className="fas fa-gem text-gold"></i> {credit.entitlement_type.replace(/_/g, ' ')}</div>
+                <div className="credit-type-lbl"><i className="fas fa-gem text-gold"></i> {formatEntitlementType(credit.entitlement_type)}</div>
                 <div className="credit-qty-val font-bold">
                   {credit.is_unlimited ? 'UNLIMITED ACCESS' : `${credit.remaining_quantity} Units Remaining`}
                 </div>

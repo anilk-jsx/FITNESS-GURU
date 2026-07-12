@@ -1,42 +1,51 @@
 /* Trainer Dashboard - Dark Material Design 3 Theme with Orange Accents CSS */
 
 :root {
-  --primary-color: #ff6b35; /* Gym Orange accent */
+  --primary-color: #ff6b35;
+  /* Gym Orange accent */
   --primary-light: rgba(255, 107, 53, 0.15);
   --primary-hover: #ff8c35;
-  --secondary-color: #f7931e; /* Gold/Amber secondary */
+  --secondary-color: #f7931e;
+  /* Gold/Amber secondary */
   --secondary-light: rgba(247, 147, 30, 0.15);
-  
-  --bg-app: #0c0c0e; /* Deep black-slate background */
-  --bg-sidebar: #121214; /* Dark slate sidebar */
-  --bg-card: rgba(20, 20, 22, 0.85); /* Glassmorphic dark card */
-  --border-color: rgba(255, 255, 255, 0.08); /* Semi-transparent border */
+
+  --bg-app: #0c0c0e;
+  /* Deep black-slate background */
+  --bg-sidebar: #121214;
+  /* Dark slate sidebar */
+  --bg-card: rgba(20, 20, 22, 0.85);
+  /* Glassmorphic dark card */
+  --border-color: rgba(255, 255, 255, 0.08);
+  /* Semi-transparent border */
   --border-focus: rgba(255, 107, 53, 0.5);
-  
-  --text-primary: #ffffff; /* Crisp white */
-  --text-secondary: rgba(255, 255, 255, 0.7); /* Muted slate/white */
-  --text-muted: rgba(255, 255, 255, 0.45); /* Very muted white */
+
+  --text-primary: #ffffff;
+  /* Crisp white */
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  /* Muted slate/white */
+  --text-muted: rgba(255, 255, 255, 0.45);
+  /* Very muted white */
   --text-on-primary: #ffffff;
-  
+
   --success: #10b981;
   --success-light: rgba(16, 185, 129, 0.15);
   --warning: #f59e0b;
   --warning-light: rgba(245, 158, 11, 0.15);
   --danger: #ef4444;
   --danger-light: rgba(239, 68, 68, 0.15);
-  
+
   --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 10px 20px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.6);
-  
+
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 20px;
   --radius-full: 9999px;
-  
+
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 80px;
-  
+
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -162,6 +171,7 @@ body {
 .sidebar-nav::-webkit-scrollbar {
   width: 4px;
 }
+
 .sidebar-nav::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: var(--radius-full);
@@ -249,7 +259,7 @@ body {
   transition: margin-left var(--transition-normal);
 }
 
-.trainer-sidebar.collapsed + .trainer-main-area {
+.trainer-sidebar.collapsed+.trainer-main-area {
   margin-left: var(--sidebar-collapsed-width);
 }
 
@@ -407,8 +417,15 @@ body {
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dropdown-menu-header {
@@ -465,8 +482,15 @@ body {
 }
 
 @keyframes viewFadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .page-header {
@@ -498,7 +522,8 @@ body {
 .m-card {
   background-color: var(--bg-card);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 107, 53, 0.15); /* Glowing Orange border */
+  border: 1px solid rgba(255, 107, 53, 0.15);
+  /* Glowing Orange border */
   border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: var(--shadow-sm);
@@ -518,7 +543,7 @@ body {
 }
 
 /* Buttons System */
-.btn-primary {
+.btn-primary-td {
   background-color: var(--primary-color);
   color: var(--text-on-primary);
   border: none;
@@ -533,16 +558,16 @@ body {
   transition: var(--transition-fast);
 }
 
-.btn-primary:hover {
+.btn-primary-td:hover {
   background-color: var(--primary-hover);
   box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
 }
 
-.btn-primary:active {
+.btn-primary-td:active {
   transform: translateY(1px);
 }
 
-.btn-secondary {
+.btn-secondary-td {
   background-color: rgba(255, 255, 255, 0.04);
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
@@ -557,7 +582,7 @@ body {
   transition: var(--transition-fast);
 }
 
-.btn-secondary:hover {
+.btn-secondary-td:hover {
   background-color: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   border-color: rgba(255, 107, 53, 0.25);
@@ -625,11 +650,30 @@ body {
   font-size: 1.4rem;
 }
 
-.kpi-icon-box.primary { background-color: var(--primary-light); color: var(--primary-color); }
-.kpi-icon-box.secondary { background-color: var(--secondary-light); color: var(--secondary-color); }
-.kpi-icon-box.success { background-color: var(--success-light); color: var(--success); }
-.kpi-icon-box.warning { background-color: var(--warning-light); color: var(--warning); }
-.kpi-icon-box.danger { background-color: var(--danger-light); color: var(--danger); }
+.kpi-icon-box.primary {
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.kpi-icon-box.secondary {
+  background-color: var(--secondary-light);
+  color: var(--secondary-color);
+}
+
+.kpi-icon-box.success {
+  background-color: var(--success-light);
+  color: var(--success);
+}
+
+.kpi-icon-box.warning {
+  background-color: var(--warning-light);
+  color: var(--warning);
+}
+
+.kpi-icon-box.danger {
+  background-color: var(--danger-light);
+  color: var(--danger);
+}
 
 .kpi-data {
   display: flex;
@@ -737,11 +781,30 @@ body {
   letter-spacing: 0.2px;
 }
 
-.m-badge.success { background-color: var(--success-light); color: var(--success); }
-.m-badge.warning { background-color: var(--warning-light); color: var(--warning); }
-.m-badge.danger { background-color: var(--danger-light); color: var(--danger); }
-.m-badge.primary { background-color: var(--primary-light); color: var(--primary-color); }
-.m-badge.secondary { background-color: var(--secondary-light); color: var(--secondary-color); }
+.m-badge.success {
+  background-color: var(--success-light);
+  color: var(--success);
+}
+
+.m-badge.warning {
+  background-color: var(--warning-light);
+  color: var(--warning);
+}
+
+.m-badge.danger {
+  background-color: var(--danger-light);
+  color: var(--danger);
+}
+
+.m-badge.primary {
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.m-badge.secondary {
+  background-color: var(--secondary-light);
+  color: var(--secondary-color);
+}
 
 /* Table Pagination styling */
 .table-pagination-bar {
@@ -803,8 +866,13 @@ body {
 }
 
 @keyframes fadeInModal {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-container {
@@ -823,8 +891,15 @@ body {
 }
 
 @keyframes slideUpModal {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-header {
@@ -1033,9 +1108,17 @@ body {
   box-shadow: 0 0 0 3px #121214;
 }
 
-.timeline-dot.success { border-color: var(--success); }
-.timeline-dot.warning { border-color: var(--warning); }
-.timeline-dot.danger { border-color: var(--danger); }
+.timeline-dot.success {
+  border-color: var(--success);
+}
+
+.timeline-dot.warning {
+  border-color: var(--warning);
+}
+
+.timeline-dot.danger {
+  border-color: var(--danger);
+}
 
 .timeline-content {
   display: flex;
@@ -1190,7 +1273,7 @@ body {
 /* Diet Plan Module Builder Styles */
 .diet-builder-grid {
   display: grid;
-  grid-template-columns: 1fr 1.6fr 1.4fr;
+  grid-template-columns: 1.6fr 1.7fr 1.4fr;
   gap: 24px;
   align-items: start;
 }
@@ -1331,9 +1414,11 @@ body {
   .overview-tab-grid {
     grid-template-columns: 1fr;
   }
+
   .clients-tab-layout {
     grid-template-columns: 1fr;
   }
+
   .clients-list-panel {
     max-height: 350px;
   }
@@ -1345,9 +1430,11 @@ body {
     align-items: flex-start;
     gap: 15px;
   }
+
   .trainer-header-badge {
     align-items: flex-start;
   }
+
   .trainer-tabs-container {
     overflow-x: auto;
     padding-bottom: 10px;

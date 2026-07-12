@@ -14,6 +14,22 @@ const ALLOWED_ENTITLEMENTS = [
     'ACCESS_NUTRITION_GUIDE'
 ];
 
+const ENTITLEMENT_LABELS = {
+    'GYM_ACCESS': 'Gym Access',
+    'PT_1ON1': 'Personal Training (1-on-1)',
+    'GROUP_CLASS': 'Group Classes',
+    'FACILITY_SAUNA': 'Sauna Access',
+    'FACILITY_STEAM_BATH': 'Steam Bath Access',
+    'ACCESS_WORKOUT_PLANS': 'Workout Plans Access',
+    'ACCESS_DIET_PLANS': 'Diet Plans Access',
+    'ACCESS_ASSESSMENTS': 'Fitness Assessments',
+    'ACCESS_NUTRITION_GUIDE': 'Nutrition Guide Access'
+};
+
+const formatEntitlementType = (type) => {
+    return ENTITLEMENT_LABELS[type] || (type ? type.replace(/_/g, ' ') : '');
+};
+
 const PLAN_TYPES = [
     { label: 'Base Membership', value: 'BASE_MEMBERSHIP' },
     { label: 'PT Upgrade', value: 'PT_UPGRADE' },
@@ -157,14 +173,14 @@ const SubscriptionManagement = () => {
                 return;
             }
             if (typesSeen.has(ent.entitlement_type)) {
-                showNotice(`Duplicate entitlement type found: ${ent.entitlement_type}`, true);
+                showNotice(`Duplicate entitlement type found: ${formatEntitlementType(ent.entitlement_type)}`, true);
                 setActionLoading(false);
                 return;
             }
             typesSeen.add(ent.entitlement_type);
 
             if (parseInt(ent.quantity) < 1 || parseInt(ent.valid_days) < 1) {
-                showNotice(`Quantity and Valid Days must be at least 1 for ${ent.entitlement_type}`, true);
+                showNotice(`Quantity and Valid Days must be at least 1 for ${formatEntitlementType(ent.entitlement_type)}`, true);
                 setActionLoading(false);
                 return;
             }
@@ -280,7 +296,7 @@ const SubscriptionManagement = () => {
     // API 7: Delete Single Entitlement from Plan
     const handleDeleteSingleEntitlement = async (entType) => {
         if (!selectedPlanForEntitlements) return;
-        if (!window.confirm(`Remove entitlement "${entType}" from plan?`)) return;
+        if (!window.confirm(`Remove entitlement "${formatEntitlementType(entType)}" from plan?`)) return;
 
         setActionLoading(true);
         try {
@@ -289,7 +305,7 @@ const SubscriptionManagement = () => {
             const data = await res.json();
 
             if (res.ok && data.status === 'success') {
-                showNotice(`Entitlement '${entType}' removed successfully`);
+                showNotice(`Entitlement '${formatEntitlementType(entType)}' removed successfully`);
                 setEntitlementsManageList(prev => prev.filter(item => item.entitlement_type !== entType));
                 fetchMembershipPlans();
             } else {
@@ -538,8 +554,8 @@ const SubscriptionManagement = () => {
         setPlanFormData(prev => ({
             ...prev,
             entitlements: [
-                ...prev.entitlements,
-                { entitlement_type: unused, quantity: 30, valid_days: 30 }
+                { entitlement_type: unused, quantity: 30, valid_days: 30, isNew: true },
+                ...prev.entitlements
             ]
         }));
     };
@@ -566,8 +582,8 @@ const SubscriptionManagement = () => {
         ) || ALLOWED_ENTITLEMENTS[0];
 
         setEntitlementsManageList(prev => [
-            ...prev,
-            { entitlement_type: unused, quantity: 30, valid_days: 30 }
+            { entitlement_type: unused, quantity: 30, valid_days: 30, isNew: true },
+            ...prev
         ]);
     };
 
@@ -677,7 +693,7 @@ const SubscriptionManagement = () => {
                     onClick={() => setActiveTab('plans')}
                 >
                     <i className="fas fa-tags"></i>
-                    Membership Plans & Entitlements Catalog
+                    Subscriptions & Entitlements Catalog
                     <span className="sub-tab-count">{plans.length}</span>
                 </button>
             </div>
@@ -792,7 +808,7 @@ const SubscriptionManagement = () => {
                                                 plan.entitlements.map((ent, idx) => (
                                                     <span key={idx} className="entitlement-tag">
                                                         <i className="fas fa-check-circle"></i>
-                                                        <strong>{ent.entitlement_type}</strong>
+                                                        <strong>{formatEntitlementType(ent.entitlement_type)}</strong>
                                                         <span className="ent-qty">{ent.quantity} qty ({ent.valid_days}d)</span>
                                                     </span>
                                                 ))
@@ -1040,7 +1056,7 @@ const SubscriptionManagement = () => {
                                                                         {credits.map((credit, cIdx) => (
                                                                             <div key={credit.credit_id || cIdx} className={`credit-card ${credit.status === 0 ? 'credit-revoked' : ''}`}>
                                                                                 <div className="credit-card-header">
-                                                                                    <span className="credit-type">{credit.entitlement_type}</span>
+                                                                                    <span className="credit-type">{formatEntitlementType(credit.entitlement_type)}</span>
                                                                                     <span className={`credit-status ${credit.status === 1 ? 'active' : 'revoked'}`}>
                                                                                         {credit.status === 1 ? 'Active' : 'Revoked'}
                                                                                     </span>
@@ -1188,7 +1204,7 @@ const SubscriptionManagement = () => {
                                 ) : (
                                     <div className="factory-rows-container">
                                         {planFormData.entitlements.map((ent, idx) => (
-                                            <div key={idx} className="factory-row">
+                                            <div key={ent.entitlement_type || idx} className={`factory-row ${ent.isNew ? 'newly-added-row' : ''}`}>
                                                 <div className="factory-col col-type">
                                                     <label>Entitlement Type</label>
                                                     <select
@@ -1196,7 +1212,7 @@ const SubscriptionManagement = () => {
                                                         onChange={(e) => handleUpdateEntitlementRow(idx, 'entitlement_type', e.target.value)}
                                                     >
                                                         {ALLOWED_ENTITLEMENTS.map(type => (
-                                                            <option key={type} value={type}>{type}</option>
+                                                            <option key={type} value={type}>{formatEntitlementType(type)}</option>
                                                         ))}
                                                     </select>
                                                 </div>
@@ -1285,7 +1301,7 @@ const SubscriptionManagement = () => {
 
                             <div className="factory-rows-container">
                                 {entitlementsManageList.map((ent, idx) => (
-                                    <div key={idx} className="factory-row">
+                                    <div key={ent.entitlement_type || idx} className={`factory-row ${ent.isNew ? 'newly-added-row' : ''}`}>
                                         <div className="factory-col col-type">
                                             <label>Entitlement Type</label>
                                             <select
@@ -1293,7 +1309,7 @@ const SubscriptionManagement = () => {
                                                 onChange={(e) => handleUpdateManageEntitlementRow(idx, 'entitlement_type', e.target.value)}
                                             >
                                                 {ALLOWED_ENTITLEMENTS.map(type => (
-                                                    <option key={type} value={type}>{type}</option>
+                                                    <option key={type} value={type}>{formatEntitlementType(type)}</option>
                                                 ))}
                                             </select>
                                         </div>

@@ -517,8 +517,8 @@
   margin-bottom: 0.5rem;
 }
 
-.form-group input,
-.form-group textarea {
+.freeze-modal .form-group input,
+.freeze-modal .form-group textarea {
   width: 100%;
   padding: 0.875rem;
   background: rgba(255, 255, 255, 0.05);
@@ -530,18 +530,18 @@
   transition: all 0.3s ease;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
+.freeze-modal .form-group input:focus,
+.freeze-modal .form-group textarea:focus {
   outline: none;
   border-color: rgba(255, 107, 53, 0.5);
   background: rgba(255, 255, 255, 0.08);
 }
 
-.form-group small {
+.freeze-modal .form-group small {
   display: block;
-  margin-top: 0.5rem;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
+  margin-top: 5px;
+  color: #aaaaaa;
+  font-size: 0.8rem;
 }
 
 .form-row {

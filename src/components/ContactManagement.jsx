@@ -430,11 +430,13 @@ const ContactManagement = () => {
                         {error && !loading ? (
                             <tr>
                                 <td colSpan="5" className="contact-error">
-                                    <i className="fas fa-exclamation-triangle"></i>
-                                    <p>{error}</p>
-                                    <button onClick={() => fetchContactData()} className="contact-btn-primary contact-btn-sm">
-                                        <i className="fas fa-redo"></i> Retry
-                                    </button>
+                                    <div className="error-content-wrapper">
+                                        <i className="fas fa-exclamation-triangle"></i>
+                                        <p>{error}</p>
+                                        <button onClick={() => fetchContactData()} className="contact-btn-primary contact-btn-sm">
+                                            <i className="fas fa-redo"></i> Retry
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ) : loading ? (

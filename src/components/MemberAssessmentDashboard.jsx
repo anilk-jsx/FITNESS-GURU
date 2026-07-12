@@ -311,408 +311,391 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
 
     return (
       <div className="mad-gauge-mini">
-        <svg className="mad-gauge-mini-svg" width="54" height="54" viewBox="0 0 54 54">
-          <circle className="mad-gauge-mini-bg" cx="27" cy="27" r={radius} />
-          <circle 
-            className="mad-gauge-mini-fill" 
-            cx="27" 
-            cy="27" 
-            r={radius} 
-            stroke="#22c55e"
+        <svg className="mad-gauge-mini-svg" width="60" height="60" viewBox="0 0 60 60">
+          <circle className="mad-gauge-mini-bg" cx="30" cy="30" r={radius} />
+          <circle
+            className="mad-gauge-mini-fill"
+            cx="30"
+            cy="30"
+            r={radius}
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
           />
         </svg>
         <div className="mad-gauge-mini-icon">
-          <i className="fas fa-chart-line"></i>
+          <i className="fas fa-bolt"></i>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="mad-dashboard-wrapper">
+    <div className={`mad-dashboard-wrapper ${isAdmin ? 'mad-light-theme' : 'mad-dark-theme'}`}>
       {/* Breadcrumb Navigation Bar */}
       <div className="mad-top-nav-bar">
         <div className="mad-breadcrumb">
           <button className="mad-breadcrumb-back" onClick={onBack}>
-            <i className="fas fa-arrow-left"></i> Assessments
+            <i className="fas fa-chevron-left"></i> Assessments
           </button>
-          <span>&gt;</span>
+          <span className="mad-breadcrumb-divider">/</span>
           <span className="mad-breadcrumb-active">Assessment Details</span>
         </div>
-        
+
         <div className="mad-action-block">
           <button className="mad-btn-secondary">
             <i className="fas fa-download"></i> Download Report
           </button>
           <button className="mad-btn-icon-only">
-            <i className="fas fa-ellipsis-v"></i>
+            <i className="fas fa-ellipsis-h"></i>
           </button>
         </div>
       </div>
 
       {/* Main Profile Header Card */}
-      <div className="mad-header-row">
+      <div className="mad-header-card">
         <div className="mad-profile-block">
           <div className="mad-avatar-container">
             <span className="mad-avatar-placeholder">
-              {memberName.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}
+              {memberName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
             </span>
           </div>
           <div className="mad-profile-details">
             <h1 className="mad-member-name">
               {memberName}
-              <span className="mad-status-badge">Active Member</span>
+              <span className="mad-status-badge">Active</span>
             </h1>
             <p className="mad-meta-text">
-              <span><strong>ID:</strong> {memberId}</span>
-              <span>•</span>
-              <span><strong>Age:</strong> {memberAge} years</span>
-              <span>•</span>
-              <span><strong>Gender:</strong> {memberGender}</span>
+              <span className="mad-meta-pill">ID: {memberId}</span>
+              <span className="mad-meta-pill">{memberAge} yrs</span>
+              <span className="mad-meta-pill">{memberGender}</span>
             </p>
             <p className="mad-meta-contact">
-              <span><i className="far fa-envelope"></i> <a href={`mailto:${memberEmail}`}>{memberEmail}</a></span>
+              <a href={`mailto:${memberEmail}`}><i className="far fa-envelope"></i> {memberEmail}</a>
               <span><i className="fas fa-phone-alt"></i> {memberPhone}</span>
             </p>
           </div>
         </div>
 
         {/* Top Right Header Section: Dates and Overall Score */}
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-            <div style={{ marginBottom: '4px' }}>
-              <i className="far fa-calendar-alt"></i> <strong>Assessment Date:</strong> {latestAssess.date} {latestAssess.time}
-            </div>
-            <div style={{ marginBottom: '4px' }}>
-              <i className="far fa-user"></i> <strong>Trainer:</strong> {latestAssess.trainer}
+        <div className="mad-header-stats">
+          <div className="mad-header-info-list">
+            <div>
+              <i className="far fa-calendar-alt"></i> <span>{latestAssess.date}</span>
             </div>
             <div>
-              <i className="fas fa-history"></i> <strong>Assessments Taken:</strong> 5
+              <i className="far fa-user"></i> <span>Coach: {latestAssess.trainer}</span>
+            </div>
+            <div>
+              <i className="fas fa-clipboard-list"></i> <span>Test 5 of 5</span>
             </div>
           </div>
 
-          <div className="mad-score-section">
-            <div className="mad-score-box">
-              <div className="mad-score-label">Overall Fitness Score</div>
-              <div className="mad-score-num">{latestAssess.overallScore}<span>/100</span></div>
-              <div className="mad-score-rating">{latestAssess.rating}</div>
+          <div className="mad-score-card-modern">
+            <div className="mad-score-content">
+              <span className="mad-score-label">Overall Score</span>
+              <div className="mad-score-value">
+                {latestAssess.overallScore}<span>/100</span>
+              </div>
+              <span className="mad-score-rating">{latestAssess.rating}</span>
             </div>
             <MiniCircularGauge score={latestAssess.overallScore} max={100} />
           </div>
         </div>
       </div>
 
-      {/* Navigation tabs */}
-      <div className="mad-tabs-bar">
-        <button 
-          className={`mad-tab-button ${activeTab === 'details' ? 'active' : ''}`}
+      {/* Modern Navigation tabs */}
+      <div className="mad-tabs-container">
+        <button
+          className={`mad-tab-pill ${activeTab === 'details' ? 'active' : ''}`}
           onClick={() => setActiveTab('details')}
         >
-          Assessment Details
+          <i className="fas fa-chart-pie"></i> Details
         </button>
-        <button 
-          className={`mad-tab-button ${activeTab === 'history' ? 'active' : ''}`}
+        <button
+          className={`mad-tab-pill ${activeTab === 'history' ? 'active' : ''}`}
           onClick={() => setActiveTab('history')}
         >
-          Assessment History & Progress
+          <i className="fas fa-chart-line"></i> History & Progress
         </button>
-        <button 
-          className={`mad-tab-button ${activeTab === 'parameters' ? 'active' : ''}`}
+        <button
+          className={`mad-tab-pill ${activeTab === 'parameters' ? 'active' : ''}`}
           onClick={() => setActiveTab('parameters')}
         >
-          Assessment Parameters
+          <i className="fas fa-sliders-h"></i> Parameters
         </button>
       </div>
 
       {/* Tab 1: Assessment Details */}
       {activeTab === 'details' && (
-        <div className="mad-tab-content">
-          
+        <div className="mad-tab-content fade-in">
+
           {/* Quick Score Overview Cards */}
-          <div className="mad-categories-grid">
-            <div className="mad-category-kpi-card body_composition">
-              <div className="mad-category-kpi-header">
-                <span className="mad-category-kpi-title">Body Composition</span>
-                <i className="fas fa-weight-hanging" style={{ color: '#10b981' }}></i>
+          <div className="mad-kpi-grid">
+            <div className="mad-kpi-card body_composition">
+              <div className="mad-kpi-icon"><i className="fas fa-weight-hanging"></i></div>
+              <div className="mad-kpi-info">
+                <span className="mad-kpi-title">Body Comp</span>
+                <div className="mad-kpi-score">40<span>/40</span></div>
+                <span className="mad-kpi-rating">Excellent</span>
               </div>
-              <div className="mad-category-kpi-score">40<span>/40</span></div>
-              <span className="mad-category-kpi-rating" style={{ color: '#10b981' }}>Excellent</span>
             </div>
 
-            <div className="mad-category-kpi-card vital_signs">
-              <div className="mad-category-kpi-header">
-                <span className="mad-category-kpi-title">Vital Signs</span>
-                <i className="fas fa-heartbeat" style={{ color: '#3b82f6' }}></i>
+            <div className="mad-kpi-card vital_signs">
+              <div className="mad-kpi-icon"><i className="fas fa-heartbeat"></i></div>
+              <div className="mad-kpi-info">
+                <span className="mad-kpi-title">Vital Signs</span>
+                <div className="mad-kpi-score">16<span>/20</span></div>
+                <span className="mad-kpi-rating">Good</span>
               </div>
-              <div className="mad-category-kpi-score">16<span>/20</span></div>
-              <span className="mad-category-kpi-rating" style={{ color: '#3b82f6' }}>Good</span>
             </div>
 
-            <div className="mad-category-kpi-card flexibility">
-              <div className="mad-category-kpi-header">
-                <span className="mad-category-kpi-title">Flexibility</span>
-                <i className="fas fa-child" style={{ color: '#8b5cf6' }}></i>
+            <div className="mad-kpi-card flexibility">
+              <div className="mad-kpi-icon"><i className="fas fa-child"></i></div>
+              <div className="mad-kpi-info">
+                <span className="mad-kpi-title">Flexibility</span>
+                <div className="mad-kpi-score">16<span>/20</span></div>
+                <span className="mad-kpi-rating">Good</span>
               </div>
-              <div className="mad-category-kpi-score">16<span>/20</span></div>
-              <span className="mad-category-kpi-rating" style={{ color: '#8b5cf6' }}>Good</span>
             </div>
 
-            <div className="mad-category-kpi-card body_measurements">
-              <div className="mad-category-kpi-header">
-                <span className="mad-category-kpi-title">Measurements</span>
-                <i className="fas fa-ruler-horizontal" style={{ color: '#f59e0b' }}></i>
+            <div className="mad-kpi-card body_measurements">
+              <div className="mad-kpi-icon"><i className="fas fa-ruler-horizontal"></i></div>
+              <div className="mad-kpi-info">
+                <span className="mad-kpi-title">Measurements</span>
+                <div className="mad-kpi-score">9<span>/10</span></div>
+                <span className="mad-kpi-rating">Excellent</span>
               </div>
-              <div className="mad-category-kpi-score">9<span>/10</span></div>
-              <span className="mad-category-kpi-rating" style={{ color: '#f59e0b' }}>Excellent</span>
             </div>
 
-            <div className="mad-category-kpi-card trainer_assessment">
-              <div className="mad-category-kpi-header">
-                <span className="mad-category-kpi-title">Trainer Rating</span>
-                <i className="fas fa-user-check" style={{ color: '#06b6d4' }}></i>
+            <div className="mad-kpi-card trainer_assessment">
+              <div className="mad-kpi-icon"><i className="fas fa-user-check"></i></div>
+              <div className="mad-kpi-info">
+                <span className="mad-kpi-title">Coach Rating</span>
+                <div className="mad-kpi-score">10<span>/10</span></div>
+                <span className="mad-kpi-rating">Excellent</span>
               </div>
-              <div className="mad-category-kpi-score">10<span>/10</span></div>
-              <span className="mad-category-kpi-rating" style={{ color: '#06b6d4' }}>Excellent</span>
             </div>
           </div>
 
           {/* 3-Column Card Grid Layout */}
           <div className="mad-grid-dashboard">
-            
+
             {/* Card 1: Body Composition */}
-            <div className="mad-section-card">
-              <h2 className="mad-section-title body_composition">
-                <i className="fas fa-weight-hanging"></i> Body Composition <span>40/40</span>
-              </h2>
-              <div className="mad-stat-group">
-                <div className="mad-stat-info">
-                  <span className="mad-stat-name">BMI (20)</span>
-                  <span className="mad-stat-value">{bodyCompDetails.bmi.value}<span className="mad-stat-value-badge">20/20</span></span>
-                </div>
-                <div className="mad-stat-status-row">
-                  <i className="fas fa-check-circle"></i> <span>Normal (18.5 - 24.9)</span>
-                </div>
+            <div className="mad-modern-card">
+              <div className="mad-card-header">
+                <h2 className="mad-card-title"><i className="fas fa-weight-hanging icon-green"></i> Body Composition</h2>
+                <span className="mad-card-score badge-green">40/40</span>
               </div>
               <div className="mad-stat-group">
-                <div className="mad-stat-info">
-                  <span className="mad-stat-name">Body Fat % (20)</span>
-                  <span className="mad-stat-value">{bodyCompDetails.bodyFat.value}%<span className="mad-stat-value-badge">20/20</span></span>
+                <div className="mad-stat-row">
+                  <span className="mad-stat-name">BMI</span>
+                  <div className="mad-stat-value-group">
+                    <span className="mad-stat-val">{bodyCompDetails.bmi.value}</span>
+                    <span className="mad-stat-points">20 pts</span>
+                  </div>
                 </div>
-                <div className="mad-stat-status-row">
-                  <i className="fas fa-check-circle"></i> <span>Excellent (10 - 20%)</span>
-                </div>
+                <div className="mad-stat-status"><i className="fas fa-check-circle"></i> Normal (18.5 - 24.9)</div>
               </div>
-              <div className="mad-advice-box green">
-                <i className="fas fa-star"></i>
-                <span>Great! Your body composition is within the healthy range.</span>
+              <div className="mad-stat-group">
+                <div className="mad-stat-row">
+                  <span className="mad-stat-name">Body Fat %</span>
+                  <div className="mad-stat-value-group">
+                    <span className="mad-stat-val">{bodyCompDetails.bodyFat.value}%</span>
+                    <span className="mad-stat-points">20 pts</span>
+                  </div>
+                </div>
+                <div className="mad-stat-status"><i className="fas fa-check-circle"></i> Excellent (10 - 20%)</div>
+              </div>
+              <div className="mad-advice-alert success">
+                <i className="fas fa-info-circle"></i> {bodyCompDetails.bmi.note}
               </div>
             </div>
 
             {/* Card 2: Vital Signs */}
-            <div className="mad-section-card">
-              <h2 className="mad-section-title vital_signs">
-                <i className="fas fa-heartbeat"></i> Vital Signs <span>16/20</span>
-              </h2>
-              <div className="mad-stat-group">
-                <div className="mad-stat-info">
-                  <span className="mad-stat-name">Blood Pressure (10)</span>
-                  <span className="mad-stat-value">{vitalsDetails.bloodPressure.systolic}/{vitalsDetails.bloodPressure.diastolic} <span style={{ fontSize: '0.78rem', color: '#64748b' }}>mmHg</span><span className="mad-stat-value-badge">8/10</span></span>
-                </div>
-                <div className="mad-stat-status-row">
-                  <i className="fas fa-check-circle"></i> <span>Normal (90-120 / 60-80)</span>
-                </div>
+            <div className="mad-modern-card">
+              <div className="mad-card-header">
+                <h2 className="mad-card-title"><i className="fas fa-heartbeat icon-blue"></i> Vital Signs</h2>
+                <span className="mad-card-score badge-blue">16/20</span>
               </div>
               <div className="mad-stat-group">
-                <div className="mad-stat-info">
-                  <span className="mad-stat-name">Resting Heart Rate (10)</span>
-                  <span className="mad-stat-value">{vitalsDetails.heartRate.value} <span style={{ fontSize: '0.78rem', color: '#64748b' }}>bpm</span><span className="mad-stat-value-badge">8/10</span></span>
+                <div className="mad-stat-row">
+                  <span className="mad-stat-name">Blood Pressure</span>
+                  <div className="mad-stat-value-group">
+                    <span className="mad-stat-val">{vitalsDetails.bloodPressure.systolic}/{vitalsDetails.bloodPressure.diastolic} <small>mmHg</small></span>
+                    <span className="mad-stat-points">8 pts</span>
+                  </div>
                 </div>
-                <div className="mad-stat-status-row">
-                  <i className="fas fa-check-circle"></i> <span>Normal (60-80 bpm)</span>
-                </div>
+                <div className="mad-stat-status"><i className="fas fa-check-circle"></i> Normal (90-120 / 60-80)</div>
               </div>
-              <div className="mad-advice-box blue">
-                <i className="fas fa-heart"></i>
-                <span>Your vital signs are good.</span>
+              <div className="mad-stat-group">
+                <div className="mad-stat-row">
+                  <span className="mad-stat-name">Resting Heart Rate</span>
+                  <div className="mad-stat-value-group">
+                    <span className="mad-stat-val">{vitalsDetails.heartRate.value} <small>bpm</small></span>
+                    <span className="mad-stat-points">8 pts</span>
+                  </div>
+                </div>
+                <div className="mad-stat-status"><i className="fas fa-check-circle"></i> Normal (60-80 bpm)</div>
+              </div>
+              <div className="mad-advice-alert info">
+                <i className="fas fa-heart"></i> {vitalsDetails.bloodPressure.note}
               </div>
             </div>
 
             {/* Card 3: Flexibility */}
-            <div className="mad-section-card">
-              <h2 className="mad-section-title flexibility">
-                <i className="fas fa-child"></i> Flexibility <span>16/20</span>
-              </h2>
-              <div className="mad-stat-group">
-                <div className="mad-stat-info">
-                  <span className="mad-stat-name">Sit &amp; Reach (10)</span>
-                  <span className="mad-stat-value">{flexibilityDetails.sitReach.value} <span style={{ fontSize: '0.78rem', color: '#64748b' }}>cm</span><span className="mad-stat-value-badge">8/10</span></span>
-                </div>
-                <div className="mad-stat-status-row">
-                  <i className="fas fa-check-circle"></i> <span>Good</span>
-                </div>
+            <div className="mad-modern-card">
+              <div className="mad-card-header">
+                <h2 className="mad-card-title"><i className="fas fa-child icon-purple"></i> Flexibility</h2>
+                <span className="mad-card-score badge-purple">16/20</span>
               </div>
               <div className="mad-stat-group">
-                <div className="mad-stat-info">
-                  <span className="mad-stat-name">Shoulder Flexibility (10)</span>
-                  <span className="mad-stat-value">{flexibilityDetails.shoulder.value}<span className="mad-stat-value-badge">8/10</span></span>
+                <div className="mad-stat-row">
+                  <span className="mad-stat-name">Sit & Reach</span>
+                  <div className="mad-stat-value-group">
+                    <span className="mad-stat-val">{flexibilityDetails.sitReach.value} <small>cm</small></span>
+                    <span className="mad-stat-points">8 pts</span>
+                  </div>
                 </div>
-                <div className="mad-stat-status-row">
-                  <i className="fas fa-check-circle"></i> <span>Good</span>
-                </div>
+                <div className="mad-stat-status"><i className="fas fa-check-circle"></i> Good</div>
               </div>
-              <div className="mad-advice-box purple">
-                <i className="fas fa-running"></i>
-                <span>Good flexibility. Keep stretching to improve further.</span>
+              <div className="mad-stat-group">
+                <div className="mad-stat-row">
+                  <span className="mad-stat-name">Shoulder Flex</span>
+                  <div className="mad-stat-value-group">
+                    <span className="mad-stat-val">{flexibilityDetails.shoulder.value}</span>
+                    <span className="mad-stat-points">8 pts</span>
+                  </div>
+                </div>
+                <div className="mad-stat-status"><i className="fas fa-check-circle"></i> Good</div>
+              </div>
+              <div className="mad-advice-alert purple">
+                <i className="fas fa-running"></i> {flexibilityDetails.sitReach.note}
               </div>
             </div>
 
             {/* Card 4: Body Measurements */}
-            <div className="mad-section-card">
-              <h2 className="mad-section-title body_measurements">
-                <i className="fas fa-ruler-horizontal"></i> Body Measurements <span>9/10</span>
-              </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', fontSize: '0.8rem' }}>
-                <div><strong>Mid-Waist:</strong> {bodyMeasurementsDetails.midWaist} cm</div>
-                <div><strong>Lower-Waist:</strong> {bodyMeasurementsDetails.lowerWaist} cm</div>
-                <div><strong>Hip:</strong> {bodyMeasurementsDetails.hip} cm</div>
-                <div><strong>Chest:</strong> {bodyMeasurementsDetails.chest} cm</div>
-                <div><strong>Arm:</strong> {bodyMeasurementsDetails.arm} cm</div>
-                <div><strong>Thigh:</strong> {bodyMeasurementsDetails.thigh} cm</div>
-                <div style={{ gridColumn: 'span 2' }}><strong>Shoulder Width:</strong> {bodyMeasurementsDetails.shoulderWidth} cm</div>
+            <div className="mad-modern-card">
+              <div className="mad-card-header">
+                <h2 className="mad-card-title"><i className="fas fa-ruler-horizontal icon-warning"></i> Measurements</h2>
+                <span className="mad-card-score badge-warning">9/10</span>
               </div>
-              <div className="mad-stat-group" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
-                <div className="mad-stat-info">
-                  <span className="mad-stat-name">Waist-to-Hip Ratio</span>
-                  <span className="mad-stat-value">{bodyMeasurementsDetails.ratio}<span className="mad-stat-value-badge">10/10</span></span>
-                </div>
-                <div className="mad-range-bar-track" style={{ marginTop: '4px' }}>
-                  <div className="mad-range-bar-fill" style={{ width: '40%', backgroundColor: '#10b981' }}></div>
-                </div>
-                <div className="mad-range-labels">
-                  <span style={{ color: '#10b981' }}>&lt; 0.90 Excellent</span>
-                  <span style={{ color: '#f59e0b' }}>0.90 - 0.99 Good</span>
-                  <span style={{ color: '#ef4444' }}>&ge; 1.00 Improve</span>
-                </div>
+              <div className="mad-measurements-grid">
+                <div><span>Mid-Waist</span> <strong>{bodyMeasurementsDetails.midWaist} cm</strong></div>
+                <div><span>Lower-Waist</span> <strong>{bodyMeasurementsDetails.lowerWaist} cm</strong></div>
+                <div><span>Hip</span> <strong>{bodyMeasurementsDetails.hip} cm</strong></div>
+                <div><span>Chest</span> <strong>{bodyMeasurementsDetails.chest} cm</strong></div>
+                <div><span>Arm</span> <strong>{bodyMeasurementsDetails.arm} cm</strong></div>
+                <div><span>Thigh</span> <strong>{bodyMeasurementsDetails.thigh} cm</strong></div>
+                <div className="col-span-2"><span>Shoulder Width</span> <strong>{bodyMeasurementsDetails.shoulderWidth} cm</strong></div>
               </div>
-              <div className="mad-advice-box orange" style={{ marginTop: 0 }}>
-                <i className="fas fa-info-circle"></i>
-                <span>Excellent! Your waist-to-hip ratio is in the optimal range.</span>
+
+              <div className="mad-ratio-section">
+                <div className="mad-stat-row">
+                  <span className="mad-stat-name">W/H Ratio</span>
+                  <div className="mad-stat-value-group">
+                    <span className="mad-stat-val">{bodyMeasurementsDetails.ratio}</span>
+                    <span className="mad-stat-points">10 pts</span>
+                  </div>
+                </div>
+                <div className="mad-progress-track">
+                  <div className="mad-progress-fill success" style={{ width: '40%' }}></div>
+                </div>
               </div>
             </div>
 
             {/* Card 5: Health History */}
-            <div className="mad-section-card">
-              <h2 className="mad-section-title health_history">
-                <i className="fas fa-notes-medical"></i> Health History
-              </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.85rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="mad-stat-name">Major Health Issues</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>{healthHistoryDetails.majorIssues} <i className="fas fa-check-circle" style={{ color: '#22c55e' }}></i></span>
+            <div className="mad-modern-card">
+              <div className="mad-card-header">
+                <h2 className="mad-card-title"><i className="fas fa-notes-medical icon-danger"></i> Health History</h2>
+              </div>
+              <div className="mad-history-list">
+                <div className="mad-history-item">
+                  <span>Major Health Issues</span>
+                  <div className="mad-history-badge">
+                    {healthHistoryDetails.majorIssues} <i className="fas fa-check-circle"></i>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="mad-stat-name">Recent Surgery</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>{healthHistoryDetails.recentSurgery} <i className="fas fa-check-circle" style={{ color: '#22c55e' }}></i></span>
+                <div className="mad-history-item">
+                  <span>Recent Surgery</span>
+                  <div className="mad-history-badge">
+                    {healthHistoryDetails.recentSurgery} <i className="fas fa-check-circle"></i>
+                  </div>
                 </div>
               </div>
-              <div className="mad-advice-box green" style={{ marginTop: 'auto' }}>
-                <i className="fas fa-shield-alt"></i>
-                <span>No major health issues reported.</span>
+              <div className="mad-advice-alert success push-bottom">
+                <i className="fas fa-shield-check"></i> {healthHistoryDetails.note}
               </div>
             </div>
 
             {/* Card 6: Fitness Scores List */}
-            <div className="mad-section-card">
-              <h2 className="mad-section-title fitness_scores">
-                <i className="fas fa-chart-line"></i> Fitness Scores <span>100 Total</span>
-              </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Body Composition Score</span>
-                  <strong>40/40</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Vital Signs Score</span>
-                  <strong>16/20</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Flexibility Score</span>
-                  <strong>16/20</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Body Measurement Score</span>
-                  <strong>9/10</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Trainer Assessment Score</span>
-                  <strong>10/10</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '8px', color: '#22c55e' }}>
-                  <span><strong>Overall Fitness Score</strong></span>
+            <div className="mad-modern-card">
+              <div className="mad-card-header">
+                <h2 className="mad-card-title"><i className="fas fa-chart-line icon-accent"></i> Score Breakdown</h2>
+                <span className="mad-card-score badge-neutral">100 Total</span>
+              </div>
+              <div className="mad-score-breakdown">
+                <div className="mad-score-row"><span>Body Composition</span> <strong>40/40</strong></div>
+                <div className="mad-score-row"><span>Vital Signs</span> <strong>16/20</strong></div>
+                <div className="mad-score-row"><span>Flexibility</span> <strong>16/20</strong></div>
+                <div className="mad-score-row"><span>Body Measurement</span> <strong>9/10</strong></div>
+                <div className="mad-score-row"><span>Trainer Assessment</span> <strong>10/10</strong></div>
+                <div className="mad-score-row total">
+                  <span>Overall Fitness Score</span>
                   <strong>85/100</strong>
                 </div>
               </div>
             </div>
 
             {/* Card 7: Trainer Assessment */}
-            <div className="mad-section-card">
-              <h2 className="mad-section-title trainer_assessment">
-                <i className="fas fa-user-check"></i> Trainer Assessment <span>10/10</span>
-              </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', fontSize: '0.8rem' }}>
-                <div><strong>Posture:</strong> {trainerAssessmentDetails.posture}</div>
-                <div><strong>Mobility:</strong> {trainerAssessmentDetails.mobility}</div>
-                <div style={{ gridColumn: 'span 2' }}><strong>Overall Obs:</strong> {trainerAssessmentDetails.observation}</div>
+            <div className="mad-modern-card">
+              <div className="mad-card-header">
+                <h2 className="mad-card-title"><i className="fas fa-user-check icon-teal"></i> Coach Assessment</h2>
+                <span className="mad-card-score badge-teal">10/10</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-                <span>Trainer Rating</span>
-                <strong style={{ color: '#22c55e' }}>{trainerAssessmentDetails.rating} <span className="mad-stat-value-badge">10/10</span></strong>
+              <div className="mad-coach-grid">
+                <div className="mad-coach-metric"><span>Posture</span> <strong>{trainerAssessmentDetails.posture}</strong></div>
+                <div className="mad-coach-metric"><span>Mobility</span> <strong>{trainerAssessmentDetails.mobility}</strong></div>
+                <div className="mad-coach-metric col-span-2"><span>Observation</span> <strong>{trainerAssessmentDetails.observation}</strong></div>
               </div>
-              <div className="mad-advice-box teal" style={{ marginTop: 0 }}>
-                <i className="fas fa-quote-left"></i>
-                <span>{trainerAssessmentDetails.comment}</span>
+              <div className="mad-advice-alert teal push-bottom">
+                <i className="fas fa-quote-left"></i> "{trainerAssessmentDetails.comment}"
               </div>
             </div>
 
-            {/* Card 8: Photos Card (Spans 2 columns on desktop) */}
-            <div className="mad-section-card mad-col-span-2">
-              <h2 className="mad-section-title photos">
-                <i className="fas fa-camera"></i> Photos <span>Assessment Logs</span>
-              </h2>
-              <div className="mad-photos-grid-scrollable">
+            {/* Card 8: Photos Card */}
+            <div className="mad-modern-card col-span-2">
+              <div className="mad-card-header">
+                <h2 className="mad-card-title"><i className="fas fa-camera icon-blue"></i> Progress Gallery</h2>
+              </div>
+              <div className="mad-gallery-scroll">
                 {bodyPhotos.map((photo, i) => (
-                  <div className="mad-photo-card-mini" key={i}>
-                    <div className="mad-photo-image-wrapper-mini">
-                      <img src={photo.url} alt={photo.label} />
-                    </div>
-                    <div className="mad-photo-label-mini-footer">{photo.label}</div>
+                  <div className="mad-gallery-item" key={i}>
+                    <img src={photo.url} alt={photo.label} loading="lazy" />
+                    <div className="mad-gallery-overlay"><span>{photo.label}</span></div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Card 9: Assessment Timeline Stepper (Spans 2 columns on desktop) */}
-            <div className="mad-section-card mad-col-span-2">
-              <h2 className="mad-section-title timeline">
-                <i className="fas fa-history"></i> Assessment Timeline <span>History Logs</span>
-              </h2>
-              <div className="mad-timeline-stepper">
+            {/* Card 9: Assessment Timeline Stepper */}
+            <div className="mad-modern-card col-span-2">
+              <div className="mad-card-header">
+                <h2 className="mad-card-title"><i className="fas fa-history icon-purple"></i> Timeline</h2>
+              </div>
+              <div className="mad-timeline-modern">
                 <div className="mad-timeline-line"></div>
-                {assessmentHistory.map((step) => {
-                  let colorClass = 'blue';
-                  if (step.overallScore >= 80) colorClass = 'green';
-                  else if (step.overallScore >= 60) colorClass = 'blue';
-                  else if (step.overallScore >= 50) colorClass = 'orange';
-                  else colorClass = 'red';
+                {assessmentHistory.slice().reverse().map((step) => {
+                  let statusTheme = 'danger';
+                  if (step.overallScore >= 80) statusTheme = 'success';
+                  else if (step.overallScore >= 60) statusTheme = 'info';
+                  else if (step.overallScore >= 50) statusTheme = 'warning';
 
                   return (
-                    <div className="mad-timeline-step" key={step.id}>
-                      <span className="mad-timeline-date">{step.date.split(',')[0]}</span>
-                      <div className={`mad-timeline-node ${colorClass}`}></div>
-                      <span className="mad-timeline-score">{step.overallScore}/100</span>
-                      <span className="mad-timeline-rating">{step.rating}</span>
+                    <div className="mad-timeline-node-wrapper" key={step.id}>
+                      <span className="mad-t-date">{step.date.split(',')[0]}</span>
+                      <div className={`mad-t-node ${statusTheme}`}></div>
+                      <span className="mad-t-score">{step.overallScore}</span>
+                      <span className="mad-t-rating">{step.rating}</span>
                     </div>
                   );
                 })}
@@ -720,32 +703,38 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
             </div>
 
             {/* Card 10: Score Progress & Mini Trend Chart */}
-            <div className="mad-section-card">
-              <h2 className="mad-section-title" style={{ color: '#ff6b35' }}>
-                <i className="fas fa-chart-line"></i> Score Progress
-              </h2>
-              <div className="mad-score-progress-card">
-                <div className="mad-score-progress-kpi">
-                  <div className="mad-score-progress-val">+{latestAssess.overallScore - assessmentHistory[4].overallScore}</div>
-                  <div className="mad-score-progress-lbl">Improvement</div>
-                  <div className="mad-score-progress-desc">Last 5 Tests</div>
+            <div className="mad-modern-card accent-glow">
+              <div className="mad-card-header">
+                <h2 className="mad-card-title">Trend Snapshot</h2>
+              </div>
+              <div className="mad-snapshot-flex">
+                <div className="mad-snapshot-data">
+                  <span className="mad-snap-val">+{latestAssess.overallScore - assessmentHistory[4].overallScore}</span>
+                  <span className="mad-snap-lbl">Points Gained</span>
                 </div>
 
-                {/* Mini trend chart */}
-                <div style={{ width: '100px', height: '60px' }}>
+                {/* Modern Mini Area Chart */}
+                <div className="mad-mini-chart">
                   <svg viewBox="0 0 100 60" width="100%" height="100%">
-                    <path 
-                      d="M 5 50 L 28 41 L 51 37 L 74 27 L 95 20" 
-                      fill="none" 
-                      stroke="#22c55e" 
-                      strokeWidth="2.5" 
-                      strokeLinecap="round" 
+                    <defs>
+                      <linearGradient id="miniArea" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--accent-success)" stopOpacity="0.4" />
+                        <stop offset="100%" stopColor="var(--accent-success)" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M 5 50 L 28 41 L 51 37 L 74 27 L 95 20 L 95 60 L 5 60 Z"
+                      fill="url(#miniArea)"
                     />
-                    <circle cx="5" cy="50" r="2.5" fill="#22c55e" />
-                    <circle cx="28" cy="41" r="2.5" fill="#22c55e" />
-                    <circle cx="51" cy="37" r="2.5" fill="#22c55e" />
-                    <circle cx="74" cy="27" r="2.5" fill="#22c55e" />
-                    <circle cx="95" cy="20" r="2.5" fill="#22c55e" />
+                    <path
+                      d="M 5 50 L 28 41 L 51 37 L 74 27 L 95 20"
+                      fill="none"
+                      stroke="var(--accent-success)"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="95" cy="20" r="4" fill="var(--bg-card)" stroke="var(--accent-success)" strokeWidth="2" />
                   </svg>
                 </div>
               </div>
@@ -754,217 +743,186 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
           </div>
 
           {/* Footer Metadata stats bar */}
-          <div className="mad-footer-stats-bar">
-            <div className="mad-footer-stats-left">
-              <div className="mad-footer-stat-item">
-                <i className="fas fa-list-ol"></i> Total Parameters: <strong>33</strong>
-              </div>
-              <span>•</span>
-              <div className="mad-footer-stat-item required">
-                <i className="fas fa-check-double"></i> Required Parameters: <strong>19</strong>
-              </div>
-              <span>•</span>
-              <div className="mad-footer-stat-item">
-                <i className="fas fa-calculator"></i> Completed: <strong>31</strong>
-              </div>
-              <span>•</span>
-              <div className="mad-footer-stat-item">
-                <i className="fas fa-cogs"></i> Auto Calculated: <strong>2 (BMI, Scores)</strong>
-              </div>
+          <div className="mad-footer-stats">
+            <div className="mad-f-items">
+              <span className="mad-f-tag"><i className="fas fa-list"></i> 33 Params</span>
+              <span className="mad-f-tag success"><i className="fas fa-check-double"></i> 19 Required</span>
+              <span className="mad-f-tag"><i className="fas fa-check-circle"></i> 31 Completed</span>
+              <span className="mad-f-tag info"><i className="fas fa-robot"></i> 2 Auto-calc</span>
             </div>
-            <div>
-              <i className="fas fa-info-circle"></i> Note: Scores are based on current assessment data.
-            </div>
+            <div className="mad-f-note">Scores mapped to most recent test data.</div>
           </div>
-
         </div>
       )}
 
       {/* Tab 2: Assessment History & Progress */}
       {activeTab === 'history' && (
-        <div className="mad-tab-content">
-          
+        <div className="mad-tab-content fade-in">
+
           {/* Progress KPI Summaries */}
-          <div className="mad-progress-kpi-row">
-            <div className="mad-progress-kpi-card">
-              <span className="mad-progress-kpi-lbl">Overall Progress</span>
-              <div className="mad-progress-kpi-val improvement">+20</div>
-              <span className="mad-progress-kpi-desc">Points Improvement</span>
+          <div className="mad-history-kpis">
+            <div className="mad-hkpi-card">
+              <span className="mad-hkpi-lbl">Total Growth</span>
+              <div className="mad-hkpi-val text-success">+20 <small>pts</small></div>
             </div>
-            
-            <div className="mad-progress-kpi-card">
-              <span className="mad-progress-kpi-lbl">Best Score</span>
-              <div className="mad-progress-kpi-val" style={{ color: '#ff6b35' }}>85/100</div>
-              <span className="mad-progress-kpi-desc">May 15, 2024</span>
+            <div className="mad-hkpi-card">
+              <span className="mad-hkpi-lbl">Peak Score</span>
+              <div className="mad-hkpi-val text-accent">85/100</div>
             </div>
-
-            <div className="mad-progress-kpi-card">
-              <span className="mad-progress-kpi-lbl">Average Score</span>
-              <div className="mad-progress-kpi-val">72/100</div>
-              <span className="mad-progress-kpi-desc">Across 5 tests</span>
+            <div className="mad-hkpi-card">
+              <span className="mad-hkpi-lbl">Average Score</span>
+              <div className="mad-hkpi-val">72/100</div>
             </div>
-
-            <div className="mad-progress-kpi-card">
-              <span className="mad-progress-kpi-lbl">Consistency</span>
-              <div className="mad-progress-kpi-val" style={{ color: '#10b981' }}>Good</div>
-              <span className="mad-progress-kpi-desc">Steady improvement</span>
-            </div>
-
-            <div className="mad-progress-kpi-card">
-              <span className="mad-progress-kpi-lbl">Tests Taken</span>
-              <div className="mad-progress-kpi-val">5</div>
-              <span className="mad-progress-kpi-desc">Last 12 months</span>
+            <div className="mad-hkpi-card">
+              <span className="mad-hkpi-lbl">Total Tests</span>
+              <div className="mad-hkpi-val">5</div>
             </div>
           </div>
 
-          {/* Trend Charts Section */}
           <div className="mad-charts-layout">
-            
-            {/* Chart 1: Overall Score Trend */}
-            <div className="mad-chart-card">
-              <div className="mad-chart-header">
-                <h3 className="mad-chart-title">Overall Score Trend</h3>
-                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Dec 2023 - May 2024</span>
-              </div>
-              <div className="mad-chart-canvas-wrapper" style={{ height: '220px' }}>
-                <svg viewBox="0 0 500 200" width="100%" height="100%">
-                  {/* Grid Lines */}
-                  <line x1="40" y1="20" x2="480" y2="20" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
-                  <line x1="40" y1="80" x2="480" y2="80" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
-                  <line x1="40" y1="140" x2="480" y2="140" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
-                  <line x1="40" y1="170" x2="480" y2="170" stroke="rgba(255, 255, 255, 0.12)" strokeWidth="1.5" />
-                  
-                  {/* Axis values */}
-                  <text x="25" y="24" fill="#64748b" fontSize="9" textAnchor="end">100</text>
-                  <text x="25" y="84" fill="#64748b" fontSize="9" textAnchor="end">60</text>
-                  <text x="25" y="144" fill="#64748b" fontSize="9" textAnchor="end">30</text>
-
-                  {/* Draw Curve Path */}
-                  <path 
-                    d="M 60 102.5 L 160 83 L 260 72.5 L 360 53 L 460 42.5" 
-                    fill="none" 
-                    stroke="#22c55e" 
-                    strokeWidth="3.5" 
-                    strokeLinecap="round" 
-                  />
-
-                  {/* Data Points */}
-                  <circle cx="60" cy="102.5" r="5" fill="#22c55e" stroke="#0c0c0e" strokeWidth="2.5" />
-                  <text x="60" y="90" fill="#ffffff" fontSize="9.5" fontWeight="700" textAnchor="middle">45</text>
-                  <text x="60" y="185" fill="#64748b" fontSize="8.5" textAnchor="middle">Dec 15</text>
-
-                  <circle cx="160" cy="83" r="5" fill="#22c55e" stroke="#0c0c0e" strokeWidth="2.5" />
-                  <text x="160" y="70" fill="#ffffff" fontSize="9.5" fontWeight="700" textAnchor="middle">58</text>
-                  <text x="160" y="185" fill="#64748b" fontSize="8.5" textAnchor="middle">Jan 15</text>
-
-                  <circle cx="260" cy="72.5" r="5" fill="#22c55e" stroke="#0c0c0e" strokeWidth="2.5" />
-                  <text x="260" y="60" fill="#ffffff" fontSize="9.5" fontWeight="700" textAnchor="middle">65</text>
-                  <text x="260" y="185" fill="#64748b" fontSize="8.5" textAnchor="middle">Mar 15</text>
-
-                  <circle cx="360" cy="53" r="5" fill="#22c55e" stroke="#0c0c0e" strokeWidth="2.5" />
-                  <text x="360" y="40" fill="#ffffff" fontSize="9.5" fontWeight="700" textAnchor="middle">78</text>
-                  <text x="360" y="185" fill="#64748b" fontSize="8.5" textAnchor="middle">Apr 15</text>
-
-                  <circle cx="460" cy="42.5" r="5" fill="#22c55e" stroke="#0c0c0e" strokeWidth="2.5" />
-                  <text x="460" y="28" fill="#ffffff" fontSize="9.5" fontWeight="700" textAnchor="middle">85</text>
-                  <text x="460" y="185" fill="#64748b" fontSize="8.5" textAnchor="middle">May 15</text>
-                </svg>
-              </div>
-            </div>
-
-            {/* Chart 2: Category Trend curves */}
-            <div className="mad-chart-card">
-              <div className="mad-chart-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
-                <h3 className="mad-chart-title">Score Trend by Category</h3>
-                <div className="mad-chart-legend">
-                  <div className="mad-legend-item">
-                    <span className="mad-legend-dot" style={{ backgroundColor: '#10b981' }}></span> Body Comp
-                  </div>
-                  <div className="mad-legend-item">
-                    <span className="mad-legend-dot" style={{ backgroundColor: '#3b82f6' }}></span> Vitals
-                  </div>
-                  <div className="mad-legend-item">
-                    <span className="mad-legend-dot" style={{ backgroundColor: '#8b5cf6' }}></span> Flexibility
-                  </div>
-                  <div className="mad-legend-item">
-                    <span className="mad-legend-dot" style={{ backgroundColor: '#f59e0b' }}></span> Measurements
-                  </div>
-                  <div className="mad-legend-item">
-                    <span className="mad-legend-dot" style={{ backgroundColor: '#06b6d4' }}></span> Coach Rating
-                  </div>
+            {/* Chart 1: Overall Score Trend with Area Fill */}
+            <div className="mad-modern-card">
+              <div className="mad-card-header">
+                <div>
+                  <h3 className="mad-chart-title">Growth Trajectory</h3>
+                  <p className="mad-chart-subtitle">Dec 2023 - May 2024</p>
                 </div>
               </div>
-              <div className="mad-chart-canvas-wrapper" style={{ height: '220px' }}>
+              <div className="mad-chart-canvas">
                 <svg viewBox="0 0 500 200" width="100%" height="100%">
+                  <defs>
+                    <linearGradient id="mainGlow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--accent-success)" stopOpacity="0.2" />
+                      <stop offset="100%" stopColor="var(--accent-success)" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+
                   {/* Grid Lines */}
-                  <line x1="40" y1="20" x2="480" y2="20" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
-                  <line x1="40" y1="90" x2="480" y2="90" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
-                  <line x1="40" y1="160" x2="480" y2="160" stroke="rgba(255, 255, 255, 0.12)" strokeWidth="1.5" />
+                  <line x1="40" y1="20" x2="480" y2="20" stroke="var(--border-light)" strokeDasharray="4 4" />
+                  <line x1="40" y1="80" x2="480" y2="80" stroke="var(--border-light)" strokeDasharray="4 4" />
+                  <line x1="40" y1="140" x2="480" y2="140" stroke="var(--border-light)" strokeDasharray="4 4" />
+                  <line x1="40" y1="170" x2="480" y2="170" stroke="var(--border-solid)" strokeWidth="1" />
 
-                  {/* Lines mapping */}
-                  <path d="M 60 83 L 160 69 L 260 62 L 360 41 L 460 20" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M 60 76 L 160 62 L 260 48 L 360 34 L 460 20" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M 60 104 L 160 90 L 260 76 L 360 62 L 460 48" fill="none" stroke="#8b5cf6" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M 60 76 L 160 62 L 260 48 L 360 34 L 460 34" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M 60 62 L 160 48 L 260 34 L 360 34 L 460 20" fill="none" stroke="#06b6d4" strokeWidth="2.5" strokeLinecap="round" />
+                  <text x="30" y="24" fill="var(--text-muted)" fontSize="10" textAnchor="end">100</text>
+                  <text x="30" y="84" fill="var(--text-muted)" fontSize="10" textAnchor="end">60</text>
+                  <text x="30" y="144" fill="var(--text-muted)" fontSize="10" textAnchor="end">30</text>
 
-                  {/* Date labels */}
-                  <text x="60" y="180" fill="#64748b" fontSize="8.5" textAnchor="middle">Dec 15</text>
-                  <text x="160" y="180" fill="#64748b" fontSize="8.5" textAnchor="middle">Jan 15</text>
-                  <text x="260" y="180" fill="#64748b" fontSize="8.5" textAnchor="middle">Mar 15</text>
-                  <text x="360" y="180" fill="#64748b" fontSize="8.5" textAnchor="middle">Apr 15</text>
-                  <text x="460" y="180" fill="#64748b" fontSize="8.5" textAnchor="middle">May 15</text>
+                  {/* Area Fill */}
+                  <path
+                    d="M 60 102.5 L 160 83 L 260 72.5 L 360 53 L 460 42.5 L 460 170 L 60 170 Z"
+                    fill="url(#mainGlow)"
+                  />
+
+                  {/* Line */}
+                  <path
+                    d="M 60 102.5 L 160 83 L 260 72.5 L 360 53 L 460 42.5"
+                    fill="none"
+                    stroke="var(--accent-success)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+
+                  {/* Nodes */}
+                  <circle cx="60" cy="102.5" r="4" fill="var(--bg-card)" stroke="var(--accent-success)" strokeWidth="2" />
+                  <circle cx="160" cy="83" r="4" fill="var(--bg-card)" stroke="var(--accent-success)" strokeWidth="2" />
+                  <circle cx="260" cy="72.5" r="4" fill="var(--bg-card)" stroke="var(--accent-success)" strokeWidth="2" />
+                  <circle cx="360" cy="53" r="4" fill="var(--bg-card)" stroke="var(--accent-success)" strokeWidth="2" />
+                  <circle cx="460" cy="42.5" r="5" fill="var(--accent-success)" stroke="var(--bg-card)" strokeWidth="2" />
+
+                  {/* Node Labels */}
+                  <text x="60" y="90" fill="var(--text-main)" fontSize="10" fontWeight="600" textAnchor="middle">45</text>
+                  <text x="160" y="70" fill="var(--text-main)" fontSize="10" fontWeight="600" textAnchor="middle">58</text>
+                  <text x="260" y="60" fill="var(--text-main)" fontSize="10" fontWeight="600" textAnchor="middle">65</text>
+                  <text x="360" y="40" fill="var(--text-main)" fontSize="10" fontWeight="600" textAnchor="middle">78</text>
+                  <text x="460" y="28" fill="var(--accent-success)" fontSize="11" fontWeight="bold" textAnchor="middle">85</text>
+
+                  {/* Axis Labels */}
+                  <text x="60" y="190" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Dec</text>
+                  <text x="160" y="190" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Jan</text>
+                  <text x="260" y="190" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Mar</text>
+                  <text x="360" y="190" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Apr</text>
+                  <text x="460" y="190" fill="var(--text-main)" fontSize="10" fontWeight="600" textAnchor="middle">May</text>
                 </svg>
               </div>
             </div>
 
+            {/* Chart 2: Category Trend */}
+            <div className="mad-modern-card">
+              <div className="mad-card-header col-layout">
+                <h3 className="mad-chart-title">Category Breakdown</h3>
+                <div className="mad-chart-legend">
+                  <span className="lg-dot green">Body</span>
+                  <span className="lg-dot blue">Vitals</span>
+                  <span className="lg-dot purple">Flex</span>
+                  <span className="lg-dot warning">Meas.</span>
+                  <span className="lg-dot teal">Coach</span>
+                </div>
+              </div>
+              <div className="mad-chart-canvas">
+                <svg viewBox="0 0 500 200" width="100%" height="100%">
+                  <line x1="40" y1="20" x2="480" y2="20" stroke="var(--border-light)" strokeDasharray="4 4" />
+                  <line x1="40" y1="90" x2="480" y2="90" stroke="var(--border-light)" strokeDasharray="4 4" />
+                  <line x1="40" y1="160" x2="480" y2="160" stroke="var(--border-solid)" strokeWidth="1" />
+
+                  <path d="M 60 83 L 160 69 L 260 62 L 360 41 L 460 20" fill="none" stroke="var(--accent-success)" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d="M 60 76 L 160 62 L 260 48 L 360 34 L 460 20" fill="none" stroke="var(--accent-info)" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d="M 60 104 L 160 90 L 260 76 L 360 62 L 460 48" fill="none" stroke="var(--accent-purple)" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d="M 60 76 L 160 62 L 260 48 L 360 34 L 460 34" fill="none" stroke="var(--accent-warning)" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d="M 60 62 L 160 48 L 260 34 L 360 34 L 460 20" fill="none" stroke="var(--accent-teal)" strokeWidth="2.5" strokeLinecap="round" />
+
+                  <text x="60" y="185" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Dec</text>
+                  <text x="160" y="185" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Jan</text>
+                  <text x="260" y="185" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Mar</text>
+                  <text x="360" y="185" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Apr</text>
+                  <text x="460" y="185" fill="var(--text-main)" fontSize="10" fontWeight="600" textAnchor="middle">May</text>
+                </svg>
+              </div>
+            </div>
           </div>
 
           {/* Assessment History Table */}
-          <div className="mad-section-card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ padding: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-              <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>Assessment History</h3>
+          <div className="mad-modern-card no-pad">
+            <div className="mad-card-header pad-xy">
+              <h3 className="mad-table-title">Assessment Records</h3>
             </div>
-            <div className="mad-history-table-wrapper">
-              <table className="mad-history-table">
+            <div className="mad-table-responsive">
+              <table className="mad-modern-table">
                 <thead>
                   <tr>
-                    <th>Date &amp; Time</th>
-                    <th>Overall Score</th>
+                    <th>Date & Time</th>
+                    <th>Score</th>
                     <th>Rating</th>
-                    <th>Change vs Previous</th>
+                    <th>Change</th>
                     <th>Trainer</th>
-                    <th>Actions</th>
+                    <th className="text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {assessmentHistory.map((item, idx) => (
                     <tr key={item.id}>
-                      <td style={{ fontWeight: 500 }}>
-                        {item.date} <span style={{ color: '#64748b', fontSize: '0.75rem', marginLeft: '4px' }}>{item.time}</span>
-                        {idx === 0 && <span className="mad-history-badge latest" style={{ marginLeft: '4px' }}>Latest</span>}
-                      </td>
                       <td>
-                        <span className="mad-history-badge">{item.overallScore}/100</span>
+                        <div className="td-date-stack">
+                          <span className="dt">{item.date}</span>
+                          <span className="tm">{item.time}</span>
+                        </div>
+                        {idx === 0 && <span className="mad-badge-pill new">Current</span>}
                       </td>
-                      <td>{item.rating}</td>
+                      <td><span className="mad-score-chip">{item.overallScore}/100</span></td>
+                      <td><span className="mad-text-rating">{item.rating}</span></td>
                       <td>
                         {item.improvement === '-' ? (
-                          <span style={{ color: '#64748b' }}>-</span>
+                          <span className="text-muted">-</span>
                         ) : (
-                          <span className={`mad-trend-indicator ${item.isUp ? 'up' : 'down'}`}>
+                          <span className={`mad-trend-pill ${item.isUp ? 'up' : 'down'}`}>
                             <i className={`fas ${item.isUp ? 'fa-arrow-up' : 'fa-arrow-down'}`}></i> {item.improvement}
                           </span>
                         )}
                       </td>
                       <td>{item.trainer}</td>
-                      <td>
-                        <button className="mad-btn-icon" title="View details" onClick={() => setActiveTab('details')}>
-                          <i className="far fa-eye"></i>
-                        </button>
-                        <button className="mad-btn-icon" title="Download report">
-                          <i className="fas fa-download"></i>
-                        </button>
+                      <td className="text-right">
+                        <button className="mad-action-btn" onClick={() => setActiveTab('details')}><i className="far fa-eye"></i></button>
+                        <button className="mad-action-btn"><i className="fas fa-download"></i></button>
                       </td>
                     </tr>
                   ))}
@@ -973,142 +931,53 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
             </div>
           </div>
 
-          {/* Detailed Comparison Matrix */}
-          <div className="mad-section-card" style={{ padding: 0, overflow: 'hidden', marginTop: '16px' }}>
-            <div style={{ padding: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-              <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>Detailed Comparison</h3>
-            </div>
-            <div className="mad-matrix-table-wrapper">
-              <table className="mad-matrix-table">
-                <thead>
-                  <tr>
-                    <th>Category</th>
-                    <th>Dec 15, 2023</th>
-                    <th>Jan 15, 2024</th>
-                    <th>Mar 15, 2024</th>
-                    <th>Apr 15, 2024</th>
-                    <th>May 15, 2024</th>
-                    <th>Change (First &rarr; Latest)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="mad-matrix-category-cell">
-                      <span className="mad-legend-dot" style={{ backgroundColor: '#10b981' }}></span>
-                      Body Composition (40 pts)
-                    </td>
-                    <td>22/40 (55%)</td>
-                    <td>26/40 (65%)</td>
-                    <td>28/40 (70%)</td>
-                    <td>34/40 (85%)</td>
-                    <td>40/40 (100%)</td>
-                    <td className="mad-matrix-change-col">+18 (45%)</td>
-                  </tr>
-                  <tr>
-                    <td className="mad-matrix-category-cell">
-                      <span className="mad-legend-dot" style={{ backgroundColor: '#3b82f6' }}></span>
-                      Vital Signs (20 pts)
-                    </td>
-                    <td>12/20 (60%)</td>
-                    <td>14/20 (70%)</td>
-                    <td>16/20 (80%)</td>
-                    <td>18/20 (90%)</td>
-                    <td>20/20 (100%)</td>
-                    <td className="mad-matrix-change-col">+8 (40%)</td>
-                  </tr>
-                  <tr>
-                    <td className="mad-matrix-category-cell">
-                      <span className="mad-legend-dot" style={{ backgroundColor: '#8b5cf6' }}></span>
-                      Flexibility (20 pts)
-                    </td>
-                    <td>8/20 (40%)</td>
-                    <td>10/20 (50%)</td>
-                    <td>12/20 (60%)</td>
-                    <td>14/20 (70%)</td>
-                    <td>16/20 (80%)</td>
-                    <td className="mad-matrix-change-col">+8 (40%)</td>
-                  </tr>
-                  <tr>
-                    <td className="mad-matrix-category-cell">
-                      <span className="mad-legend-dot" style={{ backgroundColor: '#f59e0b' }}></span>
-                      Body Measurements (10 pts)
-                    </td>
-                    <td>6/10 (60%)</td>
-                    <td>7/10 (70%)</td>
-                    <td>8/10 (80%)</td>
-                    <td>9/10 (90%)</td>
-                    <td>9/10 (90%)</td>
-                    <td className="mad-matrix-change-col">+3 (30%)</td>
-                  </tr>
-                  <tr>
-                    <td className="mad-matrix-category-cell">
-                      <span className="mad-legend-dot" style={{ backgroundColor: '#06b6d4' }}></span>
-                      Trainer Assessment (10 pts)
-                    </td>
-                    <td>7/10 (70%)</td>
-                    <td>8/10 (80%)</td>
-                    <td>9/10 (90%)</td>
-                    <td>9/10 (90%)</td>
-                    <td>10/10 (100%)</td>
-                    <td className="mad-matrix-change-col">+3 (30%)</td>
-                  </tr>
-                  <tr className="mad-matrix-total-row">
-                    <td>Overall Score (100 pts)</td>
-                    <td>45/100 (45%)</td>
-                    <td>58/100 (58%)</td>
-                    <td>65/100 (65%)</td>
-                    <td>78/100 (78%)</td>
-                    <td>85/100 (85%)</td>
-                    <td className="mad-matrix-change-col">+40 (44%)</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
         </div>
       )}
 
-      {/* Tab 3: Assessment Parameters organized exactly as in screenshot 2 */}
+      {/* Tab 3: Parameters */}
       {activeTab === 'parameters' && (
-        <div className="mad-tab-content">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div className="mad-tab-content fade-in">
+          <div className="mad-param-header">
             <div>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>Assessment Parameters</h2>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '4px 0 0 0' }}>Organized by categories</p>
+              <h2 className="mad-page-title">System Parameters</h2>
+              <p className="mad-page-subtitle">Database schema configuration & mapped fields</p>
             </div>
             <button className="mad-btn-secondary">
-              <i className="fas fa-balance-scale"></i> View Scoring System
+              <i className="fas fa-code"></i> View Schema
             </button>
           </div>
 
-          <div className="mad-parameters-grid-layout">
+          <div className="mad-params-masonry">
             {parameterSchema.map((cat, i) => (
-              <div className="mad-parameter-category-card" key={i}>
-                <h3 className="mad-parameter-category-title">
-                  <i className={cat.icon}></i> {cat.category}
-                </h3>
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="mad-parameter-table">
+              <div className="mad-modern-card param-card" key={i}>
+                <div className="mad-card-header param-header">
+                  <div className="mad-param-icon-box">
+                    <i className={cat.icon}></i>
+                  </div>
+                  <div>
+                    <h3 className="mad-param-cat-name">{cat.category}</h3>
+                    <p className="mad-param-cat-sub">{cat.subtitle}</p>
+                  </div>
+                </div>
+                <div className="mad-table-responsive param">
+                  <table className="mad-modern-table condensed">
                     <thead>
                       <tr>
-                        <th style={{ width: '30px' }}>#</th>
-                        <th>Parameter</th>
+                        <th>ID</th>
+                        <th>Field Name</th>
                         <th>Type</th>
-                        <th style={{ textAlign: 'center' }}>Req</th>
-                        <th>Default / Notes</th>
+                        <th className="text-center">Req</th>
                       </tr>
                     </thead>
                     <tbody>
                       {cat.params.map((p, idx) => (
                         <tr key={idx}>
-                          <td>{p.id}</td>
-                          <td style={{ fontWeight: 600, color: '#ff6b35' }}>{p.name}</td>
-                          <td style={{ color: '#94a3b8' }}>{p.type}</td>
-                          <td style={{ textAlign: 'center' }}>
-                            {p.required ? <i className="fas fa-check-circle mad-parameter-required-icon"></i> : <span style={{ color: '#64748b' }}>-</span>}
+                          <td className="text-muted">{p.id}</td>
+                          <td className="font-mono field-name">{p.name}</td>
+                          <td className="text-muted text-sm">{p.type}</td>
+                          <td className="text-center">
+                            {p.required ? <i className="fas fa-asterisk text-danger" style={{ fontSize: '0.6rem' }}></i> : '-'}
                           </td>
-                          <td style={{ fontSize: '0.72rem', color: '#64748b' }}>{p.notes}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1116,26 +985,6 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* Parameters bottom stats bar */}
-          <div className="mad-footer-stats-bar">
-            <div className="mad-footer-stats-left">
-              <div className="mad-footer-stat-item">
-                <i className="fas fa-list-ol"></i> Total Parameters: <strong>33</strong>
-              </div>
-              <span>•</span>
-              <div className="mad-footer-stat-item required">
-                <i className="fas fa-check-double"></i> Required Parameters: <strong>19</strong>
-              </div>
-              <span>•</span>
-              <div className="mad-footer-stat-item">
-                <i className="fas fa-cogs"></i> Auto Generated: <strong>2 (member_id, bmi)</strong>
-              </div>
-            </div>
-            <div>
-              <i className="fas fa-info-circle"></i> Note: Fields without ID are calculated or photo uploads.
-            </div>
           </div>
         </div>
       )}

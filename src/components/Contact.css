@@ -143,13 +143,13 @@
   border-radius: 2px;
 }
 
-.form-group {
+.contact-section .form-group {
   margin-bottom: 30px;
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
+.contact-section .form-group input,
+.contact-section .form-group select,
+.contact-section .form-group textarea {
   width: 100%;
   padding: 18px;
   border: 2px solid rgba(255, 255, 255, 0.1);
@@ -162,14 +162,14 @@
   font-family: inherit;
 }
 
-.form-group input::placeholder,
-.form-group textarea::placeholder {
+.contact-section .form-group input::placeholder,
+.contact-section .form-group textarea::placeholder {
   color: #aaaaaa;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.contact-section .form-group input:focus,
+.contact-section .form-group select:focus,
+.contact-section .form-group textarea:focus {
   outline: none;
   border-color: #ff6b35;
   box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
@@ -391,9 +391,9 @@
     padding: 30px 20px;
   }
   
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
+  .contact-section .form-group input,
+  .contact-section .form-group select,
+  .contact-section .form-group textarea {
     padding: 15px;
   }
   

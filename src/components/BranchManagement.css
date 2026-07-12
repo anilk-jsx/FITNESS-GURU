@@ -11,8 +11,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.85rem;
-    padding: 0;
+    margin-bottom: 1.5rem;
+    padding: 0 32px;
 }
 
 .branch-title {
@@ -41,12 +41,12 @@
     align-items: center;
     gap: 8px;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .branch-add-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
 }
 
 /* Statistics Bar */
@@ -62,9 +62,9 @@
     align-items: center;
     gap: 16px;
     padding: 16px;
-    background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+    background: white;
     border-radius: 12px;
-    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
 }
 
@@ -759,6 +759,7 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 16px;
+        padding: 16px;
     }
 
     .branch-add-btn {

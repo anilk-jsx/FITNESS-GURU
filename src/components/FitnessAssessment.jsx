@@ -163,7 +163,7 @@ const FitnessAssessment = () => {
       if (response.ok && (resData.status === 'success' || resData.assessment_id)) {
         const computedScore = resData.overall_fitness_score || 82.5;
         showToast(`Fitness assessment saved successfully! Score: ${computedScore} / 100`, 'success');
-        
+
         // Update member list state locally
         setMembers(prev => prev.map(m => {
           if (m.user_id === payload.member_id) {
@@ -206,8 +206,8 @@ const FitnessAssessment = () => {
   const filteredMembers = members.filter(m => {
     const query = searchQuery.toLowerCase();
     const matchesSearch = (m.name || '').toLowerCase().includes(query) ||
-                          (m.email || '').toLowerCase().includes(query) ||
-                          (m.phone || '').includes(query);
+      (m.email || '').toLowerCase().includes(query) ||
+      (m.phone || '').includes(query);
     const matchesType = typeFilter === 'ALL' || m.assessment_type === typeFilter;
     return matchesSearch && matchesType;
   });
@@ -234,25 +234,6 @@ const FitnessAssessment = () => {
           <span>{toast.message}</span>
         </div>
       )}
-
-      {/* Main Page Header */}
-      <div className="fa-page-header">
-        <div>
-          <h1 className="fa-page-title">
-            <i className="fas fa-heartbeat text-gradient"></i> Member Fitness Assessment Control Desk
-          </h1>
-          <p className="fa-page-subtitle">
-            Conduct standardized physical assessments, compute 100-point fitness scores, and audit body transformation parameters.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="pt-btn pt-btn-primary"
-          onClick={() => handleOpenCreateModal()}
-        >
-          <i className="fas fa-plus-circle"></i> + Conduct New Fitness Assessment
-        </button>
-      </div>
 
       {/* Summary KPI Cards Bar */}
       <div className="fa-kpi-bar">
@@ -310,7 +291,6 @@ const FitnessAssessment = () => {
         </div>
 
         <div className="fa-filter-group">
-          <label className="fa-filter-label">Assessment Type Filter</label>
           <select
             className="fa-select"
             value={typeFilter}
@@ -322,6 +302,14 @@ const FitnessAssessment = () => {
             <option value="FINAL">FINAL Assessment</option>
           </select>
         </div>
+
+        <button
+          type="button"
+          className="pt-btn pt-btn-primary"
+          onClick={() => handleOpenCreateModal()}
+        >
+          <i className="fas fa-plus-circle"></i> Conduct New Fitness Assessment
+        </button>
       </div>
 
       {/* Member Directory Directory Cards / Table */}
@@ -407,7 +395,7 @@ const FitnessAssessment = () => {
       {/* CREATE / SUBMIT FITNESS ASSESSMENT MODAL (API 1: POST /api/assessments) */}
       {showCreateModal && (
         <div className="pt-modal-backdrop">
-          <div className="pt-modal-card">
+          <div className="pt-modal-card" style={{ maxWidth: '850px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.8rem', borderBottom: '1px solid #e2e8f0', marginBottom: '1rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>

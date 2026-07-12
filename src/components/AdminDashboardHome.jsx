@@ -45,7 +45,7 @@ const AdminDashboardHome = () => {
   };
 
   return (
-    <div className="dash-container fade-in">
+    <div className="dash-container">
       {/* Top Controls Header Bar */}
       <div className="dash-header-section">
         <div className="dash-header-main">

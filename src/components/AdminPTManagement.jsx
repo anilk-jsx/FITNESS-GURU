@@ -10,6 +10,7 @@ const AdminPTManagement = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tabParam || 'purchase-assignment'); // 'purchase-assignment', 'audit-directory', 'schedule-generator', 'diet-plans', 'assessments'
+  const [purchaseSubTab, setPurchaseSubTab] = useState('roster'); // 'roster' | 'purchase'
 
   useEffect(() => {
     if (tabParam) {
@@ -124,7 +125,7 @@ const AdminPTManagement = () => {
         };
     }
   };
-  
+
   // Shift Modal State
   const [showShiftModal, setShowShiftModal] = useState(false);
   const [editingShift, setEditingShift] = useState(null);
@@ -257,9 +258,9 @@ const AdminPTManagement = () => {
       if (response.ok) {
         const data = await response.json();
         const fetched = data.data || [];
-        const ptOnly = fetched.filter(p => 
-          p.plan_type === 'PT_UPGRADE' || 
-          p.plan_type === 'ADD_ON' || 
+        const ptOnly = fetched.filter(p =>
+          p.plan_type === 'PT_UPGRADE' ||
+          p.plan_type === 'ADD_ON' ||
           (p.plan_name && p.plan_name.toLowerCase().includes('pt'))
         );
         if (ptOnly.length > 0) {
@@ -348,7 +349,7 @@ const AdminPTManagement = () => {
         const ptOnlySubs = rawSubs.filter(sub => {
           const planType = (sub.plan_type || sub.plan?.plan_type || sub.membership_plan?.plan_type || '').toUpperCase();
           const planName = (sub.subscription_name || sub.plan_name || sub.plan?.plan_name || sub.plan?.name || sub.membership_plan?.plan_name || '').toLowerCase();
-          
+
           if (planType === 'PT_UPGRADE' || planType === 'ADD_ON') return true;
           if (planName.includes('pt') || planName.includes('personal train') || planName.includes('session') || planName.includes('coach')) return true;
           if ((sub.pt_credits && sub.pt_credits > 0) || (sub.total_credits && sub.total_credits > 0) || sub.trainer_id || sub.assigned_trainer_id) return true;
@@ -362,7 +363,7 @@ const AdminPTManagement = () => {
           const trainerObj = sub.trainer || {};
           const totalCreds = sub.total_credits || sub.sessions || planObj.sessions || (sub.plan_id === 5 ? 24 : sub.plan_id === 2 ? 12 : 8);
           const ptCreds = sub.pt_credits ?? sub.credits_remaining ?? Math.max(0, totalCreds - (sub.sessions_used || 2));
-          
+
           return {
             subscription_id: sub.subscription_id || sub.id || (1001 + idx),
             user_id: sub.user_id || userObj.user_id || (138 + idx),
@@ -479,7 +480,7 @@ const AdminPTManagement = () => {
     try {
       const token = tokenManager.getAccessToken();
       const isEdit = !!editingShift;
-      const url = isEdit 
+      const url = isEdit
         ? `${API_BASE_URL}/api/admin/shifts/${editingShift.shift_id}`
         : `${API_BASE_URL}/api/admin/shifts`;
       const method = isEdit ? 'PUT' : 'POST';
@@ -558,7 +559,7 @@ const AdminPTManagement = () => {
     try {
       const token = tokenManager.getAccessToken();
       const isEdit = !!editingSlot;
-      const url = isEdit 
+      const url = isEdit
         ? `${API_BASE_URL}/api/admin/pt-slots/${editingSlot.slot_id}`
         : `${API_BASE_URL}/api/admin/pt-slots`;
       const method = isEdit ? 'PUT' : 'POST';
@@ -952,6 +953,20 @@ const AdminPTManagement = () => {
     return 'score-average';
   };
 
+  const filteredSubscriptions = ptSubscriptionsList
+    .filter(sub => {
+      if (rosterFilterStatus === 'ACTIVE') return sub.pt_credits > 0;
+      if (rosterFilterStatus === 'EXHAUSTED') return sub.pt_credits === 0;
+      return true;
+    })
+    .filter(sub => {
+      if (!rosterSearch) return true;
+      const q = rosterSearch.toLowerCase();
+      return sub.member_name.toLowerCase().includes(q) ||
+        sub.member_code.toLowerCase().includes(q) ||
+        sub.phone.includes(q);
+    });
+
   const selectedPkg = ptPlansList.find(p => String(p.plan_id || p.id) === String(selectedPlan)) || ptPlansList[0] || { price: 4500, plan_name: 'PT Upgrade Plan' };
 
   return (
@@ -999,25 +1014,29 @@ const AdminPTManagement = () => {
       {/* TAB 1: SCREEN 1.1 MEMBER PURCHASE & TRAINER ASSIGNMENT */}
       {activeTab === 'purchase-assignment' && (
         <div className="pt-tab-content fade-in">
+          {/* Sub-tabs toggler visible only on mobile/tablet */}
+          <div className="pt-sub-tabs">
+            <button
+              type="button"
+              className={`pt-sub-tab-btn ${purchaseSubTab === 'roster' ? 'active' : ''}`}
+              onClick={() => setPurchaseSubTab('roster')}
+            >
+              <i className="fas fa-list-alt"></i> Roster & Trainers
+            </button>
+            <button
+              type="button"
+              className={`pt-sub-tab-btn ${purchaseSubTab === 'purchase' ? 'active' : ''}`}
+              onClick={() => setPurchaseSubTab('purchase')}
+            >
+              <i className="fas fa-shopping-cart"></i> Purchase Desk
+            </button>
+          </div>
+
           {/* Main 2/3 vs 1/3 Purchase Layout */}
           <div className="pt-purchase-layout">
-            
-            {/* LEFT 2/3 COLUMN: PT SUBSCRIPTIONS & ACTIVE MEMBER ROSTER LISTING */}
-            <div className="pt-card flex-col" style={{ gap: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                <div>
-                  <h3 className="card-title" style={{ margin: 0 }}>
-                    <i className="fas fa-list-alt text-primary"></i> PT Subscriptions & Active Client Roster
-                  </h3>
-                  <p className="card-desc" style={{ margin: '2px 0 0 0' }}>
-                    Directory of members with provisioned PT credits, assigned coaches, and active subscription balances.
-                  </p>
-                </div>
-                <span className="pt-badge code" style={{ background: '#e0e7ff', color: '#3730a3' }}>
-                  <i className="fas fa-layer-group"></i> 2/3 Roster Workspace
-                </span>
-              </div>
 
+            {/* LEFT 2/3 COLUMN: PT SUBSCRIPTIONS & ACTIVE MEMBER ROSTER LISTING */}
+            <div className={`pt-layout-column pt-layout-left pt-card flex-col ${purchaseSubTab === 'roster' ? 'show-mobile' : 'hide-mobile'}`} style={{ gap: '1.25rem' }}>
               {/* Roster Search & Filter Toolbar */}
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', background: '#f8fafc', padding: '10px 14px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                 <div style={{ flex: 1, minWidth: '220px', position: 'relative' }}>
@@ -1032,12 +1051,12 @@ const AdminPTManagement = () => {
                   />
                 </div>
 
-                <div style={{ display: 'flex', gap: '6px' }}>
+                <div className="pt-filter-group">
                   {['ALL', 'ACTIVE', 'EXHAUSTED'].map(st => (
                     <button
                       key={st}
                       type="button"
-                      className={`pt-tab-btn ${rosterFilterStatus === st ? 'active' : ''}`}
+                      className={`pt-filter-btn ${rosterFilterStatus === st ? 'active' : ''}`}
                       style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                       onClick={() => setRosterFilterStatus(st)}
                     >
@@ -1048,7 +1067,7 @@ const AdminPTManagement = () => {
               </div>
 
               {/* PT Subscriptions Data Table */}
-              <div className="table-responsive" style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+              <div className={`table-responsive ${filteredSubscriptions.length > 2 ? 'pt-table-scrollable' : ''}`} style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 <table className="pt-table">
                   <thead>
                     <tr>
@@ -1061,93 +1080,80 @@ const AdminPTManagement = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {ptSubscriptionsList
-                      .filter(sub => {
-                        if (rosterFilterStatus === 'ACTIVE') return sub.pt_credits > 0;
-                        if (rosterFilterStatus === 'EXHAUSTED') return sub.pt_credits === 0;
-                        return true;
-                      })
-                      .filter(sub => {
-                        if (!rosterSearch) return true;
-                        const q = rosterSearch.toLowerCase();
-                        return sub.member_name.toLowerCase().includes(q) ||
-                          sub.member_code.toLowerCase().includes(q) ||
-                          sub.phone.includes(q);
-                      })
-                      .map(sub => {
-                        const percentUsed = Math.round(((sub.total_credits - sub.pt_credits) / sub.total_credits) * 100);
-                        return (
-                          <tr key={sub.subscription_id} style={{ background: selectedMember?.user_id === sub.user_id ? 'rgba(79, 70, 229, 0.05)' : 'transparent' }}>
-                            <td>
-                              <div className="member-cell">
-                                <img src={sub.avatar} alt={sub.member_name} className="mini-avatar" />
-                                <div>
-                                  <strong style={{ fontSize: '0.9rem', color: '#1e293b' }}>{sub.member_name}</strong>
-                                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{sub.member_code} • {sub.phone}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              <strong style={{ fontSize: '0.85rem', color: '#4f46e5' }}>{sub.plan_name}</strong>
-                              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Purchased {sub.purchase_date}</div>
-                            </td>
-                            <td>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <img src={sub.trainer_avatar} alt={sub.assigned_trainer_name} style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
-                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>{sub.assigned_trainer_name}</span>
-                              </div>
-                            </td>
-                            <td>
+                    {filteredSubscriptions.map(sub => {
+                      const percentUsed = Math.round(((sub.total_credits - sub.pt_credits) / sub.total_credits) * 100);
+                      return (
+                        <tr key={sub.subscription_id} style={{ background: selectedMember?.user_id === sub.user_id ? 'rgba(79, 70, 229, 0.05)' : 'transparent' }}>
+                          <td>
+                            <div className="member-cell">
+                              <img src={sub.avatar} alt={sub.member_name} className="mini-avatar" />
                               <div>
-                                <strong style={{ fontSize: '0.9rem', color: sub.pt_credits > 0 ? '#10b981' : '#ef4444' }}>
-                                  {sub.pt_credits} / {sub.total_credits} Sessions
-                                </strong>
-                                <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '3px', marginTop: '4px', overflow: 'hidden' }}>
-                                  <div 
-                                    style={{ 
-                                      height: '100%', 
-                                      width: `${Math.min(100, Math.max(0, 100 - percentUsed))}%`, 
-                                      background: sub.pt_credits > 0 ? '#10b981' : '#ef4444' 
-                                    }} 
-                                  />
-                                </div>
+                                <strong style={{ fontSize: '0.9rem', color: '#1e293b' }}>{sub.member_name}</strong>
+                                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{sub.member_code} • {sub.phone}</div>
                               </div>
-                            </td>
-                            <td>
-                              <span className={`type-badge ${sub.pt_credits > 0 ? 'score-excellent' : 'score-average'}`} style={{ fontSize: '0.75rem', padding: '3px 8px' }}>
-                                {sub.pt_credits > 0 ? 'ACTIVE' : 'EXHAUSTED'}
-                              </span>
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                className="pt-btn pt-btn-secondary"
-                                style={{ padding: '4px 10px', fontSize: '0.78rem' }}
-                                onClick={() => {
-                                  setSelectedMember({
-                                    user_id: sub.user_id,
-                                    member_code: sub.member_code,
-                                    name: sub.member_name,
-                                    phone: sub.phone,
-                                    email: sub.email,
-                                    age: 28,
-                                    gender: 'Member',
-                                    assigned_trainer_id: sub.assigned_trainer_id,
-                                    assigned_trainer_name: sub.assigned_trainer_name,
-                                    pt_credits: sub.pt_credits
-                                  });
-                                  if (sub.assigned_trainer_id) {
-                                    setSelectedTrainerId(sub.assigned_trainer_id);
-                                  }
-                                  showToast(`Selected ${sub.member_name} in Purchase Desk!`);
-                                }}
-                              >
-                                <i className="fas fa-shopping-cart"></i> Select Member
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                            </div>
+                          </td>
+                          <td>
+                            <strong style={{ fontSize: '0.85rem', color: '#4f46e5' }}>{sub.plan_name}</strong>
+                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Purchased {sub.purchase_date}</div>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <img src={sub.trainer_avatar} alt={sub.assigned_trainer_name} style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
+                              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>{sub.assigned_trainer_name}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div>
+                              <strong style={{ fontSize: '0.9rem', color: sub.pt_credits > 0 ? '#10b981' : '#ef4444' }}>
+                                {sub.pt_credits} / {sub.total_credits} Sessions
+                              </strong>
+                              <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '3px', marginTop: '4px', overflow: 'hidden' }}>
+                                <div
+                                  style={{
+                                    height: '100%',
+                                    width: `${Math.min(100, Math.max(0, 100 - percentUsed))}%`,
+                                    background: sub.pt_credits > 0 ? '#10b981' : '#ef4444'
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`type-badge ${sub.pt_credits > 0 ? 'score-excellent' : 'score-average'}`} style={{ fontSize: '0.75rem', padding: '3px 8px' }}>
+                              {sub.pt_credits > 0 ? 'ACTIVE' : 'EXHAUSTED'}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="pt-btn pt-btn-secondary"
+                              style={{ padding: '4px 10px', fontSize: '0.78rem' }}
+                              onClick={() => {
+                                setSelectedMember({
+                                  user_id: sub.user_id,
+                                  member_code: sub.member_code,
+                                  name: sub.member_name,
+                                  phone: sub.phone,
+                                  email: sub.email,
+                                  age: 28,
+                                  gender: 'Member',
+                                  assigned_trainer_id: sub.assigned_trainer_id,
+                                  assigned_trainer_name: sub.assigned_trainer_name,
+                                  pt_credits: sub.pt_credits
+                                });
+                                if (sub.assigned_trainer_id) {
+                                  setSelectedTrainerId(sub.assigned_trainer_id);
+                                }
+                                showToast(`Selected ${sub.member_name} in Purchase Desk!`);
+                              }}
+                            >
+                              <i className="fas fa-shopping-cart"></i> Select Member
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1181,10 +1187,10 @@ const AdminPTManagement = () => {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <img 
-                            src={trainer.avatar} 
-                            alt={trainer.name} 
-                            style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #6366f1' }} 
+                          <img
+                            src={trainer.avatar}
+                            alt={trainer.name}
+                            style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #6366f1' }}
                           />
                           <div style={{ flex: 1 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1208,12 +1214,12 @@ const AdminPTManagement = () => {
                             </span>
                           </div>
                           <div style={{ height: '5px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
-                            <div 
-                              style={{ 
-                                height: '100%', 
-                                width: `${capacityPercent}%`, 
+                            <div
+                              style={{
+                                height: '100%',
+                                width: `${capacityPercent}%`,
                                 background: isFull ? '#ef4444' : capacityPercent > 80 ? '#f59e0b' : '#10b981'
-                              }} 
+                              }}
                             />
                           </div>
                         </div>
@@ -1242,17 +1248,7 @@ const AdminPTManagement = () => {
             </div>
 
             {/* RIGHT 1/3 COLUMN: PT PURCHASE & PROVISIONING FORM DESK */}
-            <div className="pt-card flex-col">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <h3 className="card-title" style={{ margin: 0 }}>
-                  <i className="fas fa-shopping-cart text-primary"></i> PT Purchase Desk
-                </h3>
-                <span className="pt-badge code" style={{ background: 'rgba(79, 70, 229, 0.1)', color: '#4f46e5', border: '1px solid rgba(79, 70, 229, 0.2)' }}>
-                  1/3 Desk
-                </span>
-              </div>
-              <p className="card-desc">Search member, select PT upgrade plan, and confirm coach assignment.</p>
-
+            <div className={`pt-layout-column pt-layout-right pt-card flex-col ${purchaseSubTab === 'purchase' ? 'show-mobile' : 'hide-mobile'}`}>
               {/* Member Search Quick Input */}
               <div className="form-group" style={{ marginBottom: '1rem', position: 'relative' }}>
                 <label>Member Search</label>
@@ -1403,9 +1399,9 @@ const AdminPTManagement = () => {
           <div className="pt-modal-card full-width">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', paddingBottom: '1rem', borderBottom: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <img 
-                  src={viewingTrainer.avatar} 
-                  alt={viewingTrainer.name} 
+                <img
+                  src={viewingTrainer.avatar}
+                  alt={viewingTrainer.name}
                   style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #6366f1' }}
                 />
                 <div>
@@ -1419,8 +1415,8 @@ const AdminPTManagement = () => {
                   </div>
                 </div>
               </div>
-              <button 
-                className="pt-icon-btn" 
+              <button
+                className="pt-icon-btn"
                 onClick={() => setViewingTrainer(null)}
                 style={{ fontSize: '1.2rem', padding: '8px' }}
               >
@@ -1444,12 +1440,12 @@ const AdminPTManagement = () => {
                   <strong>{viewingTrainer.assigned_count} / {viewingTrainer.max_capacity}</strong>
                 </div>
                 <div style={{ height: '10px', background: '#cbd5e1', borderRadius: '5px', overflow: 'hidden', marginBottom: '10px' }}>
-                  <div 
-                    style={{ 
-                      height: '100%', 
+                  <div
+                    style={{
+                      height: '100%',
                       width: `${Math.min(100, Math.round((viewingTrainer.assigned_count / viewingTrainer.max_capacity) * 100))}%`,
                       background: viewingTrainer.assigned_count >= viewingTrainer.max_capacity ? '#ef4444' : '#10b981'
-                    }} 
+                    }}
                   />
                 </div>
                 <p style={{ margin: 0, fontSize: '0.82rem', color: viewingTrainer.assigned_count >= viewingTrainer.max_capacity ? '#ef4444' : '#10b981', fontWeight: 600 }}>
@@ -1459,15 +1455,15 @@ const AdminPTManagement = () => {
             </div>
 
             <div className="modal-actions-flex" style={{ justifyContent: 'flex-end', gap: '12px' }}>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="pt-btn pt-btn-secondary"
                 onClick={() => setViewingTrainer(null)}
               >
                 Close Profile
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="pt-btn pt-btn-primary"
                 onClick={() => {
                   setSelectedTrainerId(viewingTrainer.trainer_id);
