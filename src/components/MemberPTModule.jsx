@@ -80,7 +80,7 @@ const MemberPTModule = () => {
     setBookingLimitError(false);
     try {
       const token = tokenManager.getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/api/v1/member/pt/available-slots?date=${dateStr}`, {
+      const res = await fetch(`${API_BASE_URL}/api/member/pt/available-slots?date=${dateStr}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -126,7 +126,7 @@ const MemberPTModule = () => {
 
     try {
       const token = tokenManager.getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/api/v1/member/pt/book`, {
+      const res = await fetch(`${API_BASE_URL}/api/member/pt/book`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -184,7 +184,7 @@ const MemberPTModule = () => {
     setIsVerifyingPin(true);
     try {
       const token = tokenManager.getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/api/v1/pt/session/verify`, {
+      const res = await fetch(`${API_BASE_URL}/api/pt/session/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -234,7 +234,7 @@ const MemberPTModule = () => {
     setIsLoadingDiet(true);
     try {
       const token = tokenManager.getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/api/v1/member/diet-plans/active`, {
+      const res = await fetch(`${API_BASE_URL}/api/member/diet-plans/active`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {

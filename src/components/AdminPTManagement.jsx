@@ -4,6 +4,7 @@ import tokenManager from '../utils/tokenManager';
 import AdminDietPlans from './AdminDietPlans';
 import FitnessAssessment from './FitnessAssessment';
 import GymConfigurationManagement from './GymConfigurationManagement';
+import InvoiceModal from './InvoiceModal';
 import './AdminPTManagement.css';
 
 const AdminPTManagement = () => {
@@ -34,6 +35,10 @@ const AdminPTManagement = () => {
   const [selectedPlan, setSelectedPlan] = useState('5');
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [isProvisioning, setIsProvisioning] = useState(false);
+  
+  // Tax Receipt display states
+  const [activeInvoiceId, setActiveInvoiceId] = useState(null);
+  const [showInvoice, setShowInvoice] = useState(false);
 
   // Trainer Assignment
   const [trainersList, setTrainersList] = useState([]);
@@ -251,25 +256,26 @@ const AdminPTManagement = () => {
   // Load Trainers with Capacity Counts & Full Info
   const fetchTrainersWithCapacity = useCallback(async () => {
     try {
-      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/trainers?limit=100`, {
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/pt/trainers-capacity`, {
         method: 'GET'
       });
       if (response.ok) {
         const data = await response.json();
         const rawTrainers = data.data || [];
         const enriched = rawTrainers.map(t => ({
-          trainer_id: t.employee_id || t.id,
-          name: t.full_name || t.name,
-          code: t.employee_code || `TRN-${t.employee_id || t.id}`,
+          trainer_id: t.trainer_id, // Use trainer_id, not employee_id
+          name: t.trainer_name || t.name,
+          code: t.employee_code || `TRN-${t.trainer_id}`,
           specialization: t.specialization || 'N/A',
           experience: t.experience || 'N/A',
-          rating: t.rating || '4.0 ★',
-          phone: t.phone || '',
-          email: t.email || '',
-          avatar: t.profile_photo || t.avatar || '',
+          rating: t.rating ? `${t.rating} ★` : '4.0 ★',
+          phone: t.trainer_phone || t.phone || '',
+          email: t.trainer_email || t.email || '',
+          avatar: t.profile_photo_url || t.pose_photo_url || t.showcase_photo || t.avatar || '',
           assigned_count: t.assigned_clients_count || 0,
           max_capacity: t.max_capacity || 15,
-          shift: t.shift_timing || 'General'
+          shift: t.shift_timing || 'General',
+          availability_status: t.availability_status || 'AVAILABLE'
         }));
         setTrainersList(enriched);
         if (enriched.length > 0) {
@@ -297,38 +303,28 @@ const AdminPTManagement = () => {
   const fetchRealPTSubscriptions = useCallback(async () => {
     setIsLoadingPtPlans(true);
     try {
-      // Fetch subscriptions from backend subscriptions endpoint
-      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/subscriptions`, {
+      // Fetch subscriptions from backend PT subscriptions endpoint
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/pt/subscriptions`, {
         method: 'GET'
       });
       if (response.ok) {
         const data = await response.json();
         const rawSubs = data.data || [];
 
-        // STRICT FILTER: Filter out base gym memberships, include ONLY PT Subscriptions
-        const ptOnlySubs = rawSubs.filter(sub => {
-          const planType = (sub.plan_type || sub.plan?.plan_type || sub.membership_plan?.plan_type || '').toUpperCase();
-          const planName = (sub.subscription_name || sub.plan_name || sub.plan?.plan_name || sub.plan?.name || sub.membership_plan?.plan_name || '').toLowerCase();
-          
-          if (planType === 'PT_UPGRADE' || planType === 'ADD_ON') return true;
-          if (planName.includes('pt') || planName.includes('personal train') || planName.includes('session') || planName.includes('coach')) return true;
-          if ((sub.pt_credits && sub.pt_credits > 0) || (sub.total_credits && sub.total_credits > 0) || sub.trainer_id || sub.assigned_trainer_id) return true;
-          return false;
-        });
-
         // Map real backend PT subscriptions with member, plan and credit data
-        // Per API doc: member_name, member_email, member_phone, user_id are at top-level of each subscription
-        const formatted = ptOnlySubs.map((sub, idx) => {
-          const userObj = sub.user || sub.member || {};
-          const planObj = sub.plan || sub.membership_plan || {};
-          const trainerObj = sub.trainer || sub.assigned_trainer || {};
+        const formatted = rawSubs.map((sub, idx) => {
+          const memberObj = sub.member || {};
+          const planObj = sub.plan || {};
+          const trainerAssignmentObj = sub.trainer_assignment || {};
           const walletCredits = Array.isArray(sub.wallet_credits) ? sub.wallet_credits : [];
           const ptWallet = walletCredits.find(credit => String(credit.entitlement_type || '').toUpperCase() === 'PT_1ON1');
+          
+          const defaultTotal = planObj.plan_id === 5 ? 24 : planObj.plan_id === 2 ? 12 : 8;
           const totalCreds = Number(
             ptWallet?.original_quantity ||
             sub.total_credits || sub.sessions || planObj.sessions ||
             ptWallet?.remaining_quantity ||
-            (sub.plan_id === 5 ? 24 : sub.plan_id === 2 ? 12 : 8)
+            defaultTotal
           );
           const ptCreds = Number(
             ptWallet?.remaining_quantity ??
@@ -336,29 +332,27 @@ const AdminPTManagement = () => {
             Math.max(0, totalCreds - Number(sub.sessions_used || 0))
           );
 
-          // assigned_trainer_id from the subscription — will be cross-referenced against trainersList in render
-          const assignedTrainerId = sub.trainer_id || trainerObj.trainer_id || trainerObj.id || null;
+          const assignedTrainerId = trainerAssignmentObj.trainer_profile_id || sub.trainer_id || null;
 
           return {
-            subscription_id: sub.subscription_id || sub.id || (1001 + idx),
-            // Per API doc: user_id, member_name, member_email are top-level fields
-            user_id: sub.user_id || userObj.user_id || userObj.id || (138 + idx),
-            member_code: sub.member_code || userObj.member_code || `MEM-${String(sub.user_id || idx + 1).padStart(4, '0')}`,
-            member_name: sub.member_name || sub.user_name || userObj.name || userObj.full_name || sub.name || `Member #${sub.user_id || idx + 1}`,
-            email: sub.member_email || sub.email || userObj.email || '',
-            phone: sub.member_phone || sub.phone || userObj.phone || '',
-            plan_id: sub.plan_id || planObj.plan_id || 1,
-            plan_name: sub.plan_name || sub.subscription_name || planObj.plan_name || planObj.name || 'PT Upgrade Package',
-            plan_type: sub.plan_type || planObj.plan_type || 'PT_UPGRADE',
-            // assigned_trainer_id is stored; actual name/avatar will be cross-referenced from trainersList at render
+            subscription_id: sub.subscription_id || (1001 + idx),
+            user_id: memberObj.user_id || sub.user_id || (138 + idx),
+            member_code: sub.member_code || memberObj.member_code || `MEM-${String(memberObj.user_id || sub.user_id || idx + 1).padStart(4, '0')}`,
+            member_name: memberObj.name || sub.member_name || `Member #${memberObj.user_id || idx + 1}`,
+            email: memberObj.email || sub.email || '',
+            phone: memberObj.phone || sub.phone || '',
+            plan_id: planObj.plan_id || 1,
+            plan_name: planObj.plan_name || 'PT Upgrade Package',
+            plan_type: planObj.plan_type || 'PT_UPGRADE',
             assigned_trainer_id: assignedTrainerId,
-            assigned_trainer_name: sub.trainer_name || trainerObj.name || trainerObj.full_name || null,
-            trainer_avatar: trainerObj.avatar || trainerObj.profile_image || null,
+            assigned_trainer_name: trainerAssignmentObj.trainer_name || null,
+            trainer_avatar: trainerAssignmentObj.showcase_photo || trainerAssignmentObj.avatar || null,
             total_credits: totalCreds,
             pt_credits: ptCreds,
             status: String(sub.status).toUpperCase() === 'ACTIVE' || sub.status === 1 ? (ptCreds > 0 ? 'ACTIVE' : 'EXHAUSTED') : 'EXHAUSTED',
-            purchase_date: sub.start_date || sub.created_at || '2026-05-15',
-            expiry_date: sub.end_date || '2026-08-15'
+            purchase_date: sub.start_date || '2026-05-15',
+            expiry_date: sub.end_date || '2026-08-15',
+            invoices: sub.invoices || []
           };
         });
 
@@ -666,6 +660,7 @@ const AdminPTManagement = () => {
         body: JSON.stringify({
           user_id: selectedMember.user_id,
           plan_id: parseInt(selectedPlan),
+          trainer_id: selectedTrainerId || undefined,
           payment_method: paymentMethod
         })
       });
@@ -677,6 +672,11 @@ const AdminPTManagement = () => {
       }
 
       showToast(data.message || 'Manual PT purchase processed and credits provisioned successfully!');
+
+      if (data.invoice_id) {
+        setActiveInvoiceId(data.invoice_id);
+        setShowInvoice(true);
+      }
 
       // Step 2: POST /api/admin/pt/assign-trainer — Assign trainer to the member (if one is selected)
       if (selectedTrainerId) {
@@ -810,7 +810,7 @@ const AdminPTManagement = () => {
   const fetchAssessmentAuditLogs = useCallback(async () => {
     try {
       const token = tokenManager.getAccessToken();
-      const res = await fetch(`${API_BASE_URL}/api/v1/admin/assessments/audit`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/assessments/audit`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -848,7 +848,7 @@ const AdminPTManagement = () => {
     setIsDeletingLog(true);
     try {
       const token = tokenManager.getAccessToken();
-      await fetch(`${API_BASE_URL}/api/v1/admin/assessments/${deleteLogId}`, {
+      await fetch(`${API_BASE_URL}/api/admin/assessments/${deleteLogId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -1035,7 +1035,46 @@ const AdminPTManagement = () => {
                             </td>
                             <td>
                               <strong style={{ fontSize: '0.85rem', color: '#4f46e5' }}>{sub.plan_name}</strong>
-                              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Purchased {sub.purchase_date}</div>
+                              <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '4px' }}>Purchased {sub.purchase_date}</div>
+                              {sub.invoices && sub.invoices.length > 0 ? (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                                  {sub.invoices.map(inv => (
+                                    <button
+                                      key={inv.invoice_id}
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveInvoiceId(inv.invoice_id);
+                                        setShowInvoice(true);
+                                      }}
+                                      style={{
+                                        fontSize: '0.68rem',
+                                        background: '#f1f5f9',
+                                        border: '1px solid #cbd5e1',
+                                        borderRadius: '4px',
+                                        padding: '2px 6px',
+                                        color: '#475569',
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        transition: 'all 0.2s'
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = '#e2e8f0';
+                                        e.currentTarget.style.borderColor = '#94a3b8';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = '#f1f5f9';
+                                        e.currentTarget.style.borderColor = '#cbd5e1';
+                                      }}
+                                      title={`View Invoice ${inv.invoice_number}`}
+                                    >
+                                      <i className="fas fa-file-invoice" style={{ color: '#64748b' }}></i>
+                                      {inv.invoice_number}
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : null}
                             </td>
                             {/* Assigned Coach: cross-referenced from trainersList */}
                             <td>
@@ -1497,6 +1536,16 @@ const AdminPTManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Invoice Modal Overlay Receipt */}
+      <InvoiceModal 
+        isOpen={showInvoice} 
+        invoiceId={activeInvoiceId} 
+        onClose={() => {
+          setShowInvoice(false);
+          setActiveInvoiceId(null);
+        }}
+      />
     </div>
   );
 };

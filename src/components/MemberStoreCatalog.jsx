@@ -65,13 +65,13 @@ const MemberStoreCatalog = () => {
     }
   ];
 
-  // Fetch Member Products Catalog (GET /api/v1/member/products)
+  // Fetch Member Products Catalog (GET /api/member/products)
   const fetchMemberProducts = useCallback(async () => {
     setLoading(true);
     try {
       const token = tokenManager.getAccessToken();
       const queryStr = categoryFilter ? `?category=${categoryFilter}` : '';
-      const response = await fetch(`${API_BASE_URL}/api/v1/member/products${queryStr}`, {
+      const response = await fetch(`${API_BASE_URL}/api/member/products${queryStr}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

@@ -216,7 +216,7 @@ const AdminStoreManagement = () => {
       if (branchIdFilter) queryParams.push(`branch_id=${branchIdFilter}`);
       
       const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
-      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/v1/admin/products${queryString}`, {
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/products${queryString}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -278,7 +278,7 @@ const AdminStoreManagement = () => {
 
     setSubmittingProduct(true);
     try {
-      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/v1/admin/products`, {
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -432,7 +432,7 @@ const AdminStoreManagement = () => {
     };
 
     try {
-      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/v1/admin/store/sell`, {
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/store/sell`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -606,7 +606,7 @@ const AdminStoreManagement = () => {
     };
 
     try {
-      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/v1/admin/inventory/restock`, {
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/inventory/restock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
