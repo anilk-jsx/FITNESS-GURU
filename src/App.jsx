@@ -17,6 +17,8 @@ import AdminDietPlans from './components/AdminDietPlans';
 import AdminPTManagement from './components/AdminPTManagement';
 import GymConfigurationManagement from './components/GymConfigurationManagement';
 import MemberPTModule from './components/MemberPTModule';
+import AdminStoreManagement from './components/AdminStoreManagement';
+import MemberStoreCatalog from './components/MemberStoreCatalog';
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
@@ -53,6 +55,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/pt-sessions" element={<ProtectedRoute><MemberPTModule /></ProtectedRoute>} />
+        <Route path="/store" element={<ProtectedRoute><MemberStoreCatalog /></ProtectedRoute>} />
         <Route path="/admin-dashboard" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboardHome />} />
@@ -66,6 +69,7 @@ function App() {
           <Route path="mapping" element={<UserTrainerMapping />} />
           <Route path="pt-management" element={<AdminPTManagement />} />
           <Route path="gym-configuration" element={<GymConfigurationManagement />} />
+          <Route path="store-management" element={<AdminStoreManagement />} />
           <Route path="gym-shifts" element={<Navigate to="/admin-dashboard/gym-configuration?tab=shifts-slots" replace />} />
           <Route path="diet-plans" element={<Navigate to="/admin-dashboard/pt-management?tab=diet-plans" replace />} />
         </Route>

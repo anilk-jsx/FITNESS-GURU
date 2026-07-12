@@ -127,6 +127,10 @@ const Navbar = ({ userData }) => {
                 <i className="fas fa-credit-card"></i>
                 <span>Subscriptions</span>
               </Link>
+              <Link to="/store" className="dropdown-item">
+                <i className="fas fa-shopping-bag"></i>
+                <span>Store Catalog</span>
+              </Link>
               
               <div className="dropdown-divider"></div>
               

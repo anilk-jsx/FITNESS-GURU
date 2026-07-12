@@ -5,6 +5,7 @@ import { normalizeGender, toIntOrNull, isActiveStatus, findMatchingPlan } from "
 // Import eye icons for password visibility toggle
 import eyeIcon from "../assets/icons8-eye-50.png";
 import eyeSlashIcon from "../assets/icons8-invisible-48.png";
+import InvoiceModal from "./InvoiceModal";
 
 const MemberManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,6 +17,10 @@ const MemberManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editFormData, setEditFormData] = useState(null);
+  
+  // Tax Receipt display states
+  const [activeInvoiceId, setActiveInvoiceId] = useState(null);
+  const [showInvoice, setShowInvoice] = useState(false);
 
   // Password visibility state for add member form
   const [showPassword, setShowPassword] = useState(false);
@@ -1581,6 +1586,11 @@ const MemberManagement = () => {
         // Reset form and close modal
         setShowAddModal(false);
         setAddFormErrors({}); // Clear validation errors on success
+        
+        if (data.invoice_id) {
+          setActiveInvoiceId(data.invoice_id);
+          setShowInvoice(true);
+        }
         setAddFormData({
           name: "",
           email: "",
@@ -3446,6 +3456,16 @@ const MemberManagement = () => {
 
       {/* Toast Notification */}
       <ToastNotification />
+
+      {/* Invoice Modal Popup */}
+      <InvoiceModal 
+        isOpen={showInvoice} 
+        invoiceId={activeInvoiceId} 
+        onClose={() => {
+          setShowInvoice(false);
+          setActiveInvoiceId(null);
+        }}
+      />
     </div>
   );
 };

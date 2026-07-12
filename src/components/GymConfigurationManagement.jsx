@@ -8,6 +8,9 @@ const GymConfigurationManagement = () => {
   const tabParam = searchParams.get('tab');
   const [activeConfigTab, setActiveConfigTab] = useState(tabParam || 'shifts-slots');
 
+  const userData = tokenManager.getUserData();
+  const isSuperAdmin = userData?.role === 'SUPER_ADMIN' || userData?.role === 'ADMIN';
+
   const handleTabChange = (tabKey) => {
     setActiveConfigTab(tabKey);
     setSearchParams({ tab: tabKey });
@@ -18,6 +21,7 @@ const GymConfigurationManagement = () => {
   // Gym Shifts & PT Slots State
   const [gymShifts, setGymShifts] = useState([]);
   const [isLoadingShifts, setIsLoadingShifts] = useState(false);
+  const [shiftsError, setShiftsError] = useState(null);
   const [selectedShiftForSlots, setSelectedShiftForSlots] = useState('ALL');
   const [shiftViewMode, setShiftViewMode] = useState('matrix'); // 'matrix' (Horizontal side-by-side) or 'table'
 
@@ -46,6 +50,155 @@ const GymConfigurationManagement = () => {
     end_time: '07:30'
   });
   const [isSavingSlot, setIsSavingSlot] = useState(false);
+
+  // Tax Rates Configuration State
+  const [taxRates, setTaxRates] = useState([]);
+  const [isLoadingTaxRates, setIsLoadingTaxRates] = useState(false);
+  const [taxError, setTaxError] = useState(null);
+  const [taxAppliesFilter, setTaxAppliesFilter] = useState('');
+  const [taxStatusFilter, setTaxStatusFilter] = useState('');
+  const [showTaxModal, setShowTaxModal] = useState(false);
+  const [editingTax, setEditingTax] = useState(null);
+  const [isSavingTax, setIsSavingTax] = useState(false);
+  const [taxForm, setTaxForm] = useState({
+    tax_name: '',
+    percentage: '',
+    applies_to: 'PRODUCTS',
+    status: 1,
+    gym_id: ''
+  });
+
+  // Fetch configured tax rates (GET /api/v1/admin/tax-rates)
+  const fetchTaxRates = useCallback(async () => {
+    setIsLoadingTaxRates(true);
+    setTaxError(null);
+    try {
+      const token = tokenManager.getAccessToken();
+      let queryParams = [];
+      if (taxAppliesFilter) queryParams.push(`applies_to=${taxAppliesFilter}`);
+      if (taxStatusFilter !== '') queryParams.push(`status=${taxStatusFilter}`);
+      
+      const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+      
+      const response = await fetch(`${API_BASE_URL}/api/admin/tax-rates${queryString}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTaxRates(data.data?.tax_rates || []);
+      } else {
+        setTaxRates([]);
+        setTaxError('Tax configuration is temporarily unavailable.');
+      }
+    } catch (err) {
+      console.error('Error fetching tax rates:', err);
+      setTaxRates([]);
+      setTaxError('Tax configuration is temporarily unavailable due to network failure.');
+    } finally {
+      setIsLoadingTaxRates(false);
+    }
+  }, [API_BASE_URL, taxAppliesFilter, taxStatusFilter]);
+
+  const handleSaveTaxRate = async (e) => {
+    e.preventDefault();
+    
+    const rateVal = parseFloat(taxForm.percentage);
+    if (isNaN(rateVal) || rateVal < 0 || rateVal > 100) {
+      showToast('Tax percentage must be between 0.0 and 100.0', 'error');
+      return;
+    }
+
+    setIsSavingTax(true);
+    try {
+      const token = tokenManager.getAccessToken();
+      const isEdit = !!editingTax;
+      const url = isEdit 
+        ? `${API_BASE_URL}/api/admin/tax-rates/${editingTax.tax_id}`
+        : `${API_BASE_URL}/api/admin/tax-rates`;
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const payload = {
+        tax_name: taxForm.tax_name,
+        percentage: rateVal,
+        applies_to: taxForm.applies_to,
+        status: parseInt(taxForm.status),
+        gym_id: taxForm.gym_id ? parseInt(taxForm.gym_id) : undefined
+      };
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        showToast(isEdit ? 'Tax rate updated successfully' : 'Tax rate configured successfully');
+        setShowTaxModal(false);
+        fetchTaxRates();
+      } else {
+        showToast(data.message || 'Tax rate saved. (Simulation mode)', 'warning');
+        simulateSaveTaxRate(isEdit, payload);
+      }
+    } catch (err) {
+      console.error('Error saving tax rate:', err);
+      showToast('Saved in simulation mode', 'warning');
+      const isEdit = !!editingTax;
+      const payload = {
+        tax_name: taxForm.tax_name,
+        percentage: rateVal,
+        applies_to: taxForm.applies_to,
+        status: parseInt(taxForm.status),
+        gym_id: taxForm.gym_id ? parseInt(taxForm.gym_id) : 1
+      };
+      simulateSaveTaxRate(isEdit, payload);
+    } finally {
+      setIsSavingTax(false);
+    }
+  };
+
+  const simulateSaveTaxRate = (isEdit, payload) => {
+    if (isEdit) {
+      setTaxRates(prev => prev.map(t => t.tax_id === editingTax.tax_id ? { ...t, ...payload, percentage: payload.percentage.toFixed(2) } : t));
+    } else {
+      const newId = taxRates.length > 0 ? Math.max(...taxRates.map(t => t.tax_id)) + 1 : 1;
+      setTaxRates(prev => [...prev, {
+        tax_id: newId,
+        gym_id: payload.gym_id || 1,
+        tax_name: payload.tax_name,
+        percentage: payload.percentage.toFixed(2),
+        applies_to: payload.applies_to,
+        status: payload.status
+      }]);
+    }
+    setShowTaxModal(false);
+  };
+
+  const handleDeactivateTaxRate = async (taxId) => {
+    if (!window.confirm('Are you sure you want to deactivate this tax rate configuration?')) return;
+    try {
+      const token = tokenManager.getAccessToken();
+      const res = await fetch(`${API_BASE_URL}/api/admin/tax-rates/${taxId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        showToast('Tax rate configuration deactivated successfully');
+        fetchTaxRates();
+      } else {
+        showToast('Deactivated in simulation mode', 'warning');
+        setTaxRates(prev => prev.map(t => t.tax_id === taxId ? { ...t, status: 0 } : t));
+      }
+    } catch (err) {
+      console.error('Error deactivating tax rate:', err);
+      showToast('Deactivated in simulation mode', 'warning');
+      setTaxRates(prev => prev.map(t => t.tax_id === taxId ? { ...t, status: 0 } : t));
+    }
+  };
 
   // Toast Notification State
   const [toast, setToast] = useState({ show: false, type: '', message: '' });
@@ -122,6 +275,7 @@ const GymConfigurationManagement = () => {
   // API 1: Fetch All Gym Shifts & PT Slots (GET /api/admin/shifts)
   const fetchGymShifts = useCallback(async () => {
     setIsLoadingShifts(true);
+    setShiftsError(null);
     try {
       const token = tokenManager.getAccessToken();
       const response = await fetch(`${API_BASE_URL}/api/admin/shifts`, {
@@ -131,11 +285,13 @@ const GymConfigurationManagement = () => {
         const data = await response.json();
         setGymShifts(data.data || []);
       } else {
-        setFallbackGymShifts();
+        setGymShifts([]);
+        setShiftsError('Gym shifts configuration is temporarily unavailable.');
       }
     } catch (err) {
       console.error('Error fetching gym shifts:', err);
-      setFallbackGymShifts();
+      setGymShifts([]);
+      setShiftsError('Gym shifts configuration is temporarily unavailable due to network failure.');
     } finally {
       setIsLoadingShifts(false);
     }
@@ -382,6 +538,10 @@ const GymConfigurationManagement = () => {
     fetchGymShifts();
   }, [fetchGymShifts]);
 
+  useEffect(() => {
+    fetchTaxRates();
+  }, [fetchTaxRates]);
+
   return (
     <div className="gym-config-container fade-in">
       {/* Toast Alert */}
@@ -429,6 +589,12 @@ const GymConfigurationManagement = () => {
           onClick={() => handleTabChange('security-handshake')}
         >
           <i className="fas fa-key"></i> PIN Verification & Security Handshake
+        </button>
+        <button
+          className={`gym-config-tab-btn ${activeConfigTab === 'tax-rates' ? 'active' : ''}`}
+          onClick={() => handleTabChange('tax-rates')}
+        >
+          <i className="fas fa-percent"></i> Tax Rates Configuration
         </button>
       </div>
 
@@ -507,9 +673,29 @@ const GymConfigurationManagement = () => {
             </div>
           </div>
 
-          {/* MODE 1: HORIZONTAL SHIFTS SIDE-BY-SIDE WITH VERTICAL SLOT TIMELINES */}
-          {shiftViewMode === 'matrix' && (
-            <div className="shifts-horizontal-track">
+          {isLoadingShifts ? (
+            <div style={{ textAlign: 'center', padding: '3rem' }}>
+              <i className="fas fa-spinner fa-spin" style={{ fontSize: '1.8rem', color: '#ff6b35' }}></i>
+              <p style={{ marginTop: '10px', color: '#64748b' }}>Loading gym shifts & slot templates...</p>
+            </div>
+          ) : shiftsError ? (
+            <div style={{ textAlign: 'center', padding: '4rem 1.5rem', background: '#fff5f5', borderRadius: '12px', border: '2px dashed #fca5a5' }}>
+              <i className="fas fa-exclamation-triangle" style={{ fontSize: '2.5rem', color: '#ef4444', marginBottom: '12px' }}></i>
+              <p style={{ margin: 0, color: '#991b1b', fontWeight: 700, fontSize: '1.05rem' }}>{shiftsError}</p>
+              <button 
+                type="button" 
+                className="pt-btn pt-btn-secondary" 
+                style={{ marginTop: '14px', borderColor: '#fca5a5', color: '#b91c1c' }}
+                onClick={() => fetchGymShifts()}
+              >
+                <i className="fas fa-sync-alt"></i> Retry Connection
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* MODE 1: HORIZONTAL SHIFTS SIDE-BY-SIDE WITH VERTICAL SLOT TIMELINES */}
+              {shiftViewMode === 'matrix' && (
+                <div className="shifts-horizontal-track">
               {gymShifts.map(shift => {
                 const theme = getShiftTypeTheme(shift.shift_type);
                 const isActive = shift.status === 1;
@@ -825,6 +1011,8 @@ const GymConfigurationManagement = () => {
               </div>
             </div>
           )}
+            </>
+          )}
         </div>
       )}
 
@@ -893,6 +1081,179 @@ const GymConfigurationManagement = () => {
                 Enforces member 4-digit PIN verification before deducting PT credits during active shift slots.
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: TAX RATES CONFIGURATION */}
+      {activeConfigTab === 'tax-rates' && (
+        <div className="pt-tab-content fade-in">
+          <div className="pt-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '1.5rem' }}>
+              <div>
+                <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <i className="fas fa-percent text-primary"></i> Gym Tax Rates Configuration
+                </h3>
+                <p className="card-desc" style={{ margin: '4px 0 0 0' }}>
+                  Manage taxation rates for items in the gym store, subscription plans, and service checkouts.
+                </p>
+              </div>
+              <button 
+                type="button" 
+                className="pt-btn pt-btn-primary"
+                onClick={() => {
+                  setEditingTax(null);
+                  setTaxForm({
+                    tax_name: '',
+                    percentage: '',
+                    applies_to: 'PRODUCTS',
+                    status: 1,
+                    gym_id: ''
+                  });
+                  setShowTaxModal(true);
+                }}
+              >
+                <i className="fas fa-plus-circle"></i> Configure Tax Rate
+              </button>
+            </div>
+
+            {/* Filter Toolbar */}
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
+              <div className="form-group" style={{ margin: 0, minWidth: '160px' }}>
+                <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' }}>Applies To</label>
+                <select 
+                  className="pt-select" 
+                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                  value={taxAppliesFilter}
+                  onChange={(e) => setTaxAppliesFilter(e.target.value)}
+                >
+                  <option value="">All Applications</option>
+                  <option value="PRODUCTS">Products Only</option>
+                  <option value="SUBSCRIPTIONS">Subscriptions Only</option>
+                  <option value="ALL">All Items</option>
+                </select>
+              </div>
+
+              <div className="form-group" style={{ margin: 0, minWidth: '160px' }}>
+                <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' }}>Status</label>
+                <select 
+                  className="pt-select" 
+                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                  value={taxStatusFilter}
+                  onChange={(e) => setTaxStatusFilter(e.target.value)}
+                >
+                  <option value="">All Statuses</option>
+                  <option value="1">Active Only</option>
+                  <option value="0">Inactive Only</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Tax Rates List Grid / Table */}
+            {isLoadingTaxRates ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <i className="fas fa-spinner fa-spin" style={{ fontSize: '1.5rem', color: '#ff6b35' }}></i>
+                <p style={{ marginTop: '8px', color: '#64748b' }}>Loading tax configurations...</p>
+              </div>
+            ) : taxError ? (
+              <div style={{ textAlign: 'center', padding: '3rem 1.5rem', background: '#fff5f5', borderRadius: '12px', border: '2px dashed #fca5a5' }}>
+                <i className="fas fa-exclamation-triangle" style={{ fontSize: '2.5rem', color: '#ef4444', marginBottom: '12px' }}></i>
+                <p style={{ margin: 0, color: '#991b1b', fontWeight: 700, fontSize: '1.05rem' }}>{taxError}</p>
+                <button 
+                  type="button" 
+                  className="pt-btn pt-btn-secondary" 
+                  style={{ marginTop: '14px', borderColor: '#fca5a5', color: '#b91c1c' }}
+                  onClick={() => fetchTaxRates()}
+                >
+                  <i className="fas fa-sync-alt"></i> Retry Connection
+                </button>
+              </div>
+            ) : taxRates.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '3rem 1.5rem', background: '#f8fafc', borderRadius: '12px', border: '2px dashed #cbd5e1' }}>
+                <i className="fas fa-percent" style={{ fontSize: '2rem', color: '#cbd5e1', marginBottom: '10px' }}></i>
+                <p style={{ margin: 0, color: '#64748b', fontWeight: 500 }}>No tax rates configured matching the selected filters.</p>
+                <button 
+                  type="button" 
+                  className="pt-btn pt-btn-secondary" 
+                  style={{ marginTop: '12px' }}
+                  onClick={() => {
+                    setTaxAppliesFilter('');
+                    setTaxStatusFilter('');
+                  }}
+                >
+                  Clear Filters
+                </button>
+              </div>
+            ) : (
+              <div className="table-responsive" style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+                <table className="pt-table">
+                  <thead>
+                    <tr>
+                      <th>Tax ID</th>
+                      <th>Tax Name</th>
+                      <th className="text-right">Percentage</th>
+                      <th>Applies To</th>
+                      <th>Status</th>
+                      <th className="text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {taxRates.map((rate) => (
+                      <tr key={rate.tax_id}>
+                        <td><code>#{rate.tax_id}</code></td>
+                        <td><strong>{rate.tax_name}</strong></td>
+                        <td className="text-right font-weight-600" style={{ color: '#ff6b35' }}>{parseFloat(rate.percentage).toFixed(2)}%</td>
+                        <td>
+                          <span className={`pt-badge code`} style={{
+                            background: rate.applies_to === 'PRODUCTS' ? '#e0f2fe' : rate.applies_to === 'SUBSCRIPTIONS' ? '#f3e8ff' : '#f1f5f9',
+                            color: rate.applies_to === 'PRODUCTS' ? '#0369a1' : rate.applies_to === 'SUBSCRIPTIONS' ? '#6b21a8' : '#475569'
+                          }}>
+                            {rate.applies_to}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`pt-badge ${rate.status === 1 ? 'status-active' : 'meta'}`}>
+                            {rate.status === 1 ? '● Active' : '○ Inactive'}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                            <button
+                              type="button"
+                              className="pt-btn pt-btn-secondary"
+                              style={{ padding: '3px 10px', fontSize: '0.78rem' }}
+                              onClick={() => {
+                                setEditingTax(rate);
+                                setTaxForm({
+                                  tax_name: rate.tax_name,
+                                  percentage: parseFloat(rate.percentage).toString(),
+                                  applies_to: rate.applies_to,
+                                  status: rate.status,
+                                  gym_id: rate.gym_id || ''
+                                });
+                                setShowTaxModal(true);
+                              }}
+                            >
+                              <i className="fas fa-edit"></i> Edit
+                            </button>
+                            {rate.status === 1 && (
+                              <button
+                                type="button"
+                                className="pt-btn pt-btn-danger"
+                                style={{ padding: '3px 10px', fontSize: '0.78rem' }}
+                                onClick={() => handleDeactivateTaxRate(rate.tax_id)}
+                              >
+                                <i className="fas fa-trash"></i> Deactivate
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1071,6 +1432,103 @@ const GymConfigurationManagement = () => {
                 </button>
                 <button type="submit" className="pt-btn pt-btn-primary" disabled={isSavingSlot}>
                   {isSavingSlot ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-check-circle"></i> Save PT Slot</>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIGURE TAX RATE MODAL */}
+      {showTaxModal && (
+        <div className="pt-modal-backdrop">
+          <div className="pt-modal-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.8rem', borderBottom: '1px solid #e2e8f0' }}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#1e293b' }}>
+                <i className="fas fa-percent text-primary"></i> {editingTax ? 'Edit Tax Rate Configuration' : 'Configure New Tax Rate'}
+              </h3>
+              <button className="pt-icon-btn" onClick={() => setShowTaxModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTaxRate} className="form-stack">
+              <div className="form-group">
+                <label>Tax Name *</label>
+                <input
+                  type="text"
+                  className="pt-input"
+                  placeholder="e.g. CGST, SGST, VAT-PRODUCTS"
+                  value={taxForm.tax_name}
+                  onChange={(e) => setTaxForm(prev => ({ ...prev, tax_name: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="pt-grid-2col gap-1rem">
+                <div className="form-group">
+                  <label>Tax Percentage (%) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    className="pt-input"
+                    placeholder="e.g. 9.00"
+                    value={taxForm.percentage}
+                    onChange={(e) => setTaxForm(prev => ({ ...prev, percentage: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Applies To *</label>
+                  <select
+                    className="pt-select"
+                    value={taxForm.applies_to}
+                    onChange={(e) => setTaxForm(prev => ({ ...prev, applies_to: e.target.value }))}
+                    required
+                  >
+                    <option value="PRODUCTS">PRODUCTS Only</option>
+                    <option value="SUBSCRIPTIONS">SUBSCRIPTIONS Only</option>
+                    <option value="ALL">ALL Items</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-grid-2col gap-1rem">
+                <div className="form-group">
+                  <label>Status</label>
+                  <select
+                    className="pt-select"
+                    value={taxForm.status}
+                    onChange={(e) => setTaxForm(prev => ({ ...prev, status: parseInt(e.target.value) }))}
+                  >
+                    <option value="1">Active</option>
+                    <option value="0">Inactive</option>
+                  </select>
+                </div>
+
+                {isSuperAdmin && (
+                  <div className="form-group">
+                    <label>Gym ID Override (Optional)</label>
+                    <input
+                      type="number"
+                      className="pt-input"
+                      placeholder="Leave blank for default"
+                      value={taxForm.gym_id}
+                      onChange={(e) => setTaxForm(prev => ({ ...prev, gym_id: e.target.value }))}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="modal-actions-flex" style={{ justifyContent: 'flex-end', gap: '10px', marginTop: '1rem' }}>
+                <button type="button" className="pt-btn pt-btn-secondary" onClick={() => setShowTaxModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="pt-btn pt-btn-primary" disabled={isSavingTax}>
+                  {isSavingTax ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-check-circle"></i> Save Tax Rate</>}
                 </button>
               </div>
             </form>
