@@ -69,7 +69,6 @@ const TrainerDashboardLayout = () => {
     { path: '/trainer-dashboard/dashboard', icon: 'fas fa-house', label: 'Dashboard' },
     { path: '/trainer-dashboard/pt-roster', icon: 'fas fa-calendar-check', label: 'PT Roster & Management' },
     { path: '/trainer-dashboard/clients', icon: 'fas fa-users', label: 'Clients' },
-    { path: '/trainer-dashboard/profile', icon: 'fas fa-user-circle', label: 'Profile' },
   ];
 
   return (
@@ -150,13 +149,8 @@ const TrainerDashboardLayout = () => {
                   <div className="dropdown-header-email">{userData?.email || 'trainer@fitnessguru.org.in'}</div>
                 </div>
                 <li>
-                  <NavLink to="/trainer-dashboard/profile" className="dropdown-item-link" onClick={() => setIsProfileDropdownOpen(false)}>
-                    <i className="far fa-user"></i> My Profile
-                  </NavLink>
-                </li>
-                <li>
                   <NavLink to="/trainer-dashboard/dashboard" className="dropdown-item-link" onClick={() => setIsProfileDropdownOpen(false)}>
-                    <i className="fas fa-chart-line"></i> Dashboard
+                    <i className="far fa-user"></i> My Profile
                   </NavLink>
                 </li>
                 <li>

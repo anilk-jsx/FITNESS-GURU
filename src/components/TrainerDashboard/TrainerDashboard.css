@@ -1538,4 +1538,61 @@ body {
   }
 }
 
-
+/* Custom Profile and KPI section card styles on Dashboard without m-card borders/shadows */
+.kpi-card,
+.profile-bio-card,
+.profile-shifts-card,
+.profile-password-card{
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Scoped Typography Color Enforcements (Neutralizes global `#333` body/text overrides) */
+.trainer-panel-layout,
+.trainer-panel-layout h1,
+.trainer-panel-layout h2,
+.trainer-panel-layout h3,
+.trainer-panel-layout h4,
+.trainer-panel-layout span,
+.trainer-panel-layout label,
+.trainer-panel-layout p,
+.trainer-panel-layout strong,
+.trainer-panel-layout div,
+.trainer-panel-layout td,
+.trainer-panel-layout th,
+.trainer-panel-layout input,
+.trainer-panel-layout select,
+.trainer-panel-layout textarea {
+  color: var(--text-primary) !important;
+}
+
+.trainer-panel-layout .text-muted,
+.trainer-panel-layout .kpi-label,
+.trainer-panel-layout .form-label,
+.trainer-panel-layout td:first-child,
+.trainer-panel-layout p {
+  color: var(--text-secondary) !important;
+}
+
+.trainer-panel-layout input,
+.trainer-panel-layout select,
+.trainer-panel-layout textarea {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+.trainer-panel-layout input:focus,
+.trainer-panel-layout select:focus {
+  border-color: var(--primary-color) !important;
+}
+
+
+

@@ -41,7 +41,6 @@ import TrainerClients from './components/TrainerDashboard/TrainerClients';
 import TrainerAssessments from './components/TrainerDashboard/TrainerAssessments';
 import TrainerDietPlans from './components/TrainerDashboard/TrainerDietPlans';
 import TrainerPTRoster from './components/TrainerDashboard/TrainerPTRoster';
-import TrainerProfile from './components/TrainerDashboard/TrainerProfile';
 import ProtectedRoute from './utils/ProtectedRoute';
 import './App.css';
 
@@ -82,7 +81,6 @@ function App() {
           <Route path="clients" element={<TrainerClients />} />
           <Route path="assessments" element={<Navigate to="/trainer-dashboard/pt-roster?tab=assessments" replace />} />
           <Route path="diet-plans" element={<Navigate to="/trainer-dashboard/pt-roster?tab=diet-plans" replace />} />
-          <Route path="profile" element={<TrainerProfile />} />
         </Route>
         <Route path="/*" element={
           <>
