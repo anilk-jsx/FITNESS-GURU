@@ -44,7 +44,7 @@
   --radius-full: 9999px;
 
   --sidebar-width: 260px;
-  --sidebar-collapsed-width: 80px;
+  --sidebar-collapsed-width: 72px;
 
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -70,37 +70,40 @@ body {
   background-color: var(--bg-app);
 }
 
-/* Sidebar Styling */
+/* Sidebar Rebuild */
 .trainer-sidebar {
-  width: var(--sidebar-width);
-  background-color: var(--bg-sidebar);
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
   position: fixed;
   top: 0;
   bottom: 0;
   left: 0;
   z-index: 100;
+  width: var(--sidebar-width);
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
   transition: width var(--transition-normal);
+  overflow-x: hidden;
 }
 
 .trainer-sidebar.collapsed {
   width: var(--sidebar-collapsed-width);
 }
 
+/* Sidebar Header */
 .sidebar-header {
-  padding: 20px;
+  height: 70px;
+  min-height: 70px;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--border-color);
-  position: relative;
 }
 
 .trainer-sidebar.collapsed .sidebar-header {
   justify-content: center;
-  padding: 20px 10px;
+  padding: 0;
 }
 
 .sidebar-logo-container {
@@ -108,7 +111,6 @@ body {
   align-items: center;
   gap: 12px;
   text-decoration: none;
-  overflow: hidden;
 }
 
 .sidebar-logo {
@@ -123,11 +125,17 @@ body {
   font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
-  transition: opacity var(--transition-normal);
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--transition-fast), visibility var(--transition-fast);
 }
 
 .trainer-sidebar.collapsed .sidebar-title {
-  display: none;
+  opacity: 0;
+  visibility: hidden;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 
 .sidebar-toggle-btn {
@@ -143,6 +151,7 @@ body {
   transition: var(--transition-fast);
   width: 24px;
   height: 24px;
+  flex-shrink: 0;
 }
 
 .sidebar-toggle-btn:hover {
@@ -152,12 +161,24 @@ body {
 }
 
 .trainer-sidebar.collapsed .sidebar-toggle-btn {
-  position: absolute;
-  right: -12px;
-  top: 24px;
-  z-index: 101;
+  margin-left: 0;
 }
 
+.sidebar-nav-container {
+  flex-grow: 1;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  padding: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Sidebar Navigation */
 .sidebar-nav {
   flex-grow: 1;
   padding: 16px 12px;
@@ -166,6 +187,7 @@ body {
   flex-direction: column;
   gap: 4px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .sidebar-nav::-webkit-scrollbar {
@@ -181,7 +203,7 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px 16px;
+  padding: 12px;
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   text-decoration: none;
@@ -190,6 +212,7 @@ body {
   transition: var(--transition-fast);
   cursor: pointer;
   white-space: nowrap;
+  width: 100%;
 }
 
 .nav-link-item:hover {
@@ -209,44 +232,60 @@ body {
   width: 24px;
   text-align: center;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-link-label {
-  transition: opacity var(--transition-normal);
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--transition-fast), visibility var(--transition-fast);
 }
 
 .trainer-sidebar.collapsed .nav-link-label {
-  display: none;
+  opacity: 0;
+  visibility: hidden;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 
 .trainer-sidebar.collapsed .nav-link-item {
   justify-content: center;
-  padding: 12px;
+  padding: 12px 0;
 }
 
+/* Sidebar Footer */
 .sidebar-footer {
   padding: 16px;
   border-top: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   gap: 12px;
-  overflow: hidden;
+  background-color: var(--bg-sidebar);
 }
 
 .trainer-sidebar.collapsed .sidebar-footer {
   justify-content: center;
-  padding: 16px 10px;
+  padding: 16px 0;
 }
 
 .sidebar-footer-info {
   display: flex;
   flex-direction: column;
   white-space: nowrap;
-  transition: opacity var(--transition-normal);
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--transition-fast), visibility var(--transition-fast);
 }
 
 .trainer-sidebar.collapsed .sidebar-footer-info {
-  display: none;
+  opacity: 0;
+  visibility: hidden;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 
 /* Main Area Layout */
@@ -257,129 +296,60 @@ body {
   display: flex;
   flex-direction: column;
   transition: margin-left var(--transition-normal);
+  position: relative;
 }
 
-.trainer-sidebar.collapsed+.trainer-main-area {
+.trainer-sidebar.collapsed + .trainer-main-area {
   margin-left: var(--sidebar-collapsed-width);
 }
 
-/* Top App Bar Styling */
-.top-app-bar {
-  height: 70px;
-  background-color: var(--bg-sidebar);
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 30px;
+/* Floating Top Controls (Replaces Header Bar) */
+.floating-top-controls {
   position: sticky;
-  top: 0;
+  top: 16px;
   z-index: 99;
-}
-
-.app-bar-left {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 20px;
-  flex-grow: 1;
-  max-width: 400px;
+  padding: 0 30px;
+  pointer-events: none;
+  height: 0;
+  overflow: visible;
 }
 
-.global-search-wrapper {
-  position: relative;
-  width: 100%;
-  display: flex;
-  align-items: center;
-}
-
-.global-search-icon {
-  position: absolute;
-  left: 14px;
-  color: var(--text-muted);
-}
-
-.global-search-input {
-  width: 100%;
-  padding: 10px 16px 10px 42px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-full);
-  background-color: rgba(255, 255, 255, 0.04);
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  transition: var(--transition-fast);
-}
-
-.global-search-input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  background-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.25);
-}
-
-.app-bar-right {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.app-bar-action-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 8px;
-  border-radius: var(--radius-full);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition-fast);
-}
-
-.app-bar-action-btn:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
-}
-
-.notification-badge {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 16px;
-  height: 16px;
-  background-color: var(--primary-color);
-  color: white;
-  font-size: 0.65rem;
-  font-weight: 700;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--bg-sidebar);
+.floating-top-controls * {
+  pointer-events: auto;
 }
 
 /* Profile Dropdown Menu */
 .app-bar-profile-dropdown {
   position: relative;
   cursor: pointer;
+  align-self: flex-start;
+  margin-left: auto;
 }
 
 .profile-dropdown-trigger {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px;
+  padding: 6px 12px;
   border-radius: var(--radius-full);
+  background-color: rgba(20, 20, 22, 0.8);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-sm);
   transition: var(--transition-fast);
 }
 
 .profile-dropdown-trigger:hover {
   background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 107, 53, 0.3);
 }
 
 .profile-avatar {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   color: white;
@@ -388,6 +358,7 @@ body {
   justify-content: center;
   font-weight: 700;
   overflow: hidden;
+  font-size: 0.85rem;
 }
 
 .profile-avatar img {
@@ -421,7 +392,6 @@ body {
     opacity: 0;
     transform: translateY(-5px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
@@ -486,7 +456,6 @@ body {
     opacity: 0;
     transform: translateY(8px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);

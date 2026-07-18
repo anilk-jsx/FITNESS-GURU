@@ -91,11 +91,11 @@ const TrainerDashboardLayout = () => {
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <i className={`fas ${isSidebarCollapsed ? 'fa-angle-right' : 'fa-angle-left'}`}></i>
+            <i className={`fas ${isSidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'}`}></i>
           </button>
         </div>
 
-        <nav style={{ flexGrow: 1 }}>
+        <nav className="sidebar-nav-container">
           <ul className="sidebar-nav">
             {menuItems.map((item) => (
               <li key={item.path}>
@@ -125,62 +125,49 @@ const TrainerDashboardLayout = () => {
 
       {/* Main Area */}
       <div className="trainer-main-area">
-        {/* Top App Bar */}
-        <header className="top-app-bar">
-          <div className="app-bar-left">
-            <button 
-              className="mobile-sidebar-toggle-btn"
-              onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-              title="Toggle Menu"
-            >
-              <i className="fas fa-bars"></i>
-            </button>
-            <div className="global-search-wrapper">
-              <i className="fas fa-search global-search-icon"></i>
-              <input 
-                type="text" 
-                placeholder="Search clients, plans, dates..." 
-                className="global-search-input"
-              />
-            </div>
-          </div>
+        {/* Floating Top Controls */}
+        <div className="floating-top-controls">
+          <button 
+            className="mobile-sidebar-toggle-btn"
+            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            title="Toggle Menu"
+          >
+            <i className="fas fa-bars"></i>
+          </button>
 
-          <div className="app-bar-right">
-            {/* Profile trigger */}
-            <div ref={profileRef} className="app-bar-profile-dropdown">
-              <div className="profile-dropdown-trigger" onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}>
-                <div className="profile-avatar">
-                  {userData?.name ? userData.name.split(' ').map(n=>n[0]).join('') : 'TR'}
-                </div>
-                <i className="fas fa-chevron-down dropdown-chevron"></i>
+          <div ref={profileRef} className="app-bar-profile-dropdown">
+            <div className="profile-dropdown-trigger" onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}>
+              <div className="profile-avatar">
+                {userData?.name ? userData.name.split(' ').map(n=>n[0]).join('') : 'TR'}
               </div>
-
-              {isProfileDropdownOpen && (
-                <ul className="dropdown-menu-list">
-                  <div className="dropdown-menu-header">
-                    <div className="dropdown-header-name">{userData?.name || 'Trainer'}</div>
-                    <div className="dropdown-header-email">{userData?.email || 'trainer@fitnessguru.org.in'}</div>
-                  </div>
-                  <li>
-                    <NavLink to="/trainer-dashboard/profile" className="dropdown-item-link" onClick={() => setIsProfileDropdownOpen(false)}>
-                      <i className="far fa-user"></i> My Profile
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink to="/trainer-dashboard/dashboard" className="dropdown-item-link" onClick={() => setIsProfileDropdownOpen(false)}>
-                      <i className="fas fa-chart-line"></i> Dashboard
-                    </NavLink>
-                  </li>
-                  <li>
-                    <a href="#" className="dropdown-item-link logout-item" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
-                      <i className="fas fa-sign-out-alt"></i> Logout
-                    </a>
-                  </li>
-                </ul>
-              )}
+              <i className="fas fa-chevron-down dropdown-chevron"></i>
             </div>
+
+            {isProfileDropdownOpen && (
+              <ul className="dropdown-menu-list">
+                <div className="dropdown-menu-header">
+                  <div className="dropdown-header-name">{userData?.name || 'Trainer'}</div>
+                  <div className="dropdown-header-email">{userData?.email || 'trainer@fitnessguru.org.in'}</div>
+                </div>
+                <li>
+                  <NavLink to="/trainer-dashboard/profile" className="dropdown-item-link" onClick={() => setIsProfileDropdownOpen(false)}>
+                    <i className="far fa-user"></i> My Profile
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to="/trainer-dashboard/dashboard" className="dropdown-item-link" onClick={() => setIsProfileDropdownOpen(false)}>
+                    <i className="fas fa-chart-line"></i> Dashboard
+                  </NavLink>
+                </li>
+                <li>
+                  <a href="#" className="dropdown-item-link logout-item" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
+                    <i className="fas fa-sign-out-alt"></i> Logout
+                  </a>
+                </li>
+              </ul>
+            )}
           </div>
-        </header>
+        </div>
 
         {/* Page Content Render Area */}
         <main className="trainer-page-container">
