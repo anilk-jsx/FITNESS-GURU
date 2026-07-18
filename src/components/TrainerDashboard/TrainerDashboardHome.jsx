@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
 import './TrainerDashboard.css';
 
 const TrainerDashboardHome = () => {
@@ -12,30 +11,19 @@ const TrainerDashboardHome = () => {
   ]);
 
   // Modal active states
-  const [activeModal, setActiveModal] = useState(null); // 'assessment', 'workout', 'diet', 'attendance'
+  const [activeModal, setActiveModal] = useState(null); // 'assessment', 'diet'
   
   // Forms state
   const [assessmentForm, setAssessmentForm] = useState({ client: '', weight: '', bmi: '', bodyFat: '', muscleMass: '' });
-  const [workoutForm, setWorkoutForm] = useState({ client: '', planName: '', startDate: '', notes: '' });
   const [dietForm, setDietForm] = useState({ client: '', calories: '', protein: '', duration: '' });
-  const [attendanceForm, setAttendanceForm] = useState({ client: '', time: '', type: 'Personal Training' });
   
   // Validation errors
   const [errors, setErrors] = useState({});
 
-  // Timeline
+  // Timeline (Only assessment & diet related activities)
   const [activities] = useState([
-    { id: 1, type: 'workout', title: 'Workout Plan Assigned', desc: 'Assigned Hypertrophy Split to Rahul Mehta', time: '10 mins ago', dotClass: 'primary' },
-    { id: 2, type: 'assessment', title: 'Assessment Completed', desc: 'Recorded BMI & body fat details for Rajesh Kumar', time: '1 hour ago', dotClass: 'success' },
-    { id: 3, type: 'attendance', title: 'Attendance Logged', desc: 'Sneha Patel checked in at 08:15 AM', time: '3 hours ago', dotClass: 'warning' },
-    { id: 4, type: 'diet', title: 'Diet Recommendation Updated', desc: 'Modified daily protein intake to 140g for Ananya Roy', time: 'Yesterday', dotClass: 'info' }
-  ]);
-
-  // Upcoming sessions
-  const [appointments] = useState([
-    { id: 1, client: 'Sneha Patel', time: '04:30 PM', plan: 'Mobility & Rehab', avatar: 'SP' },
-    { id: 2, client: 'Ananya Roy', time: '06:00 PM', plan: 'Strength Circuit', avatar: 'AR' },
-    { id: 3, client: 'Rajesh Kumar', time: '08:00 AM (Tomorrow)', plan: 'Chest & Triceps Focus', avatar: 'RK' }
+    { id: 1, type: 'assessment', title: 'Assessment Completed', desc: 'Recorded BMI & body fat details for Rajesh Kumar', time: '1 hour ago', dotClass: 'success' },
+    { id: 2, type: 'diet', title: 'Diet Recommendation Updated', desc: 'Modified daily protein intake to 140g for Ananya Roy', time: 'Yesterday', dotClass: 'info' }
   ]);
 
   // Validations & Submissions
@@ -47,14 +35,9 @@ const TrainerDashboardHome = () => {
       if (!data.weight || isNaN(data.weight)) errs.weight = 'Valid weight is required';
       if (!data.bmi || isNaN(data.bmi)) errs.bmi = 'Valid BMI is required';
       if (!data.bodyFat || isNaN(data.bodyFat)) errs.bodyFat = 'Valid Body Fat % is required';
-    } else if (formType === 'workout') {
-      if (!data.planName.trim()) errs.planName = 'Plan name is required';
-      if (!data.startDate) errs.startDate = 'Start date is required';
     } else if (formType === 'diet') {
       if (!data.calories || isNaN(data.calories)) errs.calories = 'Valid calorie count is required';
       if (!data.protein || isNaN(data.protein)) errs.protein = 'Valid protein in grams is required';
-    } else if (formType === 'attendance') {
-      if (!data.time) errs.time = 'Time is required';
     }
 
     setErrors(errs);
@@ -64,20 +47,11 @@ const TrainerDashboardHome = () => {
   const handleFormSubmit = (e, formType) => {
     e.preventDefault();
     let isValid = false;
-    let payload = {};
 
     if (formType === 'assessment') {
       isValid = validateForm('assessment', assessmentForm);
-      payload = assessmentForm;
-    } else if (formType === 'workout') {
-      isValid = validateForm('workout', workoutForm);
-      payload = workoutForm;
     } else if (formType === 'diet') {
       isValid = validateForm('diet', dietForm);
-      payload = dietForm;
-    } else if (formType === 'attendance') {
-      isValid = validateForm('attendance', attendanceForm);
-      payload = attendanceForm;
     }
 
     if (isValid) {
@@ -86,9 +60,7 @@ const TrainerDashboardHome = () => {
       setErrors({});
       // Reset forms
       setAssessmentForm({ client: '', weight: '', bmi: '', bodyFat: '', muscleMass: '' });
-      setWorkoutForm({ client: '', planName: '', startDate: '', notes: '' });
       setDietForm({ client: '', calories: '', protein: '', duration: '' });
-      setAttendanceForm({ client: '', time: '', type: 'Personal Training' });
     }
   };
 
@@ -119,15 +91,6 @@ const TrainerDashboardHome = () => {
           </div>
         </div>
         <div className="m-card kpi-card">
-          <div className="kpi-icon-box secondary">
-            <i className="fas fa-dumbbell"></i>
-          </div>
-          <div className="kpi-data">
-            <span className="kpi-label">Active Workouts</span>
-            <span className="kpi-value">12</span>
-          </div>
-        </div>
-        <div className="m-card kpi-card">
           <div className="kpi-icon-box success">
             <i className="fas fa-seedling"></i>
           </div>
@@ -145,20 +108,11 @@ const TrainerDashboardHome = () => {
             <span className="kpi-value">3</span>
           </div>
         </div>
-        <div className="m-card kpi-card">
-          <div className="kpi-icon-box danger">
-            <i className="fas fa-calendar-check"></i>
-          </div>
-          <div className="kpi-data">
-            <span className="kpi-label">Today's Attendance</span>
-            <span className="kpi-value">8</span>
-          </div>
-        </div>
       </div>
 
       {/* Charts Grid */}
-      <div className="charts-grid">
-        {/* Chart 1: Member Growth */}
+      <div className="charts-grid" style={{ gridTemplateColumns: '1fr' }}>
+        {/* Chart: Member Growth */}
         <div className="m-card">
           <div className="chart-header">
             <div>
@@ -225,57 +179,11 @@ const TrainerDashboardHome = () => {
             </svg>
           </div>
         </div>
-
-        {/* Chart 2: Attendance & Assessments */}
-        <div className="m-card">
-          <div className="chart-header">
-            <div>
-              <h3 className="m-card-title" style={{ marginBottom: '4px' }}>Attendance Trend</h3>
-              <span className="chart-subtitle">Weekly member attendance count</span>
-            </div>
-            <span className="m-badge success">Weekly</span>
-          </div>
-          {/* Custom SVG Bar Chart */}
-          <div style={{ height: '220px', width: '100%', position: 'relative' }}>
-            <svg viewBox="0 0 500 200" width="100%" height="100%">
-              {/* Grid Lines */}
-              <line x1="40" y1="20" x2="480" y2="20" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
-              <line x1="40" y1="65" x2="480" y2="65" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
-              <line x1="40" y1="110" x2="480" y2="110" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
-              <line x1="40" y1="155" x2="480" y2="155" stroke="rgba(255, 255, 255, 0.12)" strokeWidth="1.5" />
-              
-              {/* Bars */}
-              {/* Mon */}
-              <rect x="75" y="45" width="22" height="110" rx="4" fill="var(--primary-color)" />
-              {/* Tue */}
-              <rect x="135" y="30" width="22" height="125" rx="4" fill="var(--primary-color)" />
-              {/* Wed */}
-              <rect x="195" y="65" width="22" height="90" rx="4" fill="var(--secondary-color)" />
-              {/* Thu */}
-              <rect x="255" y="40" width="22" height="115" rx="4" fill="var(--primary-color)" />
-              {/* Fri */}
-              <rect x="315" y="55" width="22" height="100" rx="4" fill="var(--primary-color)" />
-              {/* Sat */}
-              <rect x="375" y="90" width="22" height="65" rx="4" fill="var(--secondary-color)" />
-              {/* Sun */}
-              <rect x="435" y="130" width="22" height="25" rx="4" fill="rgba(255, 255, 255, 0.1)" />
-              
-              {/* Labels */}
-              <text x="86" y="178" fill="#64748b" fontSize="10" textAnchor="middle">Mon</text>
-              <text x="146" y="178" fill="#64748b" fontSize="10" textAnchor="middle">Tue</text>
-              <text x="206" y="178" fill="#64748b" fontSize="10" textAnchor="middle">Wed</text>
-              <text x="266" y="178" fill="#64748b" fontSize="10" textAnchor="middle">Thu</text>
-              <text x="326" y="178" fill="#64748b" fontSize="10" textAnchor="middle">Fri</text>
-              <text x="386" y="178" fill="#64748b" fontSize="10" textAnchor="middle">Sat</text>
-              <text x="446" y="178" fill="#64748b" fontSize="10" textAnchor="middle">Sun</text>
-            </svg>
-          </div>
-        </div>
       </div>
 
       {/* Dashboard Bottom Grid */}
       <div className="dashboard-bottom-grid">
-        {/* Left Column: Recent Activities & Upcoming Schedule */}
+        {/* Left Column: Quick Actions Panel & Activity Log */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Quick Actions Panel */}
           <div className="m-card">
@@ -284,14 +192,8 @@ const TrainerDashboardHome = () => {
               <button className="btn-primary" onClick={() => setActiveModal('assessment')}>
                 <i className="fas fa-plus"></i> New Assessment
               </button>
-              <button className="btn-secondary" onClick={() => setActiveModal('workout')}>
-                <i className="fas fa-dumbbell"></i> Assign Workout
-              </button>
               <button className="btn-secondary" onClick={() => setActiveModal('diet')}>
-                <i className="fas fa-apple-alt"></i> Assign Diet
-              </button>
-              <button className="btn-secondary" onClick={() => setActiveModal('attendance')}>
-                <i className="fas fa-calendar-check"></i> Mark Attendance
+                <i className="fas fa-apple-alt"></i> Assign Diet Plan
               </button>
             </div>
           </div>
@@ -314,38 +216,12 @@ const TrainerDashboardHome = () => {
           </div>
         </div>
 
-        {/* Right Column: Schedule and Notifications Feed */}
+        {/* Right Column: Progress Rings */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Upcoming Schedule */}
-          <div className="m-card">
-            <div className="chart-header">
-              <h3 className="m-card-title" style={{ marginBottom: 0 }}>Upcoming Sessions</h3>
-              <NavLink to="/trainer-dashboard/schedule" style={{ fontSize: '0.85rem', color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 600 }}>See All</NavLink>
-            </div>
-            
-            <div className="upcoming-schedule-widget" style={{ marginTop: '16px' }}>
-              {appointments.map(item => (
-                <div key={item.id} className="schedule-card-item">
-                  <div className="schedule-card-time">
-                    <span>{item.time.split(' ')[0]}</span>
-                    <span style={{ fontSize: '0.65rem' }}>{item.time.split(' ')[1]}</span>
-                  </div>
-                  <div className="schedule-card-info">
-                    <h4>{item.client}</h4>
-                    <p>{item.plan}</p>
-                  </div>
-                  <div className="profile-avatar" style={{ width: '28px', height: '28px', fontSize: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-secondary)' }}>
-                    {item.avatar}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Circular Assessment Completion rings */}
+          {/* Progress rings */}
           <div className="m-card">
             <h3 className="m-card-title">Assessment Progress</h3>
-            <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '10px 0' }}>
+            <div className="progress-rings-container">
               <div style={{ textAlign: 'center' }}>
                 <svg width="80" height="80" viewBox="0 0 36 36">
                   <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255, 255, 255, 0.06)" strokeWidth="3" />
@@ -360,7 +236,7 @@ const TrainerDashboardHome = () => {
                   <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--secondary-color)" strokeWidth="3" strokeDasharray="85, 100" strokeLinecap="round" />
                   <text x="18" y="20.35" fill="var(--text-primary)" fontSize="7" fontWeight="bold" textAnchor="middle">85%</text>
                 </svg>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600, marginTop: '8px' }}>Plans Active</div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, marginTop: '8px' }}>Active Diets</div>
               </div>
             </div>
           </div>
@@ -447,67 +323,6 @@ const TrainerDashboardHome = () => {
             </div>
           )}
 
-          {/* Modal: Assign Workout */}
-          {activeModal === 'workout' && (
-            <div className="modal-container">
-              <div className="modal-header">
-                <h3>Assign Workout Plan</h3>
-                <button className="modal-close-btn" onClick={() => { setActiveModal(null); setErrors({}); }}>&times;</button>
-              </div>
-              <form onSubmit={(e) => handleFormSubmit(e, 'workout')}>
-                <div className="modal-body">
-                  <div className="form-group">
-                    <label className="form-label">Client Name</label>
-                    <select 
-                      className="form-select"
-                      value={workoutForm.client}
-                      onChange={(e) => setWorkoutForm({ ...workoutForm, client: e.target.value })}
-                    >
-                      <option value="">Select a Client</option>
-                      {clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                    </select>
-                    {errors.client && <div className="form-error-msg">{errors.client}</div>}
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Workout Plan Name</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. Hypertrophy Split, Strength Focus"
-                      className="form-input"
-                      value={workoutForm.planName}
-                      onChange={(e) => setWorkoutForm({ ...workoutForm, planName: e.target.value })}
-                    />
-                    {errors.planName && <div className="form-error-msg">{errors.planName}</div>}
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Start Date</label>
-                    <input 
-                      type="date" 
-                      className="form-input"
-                      value={workoutForm.startDate}
-                      onChange={(e) => setWorkoutForm({ ...workoutForm, startDate: e.target.value })}
-                    />
-                    {errors.startDate && <div className="form-error-msg">{errors.startDate}</div>}
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Notes & Advice</label>
-                    <textarea 
-                      rows="3" 
-                      placeholder="Write sets, repetition instructions or safety warnings..."
-                      className="form-textarea"
-                      value={workoutForm.notes}
-                      onChange={(e) => setWorkoutForm({ ...workoutForm, notes: e.target.value })}
-                    ></textarea>
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn-secondary" onClick={() => { setActiveModal(null); setErrors({}); }}>Cancel</button>
-                  <button type="submit" className="btn-primary">Assign Plan</button>
-                </div>
-              </form>
-            </div>
-          )}
-
           {/* Modal: Assign Diet */}
           {activeModal === 'diet' && (
             <div className="modal-container">
@@ -567,58 +382,6 @@ const TrainerDashboardHome = () => {
                 <div className="modal-footer">
                   <button type="button" className="btn-secondary" onClick={() => { setActiveModal(null); setErrors({}); }}>Cancel</button>
                   <button type="submit" className="btn-primary">Assign Diet</button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Modal: Mark Attendance */}
-          {activeModal === 'attendance' && (
-            <div className="modal-container">
-              <div className="modal-header">
-                <h3>Mark Attendance</h3>
-                <button className="modal-close-btn" onClick={() => { setActiveModal(null); setErrors({}); }}>&times;</button>
-              </div>
-              <form onSubmit={(e) => handleFormSubmit(e, 'attendance')}>
-                <div className="modal-body">
-                  <div className="form-group">
-                    <label className="form-label">Client Name</label>
-                    <select 
-                      className="form-select"
-                      value={attendanceForm.client}
-                      onChange={(e) => setAttendanceForm({ ...attendanceForm, client: e.target.value })}
-                    >
-                      <option value="">Select a Client</option>
-                      {clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                    </select>
-                    {errors.client && <div className="form-error-msg">{errors.client}</div>}
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Time</label>
-                    <input 
-                      type="time" 
-                      className="form-input"
-                      value={attendanceForm.time}
-                      onChange={(e) => setAttendanceForm({ ...attendanceForm, time: e.target.value })}
-                    />
-                    {errors.time && <div className="form-error-msg">{errors.time}</div>}
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Session Type</label>
-                    <select 
-                      className="form-select"
-                      value={attendanceForm.type}
-                      onChange={(e) => setAttendanceForm({ ...attendanceForm, type: e.target.value })}
-                    >
-                      <option value="Personal Training">Personal Training</option>
-                      <option value="General Workout">General Workout</option>
-                      <option value="Group Session">Group Session</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn-secondary" onClick={() => { setActiveModal(null); setErrors({}); }}>Cancel</button>
-                  <button type="submit" className="btn-primary">Mark Present</button>
                 </div>
               </form>
             </div>

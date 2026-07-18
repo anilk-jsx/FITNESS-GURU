@@ -44,7 +44,7 @@ const TrainerProfile = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '30px' }}>
+      <div className="trainer-profile-grid">
         
         {/* Left Column: Trainer Credentials Card */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>

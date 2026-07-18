@@ -1440,3 +1440,133 @@ body {
     padding-bottom: 10px;
   }
 }
+
+/* Mobile Sidebar & Layout Styles */
+.mobile-sidebar-toggle-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.mobile-sidebar-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+}
+
+@media (max-width: 768px) {
+  .mobile-sidebar-toggle-btn {
+    display: flex;
+  }
+
+  .trainer-sidebar {
+    transform: translateX(-100%);
+    z-index: 1001;
+    width: var(--sidebar-width) !important;
+    transition: transform var(--transition-normal);
+  }
+
+  .trainer-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-toggle-btn {
+    display: none !important;
+  }
+
+  .trainer-main-area {
+    margin-left: 0 !important;
+  }
+
+  .top-app-bar {
+    padding: 0 16px;
+  }
+
+  .trainer-page-container {
+    padding: 16px !important;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .page-header-actions {
+    width: 100%;
+  }
+
+  .page-header-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-container {
+    width: calc(100% - 32px) !important;
+    margin: 16px;
+  }
+}
+
+/* Diet Plans Responsive Layout Grids */
+.diet-plans-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  min-height: 650px;
+}
+
+.diet-plans-split-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 992px) {
+  .diet-plans-layout {
+    grid-template-columns: 1fr;
+  }
+  .diet-plans-split-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .clients-list-panel {
+    max-height: 300px;
+  }
+}
+
+/* Trainer Profile Grid Layout */
+.trainer-profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 30px;
+}
+
+@media (max-width: 768px) {
+  .trainer-profile-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+
