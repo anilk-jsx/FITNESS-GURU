@@ -28,6 +28,49 @@ const displayVal = (val, suffix = '') => {
   return `${val}${suffix}`;
 };
 
+const formatTime12h = (time24) => {
+  if (!time24) return '';
+  const parts = time24.split(':');
+  const h = parseInt(parts[0], 10);
+  const m = parts[1] || '00';
+  const suffix = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 || 12;
+  return `${hour12}:${m} ${suffix}`;
+};
+
+const parseApiMealItems = (rawItems) => {
+  let items = [];
+  try {
+    const parsed = typeof rawItems === 'string' ? JSON.parse(rawItems) : rawItems;
+    items = Array.isArray(parsed) ? parsed : Object.values(parsed || {});
+  } catch {
+    items = [];
+  }
+
+  return items.map(item => {
+    const rawName = item.name || item.food || '';
+    const rawQty = String(item.quantity || '');
+
+    let quantity = rawQty;
+    let unit = item.unit || 'g';
+
+    const match = rawQty.match(/^([\d.]+)\s*(.*)$/);
+    if (match) {
+      quantity = match[1];
+      const parsedUnit = match[2].trim().toLowerCase();
+      if (parsedUnit) {
+        unit = parsedUnit;
+      }
+    }
+
+    return {
+      food: rawName,
+      quantity: quantity,
+      unit: unit
+    };
+  });
+};
+
 const AdminDietPlans = () => {
   const API_BASE_URL =
     import.meta.env.VITE_API_URL ||
@@ -280,8 +323,12 @@ const AdminDietPlans = () => {
         `${API_BASE_URL}/api/admin/diet-plans/${planId}/meals`,
         { method: 'GET' }
       );
+      if (!res.ok) {
+        setSelectedPlanMeals([]);
+        return;
+      }
       const data = await res.json();
-      if (res.ok && data.status === 'success' && Array.isArray(data.data)) {
+      if (data.status === 'success' && Array.isArray(data.data)) {
         setSelectedPlanMeals(data.data);
       } else {
         setSelectedPlanMeals([]);
@@ -382,24 +429,6 @@ const AdminDietPlans = () => {
     }
   };
 
-  const handleClonePlan = async (planId) => {
-    try {
-      const res = await tokenManager.apiCall(
-        `${API_BASE_URL}/api/admin/diet-plans/${planId}/clone`,
-        { method: 'POST' }
-      );
-      const data = await res.json();
-      if (res.ok && data.status === 'success') {
-        showToast('Diet plan cloned successfully as a Draft!', 'success');
-        fetchMemberPlans(selectedMemberId);
-      } else {
-        showToast(data.message || 'Failed to clone diet plan.', 'error');
-      }
-    } catch (err) {
-      console.error('Clone failed:', err);
-      showToast('Network or server error cloning diet plan.', 'error');
-    }
-  };
 
   // --- Screen View Triggers ---
   const triggerCreateView = () => {
@@ -460,15 +489,21 @@ const AdminDietPlans = () => {
           `${API_BASE_URL}/api/admin/diet-plans/${plan.diet_plan_id}/meals`,
           { method: 'GET' }
         );
+        if (!res.ok) {
+          setMealsList([]);
+          return;
+        }
         const data = await res.json();
-        if (res.ok && data.status === 'success' && Array.isArray(data.data)) {
-          const formattedMeals = data.data.map(m => ({
-            meal_id: m.meal_id,
-            mealTitle: m.meal_title,
-            mealTime: m.meal_time ? m.meal_time.substring(0, 5) : '08:00',
-            mealItems: typeof m.meal_items === 'string' ? JSON.parse(m.meal_items) : (m.meal_items || []),
-            notes: m.notes || ''
-          }));
+        if (data.status === 'success' && Array.isArray(data.data)) {
+          const formattedMeals = data.data.map(m => {
+            return {
+              meal_id: m.meal_id,
+              mealTitle: m.meal_title,
+              mealTime: m.meal_time ? m.meal_time.substring(0, 5) : '08:00',
+              mealItems: parseApiMealItems(m.meal_items),
+              notes: m.notes || ''
+            };
+          });
           setMealsList(formattedMeals);
         } else {
           setMealsList([]);
@@ -640,13 +675,12 @@ const AdminDietPlans = () => {
             meal_title: meal.mealTitle,
             meal_time: meal.mealTime.length === 5 ? `${meal.mealTime}:00` : meal.mealTime,
             meal_items: meal.mealItems.map(item => ({
-              food: item.food,
-              quantity: Number(item.quantity),
-              unit: item.unit
+              name: item.food,
+              quantity: `${item.quantity}${item.unit || 'g'}`
             })),
             notes: meal.notes || ''
           };
-          await tokenManager.apiCall(
+          const mealRes = await tokenManager.apiCall(
             `${API_BASE_URL}/api/admin/diet-plans/${newPlanId}/meals`,
             {
               method: 'POST',
@@ -654,6 +688,10 @@ const AdminDietPlans = () => {
               body: JSON.stringify(mealPayload)
             }
           );
+          if (!mealRes.ok) {
+            const errData = await mealRes.json().catch(() => ({}));
+            throw new Error(errData.message || `Failed to create meal: ${meal.mealTitle}`);
+          }
         }
 
         showToast(`Diet plan successfully created as ${statusArg}!`, 'success');
@@ -686,16 +724,15 @@ const AdminDietPlans = () => {
             meal_title: meal.mealTitle,
             meal_time: meal.mealTime.length === 5 ? `${meal.mealTime}:00` : meal.mealTime,
             meal_items: meal.mealItems.map(item => ({
-              food: item.food,
-              quantity: Number(item.quantity),
-              unit: item.unit
+              name: item.food,
+              quantity: `${item.quantity}${item.unit || 'g'}`
             })),
             notes: meal.notes || ''
           };
 
           if (meal.meal_id) {
             // Update existing meal
-            await tokenManager.apiCall(
+            const mealRes = await tokenManager.apiCall(
               `${API_BASE_URL}/api/admin/meals/${meal.meal_id}`,
               {
                 method: 'PUT',
@@ -703,9 +740,13 @@ const AdminDietPlans = () => {
                 body: JSON.stringify(mealPayload)
               }
             );
+            if (!mealRes.ok) {
+              const errData = await mealRes.json().catch(() => ({}));
+              throw new Error(errData.message || `Failed to update meal: ${meal.mealTitle}`);
+            }
           } else {
             // Create new meal
-            await tokenManager.apiCall(
+            const mealRes = await tokenManager.apiCall(
               `${API_BASE_URL}/api/admin/diet-plans/${planForm.id}/meals`,
               {
                 method: 'POST',
@@ -713,6 +754,10 @@ const AdminDietPlans = () => {
                 body: JSON.stringify(mealPayload)
               }
             );
+            if (!mealRes.ok) {
+              const errData = await mealRes.json().catch(() => ({}));
+              throw new Error(errData.message || `Failed to create meal: ${meal.mealTitle}`);
+            }
           }
         }
 
@@ -934,12 +979,12 @@ const AdminDietPlans = () => {
                                   </span>
                                 </td>
                                 <td onClick={(e) => e.stopPropagation()}>
-                                  <div style={{ display: 'flex', gap: '6px' }}>
+                                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                    <button className="pt-icon-btn" style={{ color: '#0284c7' }} title="View Plan Details" onClick={() => setSelectedPlanId(p.diet_plan_id)}>
+                                      <i className="far fa-eye"></i>
+                                    </button>
                                     <button className="pt-icon-btn" style={{ color: '#4f46e5' }} title="Edit Plan" onClick={() => triggerEditView(p)}>
                                       <i className="far fa-edit"></i>
-                                    </button>
-                                    <button className="pt-icon-btn" style={{ color: '#10b981' }} title="Clone/Copy" onClick={() => handleClonePlan(p.diet_plan_id)}>
-                                      <i className="far fa-clone"></i>
                                     </button>
                                     <button className="pt-icon-btn text-danger" title="Delete" onClick={() => handleDeletePlan(p.diet_plan_id)}>
                                       <i className="far fa-trash-alt"></i>
@@ -1109,18 +1154,11 @@ const AdminDietPlans = () => {
                             </div>
                           ) : selectedPlanMeals.length > 0 ? (
                             selectedPlanMeals.map((meal, index) => {
-                              let items = [];
-                              try {
-                                items = typeof meal.meal_items === 'string'
-                                  ? JSON.parse(meal.meal_items)
-                                  : meal.meal_items || [];
-                              } catch {
-                                items = [];
-                              }
+                              const items = parseApiMealItems(meal.meal_items);
                               return (
                                 <div key={index} style={{ display: 'flex', gap: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px' }}>
                                   <div style={{ background: '#e0e7ff', color: '#4f46e5', width: '65px', height: '38px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 'bold', flexShrink: 0 }}>
-                                    {meal.meal_time ? meal.meal_time.substring(0, 5) : '08:00'}
+                                    {meal.meal_time ? formatTime12h(meal.meal_time) : '08:00 AM'}
                                   </div>
                                   <div style={{ minWidth: 0, flex: 1 }}>
                                     <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0f172a' }}>{meal.meal_title}</div>
@@ -1342,12 +1380,12 @@ const AdminDietPlans = () => {
                   mealsList.map((meal, index) => (
                     <div key={index} style={{ display: 'flex', gap: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px', position: 'relative' }}>
                       <div style={{ background: '#e0e7ff', color: '#4f46e5', width: '65px', height: '38px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 'bold', flexShrink: 0 }}>
-                        {meal.mealTime}
+                        {formatTime12h(meal.mealTime)}
                       </div>
                       <div style={{ paddingRight: '60px', minWidth: 0, flex: 1 }}>
                         <h4 style={{ fontSize: '0.88rem', margin: 0, fontWeight: 600, color: '#0f172a' }}>{meal.mealTitle}</h4>
                         <ul style={{ paddingLeft: '16px', margin: '4px 0 0 0', fontSize: '0.78rem', color: '#475569' }}>
-                          {meal.mealItems.map((item, itemIdx) => (
+                          {(meal.mealItems || []).map((item, itemIdx) => (
                             <li key={itemIdx}>{item.food} - {item.quantity} {item.unit}</li>
                           ))}
                         </ul>
@@ -1494,9 +1532,11 @@ const AdminDietPlans = () => {
                               placeholder="e.g. Rolled Oats"
                               value={item.food || ''}
                               onChange={(e) => {
-                                const updated = [...mealForm.mealItems];
-                                updated[idx].food = e.target.value;
-                                setMealForm({ ...mealForm, mealItems: updated });
+                                const val = e.target.value;
+                                setMealForm(prev => ({
+                                  ...prev,
+                                  mealItems: prev.mealItems.map((item, i) => i === idx ? { ...item, food: val } : item)
+                                }));
                               }}
                               required
                             />
@@ -1508,9 +1548,11 @@ const AdminDietPlans = () => {
                               placeholder="e.g. 100"
                               value={item.quantity === null || item.quantity === undefined ? '' : item.quantity}
                               onChange={(e) => {
-                                const updated = [...mealForm.mealItems];
-                                updated[idx].quantity = e.target.value;
-                                setMealForm({ ...mealForm, mealItems: updated });
+                                const val = e.target.value;
+                                setMealForm(prev => ({
+                                  ...prev,
+                                  mealItems: prev.mealItems.map((item, i) => i === idx ? { ...item, quantity: val } : item)
+                                }));
                               }}
                               required
                             />
@@ -1520,9 +1562,11 @@ const AdminDietPlans = () => {
                               className="pt-select"
                               value={item.unit || 'g'}
                               onChange={(e) => {
-                                const updated = [...mealForm.mealItems];
-                                updated[idx].unit = e.target.value;
-                                setMealForm({ ...mealForm, mealItems: updated });
+                                const val = e.target.value;
+                                setMealForm(prev => ({
+                                  ...prev,
+                                  mealItems: prev.mealItems.map((item, i) => i === idx ? { ...item, unit: val } : item)
+                                }));
                               }}
                             >
                               <option value="g">g</option>
