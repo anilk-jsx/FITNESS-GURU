@@ -1492,7 +1492,7 @@ const AdminDietPlans = () => {
                               type="text"
                               className="pt-input"
                               placeholder="e.g. Rolled Oats"
-                              value={item.food}
+                              value={item.food || ''}
                               onChange={(e) => {
                                 const updated = [...mealForm.mealItems];
                                 updated[idx].food = e.target.value;
@@ -1506,7 +1506,7 @@ const AdminDietPlans = () => {
                               type="text"
                               className="pt-input"
                               placeholder="e.g. 100"
-                              value={item.quantity}
+                              value={item.quantity === null || item.quantity === undefined ? '' : item.quantity}
                               onChange={(e) => {
                                 const updated = [...mealForm.mealItems];
                                 updated[idx].quantity = e.target.value;
@@ -1518,7 +1518,7 @@ const AdminDietPlans = () => {
                           <td style={{ padding: '6px 8px' }}>
                             <select
                               className="pt-select"
-                              value={item.unit}
+                              value={item.unit || 'g'}
                               onChange={(e) => {
                                 const updated = [...mealForm.mealItems];
                                 updated[idx].unit = e.target.value;
