@@ -83,6 +83,10 @@ const AdminDietPlans = () => {
   const [trainers, setTrainers] = useState([]);
   const [dietPlans, setDietPlans] = useState([]);
   const [selectedPlanMeals, setSelectedPlanMeals] = useState([]);
+  const [latestAssessment, setLatestAssessment] = useState(null);
+  const [assignedTrainerName, setAssignedTrainerName] = useState('None');
+  const [assignedTrainerId, setAssignedTrainerId] = useState('');
+  const [memberProfile, setMemberProfile] = useState(null);
 
   // --- Loading / Async UI States ---
   const [loadingMembers, setLoadingMembers] = useState(true);
@@ -233,6 +237,90 @@ const AdminDietPlans = () => {
     }
   }, [API_BASE_URL]);
 
+  const fetchLatestAssessment = useCallback(async (memberId) => {
+    if (!memberId) {
+      setLatestAssessment(null);
+      return;
+    }
+    try {
+      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/members/${memberId}/assessments/latest`, {
+        method: 'GET'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'success' && data.data) {
+          setLatestAssessment(data.data);
+        } else {
+          setLatestAssessment(null);
+        }
+      } else {
+        setLatestAssessment(null);
+      }
+    } catch (err) {
+      console.error('Failed to load latest assessment:', err);
+      setLatestAssessment(null);
+    }
+  }, [API_BASE_URL]);
+
+  const fetchAssignedTrainer = useCallback(async (memberId) => {
+    if (!memberId) {
+      setAssignedTrainerName('None');
+      setAssignedTrainerId('');
+      return;
+    }
+    try {
+      const mappingsRes = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/pt/trainers-members`, { method: 'GET' });
+      if (mappingsRes.ok) {
+        const mData = await mappingsRes.json();
+        const mappingsList = mData.data || [];
+        const resolvedMapping = mappingsList.find(map =>
+          map.members?.some(mm => String(mm.member_user_id) === String(memberId))
+        );
+        if (resolvedMapping) {
+          const trId = resolvedMapping.trainer_id;
+          setAssignedTrainerId(trId);
+          const tr = trainers.find(t => String(t.trainer_id || t.id || t.trainer_profile_id || t.user_id || t.trainer_user_id) === String(trId));
+          setAssignedTrainerName(tr ? (tr.name || tr.full_name || 'Trainer') : 'Trainer');
+        } else {
+          setAssignedTrainerName('None');
+          setAssignedTrainerId('');
+        }
+      } else {
+        setAssignedTrainerName('None');
+        setAssignedTrainerId('');
+      }
+    } catch (err) {
+      console.error('Failed to fetch assigned trainer:', err);
+      setAssignedTrainerName('None');
+      setAssignedTrainerId('');
+    }
+  }, [API_BASE_URL, trainers]);
+
+  const fetchMemberProfileDetails = useCallback(async (memberId) => {
+    if (!memberId) {
+      setMemberProfile(null);
+      return;
+    }
+    try {
+      const res = await tokenManager.apiCall(`${API_BASE_URL}/api/members/view?user_id=${memberId}`, {
+        method: 'GET'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'success' && data.data) {
+          setMemberProfile(data.data);
+        } else {
+          setMemberProfile(null);
+        }
+      } else {
+        setMemberProfile(null);
+      }
+    } catch (err) {
+      console.error('Failed to load member profile details:', err);
+      setMemberProfile(null);
+    }
+  }, [API_BASE_URL]);
+
   // Load initial data on mount
   useEffect(() => {
     fetchInitialData();
@@ -308,8 +396,16 @@ const AdminDietPlans = () => {
   useEffect(() => {
     if (selectedMemberId) {
       fetchMemberPlans(selectedMemberId);
+      fetchLatestAssessment(selectedMemberId);
+      fetchAssignedTrainer(selectedMemberId);
+      fetchMemberProfileDetails(selectedMemberId);
+    } else {
+      setLatestAssessment(null);
+      setAssignedTrainerName('None');
+      setAssignedTrainerId('');
+      setMemberProfile(null);
     }
-  }, [selectedMemberId, fetchMemberPlans]);
+  }, [selectedMemberId, fetchMemberPlans, fetchLatestAssessment, fetchAssignedTrainer, fetchMemberProfileDetails]);
 
   // --- Fetch meals for selected preview plan ---
   const fetchPlanMeals = useCallback(async (planId) => {
@@ -435,7 +531,7 @@ const AdminDietPlans = () => {
     setPlanForm({
       id: null,
       memberId: selectedMemberId,
-      trainerId: selectedMember?.trainer_id ? String(selectedMember.trainer_id) : '',
+      trainerId: assignedTrainerId ? String(assignedTrainerId) : (selectedMember?.trainer_id ? String(selectedMember.trainer_id) : ''),
       goal: 'WEIGHT_LOSS',
       duration: '30',
       startDate: new Date().toISOString().split('T')[0],
@@ -458,7 +554,7 @@ const AdminDietPlans = () => {
     setPlanForm({
       id: plan.diet_plan_id,
       memberId: plan.member_id,
-      trainerId: plan.trainer_id ? String(plan.trainer_id) : '',
+      trainerId: plan.trainer_id ? String(plan.trainer_id) : (assignedTrainerId ? String(assignedTrainerId) : ''),
       goal: plan.goal || 'WEIGHT_LOSS',
       duration: String(plan.duration_days || 30),
       startDate: plan.start_date || '',
@@ -890,17 +986,17 @@ const AdminDietPlans = () => {
                         )}
                       </div>
                       <p style={{ color: '#c7d2fe', fontSize: '0.8rem', margin: '6px 0 0 0' }}>
-                        ID: {selectedMember.id} • {calculateAge(selectedMember.dob) !== 'N/A' ? `${calculateAge(selectedMember.dob)} Years` : 'Age N/A'} • {selectedMember.gender || 'N/A'} • {displayVal(selectedMember.weight, ' kg')} • {displayVal(selectedMember.height, ' cm')}
+                        ID: {selectedMember.id} • {calculateAge(memberProfile?.date_of_birth || memberProfile?.dob || selectedMember.dob) !== 'N/A' ? `${calculateAge(memberProfile?.date_of_birth || memberProfile?.dob || selectedMember.dob)} Years` : 'Age N/A'} • {memberProfile?.gender || selectedMember.gender || 'N/A'} • {displayVal(latestAssessment?.weight_kg || memberProfile?.weight_kg || memberProfile?.weight || selectedMember.weight, ' kg')} • {displayVal(latestAssessment?.height_cm || memberProfile?.height_cm || memberProfile?.height || selectedMember.height, ' cm')}
                       </p>
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ fontSize: '0.8rem', textAlign: 'right' }}>
                       <span style={{ color: '#c7d2fe' }}>Assigned Trainer</span>
-                      <div style={{ fontWeight: 600, color: '#ffffff', marginTop: '2px' }}>{selectedMember.trainer || 'None'}</div>
+                      <div style={{ fontWeight: 600, color: '#ffffff', marginTop: '2px' }}>{assignedTrainerName}</div>
                     </div>
                     <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#6366f1', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700 }}>
-                      {(selectedMember.trainer || 'None').split(' ').filter(Boolean).map(n => n[0]).join('')}
+                      {assignedTrainerName.split(' ').filter(Boolean).map(n => n[0]).join('')}
                     </div>
                   </div>
                 </div>
@@ -1266,9 +1362,9 @@ const AdminDietPlans = () => {
               <div className="static-info-card" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px' }}>
                 <strong style={{ fontSize: '0.8rem', display: 'block', marginBottom: '6px', color: '#334155' }}>Target Member Info</strong>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}><span style={{ color: '#64748b' }}>Name:</span><strong style={{ color: '#1e293b' }}>{selectedMember?.name || 'N/A'}</strong></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}><span style={{ color: '#64748b' }}>Age:</span><strong style={{ color: '#1e293b' }}>{calculateAge(selectedMember?.dob) !== 'N/A' ? `${calculateAge(selectedMember?.dob)} Years` : 'N/A'}</strong></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}><span style={{ color: '#64748b' }}>Weight:</span><strong style={{ color: '#1e293b' }}>{displayVal(selectedMember?.weight, ' kg')}</strong></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}><span style={{ color: '#64748b' }}>Height:</span><strong style={{ color: '#1e293b' }}>{displayVal(selectedMember?.height, ' cm')}</strong></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}><span style={{ color: '#64748b' }}>Age:</span><strong style={{ color: '#1e293b' }}>{calculateAge(memberProfile?.date_of_birth || memberProfile?.dob || selectedMember?.dob) !== 'N/A' ? `${calculateAge(memberProfile?.date_of_birth || memberProfile?.dob || selectedMember?.dob)} Years` : 'N/A'}</strong></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '3px' }}><span style={{ color: '#64748b' }}>Weight:</span><strong style={{ color: '#1e293b' }}>{displayVal(latestAssessment?.weight_kg || memberProfile?.weight_kg || memberProfile?.weight || selectedMember?.weight, ' kg')}</strong></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}><span style={{ color: '#64748b' }}>Height:</span><strong style={{ color: '#1e293b' }}>{displayVal(latestAssessment?.height_cm || memberProfile?.height_cm || memberProfile?.height || selectedMember?.height, ' cm')}</strong></div>
               </div>
 
               <div className="form-group">
