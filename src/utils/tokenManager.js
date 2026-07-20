@@ -97,12 +97,7 @@ class TokenManager {
         throw new Error(data.message || 'Token refresh failed');
       }
     } catch (error) {
-      if (this.getAccessToken()) {
-        console.warn('Token refresh warning:', error?.message || error);
-      } else {
-        this.clearTokens();
-        window.location.href = '/login';
-      }
+      console.warn('Token refresh failed:', error?.message || error);
       throw error;
     }
   }
@@ -164,10 +159,7 @@ class TokenManager {
         } catch (refreshError) {
           this.isRefreshing = false;
           this.processQueue(refreshError);
-          if (options.noAuthRedirect) {
-            return response;
-          }
-          throw refreshError;
+          return response;
         }
       }
 

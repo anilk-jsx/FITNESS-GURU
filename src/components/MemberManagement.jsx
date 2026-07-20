@@ -1072,77 +1072,7 @@ const MemberManagement = () => {
     setLoading(true);
 
     try {
-      // Find the selected membership plan to get its ID for the API
-      let membershipPlanId = null;
-      if (editFormData.membership_plan) {
-        const selectedPlan = membershipPlans.find(plan =>
-          getPlanOptionValue(plan) === editFormData.membership_plan
-        );
-
-        if (selectedPlan) {
-          // Try to extract numeric ID from the original member data
-          // Since the API doesn't provide plan IDs, we'll use the original membership_plan value
-          // that was stored in membership_plan_raw during form population
-          const originalMemberData = memberDetails; // This should have the original numeric plan ID
-
-          // Check if the current selection matches the original plan
-          if (selectedPlan.plan_name === editFormData.membership_plan_raw) {
-            // User didn't change the plan, use original numeric ID
-            membershipPlanId = originalMemberData?.membership_plan || 1;
-          } else {
-            // User changed the plan, we need to map plan names to IDs
-            // This is a temporary solution - ideally the API should provide plan IDs
-            const planMap = {
-              'Monthly Plan': 1,
-              'Quarterly Plan': 2,
-              'Yearly Plan': 3
-            };
-            membershipPlanId = planMap[selectedPlan.plan_name] || 1;
-          }
-        } else {
-          console.warn("⚠️ Selected plan not found in available plans");
-          membershipPlanId = null;
-        }
-      } else {
-        // No plan selected, use original or default
-        membershipPlanId = memberDetails?.membership_plan || null;
-      }
-
-      // Special handling for branch changes
-      const originalBranchId = memberDetails?.branch_id;
-      const newBranchId = parseInt(editFormData.branch_id);
-
-      if (originalBranchId && newBranchId && originalBranchId !== newBranchId) {
-        console.log("🏢 Branch change detected:", {
-          from: originalBranchId,
-          to: newBranchId
-        });
-
-        // If branch changed but membership plan wasn't updated, clear it
-        if (membershipPlanId && editFormData.membership_plan === editFormData.membership_plan_raw) {
-          console.log("⚠️ Branch changed but plan not updated - clearing membership plan to avoid conflicts");
-          membershipPlanId = null;
-        }
-      }
-
-      console.log("🎯 Membership plan ID resolution:", {
-        selectedPlanName: editFormData.membership_plan,
-        originalPlanName: editFormData.membership_plan_raw,
-        resolvedPlanId: membershipPlanId,
-        originalMembershipPlan: memberDetails?.membership_plan
-      });
-
-      // Log enum transformations for debugging Edit Member
-      console.log("🔄 Enum transformations for Edit Member:", {
-        original: { gender: editFormData.gender, fitness_level: editFormData.fitness_level, goal_focus: editFormData.goal_focus },
-        transformed: {
-          gender: editFormData.gender === "MALE" ? "Male" : editFormData.gender === "FEMALE" ? "Female" : editFormData.gender === "OTHER" ? "Other" : editFormData.gender || "",
-          fitness_level: editFormData.fitness_level === "BEGINNER" ? "BEGINEER" : editFormData.fitness_level === "INTERMEDIATE" ? "INTERMEDIATE" : editFormData.fitness_level === "ADVANCED" ? "ADVANCE" : editFormData.fitness_level || "",
-          goal_focus: editFormData.goal_focus === "GENERAL" ? "GENERAL_FITNESS" : editFormData.goal_focus || ""
-        }
-      });
-
-      // Prepare update data matching the API structure
+      // Prepare update data matching Section 3 (Update Member API) specification
       const updateData = {
         user_id: editFormData.user_id,
         registration_number: editFormData.registration_number ? parseInt(editFormData.registration_number, 10) : null,
@@ -1151,30 +1081,27 @@ const MemberManagement = () => {
         name: editFormData.name.trim(),
         email: editFormData.email.trim(),
         phone: editFormData.phone.trim(),
-        status: editFormData.status === "ACTIVE" ? 1 : editFormData.status === "INACTIVE" ? 0 : editFormData.status === "SUSPENDED" ? 2 : 1, // Default to active
+        branch_id: editFormData.branch_id ? parseInt(editFormData.branch_id, 10) : null,
+        status: editFormData.status === "ACTIVE" ? 1 : editFormData.status === "INACTIVE" ? 0 : editFormData.status === "SUSPENDED" ? 2 : 1,
 
         // Profile information
+        join_date: editFormData.join_date || "",
         dob: editFormData.dob || "",
         gender: editFormData.gender || "",
         blood_group: editFormData.blood_group || "",
 
-        // Physical stats (convert to numbers, handle empty values)
+        // Physical stats
         height: editFormData.height ? parseFloat(editFormData.height) : null,
         weight: editFormData.weight ? parseFloat(editFormData.weight) : null,
         fitness_level: editFormData.fitness_level || "",
         goal_focus: editFormData.goal_focus || "",
 
-        // Gym and membership
-        branch_id: editFormData.branch_id ? parseInt(editFormData.branch_id) : null,
-        membership_plan: membershipPlanId,
-        join_date: editFormData.join_date || "",
-
         // Contact and address
         emergency_contact: editFormData.emergency_contact || "",
-        country: editFormData.country ? parseInt(editFormData.country) : 1,
-        state: editFormData.state ? parseInt(editFormData.state) : null,
-        district: editFormData.district ? parseInt(editFormData.district) : null,
-        city: editFormData.city ? parseInt(editFormData.city) : null,
+        country: editFormData.country ? parseInt(editFormData.country, 10) : 1,
+        state: editFormData.state ? parseInt(editFormData.state, 10) : null,
+        district: editFormData.district ? parseInt(editFormData.district, 10) : null,
+        city: editFormData.city ? parseInt(editFormData.city, 10) : null,
         address_line1: editFormData.address_line1 || "",
         address_line2: editFormData.address_line2 || "",
 
@@ -1197,18 +1124,12 @@ const MemberManagement = () => {
         throw new Error("Phone is required");
       }
 
-      // Validate branch_id specifically since errors occur when changing branches
+      // Validate branch_id specifically
       if (!updateData.branch_id) {
         throw new Error("Branch selection is required");
       }
       if (isNaN(updateData.branch_id) || updateData.branch_id <= 0) {
         throw new Error("Invalid branch selected");
-      }
-
-      // Validate membership_plan if provided
-      if (updateData.membership_plan && (isNaN(updateData.membership_plan) || updateData.membership_plan <= 0)) {
-        console.warn("⚠️ Invalid membership plan ID:", updateData.membership_plan);
-        updateData.membership_plan = null; // Set to null if invalid
       }
 
       // Remove null/undefined values to clean up the request
@@ -1314,8 +1235,8 @@ const MemberManagement = () => {
         errorMessage = "Invalid branch selected";
       } else if (error.message.includes("plan")) {
         errorMessage = "Invalid membership plan selected";
-      } else if (error.message.includes("401")) {
-        errorMessage = "Authentication failed. Please login again";
+      } else if (error.message.includes("401") || error.message.includes("refresh") || error.message.includes("Route not found") || error.message.includes("Unauthorized")) {
+        errorMessage = "Session expired or unauthorized. Please login again.";
       } else if (error.message.includes("403")) {
         errorMessage = "You don't have permission to update this member";
       } else if (error.message.includes("404")) {
@@ -2294,6 +2215,15 @@ const MemberManagement = () => {
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
+                      <label>User ID (Read-only)</label>
+                      <input
+                        type="text"
+                        value={`#${editFormData.user_id}`}
+                        disabled
+                        style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed', fontWeight: 600, color: '#667eea' }}
+                      />
+                    </div>
+                    <div className="member-form-group">
                       <label>Registration Number</label>
                       <input
                         type="number"
@@ -2389,33 +2319,16 @@ const MemberManagement = () => {
                       />
                     </div>
                     <div className="member-form-group">
-                      <label>Membership Plan</label>
-                      <select
-                        name="membership_plan"
-                        value={editFormData.membership_plan}
-                        onChange={handleFormChange}
-                        disabled={!editFormData.branch_id}
-                      >
-                        <option key="select-plan-edit" value="">
-                          Select Plan
-                        </option>
-                        {(() => {
-                          const availablePlans = getAvailablePlans(editFormData.branch_id);
-
-                          return availablePlans.map((plan, index) => {
-                            const optionValue = getPlanOptionValue(plan);
-
-                            return (
-                              <option
-                                key={`edit-plan-${plan.plan_id ?? plan.plan_name}-${index}`}
-                                value={optionValue}
-                              >
-                                {plan.plan_name}
-                              </option>
-                            );
-                          });
-                        })()}
-                      </select>
+                      <label>Current Plan (Read-only)</label>
+                      <input
+                        type="text"
+                        value={editFormData.membership_plan_raw || "Assigned Plan"}
+                        disabled
+                        style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                      />
+                      <small style={{ color: '#7f8c8d', fontSize: '0.78rem', marginTop: '0.25rem', display: 'block' }}>
+                        Membership plans are managed via the Subscriptions module.
+                      </small>
                     </div>
                     <div className="member-form-group">
                       <label>Status</label>
