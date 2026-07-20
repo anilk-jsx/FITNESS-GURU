@@ -224,9 +224,22 @@
   font-size: 0.95rem;
 }
 
+.member-reg-cell {
+  font-weight: 600;
+  color: #ff6b35;
+  white-space: nowrap;
+}
+
 .member-id-cell {
   font-weight: 600;
   color: #667eea;
+  white-space: nowrap;
+}
+
+.member-contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 .member-name-cell {

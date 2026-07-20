@@ -62,12 +62,14 @@ const MemberManagement = () => {
     phone: "",
     password: "",
     role: "MEMBER",
+    registration_number: "",
     // Member fields
     branch_id: "",
     join_date: new Date().toISOString().split("T")[0],
     status: "",
     // Membership plan
     plan_id: "",
+    payment_method: "UPI",
     // Profile fields
     dob: "",
     gender: "",
@@ -141,31 +143,24 @@ const MemberManagement = () => {
   };
 
   const normalizeMembershipPlan = (plan, index) => {
-    // Based on actual API response: {gym_id, branch_id, plan_name, status, created_at}
-    // No plan_id is provided by the API, so we'll use plan_name as identifier
-
     const normalizedPlan = {
       ...plan,
-      plan_id: plan.plan_name, // Use plan_name as the unique identifier
+      plan_id: plan.plan_id !== undefined && plan.plan_id !== null ? plan.plan_id : plan.plan_name,
       branch_id: toIntOrNull(plan.branch_id),
       gym_id: toIntOrNull(plan.gym_id),
-      is_active: plan.status === "ACTIVE" || isActiveStatus(plan.status),
+      is_active: plan.status === "ACTIVE" || plan.status === 1 || isActiveStatus(plan.status),
       plan_name: plan.plan_name || `Plan ${index + 1}`,
+      plan_type: plan.plan_type || "BASE_MEMBERSHIP",
     };
 
     return normalizedPlan;
   };
 
   const getPlanOptionValue = (plan) => {
-    // Use plan_name as the option value since that's our identifier
-    const planName = plan.plan_name;
-
-    if (!planName) {
-      console.warn("Plan has no plan_name:", plan);
-      return "";
+    if (plan.plan_id !== undefined && plan.plan_id !== null && plan.plan_id !== "") {
+      return String(plan.plan_id);
     }
-
-    return planName;
+    return plan.plan_name || "";
   };
 
   const isBranchMatched = (planBranchId, selectedBranchId) => {
@@ -327,17 +322,28 @@ const MemberManagement = () => {
 
     setDropdownLoading((prev) => ({ ...prev, membershipPlans: true }));
     try {
-      const url = buildApiUrl(
-        `membershipPlan?gym_id=${gymId}&branch_id=${branchId}`,
+      let url = buildApiUrl(
+        `membership-plans?gym_id=${gymId}&branch_id=${branchId}&plan_type=BASE_MEMBERSHIP`,
       );
       console.log("Fetching membership plans from:", url);
 
-      const response = await tokenManager.apiCall(url, {
+      let response = await tokenManager.apiCall(url, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
       });
+
+      if (!response.ok) {
+        url = buildApiUrl(`membershipPlan?gym_id=${gymId}&branch_id=${branchId}`);
+        console.log("Falling back to legacy endpoint:", url);
+        response = await tokenManager.apiCall(url, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -347,7 +353,8 @@ const MemberManagement = () => {
       console.log("Membership plans API response:", result);
 
       if (result.status === "success") {
-        const normalizedPlans = (result.data || []).map(normalizeMembershipPlan);
+        const rawPlans = result.data || result.plans || [];
+        const normalizedPlans = rawPlans.map(normalizeMembershipPlan);
         setMembershipPlans(normalizedPlans);
         console.log(
           "Membership plans loaded:",
@@ -421,7 +428,7 @@ const MemberManagement = () => {
       if (filters.branch_id) queryParams.append("branch_id", filters.branch_id);
 
       const response = await tokenManager.apiCall(
-        buildApiUrl(`users/list?${queryParams}`),
+        buildApiUrl(`members/viewAllMembers?${queryParams}`),
         {
           method: "GET",
           headers: {
@@ -437,10 +444,11 @@ const MemberManagement = () => {
       const data = await response.json();
 
       if (data.status === "success") {
-        setMembers(data.users || data.data || []);
+        const memberList = data.data || data.users || [];
+        setMembers(memberList);
         setPagination((prev) => ({
           ...prev,
-          total: data.meta?.total || data.total || 0,
+          total: data.count !== undefined ? data.count : (data.meta?.total || data.total || memberList.length),
         }));
       } else {
         throw new Error(data.message || "Failed to fetch members");
@@ -572,7 +580,7 @@ const MemberManagement = () => {
     setPagination((prev) => ({ ...prev, limit: actualLimit, page: 1 }));
   };
 
-  // Return members as-is (API handles search filtering)
+  // Return members matching search query
   const filteredMembers = members.filter((member) => {
     if (!searchQuery) return true; // Return all if no search
     const query = searchQuery.toLowerCase();
@@ -580,7 +588,8 @@ const MemberManagement = () => {
       member.name?.toLowerCase().includes(query) ||
       member.email?.toLowerCase().includes(query) ||
       member.phone?.includes(searchQuery) ||
-      member.user_id?.toString().includes(searchQuery)
+      member.user_id?.toString().includes(searchQuery) ||
+      member.registration_number?.toString().includes(searchQuery)
     );
   });
 
@@ -752,15 +761,11 @@ const MemberManagement = () => {
       const fitnessValue = detailedMember.fitness_level || "";
       if (!fitnessValue) return "";
 
-      // Convert database enum values to UI dropdown values
-      if (fitnessValue === "BEGINEER") return "BEGINNER"; // Database has typo
+      if (fitnessValue === "BEGINEER" || fitnessValue === "BEGINNER") return "BEGINNER";
       if (fitnessValue === "INTERMEDIATE") return "INTERMEDIATE";
-      if (fitnessValue === "ADVANCE") return "ADVANCED"; // Database uses ADVANCE
+      if (fitnessValue === "ADVANCE" || fitnessValue === "ADVANCED") return "ADVANCED";
 
-      // If it's already in UI format, use as-is
-      if (['BEGINNER', 'INTERMEDIATE', 'ADVANCED'].includes(String(fitnessValue))) return String(fitnessValue);
-
-      return ""; // Empty if unrecognized
+      return String(fitnessValue);
     })();
 
     // Normalize goal focus from database enum to UI dropdown values
@@ -768,21 +773,19 @@ const MemberManagement = () => {
       const goalValue = detailedMember.goal_focus || "";
       if (!goalValue) return "";
 
-      // Convert database enum values to UI dropdown values
-      if (goalValue === "GENERAL_FITNESS") return "GENERAL"; // Database uses GENERAL_FITNESS
+      if (goalValue === "GENERAL" || goalValue === "GENERAL_FITNESS") return "GENERAL_FITNESS";
       if (goalValue === "WEIGHT_LOSS") return "WEIGHT_LOSS";
+      if (goalValue === "FAT_LOSS") return "FAT_LOSS";
       if (goalValue === "MUSCLE_GAIN") return "MUSCLE_GAIN";
       if (goalValue === "STRENGTH") return "STRENGTH";
       if (goalValue === "ENDURANCE") return "ENDURANCE";
 
-      // If it's already in UI format, use as-is
-      if (['GENERAL', 'WEIGHT_LOSS', 'MUSCLE_GAIN', 'STRENGTH', 'ENDURANCE'].includes(String(goalValue))) return String(goalValue);
-
-      return ""; // Empty if unrecognized
+      return String(goalValue);
     })();
 
     const formData = {
       user_id: detailedMember.user_id,
+      registration_number: detailedMember.registration_number || "",
       name: detailedMember.name || "",
       email: detailedMember.email || "",
       phone: detailedMember.phone || "",
@@ -1142,6 +1145,7 @@ const MemberManagement = () => {
       // Prepare update data matching the API structure
       const updateData = {
         user_id: editFormData.user_id,
+        registration_number: editFormData.registration_number ? parseInt(editFormData.registration_number, 10) : null,
 
         // Basic user information
         name: editFormData.name.trim(),
@@ -1151,14 +1155,14 @@ const MemberManagement = () => {
 
         // Profile information
         dob: editFormData.dob || "",
-        gender: editFormData.gender === "MALE" ? "Male" : editFormData.gender === "FEMALE" ? "Female" : editFormData.gender === "OTHER" ? "Other" : editFormData.gender || "",
+        gender: editFormData.gender || "",
         blood_group: editFormData.blood_group || "",
 
         // Physical stats (convert to numbers, handle empty values)
         height: editFormData.height ? parseFloat(editFormData.height) : null,
         weight: editFormData.weight ? parseFloat(editFormData.weight) : null,
-        fitness_level: editFormData.fitness_level === "BEGINNER" ? "BEGINEER" : editFormData.fitness_level === "INTERMEDIATE" ? "INTERMEDIATE" : editFormData.fitness_level === "ADVANCED" ? "ADVANCE" : editFormData.fitness_level || "",
-        goal_focus: editFormData.goal_focus === "GENERAL" ? "GENERAL_FITNESS" : editFormData.goal_focus || "",
+        fitness_level: editFormData.fitness_level || "",
+        goal_focus: editFormData.goal_focus || "",
 
         // Gym and membership
         branch_id: editFormData.branch_id ? parseInt(editFormData.branch_id) : null,
@@ -1391,11 +1395,13 @@ const MemberManagement = () => {
     );
   };
 
-  // Get available plans based on selected branch (gym-wide plans + branch-specific plans)
+  // Get available plans based on selected branch (gym-wide plans + branch-specific plans) filtered by BASE_MEMBERSHIP
   const getAvailablePlans = (selectedBranchId) => {
     return membershipPlans.filter(
       (plan) =>
-        plan.is_active && isBranchMatched(plan.branch_id, selectedBranchId),
+        plan.is_active &&
+        isBranchMatched(plan.branch_id, selectedBranchId) &&
+        (plan.plan_type ? plan.plan_type === "BASE_MEMBERSHIP" : true),
     );
   };
 
@@ -1461,87 +1467,54 @@ const MemberManagement = () => {
     setLoading(true);
 
     try {
-      // Transform values to match API expectations
-      const transformGender = (gender) => {
-        return gender === "MALE"
-          ? "Male"
-          : gender === "FEMALE"
-            ? "Female"
-            : gender === "OTHER"
-              ? "Other"
-              : gender;
-      };
 
-      const transformFitnessLevel = (level) => {
-        switch (level) {
-          case "BEGINNER":
-            return "BEGINEER"; // Database uses "BEGINEER" with typo
-          case "INTERMEDIATE":
-            return "INTERMEDIATE";
-          case "ADVANCED":
-            return "ADVANCE"; // Database uses "ADVANCE" not "ADVANCED"
-          default:
-            return level;
-        }
-      };
-
-      const transformGoalFocus = (goal) => {
-        switch (goal) {
-          case "GENERAL":
-            return "GENERAL_FITNESS"; // Database uses "GENERAL_FITNESS"
-          case "WEIGHT_LOSS":
-            return "WEIGHT_LOSS";
-          case "MUSCLE_GAIN":
-            return "MUSCLE_GAIN";
-          case "STRENGTH":
-            return "STRENGTH";
-          case "ENDURANCE":
-            return "ENDURANCE";
-          default:
-            return goal;
-        }
-      };
 
       // Handle membership plan ID mapping
-      // Since API doesn't provide numeric plan IDs, we need to map plan names to IDs
       let membershipPlanId = null;
       if (addFormData.plan_id) {
         const selectedPlan = membershipPlans.find(plan =>
-          getPlanOptionValue(plan) === addFormData.plan_id
+          String(plan.plan_id) === String(addFormData.plan_id) ||
+          getPlanOptionValue(plan) === addFormData.plan_id ||
+          plan.plan_name === addFormData.plan_id
         );
 
-        if (selectedPlan) {
-          // Map plan names to numeric IDs as expected by the API
+        if (selectedPlan && selectedPlan.plan_id && !isNaN(Number(selectedPlan.plan_id))) {
+          membershipPlanId = Number(selectedPlan.plan_id);
+        } else if (selectedPlan) {
           const planMap = {
             'Monthly Plan': 1,
             'Quarterly Plan': 2,
             'Yearly Plan': 3
           };
           membershipPlanId = planMap[selectedPlan.plan_name] || 1;
+        } else if (!isNaN(Number(addFormData.plan_id))) {
+          membershipPlanId = Number(addFormData.plan_id);
         } else {
-          membershipPlanId = 1; // fallback to default
+          membershipPlanId = 1;
         }
       }
 
-      // Prepare member data for API call
+      // Prepare member data for API call matching the updated API spec
       const memberData = {
         name: addFormData.name || "",
         email: addFormData.email || "",
         phone: addFormData.phone || "",
         password: addFormData.password || "",
-        gym_id: 1, // Default gym_id - you may want to make this dynamic
+        gym_id: 1, // Default gym_id
         branch_id: parseInt(addFormData.branch_id) || 1,
-        status: addFormData.status === "ACTIVE" ? 1 : addFormData.status === "INACTIVE" ? 0 : addFormData.status === "SUSPENDED" ? 2 : 1, // Default to active if empty
+        status: addFormData.status === "ACTIVE" ? 1 : addFormData.status === "INACTIVE" ? 0 : addFormData.status === "SUSPENDED" ? 2 : 1,
+        registration_number: addFormData.registration_number ? parseInt(addFormData.registration_number, 10) : null,
         join_date:
           addFormData.join_date || new Date().toISOString().split("T")[0],
         membership_plan: membershipPlanId,
+        payment_method: addFormData.payment_method || "UPI",
         dob: addFormData.dob || "",
-        gender: transformGender(addFormData.gender),
-        blood_group: addFormData.blood_group,
+        gender: addFormData.gender || "",
+        blood_group: addFormData.blood_group || "",
         height: parseFloat(addFormData.height_cm) || 0,
         weight: parseFloat(addFormData.weight_kg) || 0,
-        fitness_level: transformFitnessLevel(addFormData.fitness_level),
-        goal_focus: transformGoalFocus(addFormData.goal_focus),
+        fitness_level: addFormData.fitness_level || "",
+        goal_focus: addFormData.goal_focus || "",
         country: parseInt(addFormData.country_id) || 1,
         state: parseInt(addFormData.state_id) || 1,
         district: parseInt(addFormData.district) || 1,
@@ -1597,10 +1570,12 @@ const MemberManagement = () => {
           phone: "",
           password: "",
           role: "MEMBER",
+          registration_number: "",
           branch_id: "",
           join_date: new Date().toISOString().split("T")[0],
           status: "",
           plan_id: "",
+          payment_method: "UPI",
           dob: "",
           gender: "",
           blood_group: "",
@@ -1652,10 +1627,12 @@ const MemberManagement = () => {
       phone: "",
       password: "",
       role: "MEMBER",
+      registration_number: "",
       branch_id: "",
       join_date: new Date().toISOString().split("T")[0], // Current date
       status: "",
       plan_id: "",
+      payment_method: "UPI",
       dob: "",
       gender: "",
       blood_group: "",
@@ -1857,12 +1834,14 @@ const MemberManagement = () => {
             <table className="member-table">
               <thead>
                 <tr>
+                  <th>Reg No.</th>
                   <th>User ID</th>
                   <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
+                  <th>Email / Phone</th>
+                  <th>Plan</th>
                   <th>Join Date</th>
-                  <th>Branch Name</th>
+                  <th>Branch</th>
+                  <th>Trainer</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -1870,20 +1849,29 @@ const MemberManagement = () => {
               <tbody>
                 {filteredMembers.map((member) => (
                   <tr key={member.user_id}>
+                    <td className="member-reg-cell" style={{ fontWeight: 600, color: '#ff6b35' }}>
+                      {member.registration_number ? `#${member.registration_number}` : "N/A"}
+                    </td>
                     <td className="member-id-cell">#{member.user_id}</td>
                     <td className="member-name-cell">
                       <i className="fas fa-user-circle"></i>
                       {member.name}
                     </td>
-                    <td>{member.email}</td>
-                    <td>{member.phone}</td>
-                    <td>{formatDate(member.createdDate)}</td>
-                    <td>{getBranchName(member.branch_id)}</td>
+                    <td>
+                      <div className="member-contact-info">
+                        <div>{member.email}</div>
+                        <small style={{ color: '#7f8c8d' }}>{member.phone}</small>
+                      </div>
+                    </td>
+                    <td>{member.plan_name || (member.membership_plan ? `Plan #${member.membership_plan}` : "N/A")}</td>
+                    <td>{formatDate(member.date_of_joining || member.createdDate || member.join_date)}</td>
+                    <td>{member.branch_name || getBranchName(member.branch_id)}</td>
+                    <td>{member.trainer_name || "Unassigned"}</td>
                     <td>
                       <span
                         className={`member-status-badge ${getStatusBadgeClass(member.status)}`}
                       >
-                        {member.status}
+                        {isActiveStatus(member.status) ? "Active" : "Inactive"}
                       </span>
                     </td>
                     <td className="member-actions-cell">
@@ -2049,6 +2037,12 @@ const MemberManagement = () => {
                         <span>{memberDetails.name}</span>
                       </div>
                       <div className="member-profile-item">
+                        <label>Reg No.</label>
+                        <span style={{ fontWeight: 600, color: '#ff6b35' }}>
+                          {memberDetails.registration_number ? `#${memberDetails.registration_number}` : "Not assigned"}
+                        </span>
+                      </div>
+                      <div className="member-profile-item">
                         <label>User ID</label>
                         <span>#{memberDetails.user_id}</span>
                       </div>
@@ -2144,6 +2138,20 @@ const MemberManagement = () => {
                         <label>Membership Plan</label>
                         <span>{memberDetails.plan_name || "Not assigned"}</span>
                       </div>
+                      <div className="member-profile-item">
+                        <label>Assigned Trainer</label>
+                        <span>
+                          {memberDetails.trainer_name ? `${memberDetails.trainer_name} (${memberDetails.trainer_phone || 'N/A'})` : "Unassigned"}
+                        </span>
+                      </div>
+                      {memberDetails.days_remaining !== undefined && memberDetails.days_remaining !== null && (
+                        <div className="member-profile-item">
+                          <label>Days Remaining</label>
+                          <span style={{ fontWeight: 600, color: '#27ae60' }}>
+                            {memberDetails.days_remaining} days
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -2285,6 +2293,16 @@ const MemberManagement = () => {
                     User Account Information
                   </h3>
                   <div className="member-form-grid">
+                    <div className="member-form-group">
+                      <label>Registration Number</label>
+                      <input
+                        type="number"
+                        name="registration_number"
+                        value={editFormData.registration_number}
+                        onChange={handleFormChange}
+                        placeholder="e.g. 1001"
+                      />
+                    </div>
                     <div className="member-form-group">
                       <ValidationError error={editFormErrors.name} />
                       <label>Full Name *</label>
@@ -2572,6 +2590,9 @@ const MemberManagement = () => {
                         <option key="WEIGHT_LOSS-edit" value="WEIGHT_LOSS">
                           Weight Loss
                         </option>
+                        <option key="FAT_LOSS-edit" value="FAT_LOSS">
+                          Fat Loss
+                        </option>
                         <option key="MUSCLE_GAIN-edit" value="MUSCLE_GAIN">
                           Muscle Gain
                         </option>
@@ -2581,7 +2602,7 @@ const MemberManagement = () => {
                         <option key="ENDURANCE-edit" value="ENDURANCE">
                           Endurance
                         </option>
-                        <option key="GENERAL-edit" value="GENERAL">
+                        <option key="GENERAL_FITNESS-edit" value="GENERAL_FITNESS">
                           General Fitness
                         </option>
                       </select>
@@ -2918,6 +2939,16 @@ const MemberManagement = () => {
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
+                      <label>Registration Number</label>
+                      <input
+                        type="number"
+                        name="registration_number"
+                        value={addFormData.registration_number}
+                        onChange={handleAddFormChange}
+                        placeholder="e.g. 1001"
+                      />
+                    </div>
+                    <div className="member-form-group">
                       <ValidationError error={addFormErrors.name} />
                       <label>Full Name *</label>
                       <input
@@ -3058,6 +3089,20 @@ const MemberManagement = () => {
                         <option value="ACTIVE">Active</option>
                         <option value="INACTIVE">Inactive</option>
                         <option value="SUSPENDED">Suspended</option>
+                      </select>
+                    </div>
+                    <div className="member-form-group">
+                      <label>Payment Method *</label>
+                      <select
+                        name="payment_method"
+                        value={addFormData.payment_method}
+                        onChange={handleAddFormChange}
+                        required
+                      >
+                        <option value="UPI">UPI</option>
+                        <option value="CASH">Cash</option>
+                        <option value="CARD">Card / POS</option>
+                        <option value="NET_BANKING">Net Banking</option>
                       </select>
                     </div>
                     <div className="member-form-group member-full-width">
@@ -3261,6 +3306,9 @@ const MemberManagement = () => {
                         <option key="WEIGHT_LOSS" value="WEIGHT_LOSS">
                           Weight Loss
                         </option>
+                        <option key="FAT_LOSS" value="FAT_LOSS">
+                          Fat Loss
+                        </option>
                         <option key="MUSCLE_GAIN" value="MUSCLE_GAIN">
                           Muscle Gain
                         </option>
@@ -3270,7 +3318,7 @@ const MemberManagement = () => {
                         <option key="ENDURANCE" value="ENDURANCE">
                           Endurance
                         </option>
-                        <option key="GENERAL" value="GENERAL">
+                        <option key="GENERAL_FITNESS" value="GENERAL_FITNESS">
                           General Fitness
                         </option>
                       </select>
