@@ -1699,8 +1699,24 @@ const MemberManagement = () => {
       <div className="member-table-container">
         {loading ? (
           <div className="member-loading-state">
-            <i className="fas fa-spinner fa-spin"></i>
-            <p>Loading members...</p>
+            <div className="member-loader-spinner-wrapper">
+              <div className="member-loader-ring"></div>
+              <div className="member-loader-pulse"></div>
+            </div>
+            <p className="member-loader-text">Loading member records...</p>
+            <div className="member-skeleton-table">
+              {[1, 2, 3, 4, 5].map((idx) => (
+                <div key={`skel-${idx}`} className="member-skeleton-row">
+                  <div className="member-skeleton-cell skel-short"></div>
+                  <div className="member-skeleton-cell skel-medium"></div>
+                  <div className="member-skeleton-cell skel-long"></div>
+                  <div className="member-skeleton-cell skel-medium"></div>
+                  <div className="member-skeleton-cell skel-short"></div>
+                  <div className="member-skeleton-cell skel-badge"></div>
+                  <div className="member-skeleton-cell skel-actions"></div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : filteredMembers.length > 0 ? (
           <>
@@ -1811,11 +1827,12 @@ const MemberManagement = () => {
 
             <div className="member-modal-body">
               {memberDetailsLoading && (
-                <div className="member-loading-state">
-                  <div className="member-loading-spinner">
-                    <i className="fas fa-spinner fa-spin"></i>
+                <div className="member-details-loading-state">
+                  <div className="member-loader-spinner-wrapper">
+                    <div className="member-loader-ring"></div>
+                    <div className="member-loader-pulse"></div>
                   </div>
-                  <p>Loading member details...</p>
+                  <p className="member-loader-text">Loading profile details...</p>
                 </div>
               )}
 

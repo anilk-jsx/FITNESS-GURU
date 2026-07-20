@@ -756,3 +756,142 @@
   background: #f1f5f9;
   color: #0f172a;
 }
+
+/* ==========================================================================
+   PREMIUM LOADER & SHIMMER SKELETON ANIMATIONS
+   ========================================================================== */
+
+.member-loading-state,
+.member-details-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  min-height: 280px;
+  width: 100%;
+}
+
+.member-loader-spinner-wrapper {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.member-loader-ring {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(37, 99, 235, 0.12);
+  border-top: 3px solid #2563eb;
+  border-right: 3px solid #38bdf8;
+  border-radius: 50%;
+  animation: spinRing 0.85s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.2);
+}
+
+.member-loader-pulse {
+  position: absolute;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.15);
+  animation: pulseGlow 1.8s ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes spinRing {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(0.85);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.8;
+  }
+}
+
+.member-loader-text {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #475569;
+  letter-spacing: 0.2px;
+  margin-bottom: 1.5rem;
+  animation: pulseText 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulseText {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
+
+/* Skeleton Table Shimmer */
+.member-skeleton-table {
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.member-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.member-skeleton-cell {
+  height: 18px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmerSweep 1.5s infinite ease-in-out;
+}
+
+.member-skeleton-cell.skel-short {
+  width: 70px;
+}
+
+.member-skeleton-cell.skel-medium {
+  width: 130px;
+}
+
+.member-skeleton-cell.skel-long {
+  flex: 1;
+}
+
+.member-skeleton-cell.skel-badge {
+  width: 80px;
+  height: 22px;
+  border-radius: 12px;
+}
+
+.member-skeleton-cell.skel-actions {
+  width: 65px;
+  height: 26px;
+}
+
+@keyframes shimmerSweep {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
