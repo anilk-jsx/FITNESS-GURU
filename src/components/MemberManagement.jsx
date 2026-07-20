@@ -1758,7 +1758,6 @@ const MemberManagement = () => {
               <thead>
                 <tr>
                   <th>Reg No.</th>
-                  <th>User ID</th>
                   <th>Name</th>
                   <th>Email / Phone</th>
                   <th>Plan</th>
@@ -1775,7 +1774,6 @@ const MemberManagement = () => {
                     <td className="member-reg-cell">
                       {member.registration_number ? `#${member.registration_number}` : "N/A"}
                     </td>
-                    <td className="member-id-cell">#{member.user_id}</td>
                     <td className="member-name-cell">
                       <i className="fas fa-user-circle"></i>
                       {member.name}
