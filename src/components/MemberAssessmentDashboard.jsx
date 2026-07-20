@@ -1,196 +1,387 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import tokenManager from '../utils/tokenManager';
 import './MemberAssessmentDashboard.css';
 
-const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
+const MemberAssessmentDashboard = ({ member, initialAssessmentId = null, onBack, isAdmin = false }) => {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
+
+  // --- Component State ---
   const [activeTab, setActiveTab] = useState('details'); // details, history, parameters
+  const [loading, setLoading] = useState(true);
+  const [assessmentHistory, setAssessmentHistory] = useState([]);
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState(initialAssessmentId);
+  const [selectedAssessment, setSelectedAssessment] = useState(null);
+  const [memberProfile, setMemberProfile] = useState(null);
+  const [trainersMembersList, setTrainersMembersList] = useState([]);
 
-  // Custom fallback details if not fully provided by parent
-  const memberName = member?.name || 'Alex Johnson';
-  const memberEmail = member?.email || 'alex.johnson@email.com';
-  const memberPhone = member?.phone || '+1 555 123 4567';
-  const memberId = member?.user_id || 'AJ12345';
-  const memberGender = member?.gender || 'Male';
-  const memberAge = member?.age || 28;
-  const trainerName = member?.trainer || 'John Trainer';
+  // --- Member Identification ---
+  const memberName = memberProfile?.name || memberProfile?.full_name || member?.name || member?.full_name || 'Member';
+  const memberEmail = memberProfile?.email || member?.email || 'N/A';
+  const memberPhone = memberProfile?.phone || member?.phone || 'N/A';
+  const memberId = member?.user_id || member?.id || memberProfile?.user_id || memberProfile?.id || '';
+  const memberGender = memberProfile?.gender || member?.gender || 'Male';
 
-  // Mock historical data mapping to the mockup screens
-  const assessmentHistory = [
-    {
-      id: 5,
-      date: 'May 15, 2024',
-      time: '2:30 PM',
-      overallScore: 85,
-      rating: 'Very Good',
-      improvement: '+20',
-      improvementRaw: 20,
-      isUp: true,
-      trainer: trainerName,
-      bodyComp: 40,
-      vitals: 16,
-      flexibility: 16,
-      bodyMeasurements: 9,
-      trainerScore: 10
-    },
-    {
-      id: 4,
-      date: 'Apr 15, 2024',
-      time: '11:15 AM',
-      overallScore: 78,
-      rating: 'Good',
-      improvement: '+13',
-      improvementRaw: 13,
-      isUp: true,
-      trainer: trainerName,
-      bodyComp: 34,
-      vitals: 15,
-      flexibility: 14,
-      bodyMeasurements: 9,
-      trainerScore: 9
-    },
-    {
-      id: 3,
-      date: 'Mar 15, 2024',
-      time: '4:45 PM',
-      overallScore: 65,
-      rating: 'Good',
-      improvement: '+7',
-      improvementRaw: 7,
-      isUp: true,
-      trainer: trainerName,
-      bodyComp: 28,
-      vitals: 14,
-      flexibility: 12,
-      bodyMeasurements: 8,
-      trainerScore: 9
-    },
-    {
-      id: 2,
-      date: 'Jan 15, 2024',
-      time: '10:30 AM',
-      overallScore: 58,
-      rating: 'Average',
-      improvement: '+13',
-      improvementRaw: 13,
-      isUp: true,
-      trainer: trainerName,
-      bodyComp: 26,
-      vitals: 12,
-      flexibility: 10,
-      bodyMeasurements: 7,
-      trainerScore: 8
-    },
-    {
-      id: 1,
-      date: 'Dec 15, 2023',
-      time: '3:20 PM',
-      overallScore: 45,
-      rating: 'Average',
-      improvement: '-',
-      improvementRaw: 0,
-      isUp: false,
-      trainer: trainerName,
-      bodyComp: 22,
-      vitals: 12,
-      flexibility: 8,
-      bodyMeasurements: 6,
-      trainerScore: 7
+  // --- Age Calculation Helper ---
+  const calculateAge = useCallback((dob) => {
+    if (!dob) return 'N/A';
+    const birthDate = new Date(dob);
+    if (isNaN(birthDate.getTime())) return 'N/A';
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
     }
-  ];
+    return age > 0 ? age : 'N/A';
+  }, []);
 
-  // Latest assessment details mapping
-  const latestAssess = assessmentHistory[0];
+  // --- Dynamic Age derived from date_of_birth ---
+  const memberAge = useMemo(() => {
+    if (member?.age && typeof member.age === 'number') return member.age;
+    const dob = memberProfile?.date_of_birth || memberProfile?.dob || member?.date_of_birth || member?.dob;
+    return calculateAge(dob);
+  }, [member, memberProfile, calculateAge]);
 
-  // Detailed breakdown structure matching image 1
-  const bodyCompDetails = {
-    bmi: {
-      height: 175,
-      weight: 70,
-      value: 22.9,
-      rating: 'Normal',
-      points: '20/20',
-      note: 'Great! Your body composition is within the healthy range.'
-    },
-    bodyFat: {
-      value: 18,
-      rating: 'Excellent',
-      points: '20/20',
-      note: 'Body fat percentage is excellent for your age and gender.'
-    },
-    muscleMass: 55.4
-  };
+  // --- 1. Fetch History, Member Details & Assigned Trainers API ---
+  const fetchData = useCallback(async () => {
+    if (!memberId) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const userData = tokenManager.getUserData();
+      const userRole = (userData?.role || '').toUpperCase();
+      const isAdminRole = ['ADMIN', 'SUPER-ADMIN', 'SUPER_ADMIN', 'OWNER'].includes(userRole);
 
-  const vitalsDetails = {
-    bloodPressure: {
-      systolic: 120,
-      diastolic: 80,
-      status: 'Normal',
-      points: '8/10',
-      rating: 'Normal',
-      note: 'Your vital signs are good.'
-    },
-    heartRate: {
-      value: 72,
-      status: 'Normal',
-      points: '8/10',
-      rating: 'Normal',
-      note: 'Resting heart rate is optimal (60-80 bpm).'
+      // Concurrently fetch assessments history, full member details, and PT trainers-members assignments safely
+      const fetchPromises = [
+        tokenManager.apiCall(`${API_BASE_URL}/api/members/${memberId}/assessments`, { method: 'GET', noAuthRedirect: true }).catch(() => null),
+        tokenManager.apiCall(`${API_BASE_URL}/api/members/view?user_id=${memberId}`, { method: 'GET', noAuthRedirect: true }).catch(() => null)
+      ];
+
+      if (isAdminRole) {
+        fetchPromises.push(
+          tokenManager.apiCall(`${API_BASE_URL}/api/admin/pt/trainers-members`, { method: 'GET', noAuthRedirect: true }).catch(() => null)
+        );
+      }
+
+      const results = await Promise.all(fetchPromises);
+      const historyRes = results[0];
+      const profileRes = results[1];
+      const ptRes = isAdminRole ? results[2] : null;
+
+      let historyList = [];
+      if (historyRes && historyRes.ok) {
+        const hData = await historyRes.json();
+        historyList = hData.data || (Array.isArray(hData) ? hData : []);
+      }
+      setAssessmentHistory(historyList);
+
+      if (profileRes && profileRes.ok) {
+        const pData = await profileRes.json();
+        setMemberProfile(pData.data || pData);
+      } else {
+        setMemberProfile(null);
+      }
+
+      if (ptRes && ptRes.ok) {
+        const ptData = await ptRes.json();
+        setTrainersMembersList(ptData.data || (Array.isArray(ptData) ? ptData : []));
+      } else {
+        setTrainersMembersList([]);
+      }
+
+      // Determine target assessment ID to display
+      let targetId = selectedAssessmentId || initialAssessmentId;
+      if (!targetId && historyList.length > 0) {
+        targetId = historyList[0].assessment_id;
+      }
+
+      if (targetId) {
+        setSelectedAssessmentId(targetId);
+        const detailRes = await tokenManager.apiCall(`${API_BASE_URL}/api/assessments/${targetId}`, { method: 'GET', noAuthRedirect: true }).catch(() => null);
+        if (detailRes && detailRes.ok) {
+          const dData = await detailRes.json();
+          setSelectedAssessment(dData.data || dData);
+        } else {
+          // Fallback to history list item if detail call fails
+          const found = historyList.find(a => String(a.assessment_id) === String(targetId));
+          setSelectedAssessment(found || null);
+        }
+      } else {
+        // Attempt latest assessment fetch as fallback
+        const latestRes = await tokenManager.apiCall(`${API_BASE_URL}/api/members/${memberId}/assessments/latest`, { method: 'GET', noAuthRedirect: true }).catch(() => null);
+        if (latestRes && latestRes.ok) {
+          const lData = await latestRes.json();
+          const latestObj = lData.data || lData;
+          setSelectedAssessment(latestObj);
+          if (latestObj?.assessment_id) {
+            setSelectedAssessmentId(latestObj.assessment_id);
+          }
+        } else {
+          setSelectedAssessment(null);
+        }
+      }
+    } catch (err) {
+      console.error('Error loading assessment dashboard data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [API_BASE_URL, memberId, selectedAssessmentId, initialAssessmentId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Handle selecting a specific historical assessment
+  const handleSelectAssessment = async (id) => {
+    setSelectedAssessmentId(id);
+    setLoading(true);
+    try {
+      const detailRes = await tokenManager.apiCall(`${API_BASE_URL}/api/assessments/${id}`, { method: 'GET', noAuthRedirect: true }).catch(() => null);
+      if (detailRes && detailRes.ok) {
+        const dData = await detailRes.json();
+        setSelectedAssessment(dData.data || dData);
+      } else {
+        const found = assessmentHistory.find(a => String(a.assessment_id) === String(id));
+        setSelectedAssessment(found || null);
+      }
+      setActiveTab('details');
+    } catch (err) {
+      console.error('Error fetching assessment detail:', id, err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const flexibilityDetails = {
-    sitReach: {
-      value: 28,
-      rating: 'Good',
-      points: '8/10',
-      note: 'Good flexibility. Keep stretching to improve further.'
-    },
-    shoulder: {
-      value: 'Good',
-      rating: 'Good',
-      points: '8/10',
-      note: 'Good shoulder flexibility.'
+  // --- Dynamic Assigned Trainer resolution from /api/admin/pt/trainers-members ---
+  const assignedTrainerName = useMemo(() => {
+    if (trainersMembersList && Array.isArray(trainersMembersList) && trainersMembersList.length > 0) {
+      // Search if this member ID is listed under any trainer's assigned members array
+      const foundTrainer = trainersMembersList.find(tr =>
+        tr.members?.some(m =>
+          String(m.member_user_id) === String(memberId) ||
+          String(m.member_profile_id) === String(memberId) ||
+          String(m.member_id) === String(memberId)
+        )
+      );
+      if (foundTrainer) {
+        return foundTrainer.trainer_name || foundTrainer.name;
+      }
+
+      // Match by trainer_id if present in assessment record
+      if (selectedAssessment?.trainer_id) {
+        const foundById = trainersMembersList.find(tr =>
+          String(tr.trainer_id) === String(selectedAssessment.trainer_id) ||
+          String(tr.trainer_user_id) === String(selectedAssessment.trainer_id)
+        );
+        if (foundById) {
+          return foundById.trainer_name || foundById.name;
+        }
+      }
     }
-  };
 
-  const bodyMeasurementsDetails = {
-    midWaist: 82,
-    lowerWaist: 84,
-    hip: 94,
-    chest: 100,
-    arm: 32,
-    thigh: 52,
-    shoulderWidth: 42,
-    ratio: 0.87,
-    rating: 'Excellent',
-    points: '10/10'
-  };
+    return selectedAssessment?.trainer_name ||
+           memberProfile?.assigned_trainer_name ||
+           memberProfile?.trainer_name ||
+           member?.assigned_trainer_name ||
+           member?.trainer_name ||
+           member?.trainer ||
+           'Unassigned';
+  }, [trainersMembersList, memberId, selectedAssessment, memberProfile, member]);
 
-  const healthHistoryDetails = {
-    majorIssues: 'No',
-    recentSurgery: 'No',
-    note: 'No major health issues reported.'
-  };
+  // --- 2. Dynamic Metric Calculations & Scoring Rubric Mapping ---
+  const metrics = useMemo(() => {
+    if (!selectedAssessment) return null;
+    const isMale = (memberGender || 'Male').toLowerCase() === 'male';
 
-  const trainerAssessmentDetails = {
-    posture: 'Excellent',
-    mobility: 'Excellent',
-    observation: 'Excellent',
-    rating: 'Excellent',
-    points: '10/10',
-    comment: 'Excellent overall fitness. Great posture, mobility and movement quality.'
-  };
+    const heightCm = selectedAssessment.height_cm
+      ? parseFloat(selectedAssessment.height_cm)
+      : (memberProfile?.height_cm ? parseFloat(memberProfile.height_cm) : (member?.height_cm ? parseFloat(member.height_cm) : 'N/A'));
 
-  // 6 Photo Slots for gallery matching image 1
-  const bodyPhotos = [
-    { label: 'Front View', url: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=80' },
-    { label: 'Back View', url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80' },
-    { label: 'Left Side View', url: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=400&q=80' },
-    { label: 'Right Side View', url: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&q=80' },
-    { label: 'Close-up Front', url: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&q=80' },
-    { label: 'Close-up Back', url: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&q=80' }
-  ];
+    const weightKg = selectedAssessment.weight_kg
+      ? parseFloat(selectedAssessment.weight_kg)
+      : (memberProfile?.weight_kg ? parseFloat(memberProfile.weight_kg) : (member?.weight_kg ? parseFloat(member.weight_kg) : 'N/A'));
 
-  // 33 Parameters List organized by categories matching image 2
+    const hNum = typeof heightCm === 'number' ? heightCm : 175;
+    const wNum = typeof weightKg === 'number' ? weightKg : 70;
+    const hM = hNum / 100;
+    const bmiVal = parseFloat(selectedAssessment.bmi) || (hM > 0 ? wNum / (hM * hM) : 22.0);
+    const bodyFatVal = parseFloat(selectedAssessment.body_fat_percent) || 20.0;
+    const muscleMassVal = parseFloat(selectedAssessment.muscle_mass_kg) || 0.0;
+
+    // Body Composition Breakdown (Max 40)
+    const idealFatMid = isMale ? 17.0 : 23.0;
+    const fatPoints = Math.max(0, 25 - (Math.abs(bodyFatVal - idealFatMid) * 1.5));
+    const bmiPoints = Math.max(0, 15 - (Math.abs(bmiVal - 22.0) * 1.2));
+    const bodyCompScore = parseFloat(selectedAssessment.body_composition_score) || (Math.max(0, Math.min(40, fatPoints + bmiPoints)));
+
+    let bmiRating = 'Normal';
+    if (bmiVal < 18.5) bmiRating = 'Underweight';
+    else if (bmiVal <= 24.9) bmiRating = 'Normal';
+    else if (bmiVal <= 29.9) bmiRating = 'Overweight';
+    else bmiRating = 'Obese';
+
+    // Vital Signs Breakdown (Max 20)
+    const rhr = parseInt(selectedAssessment.resting_heart_rate, 10) || 70;
+    let rhrPts = 6;
+    if (rhr <= 60) rhrPts = 10;
+    else if (rhr <= 70) rhrPts = 8;
+    else if (rhr <= 80) rhrPts = 6;
+    else rhrPts = 3;
+
+    const sys = parseInt(selectedAssessment.blood_pressure_systolic, 10) || 120;
+    const dia = parseInt(selectedAssessment.blood_pressure_diastolic, 10) || 80;
+    const bpPenalty = (Math.abs(sys - 120) / 10) + (Math.abs(dia - 80) / 5);
+    const bpPts = Math.max(0, 10 - bpPenalty);
+    const vitalsScore = parseFloat(selectedAssessment.vital_signs_score) || (Math.max(0, Math.min(20, rhrPts + bpPts)));
+
+    // Flexibility Breakdown (Max 20)
+    const sitReach = parseFloat(selectedAssessment.sit_and_reach_cm) || 30.0;
+    const shFlex = parseFloat(selectedAssessment.shoulder_flexibility_cm) || 20.0;
+    const flexPts = ((sitReach / 40) * 10) + ((shFlex / 30) * 10);
+    const flexibilityScore = parseFloat(selectedAssessment.flexibility_score) || (Math.max(0, Math.min(20, flexPts)));
+
+    // Body Measurements Breakdown (Max 10)
+    const midWaist = parseFloat(selectedAssessment.mid_waist_circumference_cm) || 80.0;
+    const lowerWaist = parseFloat(selectedAssessment.lower_waist_circumference_cm) || 0.0;
+    const hip = parseFloat(selectedAssessment.hip_circumference_cm) || 95.0;
+    const chest = parseFloat(selectedAssessment.chest_circumference_cm) || 0.0;
+    const arm = parseFloat(selectedAssessment.arm_circumference_cm) || 0.0;
+    const thigh = parseFloat(selectedAssessment.thigh_circumference_cm) || 0.0;
+    const shoulderWidth = parseFloat(selectedAssessment.shoulder_width_cm) || 0.0;
+
+    const whr = hip > 0 ? (midWaist / hip) : 0.85;
+    let whrPts = 6;
+    if (isMale) {
+      if (whr <= 0.90) whrPts = 10;
+      else if (whr <= 0.99) whrPts = 6;
+      else whrPts = 2;
+    } else {
+      if (whr <= 0.85) whrPts = 10;
+      else if (whr <= 0.89) whrPts = 6;
+      else whrPts = 2;
+    }
+    const bodyMeasurementScore = parseFloat(selectedAssessment.body_measurement_score) || (Math.max(0, Math.min(10, whrPts)));
+
+    // Health History Fields
+    const majorHealthIssues = selectedAssessment.major_health_issues ||
+                              selectedAssessment.major_issues ||
+                              memberProfile?.major_health_issues ||
+                              memberProfile?.health_issues ||
+                              member?.major_health_issues ||
+                              'None Reported';
+
+    const recentSurgery = selectedAssessment.recent_surgery ||
+                          selectedAssessment.surgery ||
+                          memberProfile?.recent_surgery ||
+                          member?.recent_surgery ||
+                          'None Reported';
+
+    // Trainer Rating Breakdown (Max 10)
+    const trainerScore = parseFloat(selectedAssessment.trainer_assessment_score) || 8.0;
+
+    // Overall Score
+    const overallScore = parseFloat(selectedAssessment.overall_fitness_score) || (bodyCompScore + vitalsScore + flexibilityScore + bodyMeasurementScore + trainerScore);
+
+    let overallRating = 'Excellent';
+    if (overallScore >= 80) overallRating = 'Excellent';
+    else if (overallScore >= 60) overallRating = 'Good';
+    else overallRating = 'Needs Improvement';
+
+    return {
+      bmi: bmiVal.toFixed(2),
+      bmiRating,
+      bmiPoints: bmiPoints.toFixed(1),
+      heightCm,
+      weightKg,
+      bodyFat: bodyFatVal.toFixed(1),
+      fatPoints: fatPoints.toFixed(1),
+      muscleMass: muscleMassVal.toFixed(1),
+      sys,
+      dia,
+      bpPts: bpPts.toFixed(1),
+      rhr,
+      rhrPts,
+      sitReach,
+      sitPts: Math.min(10, (sitReach / 40) * 10).toFixed(1),
+      shFlex,
+      shPts: Math.min(10, (shFlex / 30) * 10).toFixed(1),
+      midWaist,
+      lowerWaist,
+      hip,
+      chest,
+      arm,
+      thigh,
+      shoulderWidth,
+      whr: whr.toFixed(2),
+      whrPts,
+      majorHealthIssues,
+      recentSurgery,
+      bodyCompScore: bodyCompScore.toFixed(1),
+      vitalsScore: vitalsScore.toFixed(1),
+      flexibilityScore: flexibilityScore.toFixed(1),
+      bodyMeasurementScore: bodyMeasurementScore.toFixed(1),
+      trainerScore: trainerScore.toFixed(1),
+      overallScore: overallScore.toFixed(1),
+      overallRating,
+      trainerComments: selectedAssessment.trainer_comments || 'No specific comments recorded.',
+      date: selectedAssessment.assessment_date || 'N/A',
+      nextAssessmentDate: selectedAssessment.next_assessment_date || null,
+      assessmentType: selectedAssessment.assessment_type || 'INITIAL',
+      trainerName: assignedTrainerName
+    };
+  }, [selectedAssessment, memberGender, memberProfile, member, assignedTrainerName]);
+
+  // --- 3. Dynamic Progress Timeline & Chart Data ---
+  const sortedHistory = useMemo(() => {
+    return [...assessmentHistory].sort((a, b) => new Date(a.assessment_date || 0) - new Date(b.assessment_date || 0));
+  }, [assessmentHistory]);
+
+  const historyKPIs = useMemo(() => {
+    if (sortedHistory.length === 0) {
+      return { totalGrowth: '0', peakScore: '0', avgScore: '0', count: 0 };
+    }
+    const scores = sortedHistory.map(a => parseFloat(a.overall_fitness_score) || 0);
+    const oldest = scores[0];
+    const newest = scores[scores.length - 1];
+    const totalGrowth = (newest - oldest).toFixed(1);
+    const peakScore = Math.max(...scores).toFixed(1);
+    const avgScore = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
+    return { totalGrowth: (totalGrowth >= 0 ? `+${totalGrowth}` : totalGrowth), peakScore, avgScore, count: sortedHistory.length };
+  }, [sortedHistory]);
+
+  // Dynamic SVG Trajectory Coordinates
+  const svgTrajectory = useMemo(() => {
+    if (sortedHistory.length === 0) return { pathD: '', areaD: '', points: [] };
+    const points = sortedHistory.map((item, idx) => {
+      const stepX = sortedHistory.length === 1 ? 250 : 60 + (idx * (400 / (sortedHistory.length - 1)));
+      const score = parseFloat(item.overall_fitness_score) || 50;
+      // Score range 0..100 maps to SVG Y range 160..30
+      const stepY = 160 - ((score / 100) * 130);
+      return { x: stepX, y: stepY, score: score.toFixed(1), date: item.assessment_date || 'N/A', id: item.assessment_id, type: item.assessment_type };
+    });
+
+    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    const areaD = `${pathD} L ${points[points.length - 1].x} 170 L ${points[0].x} 170 Z`;
+    return { pathD, areaD, points };
+  }, [sortedHistory]);
+
+  // Photo gallery URLs from selected assessment if available
+  const bodyPhotos = useMemo(() => {
+    if (!selectedAssessment) return [];
+    const photos = [];
+    if (selectedAssessment.front_view_photo) photos.push({ label: 'Front View', url: selectedAssessment.front_view_photo });
+    if (selectedAssessment.back_view_photo) photos.push({ label: 'Back View', url: selectedAssessment.back_view_photo });
+    if (selectedAssessment.left_side_view_photo) photos.push({ label: 'Left Side View', url: selectedAssessment.left_side_view_photo });
+    if (selectedAssessment.right_side_view_photo) photos.push({ label: 'Right Side View', url: selectedAssessment.right_side_view_photo });
+    if (selectedAssessment.closeup_front_photo) photos.push({ label: 'Close-up Front', url: selectedAssessment.closeup_front_photo });
+    if (selectedAssessment.closeup_back_photo) photos.push({ label: 'Close-up Back', url: selectedAssessment.closeup_back_photo });
+    return photos;
+  }, [selectedAssessment]);
+
+  // --- 33 Parameters Database Reference Schema ---
   const parameterSchema = [
     {
       category: 'Member Information',
@@ -253,8 +444,8 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
       subtitle: 'Medical history and conditions',
       icon: 'fas fa-notes-medical',
       params: [
-        { id: 7, name: 'major_health_issues', type: 'varchar(100)', required: true, notes: 'utf8mb4_general_ci' },
-        { id: 8, name: 'recent_surgery', type: 'varchar(100)', required: true, notes: 'utf8mb4_general_ci' }
+        { id: 7, name: 'major_health_issues', type: 'varchar(100)', required: false, notes: '-' },
+        { id: 8, name: 'recent_surgery', type: 'varchar(100)', required: false, notes: '-' }
       ]
     },
     {
@@ -277,37 +468,14 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
       params: [
         { id: 30, name: 'trainer_comments', type: 'text', required: false, notes: 'utf8mb4_general_ci' }
       ]
-    },
-    {
-      category: 'Photos',
-      subtitle: 'Assessment photos from different views',
-      icon: 'fas fa-camera',
-      params: [
-        { id: 31, name: 'Front_view_photo', type: 'varchar(255)', required: false, notes: 'Photo Path / URL' },
-        { id: 31, name: 'back_view_photo', type: 'varchar(255)', required: false, notes: 'Photo Path / URL' },
-        { id: 31, name: 'left_side_view_photo', type: 'varchar(255)', required: false, notes: 'Photo Path / URL' },
-        { id: 31, name: 'right_side_view_photo', type: 'varchar(255)', required: false, notes: 'Photo Path / URL' },
-        { id: 31, name: 'closeup_front_photo', type: 'varchar(255)', required: false, notes: 'Photo Path / URL' },
-        { id: 31, name: 'closeup_back_photo', type: 'varchar(255)', required: false, notes: 'Photo Path / URL' },
-        { id: 31, name: 'closeup_left_photo', type: 'varchar(255)', required: false, notes: 'Photo Path / URL' },
-        { id: 31, name: 'closeup_right_photo', type: 'varchar(255)', required: false, notes: 'Photo Path / URL' }
-      ]
-    },
-    {
-      category: 'Assessment Timeline',
-      subtitle: 'Record tracking information',
-      icon: 'fas fa-history',
-      params: [
-        { id: 31, name: 'last_assessment_date', type: 'date', required: false, notes: '-' }
-      ]
     }
   ];
 
-  // Helper to draw mini overall score gauge ring in header
-  const MiniCircularGauge = ({ score, max }) => {
+  // Circular gauge component
+  const MiniCircularGauge = ({ score = 0, max = 100 }) => {
     const radius = 24;
     const circumference = 2 * Math.PI * radius;
-    const strokeDashoffset = circumference - (score / max) * circumference;
+    const strokeDashoffset = circumference - ((parseFloat(score) || 0) / max) * circumference;
 
     return (
       <div className="mad-gauge-mini">
@@ -335,18 +503,15 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
       <div className="mad-top-nav-bar">
         <div className="mad-breadcrumb">
           <button className="mad-breadcrumb-back" onClick={onBack}>
-            <i className="fas fa-chevron-left"></i> Assessments
+            <i className="fas fa-chevron-left"></i> Assessments Hub
           </button>
           <span className="mad-breadcrumb-divider">/</span>
-          <span className="mad-breadcrumb-active">Assessment Details</span>
+          <span className="mad-breadcrumb-active">Scorecard Report</span>
         </div>
 
         <div className="mad-action-block">
-          <button className="mad-btn-secondary">
-            <i className="fas fa-download"></i> Download Report
-          </button>
-          <button className="mad-btn-icon-only">
-            <i className="fas fa-ellipsis-h"></i>
+          <button className="mad-btn-secondary" onClick={() => window.print()}>
+            <i className="fas fa-print"></i> Print Report
           </button>
         </div>
       </div>
@@ -366,8 +531,10 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
             </h1>
             <p className="mad-meta-text">
               <span className="mad-meta-pill">ID: {memberId}</span>
-              <span className="mad-meta-pill">{memberAge} yrs</span>
+              <span className="mad-meta-pill">{memberAge !== 'N/A' ? `${memberAge} yrs` : 'Age N/A'}</span>
               <span className="mad-meta-pill">{memberGender}</span>
+              <span className="mad-meta-pill">Height: {metrics ? (typeof metrics.heightCm === 'number' ? `${metrics.heightCm} cm` : metrics.heightCm) : 'N/A'}</span>
+              <span className="mad-meta-pill">Weight: {metrics ? (typeof metrics.weightKg === 'number' ? `${metrics.weightKg} kg` : metrics.weightKg) : 'N/A'}</span>
             </p>
             <p className="mad-meta-contact">
               <a href={`mailto:${memberEmail}`}><i className="far fa-envelope"></i> {memberEmail}</a>
@@ -376,67 +543,94 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
           </div>
         </div>
 
-        {/* Top Right Header Section: Dates and Overall Score */}
+        {/* Header Stats Section */}
         <div className="mad-header-stats">
           <div className="mad-header-info-list">
             <div>
-              <i className="far fa-calendar-alt"></i> <span>{latestAssess.date}</span>
+              <i className="far fa-calendar-alt"></i> <span>Date: {metrics ? metrics.date : 'N/A'}</span>
             </div>
             <div>
-              <i className="far fa-user"></i> <span>Coach: {latestAssess.trainer}</span>
+              <i className="far fa-user"></i> <span>Coach: {assignedTrainerName}</span>
             </div>
             <div>
-              <i className="fas fa-clipboard-list"></i> <span>Test 5 of 5</span>
+              <i className="fas fa-clipboard-list"></i> <span>Type: {metrics ? metrics.assessmentType : 'INITIAL'}</span>
             </div>
+            {metrics?.nextAssessmentDate && (
+              <div>
+                <i className="far fa-calendar-check"></i> <span>Next Due: {metrics.nextAssessmentDate}</span>
+              </div>
+            )}
           </div>
 
           <div className="mad-score-card-modern">
             <div className="mad-score-content">
               <span className="mad-score-label">Overall Score</span>
               <div className="mad-score-value">
-                {latestAssess.overallScore}<span>/100</span>
+                {metrics ? metrics.overallScore : '0'}<span>/100</span>
               </div>
-              <span className="mad-score-rating">{latestAssess.rating}</span>
+              <span className="mad-score-rating">{metrics ? metrics.overallRating : 'No Data'}</span>
             </div>
-            <MiniCircularGauge score={latestAssess.overallScore} max={100} />
+            <MiniCircularGauge score={metrics ? metrics.overallScore : 0} max={100} />
           </div>
         </div>
       </div>
 
-      {/* Modern Navigation tabs */}
+      {/* Navigation Tabs */}
       <div className="mad-tabs-container">
         <button
           className={`mad-tab-pill ${activeTab === 'details' ? 'active' : ''}`}
           onClick={() => setActiveTab('details')}
         >
-          <i className="fas fa-chart-pie"></i> Details
+          <i className="fas fa-chart-pie"></i> Details & Breakdown
         </button>
         <button
           className={`mad-tab-pill ${activeTab === 'history' ? 'active' : ''}`}
           onClick={() => setActiveTab('history')}
         >
-          <i className="fas fa-chart-line"></i> History & Progress
+          <i className="fas fa-chart-line"></i> History & Progress ({assessmentHistory.length})
         </button>
         <button
           className={`mad-tab-pill ${activeTab === 'parameters' ? 'active' : ''}`}
           onClick={() => setActiveTab('parameters')}
         >
-          <i className="fas fa-sliders-h"></i> Parameters
+          <i className="fas fa-sliders-h"></i> Database Parameters
         </button>
       </div>
 
-      {/* Tab 1: Assessment Details */}
-      {activeTab === 'details' && (
+      {/* Loading State */}
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: '2rem', marginBottom: '12px' }}></i>
+          <p style={{ margin: 0, fontSize: '0.95rem' }}>Loading fitness assessment scorecard details...</p>
+        </div>
+      )}
+
+      {/* Empty State when no assessments exist */}
+      {!loading && !selectedAssessment && (
+        <div style={{ textAlign: 'center', padding: '60px 20px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', margin: '20px 0' }}>
+          <i className="fas fa-clipboard-check" style={{ fontSize: '3rem', color: '#94a3b8', marginBottom: '16px' }}></i>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 8px 0', color: '#1e293b' }}>No Fitness Assessment Found</h3>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', maxWidth: '450px', margin: '0 auto 20px auto' }}>
+            There are currently no recorded fitness assessment details available for member <strong>{memberName}</strong>.
+          </p>
+          <button className="mad-btn-secondary" onClick={onBack}>
+            <i className="fas fa-arrow-left" style={{ marginRight: '6px' }}></i> Back to Assessment Hub
+          </button>
+        </div>
+      )}
+
+      {/* TAB 1: Assessment Details */}
+      {!loading && selectedAssessment && metrics && activeTab === 'details' && (
         <div className="mad-tab-content fade-in">
 
-          {/* Quick Score Overview Cards */}
+          {/* Quick Score Overview KPI Cards */}
           <div className="mad-kpi-grid">
             <div className="mad-kpi-card body_composition">
               <div className="mad-kpi-icon"><i className="fas fa-weight-hanging"></i></div>
               <div className="mad-kpi-info">
                 <span className="mad-kpi-title">Body Comp</span>
-                <div className="mad-kpi-score">40<span>/40</span></div>
-                <span className="mad-kpi-rating">Excellent</span>
+                <div className="mad-kpi-score">{metrics.bodyCompScore}<span>/40</span></div>
+                <span className="mad-kpi-rating">{metrics.bmiRating}</span>
               </div>
             </div>
 
@@ -444,8 +638,8 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
               <div className="mad-kpi-icon"><i className="fas fa-heartbeat"></i></div>
               <div className="mad-kpi-info">
                 <span className="mad-kpi-title">Vital Signs</span>
-                <div className="mad-kpi-score">16<span>/20</span></div>
-                <span className="mad-kpi-rating">Good</span>
+                <div className="mad-kpi-score">{metrics.vitalsScore}<span>/20</span></div>
+                <span className="mad-kpi-rating">{parseFloat(metrics.vitalsScore) >= 16 ? 'Excellent' : 'Normal'}</span>
               </div>
             </div>
 
@@ -453,8 +647,8 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
               <div className="mad-kpi-icon"><i className="fas fa-child"></i></div>
               <div className="mad-kpi-info">
                 <span className="mad-kpi-title">Flexibility</span>
-                <div className="mad-kpi-score">16<span>/20</span></div>
-                <span className="mad-kpi-rating">Good</span>
+                <div className="mad-kpi-score">{metrics.flexibilityScore}<span>/20</span></div>
+                <span className="mad-kpi-rating">{parseFloat(metrics.flexibilityScore) >= 14 ? 'Good' : 'Needs Work'}</span>
               </div>
             </div>
 
@@ -462,8 +656,8 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
               <div className="mad-kpi-icon"><i className="fas fa-ruler-horizontal"></i></div>
               <div className="mad-kpi-info">
                 <span className="mad-kpi-title">Measurements</span>
-                <div className="mad-kpi-score">9<span>/10</span></div>
-                <span className="mad-kpi-rating">Excellent</span>
+                <div className="mad-kpi-score">{metrics.bodyMeasurementScore}<span>/10</span></div>
+                <span className="mad-kpi-rating">{parseFloat(metrics.bodyMeasurementScore) >= 8 ? 'Optimal' : 'Average'}</span>
               </div>
             </div>
 
@@ -471,74 +665,102 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
               <div className="mad-kpi-icon"><i className="fas fa-user-check"></i></div>
               <div className="mad-kpi-info">
                 <span className="mad-kpi-title">Coach Rating</span>
-                <div className="mad-kpi-score">10<span>/10</span></div>
-                <span className="mad-kpi-rating">Excellent</span>
+                <div className="mad-kpi-score">{metrics.trainerScore}<span>/10</span></div>
+                <span className="mad-kpi-rating">{parseFloat(metrics.trainerScore) >= 8 ? 'Excellent' : 'Good'}</span>
               </div>
             </div>
           </div>
 
-          {/* 3-Column Card Grid Layout */}
+          {/* Detailed Scorecard Grid */}
           <div className="mad-grid-dashboard">
 
             {/* Card 1: Body Composition */}
             <div className="mad-modern-card">
               <div className="mad-card-header">
                 <h2 className="mad-card-title"><i className="fas fa-weight-hanging icon-green"></i> Body Composition</h2>
-                <span className="mad-card-score badge-green">40/40</span>
+                <span className="mad-card-score badge-green">{metrics.bodyCompScore}/40</span>
               </div>
+
               <div className="mad-stat-group">
                 <div className="mad-stat-row">
-                  <span className="mad-stat-name">BMI</span>
+                  <span className="mad-stat-name">Height & Weight</span>
                   <div className="mad-stat-value-group">
-                    <span className="mad-stat-val">{bodyCompDetails.bmi.value}</span>
-                    <span className="mad-stat-points">20 pts</span>
+                    <span className="mad-stat-val">
+                      {typeof metrics.heightCm === 'number' ? `${metrics.heightCm} cm` : metrics.heightCm} • {typeof metrics.weightKg === 'number' ? `${metrics.weightKg} kg` : metrics.weightKg}
+                    </span>
                   </div>
                 </div>
-                <div className="mad-stat-status"><i className="fas fa-check-circle"></i> Normal (18.5 - 24.9)</div>
               </div>
+
               <div className="mad-stat-group">
                 <div className="mad-stat-row">
-                  <span className="mad-stat-name">Body Fat %</span>
+                  <span className="mad-stat-name">BMI (Body Mass Index)</span>
                   <div className="mad-stat-value-group">
-                    <span className="mad-stat-val">{bodyCompDetails.bodyFat.value}%</span>
-                    <span className="mad-stat-points">20 pts</span>
+                    <span className="mad-stat-val">{metrics.bmi} <small>kg/m²</small></span>
+                    <span className="mad-stat-points">{metrics.bmiPoints} pts</span>
                   </div>
                 </div>
-                <div className="mad-stat-status"><i className="fas fa-check-circle"></i> Excellent (10 - 20%)</div>
+                <div className="mad-stat-status">
+                  <i className="fas fa-check-circle"></i> Rating: {metrics.bmiRating} (Target: 18.5 - 24.9)
+                </div>
               </div>
-              <div className="mad-advice-alert success">
-                <i className="fas fa-info-circle"></i> {bodyCompDetails.bmi.note}
+
+              <div className="mad-stat-group">
+                <div className="mad-stat-row">
+                  <span className="mad-stat-name">Body Fat Percentage</span>
+                  <div className="mad-stat-value-group">
+                    <span className="mad-stat-val">{metrics.bodyFat}%</span>
+                    <span className="mad-stat-points">{metrics.fatPoints} pts</span>
+                  </div>
+                </div>
+                <div className="mad-stat-status">
+                  <i className="fas fa-info-circle"></i> Ideal Baseline: {memberGender === 'Female' ? '21% - 25%' : '14% - 20%'}
+                </div>
               </div>
+
+              {metrics.muscleMass > 0 && (
+                <div className="mad-stat-group">
+                  <div className="mad-stat-row">
+                    <span className="mad-stat-name">Muscle Mass</span>
+                    <div className="mad-stat-value-group">
+                      <span className="mad-stat-val">{metrics.muscleMass} <small>kg</small></span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Card 2: Vital Signs */}
             <div className="mad-modern-card">
               <div className="mad-card-header">
                 <h2 className="mad-card-title"><i className="fas fa-heartbeat icon-blue"></i> Vital Signs</h2>
-                <span className="mad-card-score badge-blue">16/20</span>
+                <span className="mad-card-score badge-blue">{metrics.vitalsScore}/20</span>
               </div>
+
               <div className="mad-stat-group">
                 <div className="mad-stat-row">
                   <span className="mad-stat-name">Blood Pressure</span>
                   <div className="mad-stat-value-group">
-                    <span className="mad-stat-val">{vitalsDetails.bloodPressure.systolic}/{vitalsDetails.bloodPressure.diastolic} <small>mmHg</small></span>
-                    <span className="mad-stat-points">8 pts</span>
+                    <span className="mad-stat-val">{metrics.sys}/{metrics.dia} <small>mmHg</small></span>
+                    <span className="mad-stat-points">{metrics.bpPts} pts</span>
                   </div>
                 </div>
-                <div className="mad-stat-status"><i className="fas fa-check-circle"></i> Normal (90-120 / 60-80)</div>
+                <div className="mad-stat-status">
+                  <i className="fas fa-check-circle"></i> Standard Ideal: 120/80 mmHg
+                </div>
               </div>
+
               <div className="mad-stat-group">
                 <div className="mad-stat-row">
                   <span className="mad-stat-name">Resting Heart Rate</span>
                   <div className="mad-stat-value-group">
-                    <span className="mad-stat-val">{vitalsDetails.heartRate.value} <small>bpm</small></span>
-                    <span className="mad-stat-points">8 pts</span>
+                    <span className="mad-stat-val">{metrics.rhr} <small>bpm</small></span>
+                    <span className="mad-stat-points">{metrics.rhrPts} pts</span>
                   </div>
                 </div>
-                <div className="mad-stat-status"><i className="fas fa-check-circle"></i> Normal (60-80 bpm)</div>
-              </div>
-              <div className="mad-advice-alert info">
-                <i className="fas fa-heart"></i> {vitalsDetails.bloodPressure.note}
+                <div className="mad-stat-status">
+                  <i className="fas fa-heart"></i> RHR Benchmark: &le;60 (10 pts), 61-70 (8 pts), 71-80 (6 pts)
+                </div>
               </div>
             </div>
 
@@ -546,30 +768,29 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
             <div className="mad-modern-card">
               <div className="mad-card-header">
                 <h2 className="mad-card-title"><i className="fas fa-child icon-purple"></i> Flexibility</h2>
-                <span className="mad-card-score badge-purple">16/20</span>
+                <span className="mad-card-score badge-purple">{metrics.flexibilityScore}/20</span>
               </div>
+
               <div className="mad-stat-group">
                 <div className="mad-stat-row">
-                  <span className="mad-stat-name">Sit & Reach</span>
+                  <span className="mad-stat-name">Sit & Reach Test</span>
                   <div className="mad-stat-value-group">
-                    <span className="mad-stat-val">{flexibilityDetails.sitReach.value} <small>cm</small></span>
-                    <span className="mad-stat-points">8 pts</span>
+                    <span className="mad-stat-val">{metrics.sitReach} <small>cm</small></span>
+                    <span className="mad-stat-points">{metrics.sitPts} pts</span>
                   </div>
                 </div>
-                <div className="mad-stat-status"><i className="fas fa-check-circle"></i> Good</div>
+                <div className="mad-stat-status"><i className="fas fa-check-circle"></i> Target Max: 40 cm</div>
               </div>
+
               <div className="mad-stat-group">
                 <div className="mad-stat-row">
-                  <span className="mad-stat-name">Shoulder Flex</span>
+                  <span className="mad-stat-name">Shoulder Flexibility</span>
                   <div className="mad-stat-value-group">
-                    <span className="mad-stat-val">{flexibilityDetails.shoulder.value}</span>
-                    <span className="mad-stat-points">8 pts</span>
+                    <span className="mad-stat-val">{metrics.shFlex} <small>cm</small></span>
+                    <span className="mad-stat-points">{metrics.shPts} pts</span>
                   </div>
                 </div>
-                <div className="mad-stat-status"><i className="fas fa-check-circle"></i> Good</div>
-              </div>
-              <div className="mad-advice-alert purple">
-                <i className="fas fa-running"></i> {flexibilityDetails.sitReach.note}
+                <div className="mad-stat-status"><i className="fas fa-check-circle"></i> Target Max: 30 cm</div>
               </div>
             </div>
 
@@ -577,28 +798,26 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
             <div className="mad-modern-card">
               <div className="mad-card-header">
                 <h2 className="mad-card-title"><i className="fas fa-ruler-horizontal icon-warning"></i> Measurements</h2>
-                <span className="mad-card-score badge-warning">9/10</span>
-              </div>
-              <div className="mad-measurements-grid">
-                <div><span>Mid-Waist</span> <strong>{bodyMeasurementsDetails.midWaist} cm</strong></div>
-                <div><span>Lower-Waist</span> <strong>{bodyMeasurementsDetails.lowerWaist} cm</strong></div>
-                <div><span>Hip</span> <strong>{bodyMeasurementsDetails.hip} cm</strong></div>
-                <div><span>Chest</span> <strong>{bodyMeasurementsDetails.chest} cm</strong></div>
-                <div><span>Arm</span> <strong>{bodyMeasurementsDetails.arm} cm</strong></div>
-                <div><span>Thigh</span> <strong>{bodyMeasurementsDetails.thigh} cm</strong></div>
-                <div className="col-span-2"><span>Shoulder Width</span> <strong>{bodyMeasurementsDetails.shoulderWidth} cm</strong></div>
+                <span className="mad-card-score badge-warning">{metrics.bodyMeasurementScore}/10</span>
               </div>
 
-              <div className="mad-ratio-section">
+              <div className="mad-measurements-grid">
+                <div><span>Mid-Waist</span> <strong>{metrics.midWaist} cm</strong></div>
+                <div><span>Hip</span> <strong>{metrics.hip} cm</strong></div>
+                {metrics.lowerWaist > 0 && <div><span>Lower-Waist</span> <strong>{metrics.lowerWaist} cm</strong></div>}
+                {metrics.chest > 0 && <div><span>Chest</span> <strong>{metrics.chest} cm</strong></div>}
+                {metrics.arm > 0 && <div><span>Arm</span> <strong>{metrics.arm} cm</strong></div>}
+                {metrics.thigh > 0 && <div><span>Thigh</span> <strong>{metrics.thigh} cm</strong></div>}
+                {metrics.shoulderWidth > 0 && <div className="col-span-2"><span>Shoulder Width</span> <strong>{metrics.shoulderWidth} cm</strong></div>}
+              </div>
+
+              <div className="mad-ratio-section" style={{ marginTop: '12px' }}>
                 <div className="mad-stat-row">
-                  <span className="mad-stat-name">W/H Ratio</span>
+                  <span className="mad-stat-name">Waist-to-Hip Ratio (WHR)</span>
                   <div className="mad-stat-value-group">
-                    <span className="mad-stat-val">{bodyMeasurementsDetails.ratio}</span>
-                    <span className="mad-stat-points">10 pts</span>
+                    <span className="mad-stat-val">{metrics.whr}</span>
+                    <span className="mad-stat-points">{metrics.whrPts} pts</span>
                   </div>
-                </div>
-                <div className="mad-progress-track">
-                  <div className="mad-progress-fill success" style={{ width: '40%' }}></div>
                 </div>
               </div>
             </div>
@@ -609,323 +828,223 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
                 <h2 className="mad-card-title"><i className="fas fa-notes-medical icon-danger"></i> Health History</h2>
               </div>
               <div className="mad-history-list">
-                <div className="mad-history-item">
-                  <span>Major Health Issues</span>
-                  <div className="mad-history-badge">
-                    {healthHistoryDetails.majorIssues} <i className="fas fa-check-circle"></i>
-                  </div>
+                <div className="mad-history-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#475569' }}>Major Health Issues</span>
+                  <strong style={{ fontSize: '0.85rem', color: metrics.majorHealthIssues === 'None Reported' ? '#059669' : '#dc2626' }}>
+                    {metrics.majorHealthIssues}
+                  </strong>
                 </div>
-                <div className="mad-history-item">
-                  <span>Recent Surgery</span>
-                  <div className="mad-history-badge">
-                    {healthHistoryDetails.recentSurgery} <i className="fas fa-check-circle"></i>
-                  </div>
+                <div className="mad-history-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#475569' }}>Recent Surgery</span>
+                  <strong style={{ fontSize: '0.85rem', color: metrics.recentSurgery === 'None Reported' ? '#059669' : '#dc2626' }}>
+                    {metrics.recentSurgery}
+                  </strong>
                 </div>
               </div>
-              <div className="mad-advice-alert success push-bottom">
-                <i className="fas fa-shield-check"></i> {healthHistoryDetails.note}
+              <div className="mad-advice-alert info push-bottom" style={{ marginTop: '10px' }}>
+                <i className="fas fa-shield-alt" style={{ marginRight: '6px' }}></i>
+                {metrics.majorHealthIssues === 'None Reported' && metrics.recentSurgery === 'None Reported'
+                  ? 'No major health risks or surgical contraindications reported.'
+                  : 'Please consider medical background when assigning workout intensity.'}
               </div>
             </div>
 
-            {/* Card 6: Fitness Scores List */}
+            {/* Card 6: Score Breakdown Summary */}
             <div className="mad-modern-card">
               <div className="mad-card-header">
                 <h2 className="mad-card-title"><i className="fas fa-chart-line icon-accent"></i> Score Breakdown</h2>
                 <span className="mad-card-score badge-neutral">100 Total</span>
               </div>
+
               <div className="mad-score-breakdown">
-                <div className="mad-score-row"><span>Body Composition</span> <strong>40/40</strong></div>
-                <div className="mad-score-row"><span>Vital Signs</span> <strong>16/20</strong></div>
-                <div className="mad-score-row"><span>Flexibility</span> <strong>16/20</strong></div>
-                <div className="mad-score-row"><span>Body Measurement</span> <strong>9/10</strong></div>
-                <div className="mad-score-row"><span>Trainer Assessment</span> <strong>10/10</strong></div>
+                <div className="mad-score-row"><span>Body Composition</span> <strong>{metrics.bodyCompScore} / 40</strong></div>
+                <div className="mad-score-row"><span>Vital Signs</span> <strong>{metrics.vitalsScore} / 20</strong></div>
+                <div className="mad-score-row"><span>Flexibility</span> <strong>{metrics.flexibilityScore} / 20</strong></div>
+                <div className="mad-score-row"><span>Body Measurement</span> <strong>{metrics.bodyMeasurementScore} / 10</strong></div>
+                <div className="mad-score-row"><span>Trainer Rating</span> <strong>{metrics.trainerScore} / 10</strong></div>
                 <div className="mad-score-row total">
                   <span>Overall Fitness Score</span>
-                  <strong>85/100</strong>
+                  <strong>{metrics.overallScore} / 100</strong>
                 </div>
               </div>
             </div>
 
-            {/* Card 7: Trainer Assessment */}
+            {/* Card 7: Coach Assessment & Comments */}
             <div className="mad-modern-card">
               <div className="mad-card-header">
-                <h2 className="mad-card-title"><i className="fas fa-user-check icon-teal"></i> Coach Assessment</h2>
-                <span className="mad-card-score badge-teal">10/10</span>
+                <h2 className="mad-card-title"><i className="fas fa-user-check icon-teal"></i> Coach Evaluation</h2>
+                <span className="mad-card-score badge-teal">{metrics.trainerScore}/10</span>
               </div>
-              <div className="mad-coach-grid">
-                <div className="mad-coach-metric"><span>Posture</span> <strong>{trainerAssessmentDetails.posture}</strong></div>
-                <div className="mad-coach-metric"><span>Mobility</span> <strong>{trainerAssessmentDetails.mobility}</strong></div>
-                <div className="mad-coach-metric col-span-2"><span>Observation</span> <strong>{trainerAssessmentDetails.observation}</strong></div>
-              </div>
-              <div className="mad-advice-alert teal push-bottom">
-                <i className="fas fa-quote-left"></i> "{trainerAssessmentDetails.comment}"
+
+              <div className="mad-advice-alert teal push-bottom" style={{ marginTop: '10px' }}>
+                <i className="fas fa-quote-left" style={{ marginRight: '6px' }}></i> "{metrics.trainerComments}"
               </div>
             </div>
 
-            {/* Card 8: Photos Card */}
-            <div className="mad-modern-card col-span-2">
-              <div className="mad-card-header">
-                <h2 className="mad-card-title"><i className="fas fa-camera icon-blue"></i> Progress Gallery</h2>
-              </div>
-              <div className="mad-gallery-scroll">
-                {bodyPhotos.map((photo, i) => (
-                  <div className="mad-gallery-item" key={i}>
-                    <img src={photo.url} alt={photo.label} loading="lazy" />
-                    <div className="mad-gallery-overlay"><span>{photo.label}</span></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Card 9: Assessment Timeline Stepper */}
-            <div className="mad-modern-card col-span-2">
-              <div className="mad-card-header">
-                <h2 className="mad-card-title"><i className="fas fa-history icon-purple"></i> Timeline</h2>
-              </div>
-              <div className="mad-timeline-modern">
-                <div className="mad-timeline-line"></div>
-                {assessmentHistory.slice().reverse().map((step) => {
-                  let statusTheme = 'danger';
-                  if (step.overallScore >= 80) statusTheme = 'success';
-                  else if (step.overallScore >= 60) statusTheme = 'info';
-                  else if (step.overallScore >= 50) statusTheme = 'warning';
-
-                  return (
-                    <div className="mad-timeline-node-wrapper" key={step.id}>
-                      <span className="mad-t-date">{step.date.split(',')[0]}</span>
-                      <div className={`mad-t-node ${statusTheme}`}></div>
-                      <span className="mad-t-score">{step.overallScore}</span>
-                      <span className="mad-t-rating">{step.rating}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Card 10: Score Progress & Mini Trend Chart */}
-            <div className="mad-modern-card accent-glow">
-              <div className="mad-card-header">
-                <h2 className="mad-card-title">Trend Snapshot</h2>
-              </div>
-              <div className="mad-snapshot-flex">
-                <div className="mad-snapshot-data">
-                  <span className="mad-snap-val">+{latestAssess.overallScore - assessmentHistory[4].overallScore}</span>
-                  <span className="mad-snap-lbl">Points Gained</span>
+            {/* Card 8: Progress Photos (if uploaded) */}
+            {bodyPhotos.length > 0 && (
+              <div className="mad-modern-card col-span-2">
+                <div className="mad-card-header">
+                  <h2 className="mad-card-title"><i className="fas fa-camera icon-blue"></i> Progress Gallery</h2>
                 </div>
+                <div className="mad-gallery-scroll">
+                  {bodyPhotos.map((photo, i) => (
+                    <div className="mad-gallery-item" key={i}>
+                      <img src={photo.url} alt={photo.label} loading="lazy" />
+                      <div className="mad-gallery-overlay"><span>{photo.label}</span></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-                {/* Modern Mini Area Chart */}
-                <div className="mad-mini-chart">
-                  <svg viewBox="0 0 100 60" width="100%" height="100%">
-                    <defs>
-                      <linearGradient id="miniArea" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--accent-success)" stopOpacity="0.4" />
-                        <stop offset="100%" stopColor="var(--accent-success)" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: Assessment History & Progress */}
+      {!loading && activeTab === 'history' && (
+        <div className="mad-tab-content fade-in">
+
+          {/* History KPIs */}
+          <div className="mad-history-kpis">
+            <div className="mad-hkpi-card">
+              <span className="mad-hkpi-lbl">Total Growth</span>
+              <div className="mad-hkpi-val text-success">{historyKPIs.totalGrowth} <small>pts</small></div>
+            </div>
+            <div className="mad-hkpi-card">
+              <span className="mad-hkpi-lbl">Peak Score</span>
+              <div className="mad-hkpi-val text-accent">{historyKPIs.peakScore} / 100</div>
+            </div>
+            <div className="mad-hkpi-card">
+              <span className="mad-hkpi-lbl">Average Score</span>
+              <div className="mad-hkpi-val">{historyKPIs.avgScore} / 100</div>
+            </div>
+            <div className="mad-hkpi-card">
+              <span className="mad-hkpi-lbl">Recorded Assessments</span>
+              <div className="mad-hkpi-val">{historyKPIs.count}</div>
+            </div>
+          </div>
+
+          {/* Dynamic SVG Trajectory Chart */}
+          {sortedHistory.length > 0 && (
+            <div className="mad-modern-card" style={{ marginBottom: '20px' }}>
+              <div className="mad-card-header">
+                <div>
+                  <h3 className="mad-chart-title">Overall Score Trajectory</h3>
+                  <p className="mad-chart-subtitle">Historical Progression for {memberName}</p>
+                </div>
+              </div>
+
+              <div className="mad-chart-canvas">
+                <svg viewBox="0 0 500 200" width="100%" height="100%">
+                  <defs>
+                    <linearGradient id="mainGlow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--accent-success)" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="var(--accent-success)" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Grid Lines */}
+                  <line x1="40" y1="30" x2="480" y2="30" stroke="var(--border-light)" strokeDasharray="4 4" />
+                  <line x1="40" y1="95" x2="480" y2="95" stroke="var(--border-light)" strokeDasharray="4 4" />
+                  <line x1="40" y1="160" x2="480" y2="160" stroke="var(--border-solid)" strokeWidth="1" />
+
+                  <text x="30" y="34" fill="var(--text-muted)" fontSize="10" textAnchor="end">100</text>
+                  <text x="30" y="99" fill="var(--text-muted)" fontSize="10" textAnchor="end">50</text>
+                  <text x="30" y="164" fill="var(--text-muted)" fontSize="10" textAnchor="end">0</text>
+
+                  {/* Dynamic Area Fill */}
+                  {svgTrajectory.areaD && (
+                    <path d={svgTrajectory.areaD} fill="url(#mainGlow)" />
+                  )}
+
+                  {/* Dynamic Line */}
+                  {svgTrajectory.pathD && (
                     <path
-                      d="M 5 50 L 28 41 L 51 37 L 74 27 L 95 20 L 95 60 L 5 60 Z"
-                      fill="url(#miniArea)"
-                    />
-                    <path
-                      d="M 5 50 L 28 41 L 51 37 L 74 27 L 95 20"
+                      d={svgTrajectory.pathD}
                       fill="none"
                       stroke="var(--accent-success)"
                       strokeWidth="3"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
-                    <circle cx="95" cy="20" r="4" fill="var(--bg-card)" stroke="var(--accent-success)" strokeWidth="2" />
-                  </svg>
-                </div>
-              </div>
-            </div>
+                  )}
 
-          </div>
-
-          {/* Footer Metadata stats bar */}
-          <div className="mad-footer-stats">
-            <div className="mad-f-items">
-              <span className="mad-f-tag"><i className="fas fa-list"></i> 33 Params</span>
-              <span className="mad-f-tag success"><i className="fas fa-check-double"></i> 19 Required</span>
-              <span className="mad-f-tag"><i className="fas fa-check-circle"></i> 31 Completed</span>
-              <span className="mad-f-tag info"><i className="fas fa-robot"></i> 2 Auto-calc</span>
-            </div>
-            <div className="mad-f-note">Scores mapped to most recent test data.</div>
-          </div>
-        </div>
-      )}
-
-      {/* Tab 2: Assessment History & Progress */}
-      {activeTab === 'history' && (
-        <div className="mad-tab-content fade-in">
-
-          {/* Progress KPI Summaries */}
-          <div className="mad-history-kpis">
-            <div className="mad-hkpi-card">
-              <span className="mad-hkpi-lbl">Total Growth</span>
-              <div className="mad-hkpi-val text-success">+20 <small>pts</small></div>
-            </div>
-            <div className="mad-hkpi-card">
-              <span className="mad-hkpi-lbl">Peak Score</span>
-              <div className="mad-hkpi-val text-accent">85/100</div>
-            </div>
-            <div className="mad-hkpi-card">
-              <span className="mad-hkpi-lbl">Average Score</span>
-              <div className="mad-hkpi-val">72/100</div>
-            </div>
-            <div className="mad-hkpi-card">
-              <span className="mad-hkpi-lbl">Total Tests</span>
-              <div className="mad-hkpi-val">5</div>
-            </div>
-          </div>
-
-          <div className="mad-charts-layout">
-            {/* Chart 1: Overall Score Trend with Area Fill */}
-            <div className="mad-modern-card">
-              <div className="mad-card-header">
-                <div>
-                  <h3 className="mad-chart-title">Growth Trajectory</h3>
-                  <p className="mad-chart-subtitle">Dec 2023 - May 2024</p>
-                </div>
-              </div>
-              <div className="mad-chart-canvas">
-                <svg viewBox="0 0 500 200" width="100%" height="100%">
-                  <defs>
-                    <linearGradient id="mainGlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--accent-success)" stopOpacity="0.2" />
-                      <stop offset="100%" stopColor="var(--accent-success)" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Grid Lines */}
-                  <line x1="40" y1="20" x2="480" y2="20" stroke="var(--border-light)" strokeDasharray="4 4" />
-                  <line x1="40" y1="80" x2="480" y2="80" stroke="var(--border-light)" strokeDasharray="4 4" />
-                  <line x1="40" y1="140" x2="480" y2="140" stroke="var(--border-light)" strokeDasharray="4 4" />
-                  <line x1="40" y1="170" x2="480" y2="170" stroke="var(--border-solid)" strokeWidth="1" />
-
-                  <text x="30" y="24" fill="var(--text-muted)" fontSize="10" textAnchor="end">100</text>
-                  <text x="30" y="84" fill="var(--text-muted)" fontSize="10" textAnchor="end">60</text>
-                  <text x="30" y="144" fill="var(--text-muted)" fontSize="10" textAnchor="end">30</text>
-
-                  {/* Area Fill */}
-                  <path
-                    d="M 60 102.5 L 160 83 L 260 72.5 L 360 53 L 460 42.5 L 460 170 L 60 170 Z"
-                    fill="url(#mainGlow)"
-                  />
-
-                  {/* Line */}
-                  <path
-                    d="M 60 102.5 L 160 83 L 260 72.5 L 360 53 L 460 42.5"
-                    fill="none"
-                    stroke="var(--accent-success)"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-
-                  {/* Nodes */}
-                  <circle cx="60" cy="102.5" r="4" fill="var(--bg-card)" stroke="var(--accent-success)" strokeWidth="2" />
-                  <circle cx="160" cy="83" r="4" fill="var(--bg-card)" stroke="var(--accent-success)" strokeWidth="2" />
-                  <circle cx="260" cy="72.5" r="4" fill="var(--bg-card)" stroke="var(--accent-success)" strokeWidth="2" />
-                  <circle cx="360" cy="53" r="4" fill="var(--bg-card)" stroke="var(--accent-success)" strokeWidth="2" />
-                  <circle cx="460" cy="42.5" r="5" fill="var(--accent-success)" stroke="var(--bg-card)" strokeWidth="2" />
-
-                  {/* Node Labels */}
-                  <text x="60" y="90" fill="var(--text-main)" fontSize="10" fontWeight="600" textAnchor="middle">45</text>
-                  <text x="160" y="70" fill="var(--text-main)" fontSize="10" fontWeight="600" textAnchor="middle">58</text>
-                  <text x="260" y="60" fill="var(--text-main)" fontSize="10" fontWeight="600" textAnchor="middle">65</text>
-                  <text x="360" y="40" fill="var(--text-main)" fontSize="10" fontWeight="600" textAnchor="middle">78</text>
-                  <text x="460" y="28" fill="var(--accent-success)" fontSize="11" fontWeight="bold" textAnchor="middle">85</text>
-
-                  {/* Axis Labels */}
-                  <text x="60" y="190" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Dec</text>
-                  <text x="160" y="190" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Jan</text>
-                  <text x="260" y="190" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Mar</text>
-                  <text x="360" y="190" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Apr</text>
-                  <text x="460" y="190" fill="var(--text-main)" fontSize="10" fontWeight="600" textAnchor="middle">May</text>
+                  {/* Dynamic Nodes & Labels */}
+                  {svgTrajectory.points.map((p) => (
+                    <g key={p.id || p.x} onClick={() => handleSelectAssessment(p.id)} style={{ cursor: 'pointer' }}>
+                      <circle cx={p.x} cy={p.y} r="5" fill="var(--accent-success)" stroke="#ffffff" strokeWidth="2" />
+                      <text x={p.x} y={p.y - 10} fill="var(--text-main)" fontSize="11" fontWeight="bold" textAnchor="middle">{p.score}</text>
+                      <text x={p.x} y="180" fill="var(--text-muted)" fontSize="9" textAnchor="middle">{p.date}</text>
+                    </g>
+                  ))}
                 </svg>
               </div>
             </div>
+          )}
 
-            {/* Chart 2: Category Trend */}
-            <div className="mad-modern-card">
-              <div className="mad-card-header col-layout">
-                <h3 className="mad-chart-title">Category Breakdown</h3>
-                <div className="mad-chart-legend">
-                  <span className="lg-dot green">Body</span>
-                  <span className="lg-dot blue">Vitals</span>
-                  <span className="lg-dot purple">Flex</span>
-                  <span className="lg-dot warning">Meas.</span>
-                  <span className="lg-dot teal">Coach</span>
-                </div>
-              </div>
-              <div className="mad-chart-canvas">
-                <svg viewBox="0 0 500 200" width="100%" height="100%">
-                  <line x1="40" y1="20" x2="480" y2="20" stroke="var(--border-light)" strokeDasharray="4 4" />
-                  <line x1="40" y1="90" x2="480" y2="90" stroke="var(--border-light)" strokeDasharray="4 4" />
-                  <line x1="40" y1="160" x2="480" y2="160" stroke="var(--border-solid)" strokeWidth="1" />
-
-                  <path d="M 60 83 L 160 69 L 260 62 L 360 41 L 460 20" fill="none" stroke="var(--accent-success)" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M 60 76 L 160 62 L 260 48 L 360 34 L 460 20" fill="none" stroke="var(--accent-info)" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M 60 104 L 160 90 L 260 76 L 360 62 L 460 48" fill="none" stroke="var(--accent-purple)" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M 60 76 L 160 62 L 260 48 L 360 34 L 460 34" fill="none" stroke="var(--accent-warning)" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M 60 62 L 160 48 L 260 34 L 360 34 L 460 20" fill="none" stroke="var(--accent-teal)" strokeWidth="2.5" strokeLinecap="round" />
-
-                  <text x="60" y="185" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Dec</text>
-                  <text x="160" y="185" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Jan</text>
-                  <text x="260" y="185" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Mar</text>
-                  <text x="360" y="185" fill="var(--text-muted)" fontSize="10" textAnchor="middle">Apr</text>
-                  <text x="460" y="185" fill="var(--text-main)" fontSize="10" fontWeight="600" textAnchor="middle">May</text>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          {/* Assessment History Table */}
+          {/* Assessment History Records Table */}
           <div className="mad-modern-card no-pad">
             <div className="mad-card-header pad-xy">
-              <h3 className="mad-table-title">Assessment Records</h3>
+              <h3 className="mad-table-title">Assessment History Log</h3>
             </div>
+
             <div className="mad-table-responsive">
               <table className="mad-modern-table">
                 <thead>
                   <tr>
-                    <th>Date & Time</th>
-                    <th>Score</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Overall Score</th>
                     <th>Rating</th>
-                    <th>Change</th>
-                    <th>Trainer</th>
                     <th className="text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {assessmentHistory.map((item, idx) => (
-                    <tr key={item.id}>
-                      <td>
-                        <div className="td-date-stack">
-                          <span className="dt">{item.date}</span>
-                          <span className="tm">{item.time}</span>
-                        </div>
-                        {idx === 0 && <span className="mad-badge-pill new">Current</span>}
-                      </td>
-                      <td><span className="mad-score-chip">{item.overallScore}/100</span></td>
-                      <td><span className="mad-text-rating">{item.rating}</span></td>
-                      <td>
-                        {item.improvement === '-' ? (
-                          <span className="text-muted">-</span>
-                        ) : (
-                          <span className={`mad-trend-pill ${item.isUp ? 'up' : 'down'}`}>
-                            <i className={`fas ${item.isUp ? 'fa-arrow-up' : 'fa-arrow-down'}`}></i> {item.improvement}
-                          </span>
-                        )}
-                      </td>
-                      <td>{item.trainer}</td>
-                      <td className="text-right">
-                        <button className="mad-action-btn" onClick={() => setActiveTab('details')}><i className="far fa-eye"></i></button>
-                        <button className="mad-action-btn"><i className="fas fa-download"></i></button>
+                  {sortedHistory.length > 0 ? (
+                    sortedHistory.map((item) => {
+                      const score = parseFloat(item.overall_fitness_score) || 0;
+                      const isSelected = String(item.assessment_id) === String(selectedAssessmentId);
+
+                      return (
+                        <tr key={item.assessment_id} style={{ background: isSelected ? 'rgba(79, 70, 229, 0.06)' : 'transparent' }}>
+                          <td>
+                            <div className="td-date-stack">
+                              <span className="dt">{item.assessment_date || 'N/A'}</span>
+                            </div>
+                            {isSelected && <span className="mad-badge-pill new">Viewing</span>}
+                          </td>
+                          <td>
+                            <span className="pt-badge" style={{ background: '#e0e7ff', color: '#4338ca', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '6px' }}>
+                              {item.assessment_type || 'INITIAL'}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="mad-score-chip">{score.toFixed(1)} / 100</span>
+                          </td>
+                          <td>
+                            <span className="mad-text-rating">{score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : 'Needs Improvement'}</span>
+                          </td>
+                          <td className="text-right">
+                            <button
+                              className="mad-action-btn"
+                              title="View Assessment Scorecard"
+                              onClick={() => handleSelectAssessment(item.assessment_id)}
+                            >
+                              <i className="far fa-eye"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: '#64748b', fontStyle: 'italic' }}>
+                        No historical assessment records available.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -934,17 +1053,14 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
         </div>
       )}
 
-      {/* Tab 3: Parameters */}
+      {/* TAB 3: Database Parameters */}
       {activeTab === 'parameters' && (
         <div className="mad-tab-content fade-in">
           <div className="mad-param-header">
             <div>
-              <h2 className="mad-page-title">System Parameters</h2>
-              <p className="mad-page-subtitle">Database schema configuration & mapped fields</p>
+              <h2 className="mad-page-title">Database Schema Parameters</h2>
+              <p className="mad-page-subtitle">33 physical fitness indicators & normalization fields defined in backend schema</p>
             </div>
-            <button className="mad-btn-secondary">
-              <i className="fas fa-code"></i> View Schema
-            </button>
           </div>
 
           <div className="mad-params-masonry">
@@ -959,6 +1075,7 @@ const MemberAssessmentDashboard = ({ member, onBack, isAdmin = false }) => {
                     <p className="mad-param-cat-sub">{cat.subtitle}</p>
                   </div>
                 </div>
+
                 <div className="mad-table-responsive param">
                   <table className="mad-modern-table condensed">
                     <thead>
