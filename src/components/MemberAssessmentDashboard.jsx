@@ -497,6 +497,13 @@ const MemberAssessmentDashboard = ({ member, initialAssessmentId = null, onBack,
     );
   };
 
+  const handlePrint = () => {
+    setActiveTab('details');
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  };
+
   return (
     <div className={`mad-dashboard-wrapper ${isAdmin ? 'mad-light-theme' : 'mad-dark-theme'}`}>
       {/* Breadcrumb Navigation Bar */}
@@ -510,7 +517,7 @@ const MemberAssessmentDashboard = ({ member, initialAssessmentId = null, onBack,
         </div>
 
         <div className="mad-action-block">
-          <button className="mad-btn-secondary" onClick={() => window.print()}>
+          <button className="mad-btn-secondary" onClick={handlePrint}>
             <i className="fas fa-print"></i> Print Report
           </button>
         </div>
