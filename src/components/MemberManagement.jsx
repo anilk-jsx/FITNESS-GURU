@@ -1847,8 +1847,8 @@ const MemberManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredMembers.map((member) => (
-                  <tr key={member.user_id}>
+                {filteredMembers.map((member, index) => (
+                  <tr key={`member-${member.user_id || 'idx'}-${member.registration_number || member.subscription_id || index}-${index}`}>
                     <td className="member-reg-cell" style={{ fontWeight: 600, color: '#ff6b35' }}>
                       {member.registration_number ? `#${member.registration_number}` : "N/A"}
                     </td>
