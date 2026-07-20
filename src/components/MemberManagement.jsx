@@ -42,11 +42,6 @@ const MemberManagement = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-  });
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -418,8 +413,6 @@ const MemberManagement = () => {
     try {
       const queryParams = new URLSearchParams({
         role: filters.role,
-        page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
       });
 
       // Add optional filters if they exist
@@ -446,10 +439,6 @@ const MemberManagement = () => {
       if (data.status === "success") {
         const memberList = data.data || data.users || [];
         setMembers(memberList);
-        setPagination((prev) => ({
-          ...prev,
-          total: data.count !== undefined ? data.count : (data.meta?.total || data.total || memberList.length),
-        }));
       } else {
         throw new Error(data.message || "Failed to fetch members");
       }
@@ -461,29 +450,10 @@ const MemberManagement = () => {
     }
   };
 
-  // Ref to track previous search query
-  const prevSearchRef = React.useRef("");
-
-  // Effect to handle search query changes and fetch all members for global search
-  useEffect(() => {
-    const searchChanged = prevSearchRef.current !== searchQuery;
-    prevSearchRef.current = searchQuery;
-
-    if (searchChanged) {
-      if (searchQuery.trim() !== "") {
-        // Search activated - fetch all members by setting high limit and page 1
-        setPagination((prev) => ({ ...prev, page: 1, limit: 9999 }));
-      } else {
-        // Search cleared - reset to default pagination (10 per page, page 1)
-        setPagination((prev) => ({ ...prev, page: 1, limit: 10 }));
-      }
-    }
-  }, [searchQuery]);
-
-  // Effect to fetch members when filters/pagination change
+  // Effect to fetch members when filters change
   useEffect(() => {
     fetchMembers();
-  }, [filters, pagination.page, pagination.limit]);
+  }, [filters]);
 
   // Effect to fetch dropdown data on component mount
   useEffect(() => {
@@ -561,23 +531,6 @@ const MemberManagement = () => {
       ...prev,
       [filterName]: value,
     }));
-    // Reset to first page when filters change
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
-
-  // Handle pagination changes
-  const handlePageChange = (newPage) => {
-    setPagination((prev) => ({ ...prev, page: newPage }));
-  };
-
-  // Handle limit changes
-  const handleLimitChange = (newLimit) => {
-    let actualLimit = newLimit;
-    // If "ALL" is selected (represented as string), use total or large number
-    if (newLimit === "ALL") {
-      actualLimit = pagination.total || 99999;
-    }
-    setPagination((prev) => ({ ...prev, limit: actualLimit, page: 1 }));
   };
 
   // Return members matching search query
@@ -592,9 +545,6 @@ const MemberManagement = () => {
       member.registration_number?.toString().includes(searchQuery)
     );
   });
-
-  // Calculate total pages
-  const totalPages = Math.ceil(pagination.total / pagination.limit);
 
   // Fetch detailed member information
   const fetchMemberDetails = async (userId) => {
@@ -1706,7 +1656,7 @@ const MemberManagement = () => {
           <i className="fas fa-users"></i>
           <span>
             TOTAL MEMBERS
-            <strong>{pagination.total}</strong>
+            <strong>{members.length}</strong>
           </span>
         </div>
         <div className="member-stat-item">
@@ -1837,64 +1787,6 @@ const MemberManagement = () => {
             )}
           </div>
         )}
-      </div>
-
-      <div className="member-pagination">
-        <div className="member-pagination-info">
-          <span>
-            Showing {filteredMembers.length} of {pagination.total} members (Page{" "}
-            {pagination.page} of {totalPages})
-          </span>
-        </div>
-
-        <div className="member-pagination-controls">
-          <select
-            className="member-pagination-limit"
-            value={pagination.limit >= pagination.total && pagination.total > 0 ? "ALL" : pagination.limit}
-            onChange={(e) => handleLimitChange(e.target.value === "ALL" ? "ALL" : parseInt(e.target.value))}
-          >
-            <option value={10}>10 per page</option>
-            <option value={50}>50 per page</option>
-            <option value={100}>100 per page</option>
-            <option value="ALL">ALL</option>
-          </select>
-
-          <button
-            className="member-pagination-btn"
-            onClick={() => handlePageChange(1)}
-            disabled={pagination.page === 1}
-          >
-            <i className="fas fa-angle-double-left"></i>
-          </button>
-
-          <button
-            className="member-pagination-btn"
-            onClick={() => handlePageChange(pagination.page - 1)}
-            disabled={pagination.page === 1}
-          >
-            <i className="fas fa-angle-left"></i>
-          </button>
-
-          <span className="member-pagination-current">
-            Page {pagination.page}
-          </span>
-
-          <button
-            className="member-pagination-btn"
-            onClick={() => handlePageChange(pagination.page + 1)}
-            disabled={pagination.page >= totalPages}
-          >
-            <i className="fas fa-angle-right"></i>
-          </button>
-
-          <button
-            className="member-pagination-btn"
-            onClick={() => handlePageChange(totalPages)}
-            disabled={pagination.page >= totalPages}
-          >
-            <i className="fas fa-angle-double-right"></i>
-          </button>
-        </div>
       </div>
 
       {/* Member Profile Modal */}
