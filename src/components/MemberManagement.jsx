@@ -1705,19 +1705,21 @@ const MemberManagement = () => {
         <div className="member-stat-item">
           <i className="fas fa-users"></i>
           <span>
-            Total: <strong>{pagination.total}</strong>
+            TOTAL MEMBERS
+            <strong>{pagination.total}</strong>
           </span>
         </div>
         <div className="member-stat-item">
           <i className="fas fa-search"></i>
           <span>
-            Found: <strong>{filteredMembers.length}</strong>
+            FOUND RECORDS
+            <strong>{filteredMembers.length}</strong>
           </span>
         </div>
         <div className="member-stat-item">
           <i className="fas fa-check-circle"></i>
           <span>
-            Active:{" "}
+            ACTIVE MEMBERS
             <strong>
               {members.filter((m) => isActiveStatus(m.status)).length}
             </strong>
@@ -1770,7 +1772,7 @@ const MemberManagement = () => {
               <tbody>
                 {filteredMembers.map((member, index) => (
                   <tr key={`member-${member.user_id || 'idx'}-${member.registration_number || member.subscription_id || index}-${index}`}>
-                    <td className="member-reg-cell" style={{ fontWeight: 600, color: '#ff6b35' }}>
+                    <td className="member-reg-cell">
                       {member.registration_number ? `#${member.registration_number}` : "N/A"}
                     </td>
                     <td className="member-id-cell">#{member.user_id}</td>
@@ -1781,7 +1783,7 @@ const MemberManagement = () => {
                     <td>
                       <div className="member-contact-info">
                         <div>{member.email}</div>
-                        <small style={{ color: '#7f8c8d' }}>{member.phone}</small>
+                        <small>{member.phone}</small>
                       </div>
                     </td>
                     <td>{member.plan_name || (member.membership_plan ? `Plan #${member.membership_plan}` : "N/A")}</td>
