@@ -895,3 +895,143 @@
     background-position: -200% 0;
   }
 }
+
+/* ==========================================
+   Toast Notification Styling
+   ========================================== */
+.fg-toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+  max-width: 420px;
+  width: calc(100% - 48px);
+}
+
+.fg-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  animation: fgToastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.fg-toast::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+}
+
+.fg-toast-success::before {
+  background: linear-gradient(180deg, #10b981, #059669);
+}
+
+.fg-toast-error::before {
+  background: linear-gradient(180deg, #ef4444, #dc2626);
+}
+
+.fg-toast-warning::before {
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+}
+
+.fg-toast-info::before {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+}
+
+.fg-toast-icon {
+  font-size: 1.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.fg-toast-success .fg-toast-icon {
+  color: #10b981;
+}
+
+.fg-toast-error .fg-toast-icon {
+  color: #ef4444;
+}
+
+.fg-toast-warning .fg-toast-icon {
+  color: #f59e0b;
+}
+
+.fg-toast-info .fg-toast-icon {
+  color: #3b82f6;
+}
+
+.fg-toast-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.fg-toast-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  margin: 0 0 3px 0;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+}
+
+.fg-toast-message {
+  font-size: 0.84rem;
+  color: #cbd5e1;
+  margin: 0;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.fg-toast-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  margin-top: -2px;
+  margin-right: -4px;
+}
+
+.fg-toast-close:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+@keyframes fgToastSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
