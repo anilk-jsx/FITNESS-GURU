@@ -1035,3 +1035,27 @@
     transform: translateY(0) scale(1);
   }
 }
+
+/* ==========================================
+   Inline Validation & Warning Banner Styling
+   ========================================== */
+.validation-error-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #f59e0b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  animation: fgToastSlideIn 0.2s ease forwards;
+}
+
+.validation-error-message i {
+  font-size: 0.85rem;
+  color: #f59e0b;
+  flex-shrink: 0;
+}

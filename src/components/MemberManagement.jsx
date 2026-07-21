@@ -17,7 +17,7 @@ const MemberManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editFormData, setEditFormData] = useState(null);
-  
+
   // Tax Receipt display states
   const [activeInvoiceId, setActiveInvoiceId] = useState(null);
   const [showInvoice, setShowInvoice] = useState(false);
@@ -579,6 +579,85 @@ const MemberManagement = () => {
     }
   }, [showEditModal, cities.length]);
 
+  // Real-time duplicate registration number validation for Edit Modal
+  useEffect(() => {
+    if (showEditModal && editFormData) {
+      const regNum = editFormData.registration_number !== undefined && editFormData.registration_number !== null
+        ? editFormData.registration_number.toString().trim()
+        : "";
+      const currentUserId = editFormData.user_id !== undefined && editFormData.user_id !== null
+        ? editFormData.user_id.toString().trim()
+        : "";
+
+      if (regNum) {
+        const duplicate = members.find((m) => {
+          const mReg = (m.registration_number ?? m.reg_no ?? m.registration_no ?? m.reg_number ?? "").toString().trim();
+          const mId = (m.user_id ?? m.id ?? m.member_id ?? "").toString().trim();
+          return mReg === regNum && mId !== currentUserId;
+        });
+
+        if (duplicate) {
+          setEditFormErrors((prev) => {
+            const warningMsg = `Warning: Registration number "${regNum}" is already assigned to member ${duplicate.name || 'another member'}`;
+            if (prev.registration_number === warningMsg) return prev;
+            return { ...prev, registration_number: warningMsg };
+          });
+        } else {
+          setEditFormErrors((prev) => {
+            if (!prev.registration_number) return prev;
+            const updated = { ...prev };
+            delete updated.registration_number;
+            return updated;
+          });
+        }
+      } else {
+        setEditFormErrors((prev) => {
+          if (!prev.registration_number) return prev;
+          const updated = { ...prev };
+          delete updated.registration_number;
+          return updated;
+        });
+      }
+    }
+  }, [showEditModal, editFormData?.registration_number, editFormData?.user_id, members]);
+
+  // Real-time duplicate registration number validation for Add Modal
+  useEffect(() => {
+    if (showAddModal && addFormData) {
+      const regNum = addFormData.registration_number !== undefined && addFormData.registration_number !== null
+        ? addFormData.registration_number.toString().trim()
+        : "";
+      if (regNum) {
+        const duplicate = members.find((m) => {
+          const mReg = (m.registration_number ?? m.reg_no ?? m.registration_no ?? m.reg_number ?? "").toString().trim();
+          return mReg === regNum;
+        });
+
+        if (duplicate) {
+          setAddFormErrors((prev) => {
+            const warningMsg = `Warning: Registration number "${regNum}" is already assigned to member ${duplicate.name || 'another member'}`;
+            if (prev.registration_number === warningMsg) return prev;
+            return { ...prev, registration_number: warningMsg };
+          });
+        } else {
+          setAddFormErrors((prev) => {
+            if (!prev.registration_number) return prev;
+            const updated = { ...prev };
+            delete updated.registration_number;
+            return updated;
+          });
+        }
+      } else {
+        setAddFormErrors((prev) => {
+          if (!prev.registration_number) return prev;
+          const updated = { ...prev };
+          delete updated.registration_number;
+          return updated;
+        });
+      }
+    }
+  }, [showAddModal, addFormData?.registration_number, members]);
+
   // Effect to fetch membership plans when branch changes
   useEffect(() => {
     if (addFormData.branch_id || editFormData?.branch_id) {
@@ -875,8 +954,8 @@ const MemberManagement = () => {
   const handleFormChange = (e) => {
     const { name, value } = e.target;
 
-    // Clear validation error for this field when user starts typing/selecting
-    if (editFormErrors[name]) {
+    // Clear validation error for this field when user starts typing/selecting (except registration_number managed by useEffect)
+    if (editFormErrors[name] && name !== "registration_number") {
       setEditFormErrors(prev => {
         const updated = { ...prev };
         delete updated[name];
@@ -984,6 +1063,19 @@ const MemberManagement = () => {
       errors.city = "Please select city";
     }
 
+    // Registration number validation (Required + Unique)
+    if (!formData.registration_number?.toString().trim()) {
+      errors.registration_number = "Registration number is required";
+    } else {
+      const regNum = formData.registration_number.toString().trim();
+      const duplicate = members.find(
+        (m) => m.registration_number?.toString().trim() === regNum
+      );
+      if (duplicate) {
+        errors.registration_number = `Warning: Registration number "${regNum}" is already assigned to member ${duplicate.name}`;
+      }
+    }
+
     return errors;
   };
 
@@ -1009,6 +1101,38 @@ const MemberManagement = () => {
 
     if (!formData.branch_id) {
       errors.branch_id = "Please select a branch";
+    }
+
+    if (!formData.country) {
+      errors.country = "Please select country";
+    }
+
+    if (!formData.state) {
+      errors.state = "Please select state";
+    }
+
+    if (!formData.district) {
+      errors.district = "Please select district";
+    }
+
+    if (!formData.city) {
+      errors.city = "Please select city";
+    }
+
+    // Registration number validation (Required + Unique)
+    if (!formData.registration_number?.toString().trim()) {
+      errors.registration_number = "Registration number is required";
+    } else {
+      const regNum = formData.registration_number.toString().trim();
+      const currentUserId = (formData.user_id ?? formData.id ?? "").toString().trim();
+      const duplicate = members.find((m) => {
+        const mReg = (m.registration_number ?? m.reg_no ?? m.registration_no ?? m.reg_number ?? "").toString().trim();
+        const mId = (m.user_id ?? m.id ?? m.member_id ?? "").toString().trim();
+        return mReg === regNum && mId !== currentUserId;
+      });
+      if (duplicate) {
+        errors.registration_number = `Warning: Registration number "${regNum}" is already assigned to member ${duplicate.name || 'another member'}`;
+      }
     }
 
     // Password validation if passwords are provided
@@ -1135,11 +1259,19 @@ const MemberManagement = () => {
         setEditFormErrors({});
         fetchMembers();
       } else {
-        throw new Error(result.message || `Failed to update member (HTTP ${response.status})`);
+        let errorMsg = result.message || `Failed to update member (HTTP ${response.status})`;
+        const lowerMsg = errorMsg.toLowerCase();
+        if (lowerMsg.includes("registration") || lowerMsg.includes("duplicate") || lowerMsg.includes("reg_no")) {
+          errorMsg = "Warning: Registration number already exists for another member";
+          setEditFormErrors(prev => ({ ...prev, registration_number: errorMsg }));
+        }
+        throw new Error(errorMsg);
       }
     } catch (error) {
       console.error("❌ Error updating member:", error);
-      showNotification(`Update Failed: ${error.message}`, 'error');
+      const errorMsg = error.message || "";
+      const isWarning = errorMsg.toLowerCase().includes("registration") || errorMsg.toLowerCase().includes("duplicate");
+      showNotification(errorMsg, isWarning ? 'warning' : 'error');
     } finally {
       setLoading(false);
     }
@@ -1235,8 +1367,8 @@ const MemberManagement = () => {
   const handleAddFormChange = (e) => {
     const { name, value } = e.target;
 
-    // Clear validation error for this field when user starts typing/selecting
-    if (addFormErrors[name]) {
+    // Clear validation error for this field when user starts typing/selecting (except registration_number managed by useEffect)
+    if (addFormErrors[name] && name !== "registration_number") {
       setAddFormErrors(prev => {
         const updated = { ...prev };
         delete updated[name];
@@ -1368,6 +1500,13 @@ const MemberManagement = () => {
           console.error("API Error Details:", errorText);
           errorMessage = errorText || errorMessage;
         }
+
+        const lowerMsg = errorMessage.toLowerCase();
+        if (lowerMsg.includes("registration") || lowerMsg.includes("duplicate") || lowerMsg.includes("reg_no")) {
+          errorMessage = "Warning: Registration number already exists for another member";
+          setAddFormErrors(prev => ({ ...prev, registration_number: errorMessage }));
+        }
+
         throw new Error(errorMessage);
       }
 
@@ -1379,7 +1518,7 @@ const MemberManagement = () => {
         // Reset form and close modal
         setShowAddModal(false);
         setAddFormErrors({}); // Clear validation errors on success
-        
+
         if (data.invoice_id) {
           setActiveInvoiceId(data.invoice_id);
           setShowInvoice(true);
@@ -2096,13 +2235,15 @@ const MemberManagement = () => {
                       />
                     </div>
                     <div className="member-form-group">
-                      <label>Registration Number</label>
+                      <ValidationError error={editFormErrors.registration_number} />
+                      <label>Registration Number *</label>
                       <input
                         type="number"
                         name="registration_number"
                         value={editFormData.registration_number}
                         onChange={handleFormChange}
                         placeholder="e.g. 1001"
+                        required
                       />
                     </div>
                     <div className="member-form-group">
@@ -2404,12 +2545,13 @@ const MemberManagement = () => {
                   <div className="member-form-grid">
                     <div className="member-form-group">
                       <ValidationError error={editFormErrors.country} />
-                      <label>Country</label>
+                      <label>Country *</label>
                       <select
                         name="country"
                         value={editFormData.country}
                         onChange={handleFormChange}
                         disabled={dropdownLoading.countries}
+                        required
                       >
                         {dropdownLoading.countries ? (
                           <option key="loading-countries-edit" value="">
@@ -2434,7 +2576,7 @@ const MemberManagement = () => {
                     </div>
                     <div className="member-form-group">
                       <ValidationError error={editFormErrors.state} />
-                      <label>State</label>
+                      <label>State *</label>
                       <select
                         name="state"
                         value={String(editFormData.state || "")}
@@ -2442,6 +2584,7 @@ const MemberManagement = () => {
                         disabled={
                           !editFormData.country || dropdownLoading.states
                         }
+                        required
                       >
                         {dropdownLoading.states ? (
                           <option key="loading-states-edit" value="">
@@ -2466,7 +2609,7 @@ const MemberManagement = () => {
                     </div>
                     <div className="member-form-group">
                       <ValidationError error={editFormErrors.district} />
-                      <label>District</label>
+                      <label>District *</label>
                       <select
                         name="district"
                         value={String(editFormData.district || "")}
@@ -2474,6 +2617,7 @@ const MemberManagement = () => {
                         disabled={
                           !editFormData.state || dropdownLoading.districts
                         }
+                        required
                       >
                         {dropdownLoading.districts ? (
                           <option key="loading-districts-edit" value="">
@@ -2498,7 +2642,7 @@ const MemberManagement = () => {
                     </div>
                     <div className="member-form-group">
                       <ValidationError error={editFormErrors.city} />
-                      <label>City</label>
+                      <label>City *</label>
                       <select
                         name="city"
                         value={String(editFormData.city || "")}
@@ -2506,6 +2650,7 @@ const MemberManagement = () => {
                         disabled={
                           !editFormData.district || dropdownLoading.cities
                         }
+                        required
                       >
                         {dropdownLoading.cities ? (
                           <option key="loading-cities-edit" value="">
@@ -2737,13 +2882,15 @@ const MemberManagement = () => {
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
-                      <label>Registration Number</label>
+                      <ValidationError error={addFormErrors.registration_number} />
+                      <label>Registration Number *</label>
                       <input
                         type="number"
                         name="registration_number"
                         value={addFormData.registration_number}
                         onChange={handleAddFormChange}
                         placeholder="e.g. 1001"
+                        required
                       />
                     </div>
                     <div className="member-form-group">
@@ -3304,9 +3451,9 @@ const MemberManagement = () => {
       <ToastNotification />
 
       {/* Invoice Modal Popup */}
-      <InvoiceModal 
-        isOpen={showInvoice} 
-        invoiceId={activeInvoiceId} 
+      <InvoiceModal
+        isOpen={showInvoice}
+        invoiceId={activeInvoiceId}
         onClose={() => {
           setShowInvoice(false);
           setActiveInvoiceId(null);
