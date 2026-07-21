@@ -185,12 +185,10 @@ const MemberManagement = () => {
 
       if (data.status === "success" && data.data) {
         setCountries(data.data); // API returns data.data, not data.countries
-        console.log("Countries loaded:", data.data.length, "items");
       } else {
         throw new Error("Invalid API response structure");
       }
     } catch (err) {
-      console.error("Error fetching countries:", err.message);
       // Fallback to default data
       setCountries([{ country_id: 1, country_name: "India" }]);
     } finally {
@@ -223,12 +221,10 @@ const MemberManagement = () => {
 
       if (data.status === "success" && data.data) {
         setStates(data.data);
-        console.log("States loaded:", data.data.length, "items");
       } else {
         throw new Error("Invalid API response structure");
       }
     } catch (err) {
-      console.error("Error fetching states:", err.message);
       setStates([]);
     } finally {
       setDropdownLoading((prev) => ({ ...prev, states: false }));
@@ -260,12 +256,10 @@ const MemberManagement = () => {
 
       if (data.status === "success" && data.data) {
         setDistricts(data.data);
-        console.log("Districts loaded:", data.data.length, "items");
       } else {
         throw new Error("Invalid API response structure");
       }
     } catch (err) {
-      console.error("Error fetching districts:", err.message);
       setDistricts([]);
     } finally {
       setDropdownLoading((prev) => ({ ...prev, districts: false }));
@@ -292,12 +286,10 @@ const MemberManagement = () => {
 
       if (data.status === "success" && data.data) {
         setBranches(data.data);
-        console.log("Branches loaded:", data.data.length, "items");
       } else {
         throw new Error("Invalid API response structure");
       }
     } catch (err) {
-      console.error("Error fetching branches:", err.message);
       setBranches([]);
     } finally {
       setDropdownLoading((prev) => ({ ...prev, branches: false }));
@@ -308,9 +300,6 @@ const MemberManagement = () => {
   const fetchMembershipPlans = async (gymId = 1, branchId) => {
     // Both gymId and branchId are required for this API
     if (!gymId || !branchId) {
-      console.log(
-        "Both gym_id and branch_id are required for membershipPlan API",
-      );
       setMembershipPlans([]);
       return;
     }
@@ -320,7 +309,6 @@ const MemberManagement = () => {
       let url = buildApiUrl(
         `membership-plans?gym_id=${gymId}&branch_id=${branchId}&plan_type=BASE_MEMBERSHIP`,
       );
-      console.log("Fetching membership plans from:", url);
 
       let response = await tokenManager.apiCall(url, {
         method: "GET",
@@ -331,7 +319,6 @@ const MemberManagement = () => {
 
       if (!response.ok) {
         url = buildApiUrl(`membershipPlan?gym_id=${gymId}&branch_id=${branchId}`);
-        console.log("Falling back to legacy endpoint:", url);
         response = await tokenManager.apiCall(url, {
           method: "GET",
           headers: {
@@ -345,22 +332,15 @@ const MemberManagement = () => {
       }
 
       const result = await response.json();
-      console.log("Membership plans API response:", result);
 
       if (result.status === "success") {
         const rawPlans = result.data || result.plans || [];
         const normalizedPlans = rawPlans.map(normalizeMembershipPlan);
         setMembershipPlans(normalizedPlans);
-        console.log(
-          "Membership plans loaded:",
-          normalizedPlans.length,
-          "items",
-        );
       } else {
         throw new Error(result.message || "Failed to fetch membership plans");
       }
     } catch (error) {
-      console.error("Error fetching membership plans:", error);
       setMembershipPlans([]);
     } finally {
       setDropdownLoading((prev) => ({ ...prev, membershipPlans: false }));
@@ -393,12 +373,10 @@ const MemberManagement = () => {
       const result = await response.json();
       if (result.status === "success") {
         setCities(result.data || []);
-        console.log("Cities loaded:", result.data?.length || 0, "items");
       } else {
         throw new Error(result.message || "Failed to fetch cities");
       }
     } catch (error) {
-      console.error("Error fetching cities:", error);
       setCities([]);
     } finally {
       setDropdownLoading((prev) => ({ ...prev, cities: false }));
@@ -444,7 +422,6 @@ const MemberManagement = () => {
       }
     } catch (err) {
       setError(err.message);
-      console.error("Error fetching members:", err);
     } finally {
       setLoading(false);
     }
@@ -464,13 +441,6 @@ const MemberManagement = () => {
     // Clean debug function - available in console as window.testAPI()
     if (typeof window !== "undefined") {
       window.testAPI = () => {
-        console.log("=== API Test Results ===");
-        console.log("Countries:", countries);
-        console.log("States:", states);
-        console.log("Districts:", districts);
-        console.log("Branches:", branches);
-        console.log("Cities:", cities);
-        console.log("Membership Plans:", membershipPlans);
       };
     }
   }, []);
@@ -715,7 +685,6 @@ const MemberManagement = () => {
         throw new Error(data.message || "Failed to fetch member details");
       }
     } catch (err) {
-      console.error("Error fetching member details:", err);
       setMemberDetailsError(err.message);
     } finally {
       setMemberDetailsLoading(false);
@@ -917,7 +886,6 @@ const MemberManagement = () => {
       formData.state ? fetchDistricts(formData.state) : Promise.resolve(),
       formData.district ? fetchCities(formData.district) : Promise.resolve(),
     ]).catch((dropdownError) => {
-      console.error("Error loading edit dropdown data:", dropdownError);
     });
 
     setShowMemberProfile(false);
@@ -941,7 +909,6 @@ const MemberManagement = () => {
       const matchingPlanId = findMatchingPlan(editFormData.membership_plan_raw, availablePlans);
 
       if (matchingPlanId && matchingPlanId !== editFormData.membership_plan) {
-        console.log("🔄 Auto-updating membership plan:", matchingPlanId);
         setEditFormData(prev => ({
           ...prev,
           membership_plan: typeof matchingPlanId === 'string' ? matchingPlanId : matchingPlanId.plan_name || ""
@@ -1170,7 +1137,6 @@ const MemberManagement = () => {
     const errors = validateEditForm(editFormData);
     if (Object.keys(errors).length > 0) {
       setEditFormErrors(errors);
-      console.warn("⚠️ Edit form validation failed:", errors);
       const firstError = Object.values(errors)[0];
       showNotification(`Validation Error: ${firstError}`, 'error');
       return;
@@ -1220,7 +1186,6 @@ const MemberManagement = () => {
         updateData.confirm_password = editFormData.confirm_password;
       }
 
-      console.log("🚀 Sending update request to API:", updateData);
 
       const apiUrl = buildApiUrl("members/updateMember");
 
@@ -1233,7 +1198,6 @@ const MemberManagement = () => {
       });
 
       const responseText = await response.text();
-      console.log("📡 Raw response status:", response.status, "text:", responseText);
 
       // Extract JSON string from responseText (stripping PHP warning HTML output if present)
       let result = {};
@@ -1245,7 +1209,6 @@ const MemberManagement = () => {
           result = JSON.parse(responseText);
         }
       } catch (parseErr) {
-        console.warn("Could not parse JSON from response:", responseText);
       }
 
       if (response.status === 401 || result.message?.includes("Invalid or expired token") || result.message?.includes("token")) {
@@ -1268,7 +1231,6 @@ const MemberManagement = () => {
         throw new Error(errorMsg);
       }
     } catch (error) {
-      console.error("❌ Error updating member:", error);
       const errorMsg = error.message || "";
       const isWarning = errorMsg.toLowerCase().includes("registration") || errorMsg.toLowerCase().includes("duplicate");
       showNotification(errorMsg, isWarning ? 'warning' : 'error');
@@ -1491,13 +1453,11 @@ const MemberManagement = () => {
         let errorMessage = `HTTP error! status: ${response.status}`;
         try {
           const errorData = await response.json();
-          console.error("API Error Response:", errorData);
           if (errorData.message) {
             errorMessage = errorData.message;
           }
         } catch (e) {
           const errorText = await response.text();
-          console.error("API Error Details:", errorText);
           errorMessage = errorText || errorMessage;
         }
 
@@ -1557,7 +1517,6 @@ const MemberManagement = () => {
         throw new Error(data.message || "Failed to add member");
       }
     } catch (err) {
-      console.error("Error adding member:", err);
 
       // Enhanced error messages for better UX
       let errorMessage = "Failed to add member. Please try again.";
