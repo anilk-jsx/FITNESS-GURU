@@ -368,14 +368,6 @@ const Subscriptions = () => {
               <i className="fas fa-snowflake"></i>
               Freeze Subscription
             </button>
-            <button className="btn-cancel" onClick={() => {
-              if (window.confirm('Are you sure you want to cancel your subscription?')) {
-                alert('Subscription cancellation initiated. You will receive a confirmation email.');
-              }
-            }}>
-              <i className="fas fa-times"></i>
-              Cancel Plan
-            </button>
           </div>
         </div>
       </div>

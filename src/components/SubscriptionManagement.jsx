@@ -1257,24 +1257,6 @@ const SubscriptionManagement = () => {
                                                                 <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-wallet'}`}></i>
                                                                 {isExpanded ? ' Hide Wallet' : ` Wallet (${credits.length})`}
                                                             </button>
-
-                                                            <button
-                                                                className="sub-btn sub-btn-xs sub-btn-secondary"
-                                                                onClick={() => openRevisionModal(sub)}
-                                                                title="Edit Subscription Lifecycle & Dates"
-                                                            >
-                                                                <i className="fas fa-calendar-edit"></i> Revise
-                                                            </button>
-
-                                                            {sub.status === 1 && (
-                                                                <button
-                                                                    className="sub-btn sub-btn-xs sub-btn-danger"
-                                                                    onClick={() => handleCancelSubscription(sub)}
-                                                                    title="Cancel Subscription & Revoke Wallet Credits"
-                                                                >
-                                                                    <i className="fas fa-times-circle"></i> Cancel
-                                                                </button>
-                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
