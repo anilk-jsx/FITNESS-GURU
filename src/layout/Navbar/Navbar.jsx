@@ -123,6 +123,10 @@ const Navbar = ({ userData }) => {
                 <i className="fas fa-user"></i>
                 <span>Profile & Attendance</span>
               </Link>
+              <Link to="/pt-sessions" className="dropdown-item">
+                <i className="fas fa-calendar-alt"></i>
+                <span>PT Sessions</span>
+              </Link>
               <Link to="/subscriptions" className="dropdown-item">
                 <i className="fas fa-credit-card"></i>
                 <span>Subscriptions</span>
