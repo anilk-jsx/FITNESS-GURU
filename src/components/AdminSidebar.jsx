@@ -32,8 +32,12 @@ const AdminSidebar = ({
         </a>
       </div>
 
-      {/* Navigation Menu with Original Items, Icons & Names */}
+      {/* Navigation Menu with Categorized Items & Updated Sequence */}
       <div className="nav-menu">
+        {/* Category: Main */}
+        <div className="nav-category-header">Main</div>
+
+        {/* 1. Dashboard */}
         <div className="nav-item">
           <NavLink 
             to="/admin-dashboard/dashboard"
@@ -45,6 +49,10 @@ const AdminSidebar = ({
           </NavLink>
         </div>
 
+        {/* Category: Operations & People */}
+        <div className="nav-category-header">Core Management</div>
+
+        {/* 2. Member */}
         <div className="nav-item">
           <NavLink 
             to="/admin-dashboard/members"
@@ -56,17 +64,7 @@ const AdminSidebar = ({
           </NavLink>
         </div>
 
-        <div className="nav-item">
-          <NavLink 
-            to="/admin-dashboard/attendance"
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-            onClick={handleNavClick}
-          >
-            <i className="fas fa-calendar-check"></i>
-            <span>Attendance Management</span>
-          </NavLink>
-        </div>
-
+        {/* 3. Employee */}
         <div className="nav-item">
           <NavLink 
             to="/admin-dashboard/staff"
@@ -78,99 +76,7 @@ const AdminSidebar = ({
           </NavLink>
         </div>
 
-        {/* Collapsible Payroll Management Group */}
-        <div className="nav-item">
-          <div 
-            className={`sidebar-group-header ${isPayrollOpen ? 'open' : ''}`}
-            onClick={() => setIsPayrollOpen(!isPayrollOpen)}
-          >
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <i className="fas fa-file-invoice-dollar main-icon"></i>
-              <span>Payroll Management</span>
-            </div>
-            <i className="fas fa-chevron-right chevron-icon"></i>
-          </div>
-
-          {isPayrollOpen && (
-            <div className="sidebar-sub-menu">
-              <NavLink 
-                to="/admin-dashboard/payroll?tab=salaries"
-                className={() => `sidebar-sub-link ${location.pathname === '/admin-dashboard/payroll' && (location.search.includes('tab=salaries') || location.search === '') ? 'active' : ''}`}
-                onClick={handleNavClick}
-              >
-                <i className="fas fa-money-bill-wave"></i>
-                <span>Salaries & Runs</span>
-              </NavLink>
-
-              <NavLink 
-                to="/admin-dashboard/payroll?tab=commissions"
-                className={() => `sidebar-sub-link ${location.pathname === '/admin-dashboard/payroll' && location.search.includes('tab=commissions') ? 'active' : ''}`}
-                onClick={handleNavClick}
-              >
-                <i className="fas fa-percent"></i>
-                <span>PT Commissions</span>
-              </NavLink>
-            </div>
-          )}
-        </div>
-
-        {/* Collapsible Finance & Accounting Group */}
-        <div className="nav-item">
-          <div 
-            className={`sidebar-group-header ${isFinanceOpen ? 'open' : ''}`}
-            onClick={() => setIsFinanceOpen(!isFinanceOpen)}
-          >
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <i className="fas fa-coins main-icon"></i>
-              <span>Finance & Accounting</span>
-            </div>
-            <i className="fas fa-chevron-right chevron-icon"></i>
-          </div>
-
-          {isFinanceOpen && (
-            <div className="sidebar-sub-menu">
-              <NavLink 
-                to="/admin-dashboard/finance?tab=summary"
-                className={() => `sidebar-sub-link ${location.pathname === '/admin-dashboard/finance' && (location.search.includes('tab=summary') || location.search === '') ? 'active' : ''}`}
-                onClick={handleNavClick}
-              >
-                <i className="fas fa-chart-line"></i>
-                <span>Executive P&L</span>
-              </NavLink>
-
-              <NavLink 
-                to="/admin-dashboard/finance?tab=opex"
-                className={() => `sidebar-sub-link ${location.pathname === '/admin-dashboard/finance' && location.search.includes('tab=opex') ? 'active' : ''}`}
-                onClick={handleNavClick}
-              >
-                <i className="fas fa-file-invoice-dollar"></i>
-                <span>Operating Expenses</span>
-              </NavLink>
-
-              <NavLink 
-                to="/admin-dashboard/finance?tab=ledger"
-                className={() => `sidebar-sub-link ${location.pathname === '/admin-dashboard/finance' && location.search.includes('tab=ledger') ? 'active' : ''}`}
-                onClick={handleNavClick}
-              >
-                <i className="fas fa-university"></i>
-                <span>Master Ledger</span>
-              </NavLink>
-            </div>
-          )}
-        </div>
-
-        <div className="nav-item">
-          <NavLink 
-            to="/admin-dashboard/contacts"
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-            onClick={handleNavClick}
-          >
-            <i className="fas fa-envelope"></i>
-            <span>Contact Management</span>
-          </NavLink>
-        </div>
-
-        {/* Collapsible Subscription Management Group */}
+        {/* 4. Subscription Management */}
         <div className="nav-item">
           <div 
             className={`sidebar-group-header ${isSubscriptionOpen ? 'open' : ''}`}
@@ -206,18 +112,7 @@ const AdminSidebar = ({
           )}
         </div>
 
-        <div className="nav-item">
-          <NavLink 
-            to="/admin-dashboard/branches"
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-            onClick={handleNavClick}
-          >
-            <i className="fas fa-building"></i>
-            <span>Branch Management</span>
-          </NavLink>
-        </div>
-
-        {/* Collapsible PT Management Group */}
+        {/* 5. PT Management */}
         <div className="nav-item">
           <div 
             className={`sidebar-group-header ${isPtOpen ? 'open' : ''}`}
@@ -262,18 +157,46 @@ const AdminSidebar = ({
           )}
         </div>
 
+        {/* Category: Finance & Inventory */}
+        <div className="nav-category-header">Finance & Stores</div>
+
+        {/* 6. Payroll Management */}
         <div className="nav-item">
-          <NavLink 
-            to="/admin-dashboard/gym-configuration"
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-            onClick={handleNavClick}
+          <div 
+            className={`sidebar-group-header ${isPayrollOpen ? 'open' : ''}`}
+            onClick={() => setIsPayrollOpen(!isPayrollOpen)}
           >
-            <i className="fas fa-sliders-h"></i>
-            <span>Gym Configuration</span>
-          </NavLink>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <i className="fas fa-file-invoice-dollar main-icon"></i>
+              <span>Payroll Management</span>
+            </div>
+            <i className="fas fa-chevron-right chevron-icon"></i>
+          </div>
+
+          {isPayrollOpen && (
+            <div className="sidebar-sub-menu">
+              <NavLink 
+                to="/admin-dashboard/payroll?tab=salaries"
+                className={() => `sidebar-sub-link ${location.pathname === '/admin-dashboard/payroll' && (location.search.includes('tab=salaries') || location.search === '') ? 'active' : ''}`}
+                onClick={handleNavClick}
+              >
+                <i className="fas fa-money-bill-wave"></i>
+                <span>Salaries & Runs</span>
+              </NavLink>
+
+              <NavLink 
+                to="/admin-dashboard/payroll?tab=commissions"
+                className={() => `sidebar-sub-link ${location.pathname === '/admin-dashboard/payroll' && location.search.includes('tab=commissions') ? 'active' : ''}`}
+                onClick={handleNavClick}
+              >
+                <i className="fas fa-percent"></i>
+                <span>PT Commissions</span>
+              </NavLink>
+            </div>
+          )}
         </div>
 
-        {/* Collapsible Store & Inventory Group */}
+        {/* 7. Store & Inventory (Gym Inventory) */}
         <div className="nav-item">
           <div 
             className={`sidebar-group-header ${isStoreOpen ? 'open' : ''}`}
@@ -316,6 +239,90 @@ const AdminSidebar = ({
               </NavLink>
             </div>
           )}
+        </div>
+
+        {/* 8. Finance & Accounting */}
+        <div className="nav-item">
+          <div 
+            className={`sidebar-group-header ${isFinanceOpen ? 'open' : ''}`}
+            onClick={() => setIsFinanceOpen(!isFinanceOpen)}
+          >
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <i className="fas fa-coins main-icon"></i>
+              <span>Finance & Accounting</span>
+            </div>
+            <i className="fas fa-chevron-right chevron-icon"></i>
+          </div>
+
+          {isFinanceOpen && (
+            <div className="sidebar-sub-menu">
+              <NavLink 
+                to="/admin-dashboard/finance?tab=summary"
+                className={() => `sidebar-sub-link ${location.pathname === '/admin-dashboard/finance' && (location.search.includes('tab=summary') || location.search === '') ? 'active' : ''}`}
+                onClick={handleNavClick}
+              >
+                <i className="fas fa-chart-line"></i>
+                <span>Executive P&L</span>
+              </NavLink>
+
+              <NavLink 
+                to="/admin-dashboard/finance?tab=opex"
+                className={() => `sidebar-sub-link ${location.pathname === '/admin-dashboard/finance' && location.search.includes('tab=opex') ? 'active' : ''}`}
+                onClick={handleNavClick}
+              >
+                <i className="fas fa-file-invoice-dollar"></i>
+                <span>Operating Expenses</span>
+              </NavLink>
+
+              <NavLink 
+                to="/admin-dashboard/finance?tab=ledger"
+                className={() => `sidebar-sub-link ${location.pathname === '/admin-dashboard/finance' && location.search.includes('tab=ledger') ? 'active' : ''}`}
+                onClick={handleNavClick}
+              >
+                <i className="fas fa-university"></i>
+                <span>Master Ledger</span>
+              </NavLink>
+            </div>
+          )}
+        </div>
+
+        {/* Category: Others */}
+        <div className="nav-category-header">Others</div>
+
+        {/* 9. Contact Management */}
+        <div className="nav-item">
+          <NavLink 
+            to="/admin-dashboard/contacts"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            onClick={handleNavClick}
+          >
+            <i className="fas fa-envelope"></i>
+            <span>Contact Management</span>
+          </NavLink>
+        </div>
+
+        {/* 10. Branch Management */}
+        <div className="nav-item">
+          <NavLink 
+            to="/admin-dashboard/branches"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            onClick={handleNavClick}
+          >
+            <i className="fas fa-building"></i>
+            <span>Branch Management</span>
+          </NavLink>
+        </div>
+
+        {/* 11. Gym Configuration */}
+        <div className="nav-item">
+          <NavLink 
+            to="/admin-dashboard/gym-configuration"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            onClick={handleNavClick}
+          >
+            <i className="fas fa-sliders-h"></i>
+            <span>Gym Configuration</span>
+          </NavLink>
         </div>
       </div>
 

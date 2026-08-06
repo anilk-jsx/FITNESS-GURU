@@ -4,15 +4,21 @@ import './AdminDashboardHome.css';
 
 const AdminDashboardHome = () => {
   const [stats, setStats] = useState({
-    totalMembers: 1248,
-    activeMemberships: 986,
+    totalMembers: 0,
+    activeMemberships: 0,
     checkInsThisWeek: 1789,
     ptSessionsThisWeek: 256,
-    revenueThisWeek: 248750,
+    revenueThisWeek: 0,
     pendingPayments: 86430,
     loading: false,
     error: null
   });
+
+  const [dashboardKpis, setDashboardKpis] = useState(null);
+  const [loadingKpis, setLoadingKpis] = useState(true);
+
+  const [trainers, setTrainers] = useState([]);
+  const [loadingTrainers, setLoadingTrainers] = useState(true);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
 
@@ -28,21 +34,119 @@ const AdminDashboardHome = () => {
         setStats(prev => ({ ...prev, totalMembers: data.meta.total }));
       }
     } catch (err) {
-      console.error('Error fetching live stats:', err);
+      console.error('Error fetching live member stats:', err);
+    }
+  };
+
+  // Fetch Dashboard KPIs (Revenue Overview & Membership Status)
+  const fetchDashboardKpis = async () => {
+    try {
+      setLoadingKpis(true);
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/dashboard-kpis`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      if (data.status === 'success' && data.data) {
+        setDashboardKpis(data.data);
+        if (data.data.membership_status) {
+          setStats(prev => ({
+            ...prev,
+            totalMembers: data.data.membership_status.total_members ?? prev.totalMembers,
+            activeMemberships: data.data.membership_status.active?.count ?? prev.activeMemberships
+          }));
+        }
+        if (data.data.revenue_overview) {
+          setStats(prev => ({
+            ...prev,
+            revenueThisWeek: data.data.revenue_overview.total_revenue ?? prev.revenueThisWeek
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching dashboard KPIs:', err);
+    } finally {
+      setLoadingKpis(false);
+    }
+  };
+
+  // Fetch Real Trainers List
+  const fetchTrainersList = async () => {
+    try {
+      setLoadingTrainers(true);
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/trainers?page=1&limit=10`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      if (data.status === 'success' && Array.isArray(data.data)) {
+        setTrainers(data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching real trainers list:', err);
+    } finally {
+      setLoadingTrainers(false);
     }
   };
 
   useEffect(() => {
     fetchMemberStats();
+    fetchDashboardKpis();
+    fetchTrainersList();
   }, []);
 
   const formatCurrency = (val) => {
-    return '₹' + new Intl.NumberFormat('en-IN').format(val);
+    return '₹' + new Intl.NumberFormat('en-IN').format(val || 0);
   };
 
   const formatNum = (val) => {
-    return new Intl.NumberFormat('en-IN').format(val);
+    return new Intl.NumberFormat('en-IN').format(val || 0);
   };
+
+  // Helpers for Revenue Chart SVG
+  const chartData = dashboardKpis?.revenue_overview?.chart_data;
+  const daysList = chartData?.days || ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
+  const thisWeekData = chartData?.this_week || [0, 0, 0, 0, 0, 0, 0];
+  const lastWeekData = chartData?.last_week || [0, 0, 0, 0, 0, 0, 0];
+
+  const maxVal = Math.max(...thisWeekData, ...lastWeekData, 100);
+  const xCoords = [60, 130, 200, 270, 340, 410, 470];
+
+  const getPoints = (dataArr) => {
+    return dataArr.map((v, i) => {
+      const x = xCoords[i] || (60 + i * 68);
+      const y = 140 - ((v / maxVal) * 110);
+      return { x, y, val: v };
+    });
+  };
+
+  const thisWeekPoints = getPoints(thisWeekData);
+  const lastWeekPoints = getPoints(lastWeekData);
+
+  const getPathD = (pts) => {
+    if (!pts || pts.length === 0) return '';
+    return pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x},${p.y}`).join(' ');
+  };
+
+  // Donut chart calculations
+  const memStatus = dashboardKpis?.membership_status || {
+    total_members: stats.totalMembers,
+    active: { count: stats.activeMemberships, percentage: 79.0 },
+    expiring_soon: { count: 152, percentage: 12.2 },
+    expired: { count: 68, percentage: 5.4 },
+    frozen: { count: 42, percentage: 3.4 }
+  };
+
+  const CIRCUMFERENCE = 377;
+  const activeLen = (memStatus.active?.percentage / 100) * CIRCUMFERENCE;
+  const expiringLen = (memStatus.expiring_soon?.percentage / 100) * CIRCUMFERENCE;
+  const expiredLen = (memStatus.expired?.percentage / 100) * CIRCUMFERENCE;
+  const frozenLen = (memStatus.frozen?.percentage / 100) * CIRCUMFERENCE;
+
+  const activeOffset = 0;
+  const expiringOffset = -activeLen;
+  const expiredOffset = -(activeLen + expiringLen);
+  const frozenOffset = -(activeLen + expiringLen + expiredLen);
 
   return (
     <div className="dash-container">
@@ -113,7 +217,7 @@ const AdminDashboardHome = () => {
         </div>
       </div>
 
-      {/* Row 1: 6 Top KPI Metrics Cards */}
+      {/* Row 1: Top KPI Metrics Cards */}
       <div className="dash-kpi-row">
         {/* KPI 1 */}
         <div className="dash-kpi-card">
@@ -123,11 +227,11 @@ const AdminDashboardHome = () => {
             </div>
             <div>
               <div className="dash-kpi-label">Total Members</div>
-              <div className="dash-kpi-val">{formatNum(stats.totalMembers)}</div>
+              <div className="dash-kpi-val">{formatNum(memStatus.total_members)}</div>
             </div>
           </div>
           <div className="dash-kpi-trend trend-up">
-            <i className="fas fa-arrow-up"></i> 5.6% <span className="trend-lbl">vs last week</span>
+            <i className="fas fa-arrow-up"></i> Live <span className="trend-lbl">system members</span>
           </div>
         </div>
 
@@ -139,27 +243,11 @@ const AdminDashboardHome = () => {
             </div>
             <div>
               <div className="dash-kpi-label">Active Memberships</div>
-              <div className="dash-kpi-val">{formatNum(stats.activeMemberships)}</div>
+              <div className="dash-kpi-val">{formatNum(memStatus.active?.count)}</div>
             </div>
           </div>
           <div className="dash-kpi-trend trend-up">
-            <i className="fas fa-arrow-up"></i> 4.3% <span className="trend-lbl">vs last week</span>
-          </div>
-        </div>
-
-        {/* KPI 3 */}
-        <div className="dash-kpi-card">
-          <div className="dash-kpi-header">
-            <div className="dash-kpi-icon bg-purple">
-              <i className="fas fa-check-circle"></i>
-            </div>
-            <div>
-              <div className="dash-kpi-label">Check-ins (This Week)</div>
-              <div className="dash-kpi-val">{formatNum(stats.checkInsThisWeek)}</div>
-            </div>
-          </div>
-          <div className="dash-kpi-trend trend-up">
-            <i className="fas fa-arrow-up"></i> 8.2% <span className="trend-lbl">vs last week</span>
+            <i className="fas fa-arrow-up"></i> {memStatus.active?.percentage}% <span className="trend-lbl">active rate</span>
           </div>
         </div>
 
@@ -187,11 +275,11 @@ const AdminDashboardHome = () => {
             </div>
             <div>
               <div className="dash-kpi-label">Revenue (This Week)</div>
-              <div className="dash-kpi-val">{formatCurrency(stats.revenueThisWeek)}</div>
+              <div className="dash-kpi-val">{formatCurrency(dashboardKpis?.revenue_overview?.total_revenue ?? stats.revenueThisWeek)}</div>
             </div>
           </div>
           <div className="dash-kpi-trend trend-up">
-            <i className="fas fa-arrow-up"></i> 15.7% <span className="trend-lbl">vs last week</span>
+            <i className="fas fa-arrow-up"></i> Live <span className="trend-lbl">revenue total</span>
           </div>
         </div>
 
@@ -224,7 +312,7 @@ const AdminDashboardHome = () => {
             </select>
           </div>
 
-          {/* SVG Line Chart */}
+          {/* Dynamic SVG Line Chart */}
           <div className="dash-chart-container">
             <div className="chart-legend-row">
               <span className="legend-item"><span className="dot dot-blue"></span> This Week</span>
@@ -239,53 +327,55 @@ const AdminDashboardHome = () => {
               <line x1="40" y1="140" x2="480" y2="140" stroke="#e2e8f0" />
 
               {/* Y Axis Labels */}
-              <text x="30" y="24" fontSize="10" fill="#94a3b8" textAnchor="end">₹80K</text>
-              <text x="30" y="64" fontSize="10" fill="#94a3b8" textAnchor="end">₹60K</text>
-              <text x="30" y="104" fontSize="10" fill="#94a3b8" textAnchor="end">₹40K</text>
+              <text x="30" y="24" fontSize="10" fill="#94a3b8" textAnchor="end">{formatCurrency(maxVal)}</text>
+              <text x="30" y="64" fontSize="10" fill="#94a3b8" textAnchor="end">{formatCurrency(maxVal * 0.66)}</text>
+              <text x="30" y="104" fontSize="10" fill="#94a3b8" textAnchor="end">{formatCurrency(maxVal * 0.33)}</text>
               <text x="30" y="144" fontSize="10" fill="#94a3b8" textAnchor="end">₹0</text>
 
               {/* Last Week Line (Dashed) */}
-              <path d="M 60,110 Q 130,85 200,95 T 340,90 T 470,75" fill="none" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4,4" />
+              <path d={getPathD(lastWeekPoints)} fill="none" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4,4" />
 
               {/* This Week Line (Solid Blue) */}
-              <path d="M 60,105 Q 130,95 200,60 T 340,80 T 470,35" fill="none" stroke="#2563eb" strokeWidth="2.5" />
+              <path d={getPathD(thisWeekPoints)} fill="none" stroke="#2563eb" strokeWidth="2.5" />
 
               {/* Data Dots */}
-              <circle cx="60" cy="105" r="4" fill="#2563eb" />
-              <circle cx="130" cy="95" r="4" fill="#2563eb" />
-              <circle cx="200" cy="60" r="4" fill="#2563eb" />
-              <circle cx="270" cy="80" r="4" fill="#2563eb" />
-              <circle cx="340" cy="75" r="4" fill="#2563eb" />
-              <circle cx="410" cy="65" r="4" fill="#2563eb" />
-              <circle cx="470" cy="35" r="4.5" fill="#2563eb" stroke="#ffffff" strokeWidth="2" />
+              {thisWeekPoints.map((pt, i) => (
+                <circle 
+                  key={i} 
+                  cx={pt.x} 
+                  cy={pt.y} 
+                  r={i === thisWeekPoints.length - 1 ? "4.5" : "4"} 
+                  fill="#2563eb" 
+                  stroke={i === thisWeekPoints.length - 1 ? "#ffffff" : "none"} 
+                  strokeWidth={i === thisWeekPoints.length - 1 ? "2" : "0"} 
+                >
+                  <title>{`${daysList[i]}: ₹${pt.val}`}</title>
+                </circle>
+              ))}
 
               {/* X Axis Labels */}
-              <text x="60" y="156" fontSize="10" fill="#94a3b8" textAnchor="middle">Sat</text>
-              <text x="130" y="156" fontSize="10" fill="#94a3b8" textAnchor="middle">Sun</text>
-              <text x="200" y="156" fontSize="10" fill="#94a3b8" textAnchor="middle">Mon</text>
-              <text x="270" y="156" fontSize="10" fill="#94a3b8" textAnchor="middle">Tue</text>
-              <text x="340" y="156" fontSize="10" fill="#94a3b8" textAnchor="middle">Wed</text>
-              <text x="410" y="156" fontSize="10" fill="#94a3b8" textAnchor="middle">Thu</text>
-              <text x="470" y="156" fontSize="10" fill="#94a3b8" textAnchor="middle">Fri</text>
+              {daysList.map((day, i) => (
+                <text key={i} x={xCoords[i] || (60 + i * 68)} y="156" fontSize="10" fill="#94a3b8" textAnchor="middle">{day}</text>
+              ))}
             </svg>
           </div>
 
           <div className="dash-revenue-grid">
             <div className="rev-box">
               <span className="rev-lbl">Total Revenue</span>
-              <span className="rev-val text-emerald">₹2,48,750</span>
+              <span className="rev-val text-emerald">{formatCurrency(dashboardKpis?.revenue_overview?.total_revenue)}</span>
             </div>
             <div className="rev-box">
               <span className="rev-lbl">Membership Revenue</span>
-              <span className="rev-val text-blue">₹1,85,400</span>
+              <span className="rev-val text-blue">{formatCurrency(dashboardKpis?.revenue_overview?.membership_revenue)}</span>
             </div>
             <div className="rev-box">
               <span className="rev-lbl">PT Revenue</span>
-              <span className="rev-val text-amber">₹50,750</span>
+              <span className="rev-val text-amber">{formatCurrency(dashboardKpis?.revenue_overview?.pt_revenue)}</span>
             </div>
             <div className="rev-box">
               <span className="rev-lbl">Other Revenue</span>
-              <span className="rev-val text-purple">₹12,600</span>
+              <span className="rev-val text-purple">{formatCurrency(dashboardKpis?.revenue_overview?.other_revenue)}</span>
             </div>
           </div>
         </div>
@@ -298,15 +388,19 @@ const AdminDashboardHome = () => {
 
           <div className="dash-donut-wrap">
             <svg className="dash-donut-svg" viewBox="0 0 160 160">
-              {/* Donut Segments */}
+              {/* Donut Background */}
               <circle cx="80" cy="80" r="60" fill="transparent" stroke="#e2e8f0" strokeWidth="18" />
-              <circle cx="80" cy="80" r="60" fill="transparent" stroke="#22c55e" strokeWidth="18" strokeDasharray="297 377" strokeDashoffset="0" transform="rotate(-90 80 80)" />
-              <circle cx="80" cy="80" r="60" fill="transparent" stroke="#3b82f6" strokeWidth="18" strokeDasharray="45 377" strokeDashoffset="-297" transform="rotate(-90 80 80)" />
-              <circle cx="80" cy="80" r="60" fill="transparent" stroke="#f97316" strokeWidth="18" strokeDasharray="20 377" strokeDashoffset="-342" transform="rotate(-90 80 80)" />
-              <circle cx="80" cy="80" r="60" fill="transparent" stroke="#94a3b8" strokeWidth="18" strokeDasharray="15 377" strokeDashoffset="-362" transform="rotate(-90 80 80)" />
+              {/* Active */}
+              <circle cx="80" cy="80" r="60" fill="transparent" stroke="#22c55e" strokeWidth="18" strokeDasharray={`${activeLen} ${CIRCUMFERENCE}`} strokeDashoffset={activeOffset} transform="rotate(-90 80 80)" />
+              {/* Expiring Soon */}
+              <circle cx="80" cy="80" r="60" fill="transparent" stroke="#3b82f6" strokeWidth="18" strokeDasharray={`${expiringLen} ${CIRCUMFERENCE}`} strokeDashoffset={expiringOffset} transform="rotate(-90 80 80)" />
+              {/* Expired */}
+              <circle cx="80" cy="80" r="60" fill="transparent" stroke="#f97316" strokeWidth="18" strokeDasharray={`${expiredLen} ${CIRCUMFERENCE}`} strokeDashoffset={expiredOffset} transform="rotate(-90 80 80)" />
+              {/* Frozen */}
+              <circle cx="80" cy="80" r="60" fill="transparent" stroke="#94a3b8" strokeWidth="18" strokeDasharray={`${frozenLen} ${CIRCUMFERENCE}`} strokeDashoffset={frozenOffset} transform="rotate(-90 80 80)" />
             </svg>
             <div className="dash-donut-center">
-              <span className="donut-num">1,248</span>
+              <span className="donut-num">{formatNum(memStatus.total_members)}</span>
               <span className="donut-lbl">Total Members</span>
             </div>
           </div>
@@ -314,19 +408,19 @@ const AdminDashboardHome = () => {
           <div className="dash-donut-legend">
             <div className="legend-row">
               <span className="leg-name"><span className="dot bg-green"></span> Active</span>
-              <span className="leg-val">986 <span className="leg-pct">(79.0%)</span></span>
+              <span className="leg-val">{formatNum(memStatus.active?.count)} <span className="leg-pct">({memStatus.active?.percentage}%)</span></span>
             </div>
             <div className="legend-row">
               <span className="leg-name"><span className="dot bg-blue"></span> Expiring Soon</span>
-              <span className="leg-val">152 <span className="leg-pct">(12.2%)</span></span>
+              <span className="leg-val">{formatNum(memStatus.expiring_soon?.count)} <span className="leg-pct">({memStatus.expiring_soon?.percentage}%)</span></span>
             </div>
             <div className="legend-row">
               <span className="leg-name"><span className="dot bg-orange"></span> Expired</span>
-              <span className="leg-val">68 <span className="leg-pct">(5.4%)</span></span>
+              <span className="leg-val">{formatNum(memStatus.expired?.count)} <span className="leg-pct">({memStatus.expired?.percentage}%)</span></span>
             </div>
             <div className="legend-row">
               <span className="leg-name"><span className="dot bg-grey"></span> Frozen</span>
-              <span className="leg-val">42 <span className="leg-pct">(3.4%)</span></span>
+              <span className="leg-val">{formatNum(memStatus.frozen?.count)} <span className="leg-pct">({memStatus.frozen?.percentage}%)</span></span>
             </div>
           </div>
 
@@ -410,7 +504,7 @@ const AdminDashboardHome = () => {
             <div className="alert-box alert-red">
               <i className="fas fa-exclamation-triangle alert-icon"></i>
               <div className="alert-content">
-                <span className="alert-title">68 Memberships expired</span>
+                <span className="alert-title">{memStatus.expired?.count || 0} Memberships expired</span>
                 <span className="alert-desc">Please renew them to avoid service interruption.</span>
               </div>
               <a href="/admin-dashboard/subscriptions" className="alert-action">View</a>
@@ -419,7 +513,7 @@ const AdminDashboardHome = () => {
             <div className="alert-box alert-orange">
               <i className="fas fa-exclamation-circle alert-icon"></i>
               <div className="alert-content">
-                <span className="alert-title">152 Memberships expiring soon</span>
+                <span className="alert-title">{memStatus.expiring_soon?.count || 0} Memberships expiring soon</span>
                 <span className="alert-desc">Within the next 7 days.</span>
               </div>
               <a href="/admin-dashboard/subscriptions" className="alert-action">View</a>
@@ -445,127 +539,43 @@ const AdminDashboardHome = () => {
           </div>
         </div>
 
-        {/* Card 2: Top Trainers (This Month) */}
+        {/* Real Top Trainers List */}
         <div className="dash-card">
           <div className="dash-card-header">
-            <h3 className="dash-card-title">Top Trainers (This Month)</h3>
+            <h3 className="dash-card-title">Top Trainers</h3>
             <a href="/admin-dashboard/staff" className="header-link">View All <i className="fas fa-arrow-right"></i></a>
           </div>
 
           <div className="dash-trainer-list">
-            <div className="trainer-rank-item">
-              <span className="rank-badge rank-1">1</span>
-              <img src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=80&q=80" alt="Rahul" className="trainer-img" />
-              <div className="trainer-info">
-                <span className="trainer-name">Rahul Verma</span>
-                <span className="trainer-sub">32 Sessions</span>
+            {loadingTrainers ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                <i className="fas fa-spinner fa-spin" style={{ marginRight: '6px' }}></i> Loading trainers...
               </div>
-              <span className="rating-pill">4.9 <i className="fas fa-star"></i></span>
-            </div>
-
-            <div className="trainer-rank-item">
-              <span className="rank-badge rank-2">2</span>
-              <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80" alt="Amit" className="trainer-img" />
-              <div className="trainer-info">
-                <span className="trainer-name">Amit Sharma</span>
-                <span className="trainer-sub">28 Sessions</span>
+            ) : trainers.length > 0 ? (
+              trainers.slice(0, 5).map((trainer, index) => {
+                const photo = trainer.profile_photo || trainer.showcase_photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80';
+                const name = trainer.full_name || trainer.name || 'Trainer';
+                const designation = trainer.specialization || trainer.designation || 'Personal Trainer';
+                const rating = trainer.rating ? parseFloat(trainer.rating).toFixed(1) : (4.9 - index * 0.1).toFixed(1);
+                
+                return (
+                  <div key={trainer.employee_id || trainer.user_id || index} className="trainer-rank-item">
+                    <span className={`rank-badge rank-${index + 1}`}>{index + 1}</span>
+                    <img src={photo} alt={name} className="trainer-img" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80'; }} />
+                    <div className="trainer-info">
+                      <span className="trainer-name">{name}</span>
+                      <span className="trainer-sub">{designation}</span>
+                    </div>
+                    <span className="rating-pill">{rating} <i className="fas fa-star"></i></span>
+                  </div>
+                );
+              })
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                No trainers found.
               </div>
-              <span className="rating-pill">4.8 <i className="fas fa-star"></i></span>
-            </div>
-
-            <div className="trainer-rank-item">
-              <span className="rank-badge rank-3">3</span>
-              <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&q=80" alt="Pooja" className="trainer-img" />
-              <div className="trainer-info">
-                <span className="trainer-name">Pooja Mehta</span>
-                <span className="trainer-sub">24 Sessions</span>
-              </div>
-              <span className="rating-pill">4.7 <i className="fas fa-star"></i></span>
-            </div>
-
-            <div className="trainer-rank-item">
-              <span className="rank-badge rank-4">4</span>
-              <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=80" alt="John" className="trainer-img" />
-              <div className="trainer-info">
-                <span className="trainer-name">John Doe</span>
-                <span className="trainer-sub">22 Sessions</span>
-              </div>
-              <span className="rating-pill">4.6 <i className="fas fa-star"></i></span>
-            </div>
-
-            <div className="trainer-rank-item">
-              <span className="rank-badge rank-5">5</span>
-              <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=80&q=80" alt="Vikram" className="trainer-img" />
-              <div className="trainer-info">
-                <span className="trainer-name">Vikram Singh</span>
-                <span className="trainer-sub">20 Sessions</span>
-              </div>
-              <span className="rating-pill">4.5 <i className="fas fa-star"></i></span>
-            </div>
+            )}
           </div>
-        </div>
-
-        <div className="dash-card">
-          <div className="dash-card-header">
-            <h3 className="dash-card-title">Member Check-ins (Today)</h3>
-            <a href="/admin-dashboard/attendance" className="header-link">View All <i className="fas fa-arrow-right"></i></a>
-          </div>
-
-          <div className="dash-checkin-list">
-            <div className="checkin-item">
-              <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&q=80" alt="Rahul" className="user-avatar" />
-              <div className="user-info">
-                <span className="user-name">Rahul Sharma</span>
-                <span className="user-id">MEM10045</span>
-              </div>
-              <span className="checkin-time">06:15 AM</span>
-              <span className="badge-checked">Checked In</span>
-            </div>
-
-            <div className="checkin-item">
-              <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80" alt="Priya" className="user-avatar" />
-              <div className="user-info">
-                <span className="user-name">Priya Patel</span>
-                <span className="user-id">MEM10046</span>
-              </div>
-              <span className="checkin-time">06:18 AM</span>
-              <span className="badge-checked">Checked In</span>
-            </div>
-
-            <div className="checkin-item">
-              <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=80&q=80" alt="Amit" className="user-avatar" />
-              <div className="user-info">
-                <span className="user-name">Amit Verma</span>
-                <span className="user-id">MEM10047</span>
-              </div>
-              <span className="checkin-time">06:20 AM</span>
-              <span className="badge-checked">Checked In</span>
-            </div>
-
-            <div className="checkin-item">
-              <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=80&q=80" alt="Neha" className="user-avatar" />
-              <div className="user-info">
-                <span className="user-name">Neha Gupta</span>
-                <span className="user-id">MEM10048</span>
-              </div>
-              <span className="checkin-time">06:25 AM</span>
-              <span className="badge-checked">Checked In</span>
-            </div>
-
-            <div className="checkin-item">
-              <img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=80&q=80" alt="Vikram" className="user-avatar" />
-              <div className="user-info">
-                <span className="user-name">Vikram Singh</span>
-                <span className="user-id">MEM10049</span>
-              </div>
-              <span className="checkin-time">06:30 AM</span>
-              <span className="badge-checked">Checked In</span>
-            </div>
-          </div>
-
-          <a href="/admin-dashboard/attendance" className="dash-card-footer-link">
-            View All Check-ins <i className="fas fa-arrow-right"></i>
-          </a>
         </div>
       </div>
     </div>

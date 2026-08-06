@@ -81,12 +81,26 @@
   color: #ffffff;
 }
 
-/* Navigation Menu */
 .nav-menu {
   padding: 0.65rem 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.nav-category-header {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 0.6rem 0.65rem 0.25rem;
+  margin-top: 0.4rem;
+}
+
+.nav-category-header:first-child {
+  margin-top: 0;
+  padding-top: 0.2rem;
 }
 
 .nav-item {

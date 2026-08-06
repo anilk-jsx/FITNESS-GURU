@@ -18,7 +18,21 @@ const AdminFinanceManagement = () => {
     const [branches, setBranches] = useState([]);
     
     // --- EXECUTIVE P&L STATE ---
-    const [plPeriod, setPlPeriod] = useState({ start_date: '2026-07-01', end_date: '2026-07-31', branch_id: '' });
+    const getInitialDates = () => {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = now.getMonth();
+        const start = new Date(y, m, 1);
+        const end = new Date(y, m + 1, 0);
+        const pad = (n) => String(n).padStart(2, '0');
+        return {
+            start: `${y}-${pad(m + 1)}-01`,
+            end: `${y}-${pad(m + 1)}-${pad(end.getDate())}`
+        };
+    };
+
+    const initialDates = getInitialDates();
+    const [plPeriod, setPlPeriod] = useState({ start_date: initialDates.start, end_date: initialDates.end, branch_id: '' });
     const [plRevenue, setPlRevenue] = useState({
         membership_and_pt_sales: "0.00",
         store_product_sales: "0.00",
@@ -38,8 +52,9 @@ const AdminFinanceManagement = () => {
         profit_margin_percentage: "0.00"
     });
     const [plDateShortcut, setPlDateShortcut] = useState('current_month');
-    const [plStartDate, setPlStartDate] = useState('2026-07-01');
-    const [plEndDate, setPlEndDate] = useState('2026-07-31');
+    const [plStartDate, setPlStartDate] = useState(initialDates.start);
+    const [plEndDate, setPlEndDate] = useState(initialDates.end);
+
 
     // --- OPEX STATE ---
     const [opexList, setOpexList] = useState([]);
@@ -188,17 +203,33 @@ const AdminFinanceManagement = () => {
     const handleShortcutChange = (e) => {
         const shortcut = e.target.value;
         setPlDateShortcut(shortcut);
+
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = now.getMonth();
+        const pad = (n) => String(n).padStart(2, '0');
+
         if (shortcut === 'current_month') {
-            setPlStartDate('2026-07-01');
-            setPlEndDate('2026-07-31');
+            const end = new Date(y, m + 1, 0);
+            setPlStartDate(`${y}-${pad(m + 1)}-01`);
+            setPlEndDate(`${y}-${pad(m + 1)}-${pad(end.getDate())}`);
         } else if (shortcut === 'previous_month') {
-            setPlStartDate('2026-06-01');
-            setPlEndDate('2026-06-30');
+            const prevMonthDate = new Date(y, m - 1, 1);
+            const py = prevMonthDate.getFullYear();
+            const pm = prevMonthDate.getMonth();
+            const end = new Date(py, pm + 1, 0);
+            setPlStartDate(`${py}-${pad(pm + 1)}-01`);
+            setPlEndDate(`${py}-${pad(pm + 1)}-${pad(end.getDate())}`);
         } else if (shortcut === 'last_3_months') {
-            setPlStartDate('2026-05-01');
-            setPlEndDate('2026-07-31');
+            const start3 = new Date(y, m - 2, 1);
+            const py = start3.getFullYear();
+            const pm = start3.getMonth();
+            const end = new Date(y, m + 1, 0);
+            setPlStartDate(`${py}-${pad(pm + 1)}-01`);
+            setPlEndDate(`${y}-${pad(m + 1)}-${pad(end.getDate())}`);
         }
     };
+
 
     // --- API 2: FETCH OPEX LOGS ---
     const fetchOpex = useCallback(async () => {

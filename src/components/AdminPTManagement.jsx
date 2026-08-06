@@ -34,7 +34,8 @@ const AdminPTManagement = () => {
 
   // Manual Purchase Form
   const [selectedPlan, setSelectedPlan] = useState('5');
-  const [paymentMethod, setPaymentMethod] = useState('CASH');
+  const [paymentMethod, setPaymentMethod] = useState('UPI');
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [isProvisioning, setIsProvisioning] = useState(false);
   
   // Tax Receipt display states
@@ -158,12 +159,11 @@ const AdminPTManagement = () => {
   });
   const [isSavingSlot, setIsSavingSlot] = useState(false);
 
-  // Toast Notification State
-  const [toast, setToast] = useState({ show: false, type: '', message: '' });
-
+  // Toast Notification Helper
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const showToast = (message, type = 'success') => {
-    setToast({ show: true, type, message });
-    setTimeout(() => setToast({ show: false, type: '', message: '' }), 4000);
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
   };
 
   // PT Upgrade Plans State (Admin Side)
@@ -176,7 +176,7 @@ const AdminPTManagement = () => {
   const [rosterFilterStatus, setRosterFilterStatus] = useState('ALL');
   const [rosterSearch, setRosterSearch] = useState('');
 
-  // Fetch PT Upgrade Plans for Admin Side
+  // Fetch PT Upgrade Plans (GET /api/membership-plans?plan_type=PT_UPGRADE)
   const fetchPTUpgradePlans = useCallback(async () => {
     setIsLoadingPtPlans(true);
     try {
@@ -185,18 +185,20 @@ const AdminPTManagement = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        const fetched = data.data || [];
-        const ptOnly = fetched.filter(p =>
-          p.plan_type === 'PT_UPGRADE' ||
-          p.plan_type === 'ADD_ON' ||
-          (p.plan_name && p.plan_name.toLowerCase().includes('pt'))
-        );
-        if (ptOnly.length > 0) {
-          setPtPlansList(ptOnly);
-          setSelectedPlan(prev => {
-            const stillValid = ptOnly.some(plan => String(plan.plan_id || plan.id) === String(prev));
-            return stillValid ? prev : String(ptOnly[0].plan_id || ptOnly[0].id || '1');
-          });
+        const rawPlans = data.data || [];
+
+        if (rawPlans.length > 0) {
+          const formatted = rawPlans.map(p => ({
+            plan_id: p.plan_id || p.id,
+            plan_name: p.plan_name || p.name,
+            price: p.price,
+            duration_months: p.duration_months || 1,
+            plan_type: p.plan_type || 'PT_UPGRADE',
+            sessions: p.entitlements?.find(e => e.entitlement_type === 'PT_1ON1')?.quantity || p.sessions || (p.duration_months ? p.duration_months * 8 : 8),
+            description: p.description || `${p.duration_months || 1}-month 1-on-1 PT package`
+          }));
+          setPtPlansList(formatted);
+          setSelectedPlan(String(formatted[0].plan_id));
         } else {
           setFallbackPtPlans();
         }
@@ -212,7 +214,7 @@ const AdminPTManagement = () => {
 
   const fetchMembersList = useCallback(async () => {
     try {
-      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/users/list?role=MEMBER&page=1&limit=100`, {
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/users/list?role=MEMBER&page=1&limit=1000`, {
         method: 'GET'
       });
       if (!response.ok) {
@@ -329,14 +331,14 @@ const AdminPTManagement = () => {
           );
           const ptCreds = Number(
             ptWallet?.remaining_quantity ??
-            sub.pt_credits ?? sub.credits_remaining ??
-            Math.max(0, totalCreds - Number(sub.sessions_used || 0))
+            sub.pt_credits ?? sub.remaining_credits ??
+            totalCreds
           );
 
-          const assignedTrainerId = trainerAssignmentObj.trainer_profile_id || sub.trainer_id || null;
+          const assignedTrainerId = trainerAssignmentObj.trainer_id || sub.assigned_trainer_id || memberObj.assigned_trainer_id || null;
 
           return {
-            subscription_id: sub.subscription_id || (1001 + idx),
+            subscription_id: sub.subscription_id || (101 + idx),
             user_id: memberObj.user_id || sub.user_id || (138 + idx),
             member_code: sub.member_code || memberObj.member_code || `MEM-${String(memberObj.user_id || sub.user_id || idx + 1).padStart(4, '0')}`,
             member_name: memberObj.name || sub.member_name || `Member #${memberObj.user_id || idx + 1}`,
@@ -402,29 +404,13 @@ const AdminPTManagement = () => {
         auto_checkout: 1,
         status: 1,
         slots: [
-          { slot_id: 1, shift_id: 1, slot_name: 'Morning Slot 1', start_time: '06:00:00', end_time: '07:30:00' },
-          { slot_id: 2, shift_id: 1, slot_name: 'Morning Slot 2', start_time: '07:30:00', end_time: '09:00:00' },
-          { slot_id: 3, shift_id: 1, slot_name: 'Morning Slot 3', start_time: '09:00:00', end_time: '10:30:00' }
+          { slot_id: 101, shift_id: 1, slot_name: 'Early Morning Slot A', start_time: '06:00:00', end_time: '07:30:00' },
+          { slot_id: 102, shift_id: 1, slot_name: 'Morning Peak Slot B', start_time: '07:30:00', end_time: '09:00:00' },
+          { slot_id: 103, shift_id: 1, slot_name: 'Late Morning Slot C', start_time: '09:00:00', end_time: '10:30:00' }
         ]
       },
       {
         shift_id: 2,
-        gym_id: 1,
-        branch_id: 1,
-        shift_name: 'Afternoon Shift',
-        shift_type: 'Afternoon',
-        start_time: '11:00:00',
-        end_time: '16:00:00',
-        grace_minutes: 15,
-        auto_checkout: 1,
-        status: 1,
-        slots: [
-          { slot_id: 4, shift_id: 2, slot_name: 'Afternoon Slot 1', start_time: '11:30:00', end_time: '13:00:00' },
-          { slot_id: 5, shift_id: 2, slot_name: 'Afternoon Slot 2', start_time: '14:00:00', end_time: '15:30:00' }
-        ]
-      },
-      {
-        shift_id: 3,
         gym_id: 1,
         branch_id: 1,
         shift_name: 'Evening Peak Shift',
@@ -888,11 +874,14 @@ const AdminPTManagement = () => {
 
   return (
     <div className="admin-pt-container">
-      {/* Toast Alert */}
+      {/* Floating Toast Alert Widget */}
       {toast.show && (
-        <div className={`pt-toast ${toast.type}`}>
-          <i className={`fas ${toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
-          <span>{toast.message}</span>
+        <div className="sub-alert-container">
+          <div className={`sub-alert ${toast.type === 'error' ? 'sub-alert-danger' : 'sub-alert-success'}`}>
+            <i className={`fas ${toast.type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}`}></i>
+            <span>{toast.message}</span>
+            <button onClick={() => setToast({ show: false, message: '', type: 'success' })}>&times;</button>
+          </div>
         </div>
       )}
 
