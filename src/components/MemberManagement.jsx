@@ -17,7 +17,7 @@ const MemberManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editFormData, setEditFormData] = useState(null);
-  
+
   // Tax Receipt display states
   const [activeInvoiceId, setActiveInvoiceId] = useState(null);
   const [showInvoice, setShowInvoice] = useState(false);
@@ -42,11 +42,6 @@ const MemberManagement = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-  });
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -62,12 +57,14 @@ const MemberManagement = () => {
     phone: "",
     password: "",
     role: "MEMBER",
+    registration_number: "",
     // Member fields
     branch_id: "",
     join_date: new Date().toISOString().split("T")[0],
     status: "",
     // Membership plan
     plan_id: "",
+    payment_method: "UPI",
     // Profile fields
     dob: "",
     gender: "",
@@ -141,31 +138,24 @@ const MemberManagement = () => {
   };
 
   const normalizeMembershipPlan = (plan, index) => {
-    // Based on actual API response: {gym_id, branch_id, plan_name, status, created_at}
-    // No plan_id is provided by the API, so we'll use plan_name as identifier
-
     const normalizedPlan = {
       ...plan,
-      plan_id: plan.plan_name, // Use plan_name as the unique identifier
+      plan_id: plan.plan_id !== undefined && plan.plan_id !== null ? plan.plan_id : plan.plan_name,
       branch_id: toIntOrNull(plan.branch_id),
       gym_id: toIntOrNull(plan.gym_id),
-      is_active: plan.status === "ACTIVE" || isActiveStatus(plan.status),
+      is_active: plan.status === "ACTIVE" || plan.status === 1 || isActiveStatus(plan.status),
       plan_name: plan.plan_name || `Plan ${index + 1}`,
+      plan_type: plan.plan_type || "BASE_MEMBERSHIP",
     };
 
     return normalizedPlan;
   };
 
   const getPlanOptionValue = (plan) => {
-    // Use plan_name as the option value since that's our identifier
-    const planName = plan.plan_name;
-
-    if (!planName) {
-      console.warn("Plan has no plan_name:", plan);
-      return "";
+    if (plan.plan_id !== undefined && plan.plan_id !== null && plan.plan_id !== "") {
+      return String(plan.plan_id);
     }
-
-    return planName;
+    return plan.plan_name || "";
   };
 
   const isBranchMatched = (planBranchId, selectedBranchId) => {
@@ -195,12 +185,10 @@ const MemberManagement = () => {
 
       if (data.status === "success" && data.data) {
         setCountries(data.data); // API returns data.data, not data.countries
-        console.log("Countries loaded:", data.data.length, "items");
       } else {
         throw new Error("Invalid API response structure");
       }
     } catch (err) {
-      console.error("Error fetching countries:", err.message);
       // Fallback to default data
       setCountries([{ country_id: 1, country_name: "India" }]);
     } finally {
@@ -233,12 +221,10 @@ const MemberManagement = () => {
 
       if (data.status === "success" && data.data) {
         setStates(data.data);
-        console.log("States loaded:", data.data.length, "items");
       } else {
         throw new Error("Invalid API response structure");
       }
     } catch (err) {
-      console.error("Error fetching states:", err.message);
       setStates([]);
     } finally {
       setDropdownLoading((prev) => ({ ...prev, states: false }));
@@ -270,12 +256,10 @@ const MemberManagement = () => {
 
       if (data.status === "success" && data.data) {
         setDistricts(data.data);
-        console.log("Districts loaded:", data.data.length, "items");
       } else {
         throw new Error("Invalid API response structure");
       }
     } catch (err) {
-      console.error("Error fetching districts:", err.message);
       setDistricts([]);
     } finally {
       setDropdownLoading((prev) => ({ ...prev, districts: false }));
@@ -302,12 +286,10 @@ const MemberManagement = () => {
 
       if (data.status === "success" && data.data) {
         setBranches(data.data);
-        console.log("Branches loaded:", data.data.length, "items");
       } else {
         throw new Error("Invalid API response structure");
       }
     } catch (err) {
-      console.error("Error fetching branches:", err.message);
       setBranches([]);
     } finally {
       setDropdownLoading((prev) => ({ ...prev, branches: false }));
@@ -318,21 +300,17 @@ const MemberManagement = () => {
   const fetchMembershipPlans = async (gymId = 1, branchId) => {
     // Both gymId and branchId are required for this API
     if (!gymId || !branchId) {
-      console.log(
-        "Both gym_id and branch_id are required for membershipPlan API",
-      );
       setMembershipPlans([]);
       return;
     }
 
     setDropdownLoading((prev) => ({ ...prev, membershipPlans: true }));
     try {
-      const url = buildApiUrl(
-        `membershipPlan?gym_id=${gymId}&branch_id=${branchId}`,
+      let url = buildApiUrl(
+        `membership-plans?gym_id=${gymId}&branch_id=${branchId}&plan_type=BASE_MEMBERSHIP`,
       );
-      console.log("Fetching membership plans from:", url);
 
-      const response = await tokenManager.apiCall(url, {
+      let response = await tokenManager.apiCall(url, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -340,25 +318,29 @@ const MemberManagement = () => {
       });
 
       if (!response.ok) {
+        url = buildApiUrl(`membershipPlan?gym_id=${gymId}&branch_id=${branchId}`);
+        response = await tokenManager.apiCall(url, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      }
+
+      if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log("Membership plans API response:", result);
 
       if (result.status === "success") {
-        const normalizedPlans = (result.data || []).map(normalizeMembershipPlan);
+        const rawPlans = result.data || result.plans || [];
+        const normalizedPlans = rawPlans.map(normalizeMembershipPlan);
         setMembershipPlans(normalizedPlans);
-        console.log(
-          "Membership plans loaded:",
-          normalizedPlans.length,
-          "items",
-        );
       } else {
         throw new Error(result.message || "Failed to fetch membership plans");
       }
     } catch (error) {
-      console.error("Error fetching membership plans:", error);
       setMembershipPlans([]);
     } finally {
       setDropdownLoading((prev) => ({ ...prev, membershipPlans: false }));
@@ -391,12 +373,10 @@ const MemberManagement = () => {
       const result = await response.json();
       if (result.status === "success") {
         setCities(result.data || []);
-        console.log("Cities loaded:", result.data?.length || 0, "items");
       } else {
         throw new Error(result.message || "Failed to fetch cities");
       }
     } catch (error) {
-      console.error("Error fetching cities:", error);
       setCities([]);
     } finally {
       setDropdownLoading((prev) => ({ ...prev, cities: false }));
@@ -411,8 +391,6 @@ const MemberManagement = () => {
     try {
       const queryParams = new URLSearchParams({
         role: filters.role,
-        page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
       });
 
       // Add optional filters if they exist
@@ -421,7 +399,7 @@ const MemberManagement = () => {
       if (filters.branch_id) queryParams.append("branch_id", filters.branch_id);
 
       const response = await tokenManager.apiCall(
-        buildApiUrl(`users/list?${queryParams}`),
+        buildApiUrl(`members/viewAllMembers?${queryParams}`),
         {
           method: "GET",
           headers: {
@@ -437,45 +415,22 @@ const MemberManagement = () => {
       const data = await response.json();
 
       if (data.status === "success") {
-        setMembers(data.users || data.data || []);
-        setPagination((prev) => ({
-          ...prev,
-          total: data.meta?.total || data.total || 0,
-        }));
+        const memberList = data.data || data.users || [];
+        setMembers(memberList);
       } else {
         throw new Error(data.message || "Failed to fetch members");
       }
     } catch (err) {
       setError(err.message);
-      console.error("Error fetching members:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Ref to track previous search query
-  const prevSearchRef = React.useRef("");
-
-  // Effect to handle search query changes and fetch all members for global search
-  useEffect(() => {
-    const searchChanged = prevSearchRef.current !== searchQuery;
-    prevSearchRef.current = searchQuery;
-
-    if (searchChanged) {
-      if (searchQuery.trim() !== "") {
-        // Search activated - fetch all members by setting high limit and page 1
-        setPagination((prev) => ({ ...prev, page: 1, limit: 9999 }));
-      } else {
-        // Search cleared - reset to default pagination (10 per page, page 1)
-        setPagination((prev) => ({ ...prev, page: 1, limit: 10 }));
-      }
-    }
-  }, [searchQuery]);
-
-  // Effect to fetch members when filters/pagination change
+  // Effect to fetch members when filters change
   useEffect(() => {
     fetchMembers();
-  }, [filters, pagination.page, pagination.limit]);
+  }, [filters]);
 
   // Effect to fetch dropdown data on component mount
   useEffect(() => {
@@ -486,13 +441,6 @@ const MemberManagement = () => {
     // Clean debug function - available in console as window.testAPI()
     if (typeof window !== "undefined") {
       window.testAPI = () => {
-        console.log("=== API Test Results ===");
-        console.log("Countries:", countries);
-        console.log("States:", states);
-        console.log("Districts:", districts);
-        console.log("Branches:", branches);
-        console.log("Cities:", cities);
-        console.log("Membership Plans:", membershipPlans);
       };
     }
   }, []);
@@ -534,10 +482,151 @@ const MemberManagement = () => {
 
   // Effect to fetch cities when district changes in edit form
   useEffect(() => {
-    if (editFormData?.district) {
+    if (editFormData?.district && !isNaN(Number(editFormData.district))) {
       fetchCities(editFormData.district);
     }
   }, [editFormData?.district]);
+
+  // Auto-resolve State ID when states array loads
+  useEffect(() => {
+    if (showEditModal && editFormData && states.length > 0) {
+      const currentState = editFormData.state || editFormData.state_name;
+      if (currentState) {
+        const found = states.find(
+          (s) =>
+            String(s.state_id || s.id) === String(currentState) ||
+            s.state_name?.toLowerCase() === String(currentState).toLowerCase()
+        );
+        if (found) {
+          const resolvedStateId = String(found.state_id || found.id);
+          if (editFormData.state !== resolvedStateId) {
+            setEditFormData((prev) => ({ ...prev, state: resolvedStateId }));
+            fetchDistricts(resolvedStateId);
+          }
+        }
+      }
+    }
+  }, [showEditModal, states.length]);
+
+  // Auto-resolve District ID when districts array loads
+  useEffect(() => {
+    if (showEditModal && editFormData && districts.length > 0) {
+      const currentDistrict = editFormData.district || editFormData.district_name;
+      if (currentDistrict) {
+        const found = districts.find(
+          (d) =>
+            String(d.district_id || d.id) === String(currentDistrict) ||
+            d.district_name?.toLowerCase() === String(currentDistrict).toLowerCase()
+        );
+        if (found) {
+          const resolvedDistrictId = String(found.district_id || found.id);
+          if (editFormData.district !== resolvedDistrictId) {
+            setEditFormData((prev) => ({ ...prev, district: resolvedDistrictId }));
+            fetchCities(resolvedDistrictId);
+          }
+        }
+      }
+    }
+  }, [showEditModal, districts.length]);
+
+  // Auto-resolve City ID when cities array loads
+  useEffect(() => {
+    if (showEditModal && editFormData && cities.length > 0) {
+      const currentCity = editFormData.city || editFormData.city_name;
+      if (currentCity) {
+        const found = cities.find(
+          (c) =>
+            String(c.city_id || c.id) === String(currentCity) ||
+            c.city_name?.toLowerCase() === String(currentCity).toLowerCase()
+        );
+        if (found) {
+          const resolvedCityId = String(found.city_id || found.id);
+          if (editFormData.city !== resolvedCityId) {
+            setEditFormData((prev) => ({ ...prev, city: resolvedCityId }));
+          }
+        }
+      }
+    }
+  }, [showEditModal, cities.length]);
+
+  // Real-time duplicate registration number validation for Edit Modal
+  useEffect(() => {
+    if (showEditModal && editFormData) {
+      const regNum = editFormData.registration_number !== undefined && editFormData.registration_number !== null
+        ? editFormData.registration_number.toString().trim()
+        : "";
+      const currentUserId = editFormData.user_id !== undefined && editFormData.user_id !== null
+        ? editFormData.user_id.toString().trim()
+        : "";
+
+      if (regNum) {
+        const duplicate = members.find((m) => {
+          const mReg = (m.registration_number ?? m.reg_no ?? m.registration_no ?? m.reg_number ?? "").toString().trim();
+          const mId = (m.user_id ?? m.id ?? m.member_id ?? "").toString().trim();
+          return mReg === regNum && mId !== currentUserId;
+        });
+
+        if (duplicate) {
+          setEditFormErrors((prev) => {
+            const warningMsg = `Warning: Registration number "${regNum}" is already assigned to member ${duplicate.name || 'another member'}`;
+            if (prev.registration_number === warningMsg) return prev;
+            return { ...prev, registration_number: warningMsg };
+          });
+        } else {
+          setEditFormErrors((prev) => {
+            if (!prev.registration_number) return prev;
+            const updated = { ...prev };
+            delete updated.registration_number;
+            return updated;
+          });
+        }
+      } else {
+        setEditFormErrors((prev) => {
+          if (!prev.registration_number) return prev;
+          const updated = { ...prev };
+          delete updated.registration_number;
+          return updated;
+        });
+      }
+    }
+  }, [showEditModal, editFormData?.registration_number, editFormData?.user_id, members]);
+
+  // Real-time duplicate registration number validation for Add Modal
+  useEffect(() => {
+    if (showAddModal && addFormData) {
+      const regNum = addFormData.registration_number !== undefined && addFormData.registration_number !== null
+        ? addFormData.registration_number.toString().trim()
+        : "";
+      if (regNum) {
+        const duplicate = members.find((m) => {
+          const mReg = (m.registration_number ?? m.reg_no ?? m.registration_no ?? m.reg_number ?? "").toString().trim();
+          return mReg === regNum;
+        });
+
+        if (duplicate) {
+          setAddFormErrors((prev) => {
+            const warningMsg = `Warning: Registration number "${regNum}" is already assigned to member ${duplicate.name || 'another member'}`;
+            if (prev.registration_number === warningMsg) return prev;
+            return { ...prev, registration_number: warningMsg };
+          });
+        } else {
+          setAddFormErrors((prev) => {
+            if (!prev.registration_number) return prev;
+            const updated = { ...prev };
+            delete updated.registration_number;
+            return updated;
+          });
+        }
+      } else {
+        setAddFormErrors((prev) => {
+          if (!prev.registration_number) return prev;
+          const updated = { ...prev };
+          delete updated.registration_number;
+          return updated;
+        });
+      }
+    }
+  }, [showAddModal, addFormData?.registration_number, members]);
 
   // Effect to fetch membership plans when branch changes
   useEffect(() => {
@@ -553,26 +642,9 @@ const MemberManagement = () => {
       ...prev,
       [filterName]: value,
     }));
-    // Reset to first page when filters change
-    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
-  // Handle pagination changes
-  const handlePageChange = (newPage) => {
-    setPagination((prev) => ({ ...prev, page: newPage }));
-  };
-
-  // Handle limit changes
-  const handleLimitChange = (newLimit) => {
-    let actualLimit = newLimit;
-    // If "ALL" is selected (represented as string), use total or large number
-    if (newLimit === "ALL") {
-      actualLimit = pagination.total || 99999;
-    }
-    setPagination((prev) => ({ ...prev, limit: actualLimit, page: 1 }));
-  };
-
-  // Return members as-is (API handles search filtering)
+  // Return members matching search query
   const filteredMembers = members.filter((member) => {
     if (!searchQuery) return true; // Return all if no search
     const query = searchQuery.toLowerCase();
@@ -580,12 +652,10 @@ const MemberManagement = () => {
       member.name?.toLowerCase().includes(query) ||
       member.email?.toLowerCase().includes(query) ||
       member.phone?.includes(searchQuery) ||
-      member.user_id?.toString().includes(searchQuery)
+      member.user_id?.toString().includes(searchQuery) ||
+      member.registration_number?.toString().includes(searchQuery)
     );
   });
-
-  // Calculate total pages
-  const totalPages = Math.ceil(pagination.total / pagination.limit);
 
   // Fetch detailed member information
   const fetchMemberDetails = async (userId) => {
@@ -615,7 +685,6 @@ const MemberManagement = () => {
         throw new Error(data.message || "Failed to fetch member details");
       }
     } catch (err) {
-      console.error("Error fetching member details:", err);
       setMemberDetailsError(err.message);
     } finally {
       setMemberDetailsLoading(false);
@@ -624,9 +693,8 @@ const MemberManagement = () => {
 
   const handleViewProfile = (member) => {
     setSelectedMember(member);
-    setMemberDetails(null); // Clear previous details
+    setMemberDetails(member);
     setShowMemberProfile(true);
-    fetchMemberDetails(member.user_id);
   };
 
   // Helper functions for formatting
@@ -674,41 +742,8 @@ const MemberManagement = () => {
     return isActiveStatus(status) ? "Active" : "Inactive";
   };
 
-  const handleEditMember = async (member) => {
-    // If we have detailed member data from the profile view, use it
+  const handleEditMember = (member) => {
     let detailedMember = member;
-
-    // If we don't have detailed data or we're coming from the table view, fetch it
-    if (!memberDetails || memberDetails.user_id !== member.user_id) {
-      try {
-        setLoading(true);
-        const response = await tokenManager.apiCall(
-          buildApiUrl(`members/view?user_id=${member.user_id}`),
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.status === "success") {
-            detailedMember = data.data;
-            console.log("🔍 Raw API Response for member:", detailedMember);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching member details for edit:", error);
-        // Continue with basic member data if detailed fetch fails
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      // Use existing memberDetails
-      detailedMember = memberDetails;
-    }
 
     // Debug membership plan resolution
     const userPlanName = detailedMember.plan_name || "";
@@ -752,15 +787,11 @@ const MemberManagement = () => {
       const fitnessValue = detailedMember.fitness_level || "";
       if (!fitnessValue) return "";
 
-      // Convert database enum values to UI dropdown values
-      if (fitnessValue === "BEGINEER") return "BEGINNER"; // Database has typo
+      if (fitnessValue === "BEGINEER" || fitnessValue === "BEGINNER") return "BEGINNER";
       if (fitnessValue === "INTERMEDIATE") return "INTERMEDIATE";
-      if (fitnessValue === "ADVANCE") return "ADVANCED"; // Database uses ADVANCE
+      if (fitnessValue === "ADVANCE" || fitnessValue === "ADVANCED") return "ADVANCED";
 
-      // If it's already in UI format, use as-is
-      if (['BEGINNER', 'INTERMEDIATE', 'ADVANCED'].includes(String(fitnessValue))) return String(fitnessValue);
-
-      return ""; // Empty if unrecognized
+      return String(fitnessValue);
     })();
 
     // Normalize goal focus from database enum to UI dropdown values
@@ -768,56 +799,70 @@ const MemberManagement = () => {
       const goalValue = detailedMember.goal_focus || "";
       if (!goalValue) return "";
 
-      // Convert database enum values to UI dropdown values
-      if (goalValue === "GENERAL_FITNESS") return "GENERAL"; // Database uses GENERAL_FITNESS
+      if (goalValue === "GENERAL" || goalValue === "GENERAL_FITNESS") return "GENERAL_FITNESS";
       if (goalValue === "WEIGHT_LOSS") return "WEIGHT_LOSS";
+      if (goalValue === "FAT_LOSS") return "FAT_LOSS";
       if (goalValue === "MUSCLE_GAIN") return "MUSCLE_GAIN";
       if (goalValue === "STRENGTH") return "STRENGTH";
       if (goalValue === "ENDURANCE") return "ENDURANCE";
 
-      // If it's already in UI format, use as-is
-      if (['GENERAL', 'WEIGHT_LOSS', 'MUSCLE_GAIN', 'STRENGTH', 'ENDURANCE'].includes(String(goalValue))) return String(goalValue);
-
-      return ""; // Empty if unrecognized
+      return String(goalValue);
     })();
 
     const formData = {
       user_id: detailedMember.user_id,
+      registration_number: detailedMember.registration_number || "",
       name: detailedMember.name || "",
       email: detailedMember.email || "",
       phone: detailedMember.phone || "",
       status:
-        detailedMember.status === 1
+        detailedMember.status === 1 || detailedMember.status === "1" || detailedMember.status === "ACTIVE"
           ? "ACTIVE"
-          : detailedMember.status === 0
+          : detailedMember.status === 0 || detailedMember.status === "0" || detailedMember.status === "INACTIVE"
             ? "INACTIVE"
-            : detailedMember.status === 2
+            : detailedMember.status === 2 || detailedMember.status === "2" || detailedMember.status === "SUSPENDED"
               ? "SUSPENDED"
-              : "ACTIVE", // Default to ACTIVE if unknown value
+              : "ACTIVE",
 
-      // Profile information
-      dob: detailedMember.date_of_birth || "",
+      // Profile information - format as YYYY-MM-DD for HTML5 date inputs
+      dob: detailedMember.dob
+        ? String(detailedMember.dob).split("T")[0]
+        : detailedMember.date_of_birth
+          ? String(detailedMember.date_of_birth).split("T")[0]
+          : "",
       gender: normalizedGender,
       blood_group: detailedMember.blood_group || "",
 
       // Physical stats
-      height: parseFloat(detailedMember.height_cm) || "",
-      weight: parseFloat(detailedMember.weight_kg) || "",
+      height:
+        detailedMember.height !== undefined && detailedMember.height !== null
+          ? detailedMember.height
+          : parseFloat(detailedMember.height_cm) || "",
+      weight:
+        detailedMember.weight !== undefined && detailedMember.weight !== null
+          ? detailedMember.weight
+          : parseFloat(detailedMember.weight_kg) || "",
       fitness_level: normalizedFitnessLevel,
       goal_focus: normalizedGoalFocus,
 
-      // Gym and membership - use plan_name as identifier
+      // Gym and membership
       branch_id: detailedMember.branch_id ? String(detailedMember.branch_id) : "",
-      membership_plan: "", // Will be populated after plans load and matching is done
-      membership_plan_raw: userPlanName, // Keep plan name for matching later
-      join_date: detailedMember.date_of_joining || "",
+      membership_plan_raw: userPlanName,
+      join_date: detailedMember.join_date
+        ? String(detailedMember.join_date).split("T")[0]
+        : detailedMember.date_of_joining
+          ? String(detailedMember.date_of_joining).split("T")[0]
+          : "",
 
-      // Contact and address - using consistent property names
+      // Contact and address
       emergency_contact: detailedMember.emergency_contact || "",
-      country: detailedMember.country_id ? String(detailedMember.country_id) : "1",
-      state: detailedMember.state_id ? String(detailedMember.state_id) : "",
-      district: detailedMember.district_id ? String(detailedMember.district_id) : "",
-      city: detailedMember.city_id ? String(detailedMember.city_id) : "",
+      country: detailedMember.country !== undefined && detailedMember.country !== null ? String(detailedMember.country) : detailedMember.country_id !== undefined && detailedMember.country_id !== null ? String(detailedMember.country_id) : "1",
+      state: detailedMember.state !== undefined && detailedMember.state !== null ? String(detailedMember.state) : detailedMember.state_id !== undefined && detailedMember.state_id !== null ? String(detailedMember.state_id) : "",
+      state_name: detailedMember.state_name || (typeof detailedMember.state === "string" ? detailedMember.state : ""),
+      district: detailedMember.district !== undefined && detailedMember.district !== null ? String(detailedMember.district) : detailedMember.district_id !== undefined && detailedMember.district_id !== null ? String(detailedMember.district_id) : "",
+      district_name: detailedMember.district_name || (typeof detailedMember.district === "string" ? detailedMember.district : ""),
+      city: detailedMember.city !== undefined && detailedMember.city !== null ? String(detailedMember.city) : detailedMember.city_id !== undefined && detailedMember.city_id !== null ? String(detailedMember.city_id) : "",
+      city_name: detailedMember.city_name || (typeof detailedMember.city === "string" ? detailedMember.city : ""),
       address_line1: detailedMember.address_line1 || "",
       address_line2: detailedMember.address_line2 || "",
 
@@ -829,18 +874,18 @@ const MemberManagement = () => {
     // Clear any existing validation errors
     setEditFormErrors({});
 
-    // Open modal immediately to avoid delayed UX, then hydrate dropdowns in background.
+    // Open modal immediately
     setEditFormData(formData);
     setShowEditModal(true);
 
+    // Trigger cascading fetches for member location
     Promise.allSettled([
       fetchBranches(1),
       formData.branch_id ? fetchMembershipPlans(1, formData.branch_id) : Promise.resolve(),
-      formData.country ? fetchStates(formData.country) : Promise.resolve(),
+      fetchStates(formData.country || "1"),
       formData.state ? fetchDistricts(formData.state) : Promise.resolve(),
       formData.district ? fetchCities(formData.district) : Promise.resolve(),
     ]).catch((dropdownError) => {
-      console.error("Error loading edit dropdown data:", dropdownError);
     });
 
     setShowMemberProfile(false);
@@ -864,7 +909,6 @@ const MemberManagement = () => {
       const matchingPlanId = findMatchingPlan(editFormData.membership_plan_raw, availablePlans);
 
       if (matchingPlanId && matchingPlanId !== editFormData.membership_plan) {
-        console.log("🔄 Auto-updating membership plan:", matchingPlanId);
         setEditFormData(prev => ({
           ...prev,
           membership_plan: typeof matchingPlanId === 'string' ? matchingPlanId : matchingPlanId.plan_name || ""
@@ -877,8 +921,8 @@ const MemberManagement = () => {
   const handleFormChange = (e) => {
     const { name, value } = e.target;
 
-    // Clear validation error for this field when user starts typing/selecting
-    if (editFormErrors[name]) {
+    // Clear validation error for this field when user starts typing/selecting (except registration_number managed by useEffect)
+    if (editFormErrors[name] && name !== "registration_number") {
       setEditFormErrors(prev => {
         const updated = { ...prev };
         delete updated[name];
@@ -894,11 +938,14 @@ const MemberManagement = () => {
         updated.state = "";
         updated.district = "";
         updated.city = "";
+        if (value) fetchStates(value);
       } else if (name === "state") {
         updated.district = "";
         updated.city = "";
+        if (value) fetchDistricts(value);
       } else if (name === "district") {
         updated.city = "";
+        if (value) fetchCities(value);
       } else if (name === "branch_id") {
         // Reset plan selection when branch changes
         updated.membership_plan = "";
@@ -983,6 +1030,19 @@ const MemberManagement = () => {
       errors.city = "Please select city";
     }
 
+    // Registration number validation (Required + Unique)
+    if (!formData.registration_number?.toString().trim()) {
+      errors.registration_number = "Registration number is required";
+    } else {
+      const regNum = formData.registration_number.toString().trim();
+      const duplicate = members.find(
+        (m) => m.registration_number?.toString().trim() === regNum
+      );
+      if (duplicate) {
+        errors.registration_number = `Warning: Registration number "${regNum}" is already assigned to member ${duplicate.name}`;
+      }
+    }
+
     return errors;
   };
 
@@ -1010,10 +1070,6 @@ const MemberManagement = () => {
       errors.branch_id = "Please select a branch";
     }
 
-    if (!formData.gender) {
-      errors.gender = "Please select gender";
-    }
-
     if (!formData.country) {
       errors.country = "Please select country";
     }
@@ -1028,6 +1084,22 @@ const MemberManagement = () => {
 
     if (!formData.city) {
       errors.city = "Please select city";
+    }
+
+    // Registration number validation (Required + Unique)
+    if (!formData.registration_number?.toString().trim()) {
+      errors.registration_number = "Registration number is required";
+    } else {
+      const regNum = formData.registration_number.toString().trim();
+      const currentUserId = (formData.user_id ?? formData.id ?? "").toString().trim();
+      const duplicate = members.find((m) => {
+        const mReg = (m.registration_number ?? m.reg_no ?? m.registration_no ?? m.reg_number ?? "").toString().trim();
+        const mId = (m.user_id ?? m.id ?? m.member_id ?? "").toString().trim();
+        return mReg === regNum && mId !== currentUserId;
+      });
+      if (duplicate) {
+        errors.registration_number = `Warning: Registration number "${regNum}" is already assigned to member ${duplicate.name || 'another member'}`;
+      }
     }
 
     // Password validation if passwords are provided
@@ -1059,175 +1131,64 @@ const MemberManagement = () => {
     e.preventDefault();
     setEditFormErrors({}); // Clear previous errors
 
+    if (!editFormData) return;
+
     // Validate form
     const errors = validateEditForm(editFormData);
     if (Object.keys(errors).length > 0) {
       setEditFormErrors(errors);
+      const firstError = Object.values(errors)[0];
+      showNotification(`Validation Error: ${firstError}`, 'error');
       return;
     }
 
     setLoading(true);
 
     try {
-      // Find the selected membership plan to get its ID for the API
-      let membershipPlanId = null;
-      if (editFormData.membership_plan) {
-        const selectedPlan = membershipPlans.find(plan =>
-          getPlanOptionValue(plan) === editFormData.membership_plan
-        );
-
-        if (selectedPlan) {
-          // Try to extract numeric ID from the original member data
-          // Since the API doesn't provide plan IDs, we'll use the original membership_plan value
-          // that was stored in membership_plan_raw during form population
-          const originalMemberData = memberDetails; // This should have the original numeric plan ID
-
-          // Check if the current selection matches the original plan
-          if (selectedPlan.plan_name === editFormData.membership_plan_raw) {
-            // User didn't change the plan, use original numeric ID
-            membershipPlanId = originalMemberData?.membership_plan || 1;
-          } else {
-            // User changed the plan, we need to map plan names to IDs
-            // This is a temporary solution - ideally the API should provide plan IDs
-            const planMap = {
-              'Monthly Plan': 1,
-              'Quarterly Plan': 2,
-              'Yearly Plan': 3
-            };
-            membershipPlanId = planMap[selectedPlan.plan_name] || 1;
-          }
-        } else {
-          console.warn("⚠️ Selected plan not found in available plans");
-          membershipPlanId = null;
-        }
-      } else {
-        // No plan selected, use original or default
-        membershipPlanId = memberDetails?.membership_plan || null;
-      }
-
-      // Special handling for branch changes
-      const originalBranchId = memberDetails?.branch_id;
-      const newBranchId = parseInt(editFormData.branch_id);
-
-      if (originalBranchId && newBranchId && originalBranchId !== newBranchId) {
-        console.log("🏢 Branch change detected:", {
-          from: originalBranchId,
-          to: newBranchId
-        });
-
-        // If branch changed but membership plan wasn't updated, clear it
-        if (membershipPlanId && editFormData.membership_plan === editFormData.membership_plan_raw) {
-          console.log("⚠️ Branch changed but plan not updated - clearing membership plan to avoid conflicts");
-          membershipPlanId = null;
-        }
-      }
-
-      console.log("🎯 Membership plan ID resolution:", {
-        selectedPlanName: editFormData.membership_plan,
-        originalPlanName: editFormData.membership_plan_raw,
-        resolvedPlanId: membershipPlanId,
-        originalMembershipPlan: memberDetails?.membership_plan
-      });
-
-      // Log enum transformations for debugging Edit Member
-      console.log("🔄 Enum transformations for Edit Member:", {
-        original: { gender: editFormData.gender, fitness_level: editFormData.fitness_level, goal_focus: editFormData.goal_focus },
-        transformed: {
-          gender: editFormData.gender === "MALE" ? "Male" : editFormData.gender === "FEMALE" ? "Female" : editFormData.gender === "OTHER" ? "Other" : editFormData.gender || "",
-          fitness_level: editFormData.fitness_level === "BEGINNER" ? "BEGINEER" : editFormData.fitness_level === "INTERMEDIATE" ? "INTERMEDIATE" : editFormData.fitness_level === "ADVANCED" ? "ADVANCE" : editFormData.fitness_level || "",
-          goal_focus: editFormData.goal_focus === "GENERAL" ? "GENERAL_FITNESS" : editFormData.goal_focus || ""
-        }
-      });
-
-      // Prepare update data matching the API structure
+      // Prepare update data matching Section 3 (Update Member API) specification
+      // Ensure all expected array keys exist in payload so PHP backend array access won't throw Undefined Array Key Warnings
       const updateData = {
         user_id: editFormData.user_id,
+        registration_number: editFormData.registration_number ? parseInt(editFormData.registration_number, 10) : 0,
 
         // Basic user information
-        name: editFormData.name.trim(),
-        email: editFormData.email.trim(),
-        phone: editFormData.phone.trim(),
-        status: editFormData.status === "ACTIVE" ? 1 : editFormData.status === "INACTIVE" ? 0 : editFormData.status === "SUSPENDED" ? 2 : 1, // Default to active
+        name: editFormData.name ? editFormData.name.trim() : "",
+        email: editFormData.email ? editFormData.email.trim() : "",
+        phone: editFormData.phone ? editFormData.phone.trim() : "",
+        branch_id: editFormData.branch_id ? parseInt(editFormData.branch_id, 10) : 0,
+        status: editFormData.status === "ACTIVE" ? 1 : editFormData.status === "INACTIVE" ? 0 : editFormData.status === "SUSPENDED" ? 2 : 1,
 
         // Profile information
+        join_date: editFormData.join_date || "",
         dob: editFormData.dob || "",
-        gender: editFormData.gender === "MALE" ? "Male" : editFormData.gender === "FEMALE" ? "Female" : editFormData.gender === "OTHER" ? "Other" : editFormData.gender || "",
+        gender: editFormData.gender || "",
         blood_group: editFormData.blood_group || "",
 
-        // Physical stats (convert to numbers, handle empty values)
-        height: editFormData.height ? parseFloat(editFormData.height) : null,
-        weight: editFormData.weight ? parseFloat(editFormData.weight) : null,
-        fitness_level: editFormData.fitness_level === "BEGINNER" ? "BEGINEER" : editFormData.fitness_level === "INTERMEDIATE" ? "INTERMEDIATE" : editFormData.fitness_level === "ADVANCED" ? "ADVANCE" : editFormData.fitness_level || "",
-        goal_focus: editFormData.goal_focus === "GENERAL" ? "GENERAL_FITNESS" : editFormData.goal_focus || "",
-
-        // Gym and membership
-        branch_id: editFormData.branch_id ? parseInt(editFormData.branch_id) : null,
-        membership_plan: membershipPlanId,
-        join_date: editFormData.join_date || "",
+        // Physical stats
+        height: editFormData.height !== "" && editFormData.height !== null && editFormData.height !== undefined ? parseFloat(editFormData.height) : 0,
+        weight: editFormData.weight !== "" && editFormData.weight !== null && editFormData.weight !== undefined ? parseFloat(editFormData.weight) : 0,
+        fitness_level: editFormData.fitness_level || "",
+        goal_focus: editFormData.goal_focus || "",
 
         // Contact and address
         emergency_contact: editFormData.emergency_contact || "",
-        country: editFormData.country ? parseInt(editFormData.country) : 1,
-        state: editFormData.state ? parseInt(editFormData.state) : null,
-        district: editFormData.district ? parseInt(editFormData.district) : null,
-        city: editFormData.city ? parseInt(editFormData.city) : null,
+        country: editFormData.country ? parseInt(editFormData.country, 10) : 1,
+        state: editFormData.state ? parseInt(editFormData.state, 10) : 0,
+        district: editFormData.district ? parseInt(editFormData.district, 10) : 0,
+        city: editFormData.city ? parseInt(editFormData.city, 10) : 0,
         address_line1: editFormData.address_line1 || "",
         address_line2: editFormData.address_line2 || "",
-
-        // Password fields (optional)
-        new_password: editFormData.new_password || "",
-        confirm_password: editFormData.confirm_password || "",
       };
 
-      // Validate required fields
-      if (!updateData.user_id) {
-        throw new Error("User ID is missing");
-      }
-      if (!updateData.name) {
-        throw new Error("Name is required");
-      }
-      if (!updateData.email) {
-        throw new Error("Email is required");
-      }
-      if (!updateData.phone) {
-        throw new Error("Phone is required");
+      // Only include password fields if user actively typed a new password
+      if (editFormData.new_password && editFormData.new_password.trim() !== "") {
+        updateData.new_password = editFormData.new_password;
+        updateData.confirm_password = editFormData.confirm_password;
       }
 
-      // Validate branch_id specifically since errors occur when changing branches
-      if (!updateData.branch_id) {
-        throw new Error("Branch selection is required");
-      }
-      if (isNaN(updateData.branch_id) || updateData.branch_id <= 0) {
-        throw new Error("Invalid branch selected");
-      }
 
-      // Validate membership_plan if provided
-      if (updateData.membership_plan && (isNaN(updateData.membership_plan) || updateData.membership_plan <= 0)) {
-        console.warn("⚠️ Invalid membership plan ID:", updateData.membership_plan);
-        updateData.membership_plan = null; // Set to null if invalid
-      }
-
-      // Remove null/undefined values to clean up the request
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key] === null || updateData[key] === undefined) {
-          if (key !== 'new_password' && key !== 'confirm_password') {
-            delete updateData[key];
-          }
-        }
-      });
-
-      // Validate critical data before sending
-      if (!updateData.branch_id) {
-        console.warn("⚠️ Branch ID is missing, this may cause server errors");
-      }
-
-      console.log("🚀 Sending update request:", updateData);
-
-      // Debug API URL
       const apiUrl = buildApiUrl("members/updateMember");
-      console.log("🌐 API URL:", apiUrl);
 
-      // Make the API call
       const response = await tokenManager.apiCall(apiUrl, {
         method: "PUT",
         headers: {
@@ -1236,95 +1197,43 @@ const MemberManagement = () => {
         body: JSON.stringify(updateData),
       });
 
-      console.log("📡 Response status:", response.status, response.statusText);
-      console.log("📡 Response headers:", Object.fromEntries(response.headers.entries()));
-
-      // Get response text first to handle both JSON and HTML responses
       const responseText = await response.text();
-      console.log("📡 Raw response (first 500 chars):", responseText.substring(0, 500));
 
-      if (!response.ok) {
-        // Log the full error response for debugging
-        console.error("❌ Server error response:", responseText);
-
-        if (responseText.includes("<html>") || responseText.includes("<!DOCTYPE")) {
-          throw new Error(`Server returned an error page (HTTP ${response.status}). Check server logs for details.`);
-        }
-
-        throw new Error(`HTTP error! status: ${response.status} - ${responseText}`);
-      }
-
-      // Try to parse as JSON
-      let result;
+      // Extract JSON string from responseText (stripping PHP warning HTML output if present)
+      let result = {};
       try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error("❌ Failed to parse response as JSON:", parseError);
-
-        if (responseText.includes("<html>") || responseText.includes("<!DOCTYPE")) {
-          throw new Error("Server returned HTML instead of JSON. This usually indicates a server error or configuration issue.");
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          result = JSON.parse(jsonMatch[0]);
+        } else {
+          result = JSON.parse(responseText);
         }
-
-        throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+      } catch (parseErr) {
       }
 
-      if (result.status === "success") {
-        // Success!
-        const successMessage = editFormData.new_password
-          ? "Member information and password updated successfully! 🎉"
-          : "Member information updated successfully! 🎉";
+      if (response.status === 401 || result.message?.includes("Invalid or expired token") || result.message?.includes("token")) {
+        throw new Error("Session expired or invalid token. Please log out and log in again.");
+      }
 
-        showNotification(successMessage, 'success');
-
-        // Close the modal
+      if (response.ok && (result.status === "success" || response.status === 200)) {
+        showNotification(result.message || "Member details updated successfully! 🎉", 'success');
         setShowEditModal(false);
         setEditFormData(null);
-        setEditFormErrors({}); // Clear validation errors on success
-
-        // Refresh the members list to show updated data
+        setEditFormErrors({});
         fetchMembers();
-
-        // Refresh member details if we're viewing them
-        if (memberDetails && memberDetails.user_id === updateData.user_id) {
-          fetchMemberDetails(updateData.user_id);
-        }
       } else {
-        throw new Error(result.message || "Update failed");
+        let errorMsg = result.message || `Failed to update member (HTTP ${response.status})`;
+        const lowerMsg = errorMsg.toLowerCase();
+        if (lowerMsg.includes("registration") || lowerMsg.includes("duplicate") || lowerMsg.includes("reg_no")) {
+          errorMsg = "Warning: Registration number already exists for another member";
+          setEditFormErrors(prev => ({ ...prev, registration_number: errorMsg }));
+        }
+        throw new Error(errorMsg);
       }
-
     } catch (error) {
-      console.error("❌ Error updating member:", error);
-
-      let errorMessage = "Failed to update member";
-
-      // Handle different types of errors
-      if (error.message.includes("duplicate") || error.message.includes("email")) {
-        errorMessage = "Email already exists for another member";
-      } else if (error.message.includes("phone")) {
-        errorMessage = "Phone number already exists for another member";
-      } else if (error.message.includes("validation")) {
-        errorMessage = "Please check your input data";
-      } else if (error.message.includes("user_id")) {
-        errorMessage = "Invalid user ID";
-      } else if (error.message.includes("branch")) {
-        errorMessage = "Invalid branch selected";
-      } else if (error.message.includes("plan")) {
-        errorMessage = "Invalid membership plan selected";
-      } else if (error.message.includes("401")) {
-        errorMessage = "Authentication failed. Please login again";
-      } else if (error.message.includes("403")) {
-        errorMessage = "You don't have permission to update this member";
-      } else if (error.message.includes("404")) {
-        errorMessage = "Member not found";
-      } else if (error.message.includes("500")) {
-        errorMessage = "Server error. Please try again later";
-      } else if (error.name === "TypeError" && error.message.includes("fetch")) {
-        errorMessage = "Network error. Please check your connection";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      showNotification(`Update Failed: ${errorMessage}. Please check your data and try again.`, 'error');
+      const errorMsg = error.message || "";
+      const isWarning = errorMsg.toLowerCase().includes("registration") || errorMsg.toLowerCase().includes("duplicate");
+      showNotification(errorMsg, isWarning ? 'warning' : 'error');
     } finally {
       setLoading(false);
     }
@@ -1372,30 +1281,41 @@ const MemberManagement = () => {
 
   // Helper functions for edit form dropdowns
   const getEditFilteredStates = () => {
-    return states.filter(
-      (state) => state.country_id === parseInt(editFormData.country),
-    );
+    if (!editFormData?.country) return states;
+    const countryId = String(editFormData.country);
+    return states.filter((state) => {
+      const cId = String(state.country_id ?? state.country ?? "1");
+      return cId === countryId;
+    });
   };
 
   const getEditFilteredDistricts = () => {
-    return districts.filter(
-      (district) => district.state_id === parseInt(editFormData.state),
-    );
+    if (!editFormData?.state) return districts;
+    const stateId = String(editFormData.state);
+    return districts.filter((district) => {
+      const sId = String(district.state_id ?? district.state ?? "");
+      return sId === stateId;
+    });
   };
 
   const getEditFilteredCities = () => {
-    return cities.filter(
-      (city) =>
-        city.district_id === parseInt(editFormData.district) &&
-        isActiveStatus(city.status),
-    );
+    if (!editFormData?.district) return cities;
+    const districtId = String(editFormData.district);
+    return cities.filter((city) => {
+      const dId = String(city.district_id ?? city.district ?? "");
+      const matchesDistrict = !dId || dId === districtId;
+      const isActive = city.status === undefined || city.status === null || isActiveStatus(city.status);
+      return matchesDistrict && isActive;
+    });
   };
 
-  // Get available plans based on selected branch (gym-wide plans + branch-specific plans)
+  // Get available plans based on selected branch (gym-wide plans + branch-specific plans) filtered by BASE_MEMBERSHIP
   const getAvailablePlans = (selectedBranchId) => {
     return membershipPlans.filter(
       (plan) =>
-        plan.is_active && isBranchMatched(plan.branch_id, selectedBranchId),
+        plan.is_active &&
+        isBranchMatched(plan.branch_id, selectedBranchId) &&
+        (plan.plan_type ? plan.plan_type === "BASE_MEMBERSHIP" : true),
     );
   };
 
@@ -1409,8 +1329,8 @@ const MemberManagement = () => {
   const handleAddFormChange = (e) => {
     const { name, value } = e.target;
 
-    // Clear validation error for this field when user starts typing/selecting
-    if (addFormErrors[name]) {
+    // Clear validation error for this field when user starts typing/selecting (except registration_number managed by useEffect)
+    if (addFormErrors[name] && name !== "registration_number") {
       setAddFormErrors(prev => {
         const updated = { ...prev };
         delete updated[name];
@@ -1461,87 +1381,54 @@ const MemberManagement = () => {
     setLoading(true);
 
     try {
-      // Transform values to match API expectations
-      const transformGender = (gender) => {
-        return gender === "MALE"
-          ? "Male"
-          : gender === "FEMALE"
-            ? "Female"
-            : gender === "OTHER"
-              ? "Other"
-              : gender;
-      };
 
-      const transformFitnessLevel = (level) => {
-        switch (level) {
-          case "BEGINNER":
-            return "BEGINEER"; // Database uses "BEGINEER" with typo
-          case "INTERMEDIATE":
-            return "INTERMEDIATE";
-          case "ADVANCED":
-            return "ADVANCE"; // Database uses "ADVANCE" not "ADVANCED"
-          default:
-            return level;
-        }
-      };
-
-      const transformGoalFocus = (goal) => {
-        switch (goal) {
-          case "GENERAL":
-            return "GENERAL_FITNESS"; // Database uses "GENERAL_FITNESS"
-          case "WEIGHT_LOSS":
-            return "WEIGHT_LOSS";
-          case "MUSCLE_GAIN":
-            return "MUSCLE_GAIN";
-          case "STRENGTH":
-            return "STRENGTH";
-          case "ENDURANCE":
-            return "ENDURANCE";
-          default:
-            return goal;
-        }
-      };
 
       // Handle membership plan ID mapping
-      // Since API doesn't provide numeric plan IDs, we need to map plan names to IDs
       let membershipPlanId = null;
       if (addFormData.plan_id) {
         const selectedPlan = membershipPlans.find(plan =>
-          getPlanOptionValue(plan) === addFormData.plan_id
+          String(plan.plan_id) === String(addFormData.plan_id) ||
+          getPlanOptionValue(plan) === addFormData.plan_id ||
+          plan.plan_name === addFormData.plan_id
         );
 
-        if (selectedPlan) {
-          // Map plan names to numeric IDs as expected by the API
+        if (selectedPlan && selectedPlan.plan_id && !isNaN(Number(selectedPlan.plan_id))) {
+          membershipPlanId = Number(selectedPlan.plan_id);
+        } else if (selectedPlan) {
           const planMap = {
             'Monthly Plan': 1,
             'Quarterly Plan': 2,
             'Yearly Plan': 3
           };
           membershipPlanId = planMap[selectedPlan.plan_name] || 1;
+        } else if (!isNaN(Number(addFormData.plan_id))) {
+          membershipPlanId = Number(addFormData.plan_id);
         } else {
-          membershipPlanId = 1; // fallback to default
+          membershipPlanId = 1;
         }
       }
 
-      // Prepare member data for API call
+      // Prepare member data for API call matching the updated API spec
       const memberData = {
         name: addFormData.name || "",
         email: addFormData.email || "",
         phone: addFormData.phone || "",
         password: addFormData.password || "",
-        gym_id: 1, // Default gym_id - you may want to make this dynamic
+        gym_id: 1, // Default gym_id
         branch_id: parseInt(addFormData.branch_id) || 1,
-        status: addFormData.status === "ACTIVE" ? 1 : addFormData.status === "INACTIVE" ? 0 : addFormData.status === "SUSPENDED" ? 2 : 1, // Default to active if empty
+        status: addFormData.status === "ACTIVE" ? 1 : addFormData.status === "INACTIVE" ? 0 : addFormData.status === "SUSPENDED" ? 2 : 1,
+        registration_number: addFormData.registration_number ? parseInt(addFormData.registration_number, 10) : null,
         join_date:
           addFormData.join_date || new Date().toISOString().split("T")[0],
         membership_plan: membershipPlanId,
+        payment_method: addFormData.payment_method || "UPI",
         dob: addFormData.dob || "",
-        gender: transformGender(addFormData.gender),
-        blood_group: addFormData.blood_group,
+        gender: addFormData.gender || "",
+        blood_group: addFormData.blood_group || "",
         height: parseFloat(addFormData.height_cm) || 0,
         weight: parseFloat(addFormData.weight_kg) || 0,
-        fitness_level: transformFitnessLevel(addFormData.fitness_level),
-        goal_focus: transformGoalFocus(addFormData.goal_focus),
+        fitness_level: addFormData.fitness_level || "",
+        goal_focus: addFormData.goal_focus || "",
         country: parseInt(addFormData.country_id) || 1,
         state: parseInt(addFormData.state_id) || 1,
         district: parseInt(addFormData.district) || 1,
@@ -1566,15 +1453,20 @@ const MemberManagement = () => {
         let errorMessage = `HTTP error! status: ${response.status}`;
         try {
           const errorData = await response.json();
-          console.error("API Error Response:", errorData);
           if (errorData.message) {
             errorMessage = errorData.message;
           }
         } catch (e) {
           const errorText = await response.text();
-          console.error("API Error Details:", errorText);
           errorMessage = errorText || errorMessage;
         }
+
+        const lowerMsg = errorMessage.toLowerCase();
+        if (lowerMsg.includes("registration") || lowerMsg.includes("duplicate") || lowerMsg.includes("reg_no")) {
+          errorMessage = "Warning: Registration number already exists for another member";
+          setAddFormErrors(prev => ({ ...prev, registration_number: errorMessage }));
+        }
+
         throw new Error(errorMessage);
       }
 
@@ -1586,7 +1478,7 @@ const MemberManagement = () => {
         // Reset form and close modal
         setShowAddModal(false);
         setAddFormErrors({}); // Clear validation errors on success
-        
+
         if (data.invoice_id) {
           setActiveInvoiceId(data.invoice_id);
           setShowInvoice(true);
@@ -1597,10 +1489,12 @@ const MemberManagement = () => {
           phone: "",
           password: "",
           role: "MEMBER",
+          registration_number: "",
           branch_id: "",
           join_date: new Date().toISOString().split("T")[0],
           status: "",
           plan_id: "",
+          payment_method: "UPI",
           dob: "",
           gender: "",
           blood_group: "",
@@ -1623,7 +1517,6 @@ const MemberManagement = () => {
         throw new Error(data.message || "Failed to add member");
       }
     } catch (err) {
-      console.error("Error adding member:", err);
 
       // Enhanced error messages for better UX
       let errorMessage = "Failed to add member. Please try again.";
@@ -1652,10 +1545,12 @@ const MemberManagement = () => {
       phone: "",
       password: "",
       role: "MEMBER",
+      registration_number: "",
       branch_id: "",
       join_date: new Date().toISOString().split("T")[0], // Current date
       status: "",
       plan_id: "",
+      payment_method: "UPI",
       dob: "",
       gender: "",
       blood_group: "",
@@ -1688,12 +1583,11 @@ const MemberManagement = () => {
     if (!notification) return null;
 
     const getToastClass = (type) => {
-      const baseClass = "toast-notification";
       switch (type) {
-        case 'success': return `${baseClass} toast-success`;
-        case 'error': return `${baseClass} toast-error`;
-        case 'warning': return `${baseClass} toast-warning`;
-        default: return `${baseClass} toast-info`;
+        case 'success': return 'fg-toast fg-toast-success';
+        case 'error': return 'fg-toast fg-toast-error';
+        case 'warning': return 'fg-toast fg-toast-warning';
+        default: return 'fg-toast fg-toast-info';
       }
     };
 
@@ -1706,13 +1600,27 @@ const MemberManagement = () => {
       }
     };
 
+    const getToastTitle = (type) => {
+      switch (type) {
+        case 'success': return 'Success';
+        case 'error': return 'Error';
+        case 'warning': return 'Warning';
+        default: return 'Information';
+      }
+    };
+
     return (
-      <div className={getToastClass(notification.type)}>
-        <div className="toast-content">
-          <i className={getToastIcon(notification.type)}></i>
-          <span className="toast-message">{notification.message}</span>
+      <div className="fg-toast-container">
+        <div className={getToastClass(notification.type)}>
+          <div className="fg-toast-icon">
+            <i className={getToastIcon(notification.type)}></i>
+          </div>
+          <div className="fg-toast-body">
+            <h4 className="fg-toast-title">{getToastTitle(notification.type)}</h4>
+            <p className="fg-toast-message">{notification.message}</p>
+          </div>
           <button
-            className="toast-close"
+            className="fg-toast-close"
             onClick={() => setNotification(null)}
             aria-label="Close notification"
           >
@@ -1725,6 +1633,7 @@ const MemberManagement = () => {
 
   return (
     <div className="member-management">
+      <ToastNotification />
       <div className="member-page-header">
         <h1 className="member-page-title">Members Management</h1>
         <p className="member-page-subtitle">
@@ -1807,19 +1716,21 @@ const MemberManagement = () => {
         <div className="member-stat-item">
           <i className="fas fa-users"></i>
           <span>
-            Total: <strong>{pagination.total}</strong>
+            TOTAL MEMBERS
+            <strong>{members.length}</strong>
           </span>
         </div>
         <div className="member-stat-item">
           <i className="fas fa-search"></i>
           <span>
-            Found: <strong>{filteredMembers.length}</strong>
+            FOUND RECORDS
+            <strong>{filteredMembers.length}</strong>
           </span>
         </div>
         <div className="member-stat-item">
           <i className="fas fa-check-circle"></i>
           <span>
-            Active:{" "}
+            ACTIVE MEMBERS
             <strong>
               {members.filter((m) => isActiveStatus(m.status)).length}
             </strong>
@@ -1849,41 +1760,66 @@ const MemberManagement = () => {
       <div className="member-table-container">
         {loading ? (
           <div className="member-loading-state">
-            <i className="fas fa-spinner fa-spin"></i>
-            <p>Loading members...</p>
+            <div className="member-loader-spinner-wrapper">
+              <div className="member-loader-ring"></div>
+              <div className="member-loader-pulse"></div>
+            </div>
+            <p className="member-loader-text">Loading member records...</p>
+            <div className="member-skeleton-table">
+              {[1, 2, 3, 4, 5].map((idx) => (
+                <div key={`skel-${idx}`} className="member-skeleton-row">
+                  <div className="member-skeleton-cell skel-short"></div>
+                  <div className="member-skeleton-cell skel-medium"></div>
+                  <div className="member-skeleton-cell skel-long"></div>
+                  <div className="member-skeleton-cell skel-medium"></div>
+                  <div className="member-skeleton-cell skel-short"></div>
+                  <div className="member-skeleton-cell skel-badge"></div>
+                  <div className="member-skeleton-cell skel-actions"></div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : filteredMembers.length > 0 ? (
           <>
             <table className="member-table">
               <thead>
                 <tr>
-                  <th>User ID</th>
+                  <th>Reg No.</th>
                   <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
+                  <th>Email / Phone</th>
+                  <th>Plan</th>
                   <th>Join Date</th>
-                  <th>Branch Name</th>
+                  <th>Branch</th>
+                  <th>Trainer</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredMembers.map((member) => (
-                  <tr key={member.user_id}>
-                    <td className="member-id-cell">#{member.user_id}</td>
+                {filteredMembers.map((member, index) => (
+                  <tr key={`member-${member.user_id || 'idx'}-${member.registration_number || member.subscription_id || index}-${index}`}>
+                    <td className="member-reg-cell">
+                      {member.registration_number ? `#${member.registration_number}` : "N/A"}
+                    </td>
                     <td className="member-name-cell">
                       <i className="fas fa-user-circle"></i>
                       {member.name}
                     </td>
-                    <td>{member.email}</td>
-                    <td>{member.phone}</td>
-                    <td>{formatDate(member.createdDate)}</td>
-                    <td>{getBranchName(member.branch_id)}</td>
+                    <td>
+                      <div className="member-contact-info">
+                        <div>{member.email}</div>
+                        <small>{member.phone}</small>
+                      </div>
+                    </td>
+                    <td>{member.plan_name || (member.membership_plan ? `Plan #${member.membership_plan}` : "N/A")}</td>
+                    <td>{formatDate(member.date_of_joining || member.createdDate || member.join_date)}</td>
+                    <td>{member.branch_name || getBranchName(member.branch_id)}</td>
+                    <td>{member.trainer_name || "Unassigned"}</td>
                     <td>
                       <span
                         className={`member-status-badge ${getStatusBadgeClass(member.status)}`}
                       >
-                        {member.status}
+                        {isActiveStatus(member.status) ? "Active" : "Inactive"}
                       </span>
                     </td>
                     <td className="member-actions-cell">
@@ -1930,64 +1866,6 @@ const MemberManagement = () => {
         )}
       </div>
 
-      <div className="member-pagination">
-        <div className="member-pagination-info">
-          <span>
-            Showing {filteredMembers.length} of {pagination.total} members (Page{" "}
-            {pagination.page} of {totalPages})
-          </span>
-        </div>
-
-        <div className="member-pagination-controls">
-          <select
-            className="member-pagination-limit"
-            value={pagination.limit >= pagination.total && pagination.total > 0 ? "ALL" : pagination.limit}
-            onChange={(e) => handleLimitChange(e.target.value === "ALL" ? "ALL" : parseInt(e.target.value))}
-          >
-            <option value={10}>10 per page</option>
-            <option value={50}>50 per page</option>
-            <option value={100}>100 per page</option>
-            <option value="ALL">ALL</option>
-          </select>
-
-          <button
-            className="member-pagination-btn"
-            onClick={() => handlePageChange(1)}
-            disabled={pagination.page === 1}
-          >
-            <i className="fas fa-angle-double-left"></i>
-          </button>
-
-          <button
-            className="member-pagination-btn"
-            onClick={() => handlePageChange(pagination.page - 1)}
-            disabled={pagination.page === 1}
-          >
-            <i className="fas fa-angle-left"></i>
-          </button>
-
-          <span className="member-pagination-current">
-            Page {pagination.page}
-          </span>
-
-          <button
-            className="member-pagination-btn"
-            onClick={() => handlePageChange(pagination.page + 1)}
-            disabled={pagination.page >= totalPages}
-          >
-            <i className="fas fa-angle-right"></i>
-          </button>
-
-          <button
-            className="member-pagination-btn"
-            onClick={() => handlePageChange(totalPages)}
-            disabled={pagination.page >= totalPages}
-          >
-            <i className="fas fa-angle-double-right"></i>
-          </button>
-        </div>
-      </div>
-
       {/* Member Profile Modal */}
       {showMemberProfile && selectedMember && (
         <div className="member-modal-overlay" onClick={closeMemberProfile}>
@@ -2010,11 +1888,12 @@ const MemberManagement = () => {
 
             <div className="member-modal-body">
               {memberDetailsLoading && (
-                <div className="member-loading-state">
-                  <div className="member-loading-spinner">
-                    <i className="fas fa-spinner fa-spin"></i>
+                <div className="member-details-loading-state">
+                  <div className="member-loader-spinner-wrapper">
+                    <div className="member-loader-ring"></div>
+                    <div className="member-loader-pulse"></div>
                   </div>
-                  <p>Loading member details...</p>
+                  <p className="member-loader-text">Loading profile details...</p>
                 </div>
               )}
 
@@ -2047,6 +1926,12 @@ const MemberManagement = () => {
                       <div className="member-profile-item">
                         <label>Full Name</label>
                         <span>{memberDetails.name}</span>
+                      </div>
+                      <div className="member-profile-item">
+                        <label>Reg No.</label>
+                        <span style={{ fontWeight: 600, color: '#ff6b35' }}>
+                          {memberDetails.registration_number ? `#${memberDetails.registration_number}` : "Not assigned"}
+                        </span>
                       </div>
                       <div className="member-profile-item">
                         <label>User ID</label>
@@ -2144,6 +2029,20 @@ const MemberManagement = () => {
                         <label>Membership Plan</label>
                         <span>{memberDetails.plan_name || "Not assigned"}</span>
                       </div>
+                      <div className="member-profile-item">
+                        <label>Assigned Trainer</label>
+                        <span>
+                          {memberDetails.trainer_name ? `${memberDetails.trainer_name} (${memberDetails.trainer_phone || 'N/A'})` : "Unassigned"}
+                        </span>
+                      </div>
+                      {memberDetails.days_remaining !== undefined && memberDetails.days_remaining !== null && (
+                        <div className="member-profile-item">
+                          <label>Days Remaining</label>
+                          <span style={{ fontWeight: 600, color: '#27ae60' }}>
+                            {memberDetails.days_remaining} days
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -2286,6 +2185,27 @@ const MemberManagement = () => {
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
+                      <label>User ID (Read-only)</label>
+                      <input
+                        type="text"
+                        value={`#${editFormData.user_id}`}
+                        disabled
+                        style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed', fontWeight: 600, color: '#667eea' }}
+                      />
+                    </div>
+                    <div className="member-form-group">
+                      <ValidationError error={editFormErrors.registration_number} />
+                      <label>Registration Number *</label>
+                      <input
+                        type="number"
+                        name="registration_number"
+                        value={editFormData.registration_number}
+                        onChange={handleFormChange}
+                        placeholder="e.g. 1001"
+                        required
+                      />
+                    </div>
+                    <div className="member-form-group">
                       <ValidationError error={editFormErrors.name} />
                       <label>Full Name *</label>
                       <input
@@ -2371,33 +2291,16 @@ const MemberManagement = () => {
                       />
                     </div>
                     <div className="member-form-group">
-                      <label>Membership Plan</label>
-                      <select
-                        name="membership_plan"
-                        value={editFormData.membership_plan}
-                        onChange={handleFormChange}
-                        disabled={!editFormData.branch_id}
-                      >
-                        <option key="select-plan-edit" value="">
-                          Select Plan
-                        </option>
-                        {(() => {
-                          const availablePlans = getAvailablePlans(editFormData.branch_id);
-
-                          return availablePlans.map((plan, index) => {
-                            const optionValue = getPlanOptionValue(plan);
-
-                            return (
-                              <option
-                                key={`edit-plan-${plan.plan_id ?? plan.plan_name}-${index}`}
-                                value={optionValue}
-                              >
-                                {plan.plan_name}
-                              </option>
-                            );
-                          });
-                        })()}
-                      </select>
+                      <label>Current Plan (Read-only)</label>
+                      <input
+                        type="text"
+                        value={editFormData.membership_plan_raw || "Assigned Plan"}
+                        disabled
+                        style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                      />
+                      <small style={{ color: '#7f8c8d', fontSize: '0.78rem', marginTop: '0.25rem', display: 'block' }}>
+                        Membership plans are managed via the Subscriptions module.
+                      </small>
                     </div>
                     <div className="member-form-group">
                       <label>Status</label>
@@ -2572,6 +2475,9 @@ const MemberManagement = () => {
                         <option key="WEIGHT_LOSS-edit" value="WEIGHT_LOSS">
                           Weight Loss
                         </option>
+                        <option key="FAT_LOSS-edit" value="FAT_LOSS">
+                          Fat Loss
+                        </option>
                         <option key="MUSCLE_GAIN-edit" value="MUSCLE_GAIN">
                           Muscle Gain
                         </option>
@@ -2581,7 +2487,7 @@ const MemberManagement = () => {
                         <option key="ENDURANCE-edit" value="ENDURANCE">
                           Endurance
                         </option>
-                        <option key="GENERAL-edit" value="GENERAL">
+                        <option key="GENERAL_FITNESS-edit" value="GENERAL_FITNESS">
                           General Fitness
                         </option>
                       </select>
@@ -2598,12 +2504,13 @@ const MemberManagement = () => {
                   <div className="member-form-grid">
                     <div className="member-form-group">
                       <ValidationError error={editFormErrors.country} />
-                      <label>Country</label>
+                      <label>Country *</label>
                       <select
                         name="country"
                         value={editFormData.country}
                         onChange={handleFormChange}
                         disabled={dropdownLoading.countries}
+                        required
                       >
                         {dropdownLoading.countries ? (
                           <option key="loading-countries-edit" value="">
@@ -2628,14 +2535,15 @@ const MemberManagement = () => {
                     </div>
                     <div className="member-form-group">
                       <ValidationError error={editFormErrors.state} />
-                      <label>State</label>
+                      <label>State *</label>
                       <select
                         name="state"
-                        value={editFormData.state}
+                        value={String(editFormData.state || "")}
                         onChange={handleFormChange}
                         disabled={
                           !editFormData.country || dropdownLoading.states
                         }
+                        required
                       >
                         {dropdownLoading.states ? (
                           <option key="loading-states-edit" value="">
@@ -2648,8 +2556,8 @@ const MemberManagement = () => {
                             </option>
                             {getEditFilteredStates().map((state) => (
                               <option
-                                key={state.state_id}
-                                value={state.state_id}
+                                key={`edit-state-${state.state_id || state.id}`}
+                                value={String(state.state_id || state.id)}
                               >
                                 {state.state_name}
                               </option>
@@ -2660,14 +2568,15 @@ const MemberManagement = () => {
                     </div>
                     <div className="member-form-group">
                       <ValidationError error={editFormErrors.district} />
-                      <label>District</label>
+                      <label>District *</label>
                       <select
                         name="district"
-                        value={editFormData.district}
+                        value={String(editFormData.district || "")}
                         onChange={handleFormChange}
                         disabled={
                           !editFormData.state || dropdownLoading.districts
                         }
+                        required
                       >
                         {dropdownLoading.districts ? (
                           <option key="loading-districts-edit" value="">
@@ -2680,8 +2589,8 @@ const MemberManagement = () => {
                             </option>
                             {getEditFilteredDistricts().map((district) => (
                               <option
-                                key={district.district_id}
-                                value={district.district_id}
+                                key={`edit-district-${district.district_id || district.id}`}
+                                value={String(district.district_id || district.id)}
                               >
                                 {district.district_name}
                               </option>
@@ -2692,21 +2601,35 @@ const MemberManagement = () => {
                     </div>
                     <div className="member-form-group">
                       <ValidationError error={editFormErrors.city} />
-                      <label>City</label>
+                      <label>City *</label>
                       <select
                         name="city"
-                        value={editFormData.city}
+                        value={String(editFormData.city || "")}
                         onChange={handleFormChange}
-                        disabled={!editFormData.district}
+                        disabled={
+                          !editFormData.district || dropdownLoading.cities
+                        }
+                        required
                       >
-                        <option key="select-city" value="">
-                          Select City
-                        </option>
-                        {getEditFilteredCities().map((city) => (
-                          <option key={city.city_id} value={city.city_id}>
-                            {city.city_name}
+                        {dropdownLoading.cities ? (
+                          <option key="loading-cities-edit" value="">
+                            Loading cities...
                           </option>
-                        ))}
+                        ) : (
+                          <>
+                            <option key="select-city-edit" value="">
+                              Select City
+                            </option>
+                            {getEditFilteredCities().map((city) => (
+                              <option
+                                key={`edit-city-${city.city_id || city.id}`}
+                                value={String(city.city_id || city.id)}
+                              >
+                                {city.city_name}
+                              </option>
+                            ))}
+                          </>
+                        )}
                       </select>
                     </div>
                     <div className="member-form-group member-full-width">
@@ -2918,6 +2841,18 @@ const MemberManagement = () => {
                   </h3>
                   <div className="member-form-grid">
                     <div className="member-form-group">
+                      <ValidationError error={addFormErrors.registration_number} />
+                      <label>Registration Number *</label>
+                      <input
+                        type="number"
+                        name="registration_number"
+                        value={addFormData.registration_number}
+                        onChange={handleAddFormChange}
+                        placeholder="e.g. 1001"
+                        required
+                      />
+                    </div>
+                    <div className="member-form-group">
                       <ValidationError error={addFormErrors.name} />
                       <label>Full Name *</label>
                       <input
@@ -3058,6 +2993,20 @@ const MemberManagement = () => {
                         <option value="ACTIVE">Active</option>
                         <option value="INACTIVE">Inactive</option>
                         <option value="SUSPENDED">Suspended</option>
+                      </select>
+                    </div>
+                    <div className="member-form-group">
+                      <label>Payment Method *</label>
+                      <select
+                        name="payment_method"
+                        value={addFormData.payment_method}
+                        onChange={handleAddFormChange}
+                        required
+                      >
+                        <option value="UPI">UPI</option>
+                        <option value="CASH">Cash</option>
+                        <option value="CARD">Card / POS</option>
+                        <option value="NET_BANKING">Net Banking</option>
                       </select>
                     </div>
                     <div className="member-form-group member-full-width">
@@ -3261,6 +3210,9 @@ const MemberManagement = () => {
                         <option key="WEIGHT_LOSS" value="WEIGHT_LOSS">
                           Weight Loss
                         </option>
+                        <option key="FAT_LOSS" value="FAT_LOSS">
+                          Fat Loss
+                        </option>
                         <option key="MUSCLE_GAIN" value="MUSCLE_GAIN">
                           Muscle Gain
                         </option>
@@ -3270,7 +3222,7 @@ const MemberManagement = () => {
                         <option key="ENDURANCE" value="ENDURANCE">
                           Endurance
                         </option>
-                        <option key="GENERAL" value="GENERAL">
+                        <option key="GENERAL_FITNESS" value="GENERAL_FITNESS">
                           General Fitness
                         </option>
                       </select>
@@ -3458,9 +3410,9 @@ const MemberManagement = () => {
       <ToastNotification />
 
       {/* Invoice Modal Popup */}
-      <InvoiceModal 
-        isOpen={showInvoice} 
-        invoiceId={activeInvoiceId} 
+      <InvoiceModal
+        isOpen={showInvoice}
+        invoiceId={activeInvoiceId}
         onClose={() => {
           setShowInvoice(false);
           setActiveInvoiceId(null);

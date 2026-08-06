@@ -6,7 +6,7 @@ class TokenManager {
     this.API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
     this.isRefreshing = false;
     this.failedQueue = [];
-    this.SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+    this.SESSION_TIMEOUT_MS = 12 * 60 * 60 * 1000; // 12 hours
     this.lastActivityTime = Date.now();
     this.setupSessionTimeout();
   }
@@ -97,15 +97,16 @@ class TokenManager {
         throw new Error(data.message || 'Token refresh failed');
       }
     } catch (error) {
-      this.clearTokens();
-      // Redirect to login page
-      window.location.href = '/login';
+      console.warn('Token refresh failed:', error?.message || error);
       throw error;
     }
   }
 
   // Make API call with automatic token refresh
   async apiCall(url, options = {}) {
+    // Update activity timestamp on API call
+    this.lastActivityTime = Date.now();
+
     // Check for session timeout
     if (this.isSessionExpired()) {
       this.clearTokens();
@@ -131,6 +132,10 @@ class TokenManager {
 
       // If token is expired (401), attempt refresh
       if (response.status === 401) {
+        if (options.noAuthRedirect) {
+          return response;
+        }
+
         if (this.isRefreshing) {
           // If already refreshing, wait for it to complete
           return new Promise((resolve, reject) => {
@@ -154,7 +159,7 @@ class TokenManager {
         } catch (refreshError) {
           this.isRefreshing = false;
           this.processQueue(refreshError);
-          throw refreshError;
+          return response;
         }
       }
 
@@ -169,7 +174,7 @@ class TokenManager {
   isAuthenticated() {
     const accessToken = this.getAccessToken();
     const refreshToken = this.getRefreshToken();
-    return !!(accessToken && refreshToken);
+    return !!(accessToken || refreshToken);
   }
 
   // Check if token is valid (not expired or about to expire)
@@ -192,7 +197,7 @@ class TokenManager {
     if (userData) {
       try {
         const user = JSON.parse(userData);
-        return user.role === 'ADMIN';
+        return user.role === 'ADMIN' || user.role === 'SUPER-ADMIN' || user.role === 'SUPER_ADMIN' || user.role === 'OWNER';
       } catch (error) {
         console.error('Error parsing user data:', error);
         return false;
