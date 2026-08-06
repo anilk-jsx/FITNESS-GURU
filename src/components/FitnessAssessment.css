@@ -1,0 +1,186 @@
+/* ================================================================
+   FITNESS ASSESSMENT — Modern Professional Admin System
+   ================================================================ */
+
+.fa-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  width: 100%;
+}
+
+
+.fa-page-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fa-page-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+/* KPI Summary Cards */
+.fa-kpi-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.fa-kpi-card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.fa-kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.icon-indigo { background: #e0e7ff; color: #4338ca; }
+.icon-emerald { background: #d1fae5; color: #059669; }
+.icon-amber { background: #fef3c7; color: #d97706; }
+
+.fa-kpi-val {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.fa-kpi-lbl {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* Controls Toolbar */
+.fa-controls-bar {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  background: #ffffff;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.fa-search-group {
+  position: relative;
+  flex: 1;
+  min-width: 260px;
+}
+
+.fa-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.fa-search-input {
+  width: 100%;
+  padding: 8px 32px 8px 34px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.88rem;
+  color: #1e293b;
+  box-sizing: border-box;
+}
+
+.fa-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.fa-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fa-filter-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+}
+
+.fa-select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.88rem;
+  color: #1e293b;
+  background: #ffffff;
+}
+
+/* Grid & Member Cards */
+.fa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 1.25rem;
+}
+
+.fa-member-card {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.fa-member-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+.fa-member-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #ffffff;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.fa-loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+  font-size: 1.1rem;
+}

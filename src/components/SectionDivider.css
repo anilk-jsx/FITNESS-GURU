@@ -1,0 +1,159 @@
+/* ═══════ Marquee Section Divider ═══════ */
+
+.sd-wrap {
+  width: 100%;
+  position: relative;
+  overflow: visible;
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  z-index: 10;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* ── Shared row ── */
+.sd-row {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Row 1 — flat horizontal, covers the section boundary */
+.sd-row-hz {
+  background: rgba(0, 0, 0, 0.95); /* keep it dark but slightly transparent */
+  border-top: 2px solid rgba(255, 122, 0, 0.3);
+  border-bottom: 2px solid rgba(255, 122, 0, 0.3);
+  padding: 0.7rem 0;
+  position: relative;
+  z-index: 11;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+}
+
+/* Row 2 — tilted, 3D floating overlay */
+.sd-row-tilt {
+  position: absolute;
+  top: 3%;                        /* cross the center of the straight banner */
+  left: -5%;
+  width: 110%;
+  transform: rotate(-8deg) scaleX(1.1); /* more tilt */
+  transform-origin: center;
+  background:linear-gradient(135deg, #ff7a00 0%, #e06800 50%, #ff7a00 100%);
+  padding: 0.8rem 0;
+  z-index: 10;
+  pointer-events: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+
+/* ── Scrolling track (flex row of items) ── */
+.sd-track {
+  display: inline-flex;
+  align-items: center;
+  will-change: transform;
+}
+
+.sd-track-left {
+  animation: sdScrollLeft 18s linear infinite;
+}
+
+.sd-track-right {
+  animation: sdScrollRight 22s linear infinite;
+}
+
+@keyframes sdScrollLeft {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes sdScrollRight {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+/* ── Individual item ── */
+.sd-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0 2.2rem;
+  flex-shrink: 0;
+}
+
+.sd-logo {
+  height: 1.4rem;           /* adjust as needed */
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 4px rgba(255, 122, 0, 0.5));
+  opacity: 0.9;
+  transform: translateY(1px); /* fine alignment */
+}
+
+/* For the tilted row version */
+.sd-row-tilt .sd-logo {
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
+}
+
+/* Icon (emoji or glyph) */
+.sd-icon {
+  font-size: 1.15rem;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 4px rgba(255, 122, 0, 0.5));
+}
+
+/* Label text */
+.sd-label {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #fff;
+  font-family: inherit;
+}
+
+/* Row 1 text gets orange gradient */
+.sd-row-hz .sd-label {
+  background: linear-gradient(90deg, #ffb347, #ff7a00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.sd-row-hz .sd-icon {
+  filter: drop-shadow(0 0 6px rgba(255, 122, 0, 0.7));
+}
+
+/* Row 2 text stays white on orange bg */
+.sd-row-tilt .sd-label {
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+}
+
+.sd-row-tilt .sd-icon {
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
+}
+
+/* ═══════ Responsive ═══════ */
+@media (max-width: 768px) {
+  .sd-row-hz { padding: 0.45rem 0; }
+  .sd-row-tilt {
+    padding: 0.4rem 0;
+    transform: rotate(-10deg) scaleX(1.06);
+    margin-top: -0.4rem;
+  }
+  .sd-item { padding: 0 1.4rem; gap: 0.5rem; }
+  .sd-label { font-size: 0.82rem; letter-spacing: 2px; }
+  .sd-icon { font-size: 0.95rem; }
+}
+
+@media (max-width: 480px) {
+  .sd-item { padding: 0 1rem; gap: 0.4rem; }
+  .sd-label { font-size: 0.72rem; letter-spacing: 1.5px; }
+  .sd-icon { font-size: 0.85rem; }
+  .sd-row-tilt {
+    padding: 0.4rem 0;
+    transform: rotate(-12deg) scaleX(1.06);
+    top: 30%;
+  }
+}

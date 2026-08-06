@@ -1,0 +1,99 @@
+import React, { useState, useEffect } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import AdminSidebar from './AdminSidebar';
+import tokenManager from '../utils/tokenManager';
+import './AdminDashboard.css';
+
+const AdminDashboard = () => {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const location = useLocation();
+    
+    // Get active section from URL path
+    const getActiveSection = () => {
+        const path = location.pathname.split('/').pop();
+        return path || 'dashboard';
+    };
+
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
+    };
+
+    const handleLogout = async () => {
+        if (window.confirm('Are you sure you want to logout?')) {
+            try {
+                const accessToken = tokenManager.getAccessToken();
+                const refreshToken = tokenManager.getRefreshToken();
+
+                if (accessToken && refreshToken) {
+                    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
+                    await fetch(`${API_BASE_URL}/api/auth/logout`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${accessToken}`
+                        },
+                        body: JSON.stringify({
+                            refresh_token: refreshToken
+                        })
+                    });
+                }
+            } catch (err) {
+                console.error('Logout error:', err);
+            } finally {
+                // Use tokenManager logout method
+                tokenManager.logout();
+            }
+        }
+    };
+
+    const showComingSoon = (feature) => {
+        alert(`${feature} feature is coming soon! 🚀\n\nThis feature is currently under development and will be available in a future update.`);
+    };
+
+    // Close sidebar when clicking outside on mobile
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (window.innerWidth <= 768 && isMobileMenuOpen) {
+                const sidebar = document.getElementById('sidebar');
+                const toggle = document.getElementById('mobile-menu-toggle');
+                
+                if (sidebar && !sidebar.contains(event.target) && 
+                    toggle && !toggle.contains(event.target)) {
+                    setIsMobileMenuOpen(false);
+                }
+            }
+        };
+
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [isMobileMenuOpen]);
+
+    return (
+        <div className="admin-dashboard">
+            {/* Mobile Menu Toggle */}
+            <button 
+                className="mobile-menu-toggle" 
+                id="mobile-menu-toggle"
+                onClick={toggleMobileMenu}
+            >
+                <i className="fas fa-bars"></i>
+            </button>
+
+            {/* Sidebar */}
+            <AdminSidebar 
+                activeSection={getActiveSection()}
+                handleLogout={handleLogout}
+                isMobileMenuOpen={isMobileMenuOpen}
+                setIsMobileMenuOpen={setIsMobileMenuOpen}
+            />
+
+            {/* Main Content */}
+            <div className="admin-main-content">
+                {/* Nested Routes Content */}
+                <Outlet />
+            </div>
+        </div>
+    );
+};
+
+export default AdminDashboard;

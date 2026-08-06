@@ -1,0 +1,44 @@
+/* Dashboard Layout Styles - Orange & Black Theme */
+.dashboard-layout {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%, #0a0a0a 100%);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* Main Content */
+.main-content {
+    margin-top: 80px; /* Space for fixed navbar */
+    padding: 2rem 3rem;
+    min-height: calc(100vh - 80px);
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .main-content {
+        padding: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-top: 70px;
+        padding: 1.5rem 1rem;
+        min-height: calc(100vh - 70px);
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content {
+        margin-top: 65px;
+        padding: 1rem 0.75rem;
+        min-height: calc(100vh - 65px);
+    }
+}

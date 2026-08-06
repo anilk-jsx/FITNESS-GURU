@@ -1,0 +1,302 @@
+@media (max-width: 490px) {
+  .footer-container {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+    padding: 0 0.5rem;
+  }
+  .footer-col {
+    display: flex;
+    max-width: 100%;
+    min-width: 0;
+    margin-bottom: 1.2rem;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  .footer-socials {
+    justify-content: center;
+  }
+  .footer-section {
+    padding: 18px 0 0 0;
+  }
+  .footer-title {
+    font-size: 1rem;
+  }
+  .footer-heading {
+    font-size: 0.98rem;
+  }
+  .footer-desc,
+  .footer-links,
+  .footer-contact,
+  .footer-hours {
+    font-size: 0.92rem;
+  }
+  .footer-social {
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+  }
+  .footer-bottom {
+    font-size: 0.8rem;
+    padding: 0.4rem 0 0.8rem 0;
+  }
+  .footer-divider {
+    margin: 0.7rem 0 0.2rem 0;
+  }
+}
+.footer-app-download {
+  margin: 1rem 0 1.5rem 0;
+}
+
+.footer-download-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ff6b35;
+  color: #fff;
+  padding: 0.7rem 1.2rem;
+  border-radius: 25px;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.footer-download-link:hover {
+  background: #fff;
+  color: #ff6b35;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+}
+
+.footer-download-link i {
+  font-size: 1.1rem;
+}
+
+.play-store-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+/* Footer Section Styles */
+.footer-section {
+  background: #181818;
+  color: #fff;
+  padding: 48px 0 0 0;
+  font-family: inherit;
+}
+.footer-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+.footer-col {
+  flex: 1 1 220px;
+  min-width: 220px;
+  max-width: 320px;
+  margin-bottom: 2rem;
+}
+.footer-title {
+  color: #ff6b35;
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  letter-spacing: 1px;
+}
+.footer-desc {
+  color: #fff;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+}
+.footer-socials {
+  display: flex;
+  gap: 1.2rem;
+  margin-top: 0.5rem;
+}
+.footer-social {
+  background: #ff6b35;
+  color: #fff;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  transition: background 0.2s, color 0.2s;
+}
+.footer-social:hover {
+  background: #fff;
+  color: #ff6b35;
+}
+.footer-heading {
+  color: #ff6b35;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+}
+.footer-links,
+.footer-contact,
+.footer-hours {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  color: #fff;
+  font-size: 1rem;
+}
+.footer-links li {
+  margin-bottom: 0.7rem;
+}
+.footer-links a {
+  color: #fff;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-links a:hover {
+  color: #ff6b35;
+}
+.footer-contact li,
+.footer-hours li {
+  margin-bottom: 0.7rem;
+  gap: 0.7rem;
+}
+.footer-contact i,
+.footer-hours i {
+  color: #ff6b35;
+  font-size: 1.1rem;
+  min-width: 18px;
+}
+.footer-divider {
+  border: none;
+  border-top: 1px solid #333;
+  margin: 1.5rem 0 0.5rem 0;
+}
+.footer-bottom {
+  text-align: center;
+  color: #b0b0b0;
+  font-size: 0.95rem;
+  padding: 0.7rem 0 1.2rem 0;
+}
+@media (max-width: 1200px) {
+  .footer-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem 3rem;
+    padding: 0 1.2rem;
+  }
+  .footer-col {
+    max-width: 100%;
+    min-width: 0;
+    margin-bottom: 1.2rem;
+    text-align: left;
+    justify-self: start;
+  }
+  .footer-container > .footer-col:nth-child(1),
+  .footer-container > .footer-col:nth-child(3) {
+    grid-column: 1;
+  }
+  .footer-container > .footer-col:nth-child(2),
+  .footer-container > .footer-col:nth-child(4) {
+    grid-column: 2;
+  }
+  .footer-socials {
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 490px) {
+  .footer-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 0 0.5rem;
+  }
+  .footer-col {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-bottom: 1.2rem;
+    text-align: center;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+  }
+  .footer-socials {
+    justify-content: center;
+  }
+  .footer-app-download {
+    margin: 1rem 0;
+  }
+  .footer-download-link {
+    font-size: 0.9rem;
+    padding: 0.6rem 1rem;
+  }
+  .play-store-logo {
+    width: 18px;
+    height: 18px;
+  }
+  .footer-section {
+    padding: 18px 0 0 0;
+  }
+  .footer-title {
+    font-size: 1rem;
+  }
+  .footer-heading {
+    font-size: 0.98rem;
+  }
+  .footer-desc,
+  .footer-links,
+  .footer-contact,
+  .footer-hours {
+    font-size: 0.92rem;
+  }
+  .footer-social {
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+  }
+  .footer-bottom {
+    font-size: 0.8rem;
+    padding: 0.4rem 0 0.8rem 0;
+  }
+  .footer-divider {
+    margin: 0.7rem 0 0.2rem 0;
+  }
+}
+
+
+
+@media (max-width: 600px) {
+  .footer-section {
+    padding: 28px 0 0 0;
+  }
+  .footer-title {
+    font-size: 1.1rem;
+  }
+  .footer-heading {
+    font-size: 1rem;
+  }
+  .footer-desc,
+  .footer-links,
+  .footer-contact,
+  .footer-hours {
+    font-size: 0.95rem;
+  }
+  .footer-social {
+    width: 32px;
+    height: 32px;
+    font-size: 1.1rem;
+  }
+  .footer-bottom {
+    font-size: 0.85rem;
+    padding: 0.5rem 0 1rem 0;
+  }
+  .footer-divider {
+    margin: 1rem 0 0.3rem 0;
+  }
+}
