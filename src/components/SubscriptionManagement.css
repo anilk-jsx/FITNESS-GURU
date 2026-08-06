@@ -41,6 +41,81 @@
     gap: 1rem;
 }
 
+/* Subscription Statistics Cards Grid */
+.sub-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.65rem;
+    margin-bottom: 1.15rem;
+}
+
+.sub-stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.75rem 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.sub-stat-card:hover {
+    transform: translateY(-2px);
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.sub-stat-card.active-card {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+.sub-stat-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.bg-sub-blue { background: rgba(59, 130, 246, 0.12); color: #2563eb; }
+.bg-sub-green { background: rgba(34, 197, 94, 0.12); color: #16a34a; }
+.bg-sub-orange { background: rgba(249, 115, 22, 0.12); color: #ea580c; }
+.bg-sub-red { background: rgba(239, 68, 68, 0.12); color: #dc2626; }
+.bg-sub-cyan { background: rgba(6, 182, 212, 0.12); color: #0891b2; }
+.bg-sub-purple { background: rgba(168, 85, 247, 0.12); color: #9333ea; }
+.bg-sub-emerald { background: rgba(16, 185, 129, 0.12); color: #059669; }
+
+.sub-stat-details {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sub-stat-val {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.sub-stat-lbl {
+    font-size: 0.7rem;
+    color: #64748b;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
 /* Unauthorized view guard */
 .sub-management-unauthorized {
     display: flex;
@@ -77,38 +152,108 @@
     line-height: 1.6;
 }
 
-/* Global Alert Banners */
+/* Floating Alert Toast Widget */
+.sub-alert-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 440px;
+    width: calc(100vw - 48px);
+    pointer-events: none;
+}
+
 .sub-alert {
+    pointer-events: auto;
     padding: 1rem 1.25rem;
-    border-radius: 12px;
-    margin-bottom: 1.5rem;
+    border-radius: 14px;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.85rem;
     font-size: 0.95rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    font-weight: 500;
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.18), 0 4px 10px rgba(15, 23, 42, 0.08);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    animation: floatToastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    position: relative;
+    overflow: hidden;
+}
+
+@keyframes floatToastIn {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.94);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .sub-alert-danger {
-    background: #fdf2f2;
-    color: #9b2c2c;
-    border: 1px solid #feb2b2;
+    background: rgba(254, 242, 242, 0.96);
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.sub-alert-danger i {
+    color: #dc2626;
+    font-size: 1.25rem;
 }
 
 .sub-alert-success {
-    background: #f0fff4;
-    color: #22543d;
-    border: 1px solid #9ae6b4;
+    background: rgba(240, 253, 244, 0.96);
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+.sub-alert-success i {
+    color: #16a34a;
+    font-size: 1.25rem;
 }
 
 .sub-alert button {
     margin-left: auto;
     background: none;
     border: none;
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     cursor: pointer;
     color: inherit;
-    opacity: 0.7;
+    opacity: 0.65;
+    transition: opacity 0.2s;
+    line-height: 1;
+}
+
+.sub-alert button:hover {
+    opacity: 1;
+}
+
+/* Auto Disappearance Progress Bar Indicator */
+.sub-alert::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 100%;
+    animation: toastProgress 4.5s linear forwards;
+}
+
+.sub-alert-danger::after {
+    background: #ef4444;
+}
+
+.sub-alert-success::after {
+    background: #22c55e;
+}
+
+@keyframes toastProgress {
+    from { width: 100%; }
+    to { width: 0%; }
 }
 
 /* Buttons System */
