@@ -1279,34 +1279,32 @@ const SubscriptionManagement = () => {
                                                         })()}
                                                     </td>
                                                     <td>
-                                                        <div className="table-actions" style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'nowrap', minWidth: '220px' }}>
+                                                        <div className="table-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                                             <button
-                                                                className="sub-btn sub-btn-xs"
+                                                                type="button"
+                                                                className="table-icon-btn btn-renew"
                                                                 onClick={() => openRenewModal(sub.user_id, sub.plan_id, { user_id: sub.user_id, name: sub.member_name, email: sub.member_email, reg_no: sub.member_reg_no })}
-                                                                title="Renew Subscription (Stack or Reactivate)"
-                                                                style={{
-                                                                    background: '#eff6ff',
-                                                                    color: '#1d4ed8',
-                                                                    border: '1px solid #bfdbfe',
-                                                                    fontWeight: 600,
-                                                                    whiteSpace: 'nowrap'
-                                                                }}
+                                                                title="Renew Subscription"
                                                             >
-                                                                <i className="fas fa-sync-alt"></i> Renew
+                                                                <i className="fas fa-sync-alt"></i>
                                                             </button>
 
                                                             <button
-                                                                className={`sub-btn sub-btn-xs ${isExpanded ? 'sub-btn-primary' : 'sub-btn-outline'}`}
+                                                                type="button"
+                                                                className={`table-icon-btn btn-wallet ${isExpanded ? 'active-drawer' : ''}`}
                                                                 onClick={() => setExpandedSubId(isExpanded ? null : sub.subscription_id)}
-                                                                title="View Provisioned Wallet Credits"
+                                                                title={isExpanded ? "Hide Wallet Credits" : `View Provisioned Wallet Credits (${credits.length})`}
                                                             >
                                                                 <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-wallet'}`}></i>
-                                                                {isExpanded ? ' Hide Wallet' : ` Wallet (${credits.length})`}
+                                                                {credits.length > 0 && !isExpanded && (
+                                                                    <span className="table-icon-badge">{credits.length}</span>
+                                                                )}
                                                             </button>
 
                                                             {sub.status === 1 && (
                                                                 <button
-                                                                    className="sub-btn sub-btn-xs"
+                                                                    type="button"
+                                                                    className="table-icon-btn btn-revert"
                                                                     onClick={() => openRevertModal({
                                                                         ...sub,
                                                                         invoice_id: resolvedInvoiceId || sub.invoice_id,
@@ -1314,15 +1312,8 @@ const SubscriptionManagement = () => {
                                                                         price: resolvedPrice
                                                                     })}
                                                                     title="Revert Purchase (Within 24 Hours)"
-                                                                    style={{
-                                                                        background: '#f5f3ff',
-                                                                        color: '#7c3aed',
-                                                                        border: '1px solid #ddd6fe',
-                                                                        fontWeight: 600,
-                                                                        whiteSpace: 'nowrap'
-                                                                    }}
                                                                 >
-                                                                    <i className="fas fa-undo-alt"></i> 24h Revert
+                                                                    <i className="fas fa-undo-alt"></i>
                                                                 </button>
                                                             )}
                                                         </div>

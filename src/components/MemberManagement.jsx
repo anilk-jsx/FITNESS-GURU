@@ -6,7 +6,6 @@ import { normalizeGender, toIntOrNull, isActiveStatus, findMatchingPlan } from "
 import eyeIcon from "../assets/icons8-eye-50.png";
 import eyeSlashIcon from "../assets/icons8-invisible-48.png";
 import InvoiceModal from "./InvoiceModal";
-import RenewSubscriptionModal from "./RenewSubscriptionModal";
 
 const MemberManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,15 +17,6 @@ const MemberManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editFormData, setEditFormData] = useState(null);
-
-  // Renewal Modal State
-  const [showRenewModal, setShowRenewModal] = useState(false);
-  const [renewMemberData, setRenewMemberData] = useState(null);
-
-  const handleOpenRenewModal = (member) => {
-    setRenewMemberData(member);
-    setShowRenewModal(true);
-  };
 
   // Tax Receipt display states
   const [activeInvoiceId, setActiveInvoiceId] = useState(null);
@@ -1834,14 +1824,6 @@ const MemberManagement = () => {
                     </td>
                     <td className="member-actions-cell">
                       <button
-                        className="member-action-icon member-renew-btn"
-                        onClick={() => handleOpenRenewModal(member)}
-                        title="Renew Subscription (Stack or Reactivate)"
-                        style={{ color: '#2563eb', borderColor: '#bfdbfe', background: '#eff6ff' }}
-                      >
-                        <i className="fas fa-sync-alt"></i>
-                      </button>
-                      <button
                         className="member-action-icon member-view-btn"
                         onClick={() => handleViewProfile(member)}
                         title="View Profile"
@@ -3436,29 +3418,6 @@ const MemberManagement = () => {
           setActiveInvoiceId(null);
         }}
       />
-
-      {/* Renew Subscription Modal Popup */}
-      {showRenewModal && (
-        <RenewSubscriptionModal
-          isOpen={showRenewModal}
-          initialUserId={renewMemberData?.user_id}
-          initialPlanId={renewMemberData?.plan_id || renewMemberData?.membership_plan}
-          memberData={renewMemberData}
-          onClose={() => {
-            setShowRenewModal(false);
-            setRenewMemberData(null);
-          }}
-          onSuccess={(res) => {
-            showNotification(res.message || "Subscription successfully renewed!", 'success');
-            const invId = res.invoice_id || (res.data && res.data.invoice_id);
-            if (invId) {
-              setActiveInvoiceId(invId);
-              setShowInvoice(true);
-            }
-            fetchMembers();
-          }}
-        />
-      )}
     </div>
   );
 };
