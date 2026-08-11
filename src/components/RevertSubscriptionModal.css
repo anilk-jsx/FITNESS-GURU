@@ -25,10 +25,57 @@
   background: #ffffff;
   border-radius: 16px;
   width: 100%;
-  max-width: 440px;
+  max-width: 500px;
   box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.25);
   overflow: hidden;
   border: 1px solid #e2e8f0;
+}
+
+/* Consequences Warning Box */
+.revert-consequences-box {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.consequences-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #b45309;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.consequences-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.consequences-list li {
+  font-size: 0.78rem;
+  color: #451a03;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.35;
+}
+
+.consequences-list li i {
+  color: #d97706;
+  font-size: 0.75rem;
+  margin-top: 2px;
+  flex-shrink: 0;
 }
 
 /* Header */
