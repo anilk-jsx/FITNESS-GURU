@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../layout/DashboardLayout';
 import tokenManager from '../utils/tokenManager';
+import RenewSubscriptionModal from './RenewSubscriptionModal';
 import './Subscriptions.css';
 
 const ENTITLEMENT_LABELS = {
@@ -30,6 +31,7 @@ const Subscriptions = () => {
     start_date: ''
   });
   const [submittedFreezeData, setSubmittedFreezeData] = useState(null);
+  const [showRenewModal, setShowRenewModal] = useState(false);
   const [userData, setUserData] = useState(null);
   const [activeSubscription, setActiveSubscription] = useState(null);
   const [apiMembershipPlans, setApiMembershipPlans] = useState([]);
@@ -342,35 +344,53 @@ const Subscriptions = () => {
       </div>
 
       {/* Current Subscription */}
-      <div className="current-subscription">
-        <div className="current-badge">CURRENT PLAN</div>
-        <div className="current-plan-info">
-          <div className="plan-details">
-            <h3>{currentPlan.name}</h3>
-            <div className="plan-price">
-              ₹{formatPrice(currentPlan.price)}
+      {(() => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const daysRemaining = activeSubscription?.end_date ? Math.round((new Date(activeSubscription.end_date) - new Date(todayStr)) / 86400000) : 0;
+        const isExpiringSoon = activeSubscription?.status === 1 && daysRemaining >= 0 && daysRemaining <= 7;
+
+        return (
+          <div className="current-subscription">
+            <div className={`current-badge ${isExpiringSoon ? 'warning' : ''}`} style={isExpiringSoon ? { background: '#f59e0b', color: '#ffffff' } : {}}>
+              {isExpiringSoon ? `⚡ EXPIRING SOON (${daysRemaining} DAYS LEFT)` : 'CURRENT PLAN'}
             </div>
-            <div className="plan-billing">Billed {currentPlan.period}</div>
-            <div className="plan-status">
-              <i className="fas fa-check-circle"></i>
-              <span>{currentPlan.status} until {currentPlan.expiryDate}</span>
+            <div className="current-plan-info">
+              <div className="plan-details">
+                <h3>{currentPlan.name}</h3>
+                <div className="plan-price">
+                  ₹{formatPrice(currentPlan.price)}
+                </div>
+                <div className="plan-billing">Billed {currentPlan.period}</div>
+                <div className="plan-status">
+                  <i className={`fas ${isExpiringSoon ? 'fa-exclamation-circle text-warning' : 'fa-check-circle'}`}></i>
+                  <span>{isExpiringSoon ? `Expiring in ${daysRemaining} day${daysRemaining > 1 ? 's' : ''}` : `${currentPlan.status} until ${currentPlan.expiryDate}`}</span>
+                </div>
+              </div>
+              <div className="plan-actions">
+                <button
+                  className="btn-upgrade-main"
+                  onClick={() => setShowRenewModal(true)}
+                  style={{ background: '#2563eb', color: '#ffffff', borderColor: '#1d4ed8' }}
+                >
+                  <i className="fas fa-sync-alt"></i>
+                  Renew Membership
+                </button>
+                <button 
+                  className="btn-upgrade-main" 
+                  onClick={() => setShowUpgradePlans(!showUpgradePlans)}
+                >
+                  <i className={`fas ${showUpgradePlans ? 'fa-times' : 'fa-arrow-up'}`}></i>
+                  {showUpgradePlans ? 'Close Plans' : 'Upgrade Plan'}
+                </button>
+                <button className="btn-manage" onClick={() => setShowFreezeModal(true)}>
+                  <i className="fas fa-snowflake"></i>
+                  Freeze Subscription
+                </button>
+              </div>
             </div>
           </div>
-          <div className="plan-actions">
-            <button 
-              className="btn-upgrade-main" 
-              onClick={() => setShowUpgradePlans(!showUpgradePlans)}
-            >
-              <i className={`fas ${showUpgradePlans ? 'fa-times' : 'fa-arrow-up'}`}></i>
-              {showUpgradePlans ? 'Close Plans' : 'Upgrade Plan'}
-            </button>
-            <button className="btn-manage" onClick={() => setShowFreezeModal(true)}>
-              <i className="fas fa-snowflake"></i>
-              Freeze Subscription
-            </button>
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Active Wallet Credit Balances */}
       {activeSubscription && activeSubscription.wallet_credits && (
@@ -701,6 +721,21 @@ const Subscriptions = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Subscription Renewal Modal Popup */}
+      {showRenewModal && (
+        <RenewSubscriptionModal
+          isOpen={showRenewModal}
+          initialUserId={userData?.user_id}
+          initialPlanId={activeSubscription?.plan_id}
+          memberData={userData}
+          onClose={() => setShowRenewModal(false)}
+          onSuccess={(res) => {
+            alert(res.message || "Subscription successfully renewed!");
+            window.location.reload();
+          }}
+        />
       )}
     </DashboardLayout>
       )}
