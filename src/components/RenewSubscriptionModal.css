@@ -1,6 +1,6 @@
-/* RenewSubscriptionModal.css - Clean Modern Aesthetic */
+/* RenewSubscriptionModal.css - Professional Clean UI/UX Design */
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 .renew-modal-overlay {
   position: fixed;
@@ -8,34 +8,34 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(15, 23, 42, 0.78);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
-  padding: 1.25rem;
+  z-index: 99999;
+  padding: 1rem;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 .renew-modal-card {
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: 20px;
   width: 100%;
-  max-width: 680px;
-  max-height: 92vh;
+  max-width: 620px;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05);
   overflow: hidden;
-  animation: renewModalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: renewModalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes renewModalPop {
   from {
     opacity: 0;
-    transform: scale(0.92) translateY(16px);
+    transform: scale(0.95) translateY(10px);
   }
   to {
     opacity: 1;
@@ -43,27 +43,28 @@
   }
 }
 
-/* Header Gradient */
+/* Modal Header */
 .renew-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.4rem 1.75rem;
+  padding: 1.2rem 1.5rem;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e1b4b 100%);
   color: #ffffff;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
 }
 
 .renew-title-group {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .renew-icon-wrapper {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
   display: flex;
   align-items: center;
@@ -73,33 +74,33 @@
 }
 
 .renew-icon {
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   color: #ffffff;
 }
 
 .renew-title-group h3 {
   margin: 0;
   font-family: 'Outfit', sans-serif;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: #ffffff;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .renew-subtitle {
-  margin: 0.15rem 0 0 0;
-  font-size: 0.82rem;
+  margin: 0.1rem 0 0 0;
+  font-size: 0.8rem;
   color: #94a3b8;
 }
 
 .renew-close-btn {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   color: #cbd5e1;
-  font-size: 1.1rem;
+  font-size: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -114,17 +115,27 @@
   transform: rotate(90deg);
 }
 
-/* Modal Body */
-.renew-modal-body {
-  padding: 1.75rem;
-  overflow-y: auto;
+/* Modal Form Container */
+.renew-modal-form {
   display: flex;
   flex-direction: column;
-  gap: 1.4rem;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Scrollable Modal Body */
+.renew-modal-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .renew-modal-body::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 .renew-modal-body::-webkit-scrollbar-thumb {
@@ -132,49 +143,49 @@
   border-radius: 4px;
 }
 
-/* Selection Cards */
+/* Selection Cards Grid */
 .renew-selection-section {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .renew-form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.35rem;
 }
 
 .renew-label {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: #334155;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .renew-static-card {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  min-height: 48px;
+  gap: 0.65rem;
+  min-height: 44px;
 }
 
 .avatar-ring {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   background: #dbeafe;
   color: #2563eb;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 0.9rem;
   flex-shrink: 0;
 }
 
@@ -185,7 +196,7 @@
 }
 
 .static-member-info strong {
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   color: #0f172a;
   white-space: nowrap;
   overflow: hidden;
@@ -193,7 +204,7 @@
 }
 
 .static-member-info span {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #64748b;
   white-space: nowrap;
   overflow: hidden;
@@ -208,18 +219,18 @@
 
 .renew-input-styled {
   width: 100%;
-  padding: 0.75rem 1rem;
-  padding-right: 2.2rem;
+  padding: 0.65rem 0.85rem;
+  padding-right: 2rem;
   border: 1.5px solid #cbd5e1;
-  border-radius: 12px;
-  font-size: 0.9rem;
+  border-radius: 10px;
+  font-size: 0.88rem;
   font-weight: 500;
   color: #0f172a;
   background: #ffffff;
   appearance: none;
   -webkit-appearance: none;
   transition: all 0.2s ease;
-  min-height: 48px;
+  min-height: 44px;
 }
 
 .renew-input-styled option {
@@ -231,25 +242,25 @@
 .renew-input-styled:focus {
   outline: none;
   border-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 .select-chevron {
   position: absolute;
-  right: 1rem;
+  right: 0.85rem;
   pointer-events: none;
   color: #64748b;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
-/* Alert Messages */
+/* Alert Boxes */
 .renew-alert {
-  padding: 0.85rem 1.1rem;
-  border-radius: 12px;
-  font-size: 0.88rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.6rem;
   font-weight: 500;
 }
 
@@ -265,33 +276,30 @@
   color: #d48806;
 }
 
-/* Preview Card */
+/* Renewal Preview Card */
 .renew-preview-card {
-  border-radius: 16px;
+  border-radius: 14px;
   border: 1.5px solid #e2e8f0;
-  padding: 1.35rem;
+  padding: 1.1rem;
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
-  transition: all 0.3s ease;
+  gap: 0.85rem;
+  transition: all 0.2s ease;
 }
 
 .renew-preview-card.EXPIRING_SOON {
   border-color: #f59e0b;
   background: linear-gradient(135deg, #fffbe6 0%, #fffbf0 100%);
-  box-shadow: 0 8px 20px -6px rgba(245, 158, 11, 0.15);
 }
 
 .renew-preview-card.ACTIVE {
   border-color: #3b82f6;
   background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
-  box-shadow: 0 8px 20px -6px rgba(59, 130, 246, 0.15);
 }
 
 .renew-preview-card.EXPIRED {
   border-color: #ef4444;
   background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
-  box-shadow: 0 8px 20px -6px rgba(239, 68, 68, 0.15);
 }
 
 .preview-card-header {
@@ -299,23 +307,23 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .preview-card-title {
   font-family: 'Outfit', sans-serif;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: #0f172a;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .state-badge {
-  padding: 0.3rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
@@ -338,28 +346,27 @@
   border: 1px solid #ef4444;
 }
 
-/* Timeline Layout */
+/* Timeline Grid */
 .preview-dates-timeline {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 1rem;
+  gap: 0.85rem;
   background: #ffffff;
-  padding: 1.1rem 1.25rem;
-  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
   border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
 }
 
 .timeline-node {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.2rem;
   min-width: 0;
 }
 
 .node-label {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: #64748b;
   text-transform: uppercase;
   font-weight: 700;
@@ -369,14 +376,14 @@
 .node-date {
   font-family: 'Outfit', sans-serif;
   font-weight: 700;
-  font-size: 0.98rem;
+  font-size: 0.95rem;
   color: #0f172a;
   word-break: break-word;
   line-height: 1.3;
 }
 
 .to-txt {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: #94a3b8;
   font-weight: 500;
 }
@@ -395,11 +402,11 @@
 }
 
 .connector-icon {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .connector-text {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 700;
   color: #64748b;
   text-transform: uppercase;
@@ -407,31 +414,31 @@
 }
 
 .days-remaining-pill {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: #b45309;
   background: #fef3c7;
-  padding: 0.2rem 0.5rem;
-  border-radius: 6px;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
   width: fit-content;
 }
 
 .duration-pill {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: #166534;
   background: #dcfce7;
-  padding: 0.2rem 0.5rem;
-  border-radius: 6px;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
   width: fit-content;
 }
 
 .preview-strategy-info {
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   color: #334155;
-  background: rgba(255, 255, 255, 0.85);
-  padding: 0.85rem 1rem;
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.75rem 0.85rem;
+  border-radius: 8px;
   border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
@@ -439,20 +446,21 @@
   margin: 0;
   display: flex;
   align-items: flex-start;
-  gap: 0.6rem;
-  line-height: 1.45;
+  gap: 0.5rem;
+  line-height: 1.4;
 }
 
 .preview-strategy-info p i {
-  margin-top: 0.2rem;
+  margin-top: 0.15rem;
 }
 
 .preview-price-summary {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1.5px dashed rgba(0, 0, 0, 0.12);
-  padding-top: 0.85rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.12);
+  padding-top: 0.75rem;
+  margin-top: 0.15rem;
 }
 
 .price-info {
@@ -461,51 +469,54 @@
 }
 
 .price-lbl {
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: #0f172a;
 }
 
 .price-sub {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: #64748b;
 }
 
 .price-val {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.4rem;
+  font-size: 1.35rem;
   font-weight: 800;
-  color: #0f172a;
+  color: #059669;
 }
 
-/* Payment Selection Grid */
+/* Payment Mode Grid */
 .renew-payment-section {
   border-top: 1px solid #e2e8f0;
-  padding-top: 1.25rem;
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
 }
 
 .section-title {
-  margin: 0 0 0.85rem 0;
+  margin: 0;
   font-family: 'Outfit', sans-serif;
-  font-size: 1.05rem;
+  font-size: 0.98rem;
   font-weight: 700;
   color: #0f172a;
 }
 
 .payment-modes-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
 }
 
 .payment-mode-card {
   background: #ffffff;
   border: 1.5px solid #cbd5e1;
-  border-radius: 14px;
-  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  padding: 0.7rem 0.85rem;
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.65rem;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
@@ -515,26 +526,24 @@
 .payment-mode-card:hover {
   border-color: #3b82f6;
   background: #f8fafc;
-  transform: translateY(-2px);
 }
 
 .payment-mode-card.active {
   border-color: #2563eb;
   background: #eff6ff;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
 }
 
 .mode-icon-box {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   background: #f1f5f9;
   color: #475569;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
-  transition: all 0.2s ease;
+  font-size: 1rem;
   flex-shrink: 0;
 }
 
@@ -551,7 +560,7 @@
 }
 
 .mode-label {
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   font-weight: 700;
   color: #0f172a;
   white-space: nowrap;
@@ -560,7 +569,7 @@
 }
 
 .mode-desc {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: #64748b;
   white-space: nowrap;
   overflow: hidden;
@@ -569,29 +578,29 @@
 
 .mode-check {
   position: absolute;
-  top: 0.6rem;
-  right: 0.75rem;
+  top: 0.55rem;
+  right: 0.65rem;
   color: #2563eb;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .renew-preview-loading {
-  padding: 1.75rem;
+  padding: 1.5rem;
   text-align: center;
   background: #f8fafc;
-  border-radius: 14px;
+  border-radius: 12px;
   color: #475569;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
 }
 
 .spinner-pulse {
-  width: 22px;
-  height: 22px;
-  border: 3px solid #cbd5e1;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #cbd5e1;
   border-top-color: #2563eb;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -602,35 +611,37 @@
   to { transform: rotate(360deg); }
 }
 
-/* Modal Footer */
+/* Modal Sticky Footer */
 .renew-modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.85rem;
+  gap: 0.75rem;
   border-top: 1px solid #e2e8f0;
-  padding-top: 1.1rem;
+  padding: 0.85rem 1.5rem;
+  background: #f8fafc;
+  flex-shrink: 0;
 }
 
 .renew-btn {
-  padding: 0.75rem 1.4rem;
-  border-radius: 12px;
-  font-size: 0.92rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.5rem;
 }
 
 .renew-btn-cancel {
-  background: #f1f5f9;
+  background: #ffffff;
   border: 1px solid #cbd5e1;
   color: #475569;
 }
 
 .renew-btn-cancel:hover {
-  background: #e2e8f0;
+  background: #f1f5f9;
   color: #0f172a;
 }
 
@@ -638,13 +649,12 @@
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   border: 1px solid #1e40af;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .renew-btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
 }
 
 .renew-btn-primary:disabled {
@@ -655,12 +665,11 @@
   cursor: not-allowed;
 }
 
-/* Utility spacing */
-.mt-3 {
-  margin-top: 0.75rem;
+.mt-2 {
+  margin-top: 0.5rem;
 }
 
-/* Responsive adjustments */
+/* Responsive */
 @media (max-width: 640px) {
   .renew-selection-section, .payment-modes-grid {
     grid-template-columns: 1fr;
@@ -668,12 +677,12 @@
   
   .preview-dates-timeline {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: 0.65rem;
   }
 
   .timeline-connector {
     flex-direction: row;
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   .connector-icon {
