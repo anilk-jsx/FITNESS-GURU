@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import "./MemberManagement.css";
 import tokenManager from "../utils/tokenManager";
 import { normalizeGender, toIntOrNull, isActiveStatus, findMatchingPlan } from "../utils/fieldUtils";
@@ -7,7 +8,56 @@ import eyeIcon from "../assets/icons8-eye-50.png";
 import eyeSlashIcon from "../assets/icons8-invisible-48.png";
 import InvoiceModal from "./InvoiceModal";
 
+const renderFieldValue = (val, fallback = "Not provided") => {
+  if (val === null || val === undefined) {
+    return <span className="not-provided-tag"><i className="fas fa-minus-circle"></i> {fallback}</span>;
+  }
+  const str = String(val).trim();
+  if (str === "" || str === "N/A" || str === "Not provided" || str === "Not specified" || str === "Not assigned" || str === "Unassigned" || str === "0") {
+    return <span className="not-provided-tag"><i className="fas fa-minus-circle"></i> {fallback}</span>;
+  }
+  return <span className="field-value-provided">{str}</span>;
+};
+
+const calculateProfileCompletion = (member) => {
+  if (!member) return { percentage: 0, filledCount: 0, totalCount: 15, level: 'low' };
+  
+  const fields = [
+    { name: 'Full Name', value: member.name },
+    { name: 'Registration Number', value: member.registration_number },
+    { name: 'Email', value: member.email },
+    { name: 'Phone', value: member.phone },
+    { name: 'Gender', value: member.gender },
+    { name: 'Date of Birth', value: member.date_of_birth },
+    { name: 'Blood Group', value: member.blood_group },
+    { name: 'Height', value: member.height_cm },
+    { name: 'Weight', value: member.weight_kg },
+    { name: 'Fitness Level', value: member.fitness_level },
+    { name: 'Goal Focus', value: member.goal_focus },
+    { name: 'Emergency Contact', value: member.emergency_contact },
+    { name: 'Address', value: member.address_line1 },
+    { name: 'City', value: member.city_name || member.city_id },
+    { name: 'State', value: member.state_name || member.state_id },
+  ];
+
+  const filledCount = fields.filter(f => {
+    if (f.value === null || f.value === undefined) return false;
+    const str = String(f.value).trim().toLowerCase();
+    return str !== '' && str !== 'not provided' && str !== 'not specified' && str !== 'not assigned' && str !== 'unassigned' && str !== '0' && str !== 'null';
+  }).length;
+
+  const totalCount = fields.length;
+  const percentage = Math.round((filledCount / totalCount) * 100);
+
+  let level = 'low';
+  if (percentage >= 80) level = 'high';
+  else if (percentage >= 50) level = 'medium';
+
+  return { percentage, filledCount, totalCount, level };
+};
+
 const MemberManagement = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMember, setSelectedMember] = useState(null);
   const [memberDetails, setMemberDetails] = useState(null);
@@ -21,6 +71,12 @@ const MemberManagement = () => {
   // Tax Receipt display states
   const [activeInvoiceId, setActiveInvoiceId] = useState(null);
   const [showInvoice, setShowInvoice] = useState(false);
+
+  // Navigate to Member Subscriptions Desk
+  const handleNavigateToSubscription = useCallback((userId) => {
+    setShowMemberProfile(false);
+    navigate(`/admin-dashboard/subscriptions?search=${encodeURIComponent(userId)}`);
+  }, [navigate]);
 
   // Password visibility state for add member form
   const [showPassword, setShowPassword] = useState(false);
@@ -1211,7 +1267,7 @@ const MemberManagement = () => {
       } catch (parseErr) {
       }
 
-      if (response.status === 401 || result.message?.includes("Invalid or expired token") || result.message?.includes("token")) {
+      if (response.status === 401 && result.message && result.message.toLowerCase().includes("invalid or expired token")) {
         throw new Error("Session expired or invalid token. Please log out and log in again.");
       }
 
@@ -1916,6 +1972,31 @@ const MemberManagement = () => {
 
               {memberDetails && !memberDetailsLoading && (
                 <>
+                  {/* Profile Completion Meter Card */}
+                  {(() => {
+                    const { percentage, filledCount, totalCount, level } = calculateProfileCompletion(memberDetails);
+                    return (
+                      <div className={`profile-completion-card level-${level}`}>
+                        <div className="completion-info">
+                          <div className="completion-title">
+                            <i className="fas fa-chart-pie" style={{ color: level === 'high' ? '#10b981' : level === 'medium' ? '#f59e0b' : '#ef4444' }}></i>
+                            Profile Completion
+                            <span className={`completion-badge badge-${level}`}>{percentage}%</span>
+                          </div>
+                          <div className="completion-subtitle">
+                            {filledCount} of {totalCount} key profile details completed
+                          </div>
+                        </div>
+                        <div className="completion-bar-container">
+                          <div
+                            className={`completion-bar-fill fill-${level}`}
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* Basic Information */}
                   <div className="member-profile-section">
                     <h3 className="member-profile-section-title">
@@ -1925,12 +2006,12 @@ const MemberManagement = () => {
                     <div className="member-profile-grid">
                       <div className="member-profile-item">
                         <label>Full Name</label>
-                        <span>{memberDetails.name}</span>
+                        <span>{renderFieldValue(memberDetails.name, "Not provided")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Reg No.</label>
                         <span style={{ fontWeight: 600, color: '#ff6b35' }}>
-                          {memberDetails.registration_number ? `#${memberDetails.registration_number}` : "Not assigned"}
+                          {memberDetails.registration_number ? `#${memberDetails.registration_number}` : renderFieldValue(null, "Not assigned")}
                         </span>
                       </div>
                       <div className="member-profile-item">
@@ -1939,25 +2020,23 @@ const MemberManagement = () => {
                       </div>
                       <div className="member-profile-item">
                         <label>Email</label>
-                        <span>{memberDetails.email}</span>
+                        <span>{renderFieldValue(memberDetails.email, "Not provided")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Phone</label>
-                        <span>{memberDetails.phone || "Not provided"}</span>
+                        <span>{renderFieldValue(memberDetails.phone, "Not provided")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Gender</label>
-                        <span>{memberDetails.gender || "Not provided"}</span>
+                        <span>{renderFieldValue(memberDetails.gender, "Not provided")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Date of Birth</label>
-                        <span>{formatDate(memberDetails.date_of_birth)}</span>
+                        <span>{memberDetails.date_of_birth ? formatDate(memberDetails.date_of_birth) : renderFieldValue(null, "Not provided")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Blood Group</label>
-                        <span>
-                          {memberDetails.blood_group || "Not provided"}
-                        </span>
+                        <span>{renderFieldValue(memberDetails.blood_group, "Not provided")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Status</label>
@@ -1979,29 +2058,23 @@ const MemberManagement = () => {
                     <div className="member-profile-grid">
                       <div className="member-profile-item">
                         <label>Height</label>
-                        <span>{formatHeight(memberDetails.height_cm)}</span>
+                        <span>{memberDetails.height_cm ? formatHeight(memberDetails.height_cm) : renderFieldValue(null, "Not specified")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Weight</label>
-                        <span>{formatWeight(memberDetails.weight_kg)}</span>
+                        <span>{memberDetails.weight_kg ? formatWeight(memberDetails.weight_kg) : renderFieldValue(null, "Not specified")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Fitness Level</label>
-                        <span>
-                          {memberDetails.fitness_level || "Not specified"}
-                        </span>
+                        <span>{renderFieldValue(memberDetails.fitness_level, "Not specified")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Goal Focus</label>
-                        <span>
-                          {memberDetails.goal_focus || "Not specified"}
-                        </span>
+                        <span>{renderFieldValue(memberDetails.goal_focus, "Not specified")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Emergency Contact</label>
-                        <span>
-                          {memberDetails.emergency_contact || "Not provided"}
-                        </span>
+                        <span>{renderFieldValue(memberDetails.emergency_contact, "Not provided")}</span>
                       </div>
                     </div>
                   </div>
@@ -2015,24 +2088,24 @@ const MemberManagement = () => {
                     <div className="member-profile-grid">
                       <div className="member-profile-item">
                         <label>Gym</label>
-                        <span>{memberDetails.gym_name}</span>
+                        <span>{renderFieldValue(memberDetails.gym_name, "N/A")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Branch</label>
-                        <span>{memberDetails.branch_name}</span>
+                        <span>{renderFieldValue(memberDetails.branch_name, "N/A")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Date of Joining</label>
-                        <span>{formatDate(memberDetails.date_of_joining)}</span>
+                        <span>{memberDetails.date_of_joining ? formatDate(memberDetails.date_of_joining) : renderFieldValue(null, "Not provided")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Membership Plan</label>
-                        <span>{memberDetails.plan_name || "Not assigned"}</span>
+                        <span>{renderFieldValue(memberDetails.plan_name, "Not assigned")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Assigned Trainer</label>
                         <span>
-                          {memberDetails.trainer_name ? `${memberDetails.trainer_name} (${memberDetails.trainer_phone || 'N/A'})` : "Unassigned"}
+                          {memberDetails.trainer_name ? `${memberDetails.trainer_name} (${memberDetails.trainer_phone || 'N/A'})` : renderFieldValue(null, "Unassigned")}
                         </span>
                       </div>
                       {memberDetails.days_remaining !== undefined && memberDetails.days_remaining !== null && (
@@ -2046,47 +2119,60 @@ const MemberManagement = () => {
                     </div>
                   </div>
 
-                  {/* Subscription Details */}
-                  {memberDetails.subscription_id && (
-                    <div className="member-profile-section">
-                      <h3 className="member-profile-section-title">
+                  {/* Current Subscription (Interactive Pointer Card) */}
+                  <div
+                    className="member-profile-section subscription-pointer-card"
+                    onClick={() => handleNavigateToSubscription(memberDetails.user_id)}
+                    title="Tap to jump to Subscriptions Desk for this member"
+                  >
+                    <div className="sub-card-header-row">
+                      <h3 className="member-profile-section-title" style={{ margin: 0 }}>
                         <i className="fas fa-credit-card"></i>
                         Current Subscription
                       </h3>
-                      <div className="member-profile-grid">
+                      <span className="sub-pointer-link-badge">
+                        <i className="fas fa-external-link-alt"></i> Manage Subscriptions Desk <i className="fas fa-arrow-right"></i>
+                      </span>
+                    </div>
+
+                    {memberDetails.subscription_id ? (
+                      <div className="member-profile-grid" style={{ marginTop: '1rem' }}>
                         <div className="member-profile-item">
                           <label>Subscription ID</label>
                           <span>#{memberDetails.subscription_id}</span>
                         </div>
                         <div className="member-profile-item">
                           <label>Plan Name</label>
-                          <span>{memberDetails.plan_name}</span>
+                          <span>{renderFieldValue(memberDetails.plan_name, "N/A")}</span>
                         </div>
                         <div className="member-profile-item">
                           <label>Duration</label>
-                          <span>{memberDetails.duration_months} month(s)</span>
+                          <span>{memberDetails.duration_months ? `${memberDetails.duration_months} month(s)` : renderFieldValue(null, "N/A")}</span>
                         </div>
                         <div className="member-profile-item">
                           <label>Start Date</label>
-                          <span>{formatDate(memberDetails.start_date)}</span>
+                          <span>{memberDetails.start_date ? formatDate(memberDetails.start_date) : renderFieldValue(null, "N/A")}</span>
                         </div>
                         <div className="member-profile-item">
                           <label>End Date</label>
-                          <span>{formatDate(memberDetails.end_date)}</span>
+                          <span>{memberDetails.end_date ? formatDate(memberDetails.end_date) : renderFieldValue(null, "N/A")}</span>
                         </div>
                         <div className="member-profile-item">
                           <label>Subscription Status</label>
                           <span
                             className={`member-status-badge ${getStatusBadgeClass(memberDetails.subscription_status)}`}
                           >
-                            {formatSubscriptionStatus(
-                              memberDetails.subscription_status,
-                            )}
+                            {formatSubscriptionStatus(memberDetails.subscription_status)}
                           </span>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#ffffff', borderRadius: '8px', border: '1px dashed #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        {renderFieldValue(null, "No Active Subscription")}
+                        <span style={{ fontSize: '0.8rem', color: '#4f46e5', fontWeight: 600 }}>Provision Subscription &rarr;</span>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Address Information */}
                   <div className="member-profile-section">
@@ -2097,37 +2183,27 @@ const MemberManagement = () => {
                     <div className="member-profile-grid">
                       <div className="member-profile-item">
                         <label>Address Line 1</label>
-                        <span>
-                          {memberDetails.address_line1 || "Not provided"}
-                        </span>
+                        <span>{renderFieldValue(memberDetails.address_line1, "Not provided")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Address Line 2</label>
-                        <span>
-                          {memberDetails.address_line2 || "Not provided"}
-                        </span>
+                        <span>{renderFieldValue(memberDetails.address_line2, "Not provided")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>City</label>
-                        <span>{memberDetails.city_name || "Not provided"}</span>
+                        <span>{renderFieldValue(memberDetails.city_name, "Not provided")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>District</label>
-                        <span>
-                          {memberDetails.district_name || "Not provided"}
-                        </span>
+                        <span>{renderFieldValue(memberDetails.district_name, "Not provided")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>State</label>
-                        <span>
-                          {memberDetails.state_name || "Not provided"}
-                        </span>
+                        <span>{renderFieldValue(memberDetails.state_name, "Not provided")}</span>
                       </div>
                       <div className="member-profile-item">
                         <label>Country</label>
-                        <span>
-                          {memberDetails.country_name || "Not provided"}
-                        </span>
+                        <span>{renderFieldValue(memberDetails.country_name, "Not provided")}</span>
                       </div>
                     </div>
                   </div>
