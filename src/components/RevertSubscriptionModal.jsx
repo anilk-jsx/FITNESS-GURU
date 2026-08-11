@@ -264,14 +264,7 @@ const RevertSubscriptionModal = ({
                   <span>System Action Consequences Warning</span>
                 </div>
                 <ul className="consequences-list">
-                  <li>
-                    <i className="fas fa-receipt"></i>
-                    <span>Invoice status set to <strong>CANCELLED</strong> & payment marked <strong>REFUNDED</strong>.</span>
-                  </li>
-                  <li>
-                    <i className="fas fa-book-open"></i>
-                    <span>A <strong>REFUND OUTFLOW</strong> entry of <strong>₹{parseFloat(totalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong> is logged in the Financial Ledger.</span>
-                  </li>
+                  
                   <li>
                     <i className="fas fa-user-slash"></i>
                     <span>Subscription is <strong>DEACTIVATED</strong> & associated wallet credits <strong>REVOKED</strong>.</span>

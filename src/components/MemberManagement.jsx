@@ -1228,10 +1228,10 @@ const MemberManagement = () => {
 
         // Contact and address
         emergency_contact: editFormData.emergency_contact || "",
-        country: editFormData.country ? parseInt(editFormData.country, 10) : 1,
-        state: editFormData.state ? parseInt(editFormData.state, 10) : 0,
-        district: editFormData.district ? parseInt(editFormData.district, 10) : 0,
-        city: editFormData.city ? parseInt(editFormData.city, 10) : 0,
+        country: editFormData.country && parseInt(editFormData.country, 10) > 0 ? parseInt(editFormData.country, 10) : 1,
+        state: editFormData.state && parseInt(editFormData.state, 10) > 0 ? parseInt(editFormData.state, 10) : null,
+        district: editFormData.district && parseInt(editFormData.district, 10) > 0 ? parseInt(editFormData.district, 10) : null,
+        city: editFormData.city && parseInt(editFormData.city, 10) > 0 ? parseInt(editFormData.city, 10) : null,
         address_line1: editFormData.address_line1 || "",
         address_line2: editFormData.address_line2 || "",
       };
