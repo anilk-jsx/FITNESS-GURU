@@ -51,7 +51,7 @@ const RenewSubscriptionModal = ({
     try {
       const [membersRes, plansRes] = await Promise.all([
         tokenManager.apiCall(`${API_BASE_URL}/api/users/list?role=MEMBER&limit=1000`),
-        tokenManager.apiCall(`${API_BASE_URL}/api/membership-plans?status=1`)
+        tokenManager.apiCall(`${API_BASE_URL}/api/membership-plans?status=1&plan_type=BASE_MEMBERSHIP`)
       ]);
 
       if (membersRes.ok) {
@@ -66,7 +66,10 @@ const RenewSubscriptionModal = ({
         const pData = await plansRes.json();
         const rawPlans = pData.data || pData.plans || (Array.isArray(pData) ? pData : []);
         if (Array.isArray(rawPlans)) {
-          setPlansList(rawPlans.filter(p => String(p.status) === '1' || p.status === 1 || p.status === undefined));
+          setPlansList(rawPlans.filter(p => 
+            (String(p.status) === '1' || p.status === 1 || p.status === undefined) &&
+            (!p.plan_type || String(p.plan_type).toUpperCase() === 'BASE_MEMBERSHIP')
+          ));
         }
       }
     } catch (err) {
@@ -242,7 +245,7 @@ const RenewSubscriptionModal = ({
 
               {/* Plan Selection */}
               <div className="renew-form-group">
-                <label className="renew-label">Membership Plan:</label>
+                <label className="renew-label">Base Membership Plan:</label>
                 <select
                   className="renew-select"
                   value={selectedPlanId}
@@ -250,7 +253,7 @@ const RenewSubscriptionModal = ({
                   required
                   disabled={loadingDropdowns}
                 >
-                  <option value="">-- Select Plan to Renew --</option>
+                  <option value="">-- Select Base Plan to Renew --</option>
                   {plansList.map(p => (
                     <option key={p.plan_id} value={p.plan_id}>
                       {p.plan_name} ({p.duration_months} Mo — ₹{Number(p.price).toLocaleString('en-IN')})
