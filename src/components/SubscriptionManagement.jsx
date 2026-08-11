@@ -800,27 +800,9 @@ const SubscriptionManagement = () => {
                             <i className="fas fa-plus"></i> Create Membership Plan
                         </button>
                     ) : (
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                                className="sub-btn sub-btn-secondary"
-                                onClick={() => openRenewModal()}
-                                title="Renew Subscription (Stack or Reactivate)"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', borderColor: '#2563eb', color: '#1d4ed8' }}
-                            >
-                                <i className="fas fa-sync-alt" style={{ color: '#2563eb' }}></i> Renew Subscription
-                            </button>
-                            <button
-                                className="sub-btn sub-btn-secondary"
-                                onClick={() => openRevertModal(null)}
-                                title="Revert Accidental Subscription Purchase within 24 Hours"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                            >
-                                <i className="fas fa-undo-alt" style={{ color: '#7c3aed' }}></i> 24h Revert Purchase
-                            </button>
-                            <button className="sub-btn sub-btn-primary" onClick={openProvisionModal}>
-                                <i className="fas fa-user-plus"></i> Provision Member Subscription
-                            </button>
-                        </div>
+                        <button className="sub-btn sub-btn-primary" onClick={openProvisionModal}>
+                            <i className="fas fa-user-plus"></i> Provision Member Subscription
+                        </button>
                     )}
                 </div>
             </div>
