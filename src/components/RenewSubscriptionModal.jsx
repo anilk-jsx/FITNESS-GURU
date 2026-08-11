@@ -279,7 +279,9 @@ const RenewSubscriptionModal = ({
               <div className={`renew-preview-card ${previewData.membership_state}`}>
                 
                 <div className="preview-card-top">
-                  <span className="preview-card-title">Renewal Summary</span>
+                  <span className="preview-card-title">
+                    <i className="fas fa-layer-group"></i> Renewal Date Projection
+                  </span>
                   <span className={`state-badge badge-${previewData.membership_state.toLowerCase()}`}>
                     {previewData.membership_state === 'EXPIRING_SOON' && '⚡ EXPIRING SOON'}
                     {previewData.membership_state === 'ACTIVE' && '✓ ACTIVE'}
@@ -287,12 +289,30 @@ const RenewSubscriptionModal = ({
                   </span>
                 </div>
 
+                {/* Existing Stacked Subscriptions Chain (If Any) */}
+                {Array.isArray(previewData.stacked_subscriptions) && previewData.stacked_subscriptions.length > 0 && (
+                  <div className="stacked-chain-box">
+                    <div className="stacked-chain-header">
+                      <i className="fas fa-list-ol"></i> Existing Active Subscriptions ({previewData.total_stacked_count})
+                    </div>
+                    <ul className="stacked-chain-list">
+                      {previewData.stacked_subscriptions.map((s, idx) => (
+                        <li key={s.subscription_id || idx} className="stacked-chain-item">
+                          <span className="item-num">#{idx + 1}</span>
+                          <span className="item-name">{s.plan_name || 'Base Membership'}</span>
+                          <span className="item-dates">{s.start_date} → <strong>{s.end_date}</strong></span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 <div className="preview-timeline">
                   <div className="timeline-col">
-                    <span className="col-lbl">Current Expiry</span>
-                    <strong className="col-val">{previewData.current_active_end_date || 'Expired'}</strong>
+                    <span className="col-lbl">Latest Expiry Date</span>
+                    <strong className="col-val">{previewData.current_active_end_date || 'Expired / None'}</strong>
                     {previewData.current_days_remaining > 0 && (
-                      <span className="rem-days">{previewData.current_days_remaining} days left</span>
+                      <span className="rem-days">{previewData.current_days_remaining} days total coverage</span>
                     )}
                   </div>
 
@@ -304,7 +324,11 @@ const RenewSubscriptionModal = ({
                     <span className="col-lbl">New Subscription Period</span>
                     <strong className="col-val">{previewData.start_date} → {previewData.end_date}</strong>
                     <span className="type-tag">
-                      {previewData.renewal_type === 'STACKED_EXTENSION' ? 'Stacked Extension (Zero Day Loss)' : 'Fresh Reactivation (Starts Today)'}
+                      {previewData.renewal_type === 'STACKED_EXTENSION' ? (
+                        <>Starts after last active sub ({previewData.current_active_end_date})</>
+                      ) : (
+                        <>Fresh Reactivation (Starts Today)</>
+                      )}
                     </span>
                   </div>
                 </div>

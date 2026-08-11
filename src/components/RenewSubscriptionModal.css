@@ -213,6 +213,64 @@
   background: #fef2f2;
 }
 
+/* Stacked Chains List */
+.stacked-chain-box {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.stacked-chain-header {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.stacked-chain-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.stacked-chain-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.55rem;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.stacked-chain-item .item-num {
+  font-weight: 700;
+  color: #64748b;
+  width: 22px;
+}
+
+.stacked-chain-item .item-name {
+  font-weight: 600;
+  color: #0f172a;
+  flex: 1;
+}
+
+.stacked-chain-item .item-dates {
+  color: #475569;
+}
+
 .preview-card-top {
   display: flex;
   justify-content: space-between;
