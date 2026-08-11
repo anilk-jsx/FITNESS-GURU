@@ -1297,7 +1297,7 @@ const SubscriptionManagement = () => {
                                                         })()}
                                                     </td>
                                                     <td>
-                                                        <div className="table-actions" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                        <div className="table-actions" style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'nowrap', minWidth: '220px' }}>
                                                             <button
                                                                 className="sub-btn sub-btn-xs"
                                                                 onClick={() => openRenewModal(sub.user_id, sub.plan_id, { user_id: sub.user_id, name: sub.member_name, email: sub.member_email, reg_no: sub.member_reg_no })}
