@@ -2,6 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import tokenManager from '../utils/tokenManager';
 import './RenewSubscriptionModal.css';
 
+const PAYMENT_METHODS = [
+  { id: 'UPI', label: 'UPI / QR Code', icon: 'fas fa-qrcode', desc: 'GPay, PhonePe, Paytm' },
+  { id: 'CARD', label: 'Card Payment', icon: 'fas fa-credit-card', desc: 'Debit & Credit Cards' },
+  { id: 'CASH', label: 'Cash Payment', icon: 'fas fa-money-bill-wave', desc: 'Direct Gym Desk Cash' },
+  { id: 'BANK_TRANSFER', label: 'Net Banking / NEFT', icon: 'fas fa-university', desc: 'Direct Bank Transfer' }
+];
+
 const RenewSubscriptionModal = ({
   isOpen,
   initialUserId,
@@ -180,13 +187,15 @@ const RenewSubscriptionModal = ({
     <div className="renew-modal-overlay">
       <div className="renew-modal-card">
         
-        {/* Modal Header */}
+        {/* Sleek Gradient Header */}
         <div className="renew-modal-header">
           <div className="renew-title-group">
-            <i className="fas fa-sync-alt renew-icon"></i>
+            <div className="renew-icon-wrapper">
+              <i className="fas fa-sync-alt renew-icon"></i>
+            </div>
             <div>
               <h3>Renew Membership Subscription</h3>
-              <p className="renew-subtitle">Extend continuous access or reactivate member plan</p>
+              <p className="renew-subtitle">Stack continuous access or reactivate member plan</p>
             </div>
           </div>
           <button type="button" className="renew-close-btn" onClick={onClose} title="Close">
@@ -194,7 +203,7 @@ const RenewSubscriptionModal = ({
           </button>
         </div>
 
-        {/* Modal Form */}
+        {/* Form Body */}
         <form onSubmit={handleSubmitRenewal} className="renew-modal-body">
 
           {submitError && (
@@ -204,64 +213,76 @@ const RenewSubscriptionModal = ({
             </div>
           )}
 
-          {/* Member & Plan Selector */}
-          <div className="renew-form-grid">
+          {/* Member & Plan Selection Cards */}
+          <div className="renew-selection-section">
             
-            {/* Member Selector */}
+            {/* Member Field */}
             <div className="renew-form-group">
               <label className="renew-label">
-                <i className="fas fa-user"></i> Member:
+                <i className="fas fa-user-circle text-primary"></i> Member User:
               </label>
               {memberData ? (
-                <div className="renew-static-val">
-                  <strong>{memberData.name || memberData.user_name || `Member #${memberData.user_id}`}</strong>
-                  <span className="renew-subtext">{memberData.email || memberData.reg_no || ''}</span>
+                <div className="renew-static-card">
+                  <div className="avatar-ring">
+                    <i className="fas fa-user"></i>
+                  </div>
+                  <div className="static-member-info">
+                    <strong>{memberData.name || memberData.user_name || `Member #${memberData.user_id}`}</strong>
+                    <span>{memberData.email || memberData.reg_no || `User ID: #${memberData.user_id}`}</span>
+                  </div>
                 </div>
               ) : (
-                <select
-                  className="renew-input"
-                  value={selectedUserId}
-                  onChange={handleMemberChange}
-                  required
-                  disabled={loadingDropdowns}
-                >
-                  <option value="">-- Select Member --</option>
-                  {membersList.map(m => (
-                    <option key={m.user_id} value={m.user_id}>
-                      {m.name || `User #${m.user_id}`} ({m.email || m.phone || 'No Email'})
-                    </option>
-                  ))}
-                </select>
+                <div className="renew-select-wrapper">
+                  <select
+                    className="renew-input-styled"
+                    value={selectedUserId}
+                    onChange={handleMemberChange}
+                    required
+                    disabled={loadingDropdowns}
+                  >
+                    <option value="">-- Choose Member --</option>
+                    {membersList.map(m => (
+                      <option key={m.user_id} value={m.user_id}>
+                        {m.name || `User #${m.user_id}`} ({m.email || m.phone || 'No Contact'})
+                      </option>
+                    ))}
+                  </select>
+                  <i className="fas fa-chevron-down select-chevron"></i>
+                </div>
               )}
             </div>
 
             {/* Plan Selector */}
             <div className="renew-form-group">
               <label className="renew-label">
-                <i className="fas fa-id-card"></i> Membership Plan to Renew:
+                <i className="fas fa-id-card text-accent"></i> Target Membership Plan:
               </label>
-              <select
-                className="renew-input"
-                value={selectedPlanId}
-                onChange={handlePlanChange}
-                required
-                disabled={loadingDropdowns}
-              >
-                <option value="">-- Select Renewal Plan --</option>
-                {plansList.map(p => (
-                  <option key={p.plan_id} value={p.plan_id}>
-                    {p.plan_name} ({p.duration_months} Mo - ₹{Number(p.price).toLocaleString('en-IN')})
-                  </option>
-                ))}
-              </select>
+              <div className="renew-select-wrapper">
+                <select
+                  className="renew-input-styled"
+                  value={selectedPlanId}
+                  onChange={handlePlanChange}
+                  required
+                  disabled={loadingDropdowns}
+                >
+                  <option value="">-- Select Renewal Plan --</option>
+                  {plansList.map(p => (
+                    <option key={p.plan_id} value={p.plan_id}>
+                      {p.plan_name} ({p.duration_months} Mo — ₹{Number(p.price).toLocaleString('en-IN')})
+                    </option>
+                  ))}
+                </select>
+                <i className="fas fa-chevron-down select-chevron"></i>
+              </div>
             </div>
+
           </div>
 
           {/* Renewal Preview Card */}
           {loadingPreview ? (
             <div className="renew-preview-loading">
-              <i className="fas fa-spinner fa-spin"></i>
-              <span>Calculating stacked dates & membership status...</span>
+              <div className="spinner-pulse"></div>
+              <span>Pre-calculating stacked dates & membership status...</span>
             </div>
           ) : previewError ? (
             <div className="renew-alert renew-alert-warning">
@@ -273,40 +294,42 @@ const RenewSubscriptionModal = ({
               
               <div className="preview-card-header">
                 <span className="preview-card-title">
-                  <i className="fas fa-calendar-check"></i> Renewal Date Projection
+                  <i className="fas fa-calendar-alt"></i> Date Projection & Strategy
                 </span>
                 <span className={`state-badge badge-${previewData.membership_state.toLowerCase()}`}>
-                  {previewData.membership_state === 'EXPIRING_SOON' && '⚡ EXPIRING SOON (<= 7d)'}
+                  {previewData.membership_state === 'EXPIRING_SOON' && '⚡ EXPIRING SOON (<= 7 Days)'}
                   {previewData.membership_state === 'ACTIVE' && '✓ ACTIVE'}
                   {previewData.membership_state === 'EXPIRED' && '⚠ EXPIRED'}
                 </span>
               </div>
 
-              <div className="preview-dates-grid">
+              {/* Timeline Grid */}
+              <div className="preview-dates-timeline">
                 
-                <div className="date-block">
-                  <span className="date-label">Current Plan End Date</span>
-                  <span className="date-value text-muted">
-                    {previewData.current_active_end_date || 'N/A (Expired)'}
+                <div className="timeline-node current">
+                  <span className="node-label">Current Plan End</span>
+                  <span className="node-date">
+                    {previewData.current_active_end_date || 'Expired'}
                   </span>
                   {previewData.current_days_remaining > 0 && (
                     <span className="days-remaining-pill">
-                      {previewData.current_days_remaining} day{previewData.current_days_remaining > 1 ? 's' : ''} left
+                      {previewData.current_days_remaining} day{previewData.current_days_remaining > 1 ? 's' : ''} remaining
                     </span>
                   )}
                 </div>
 
-                <div className="date-arrow">
-                  <i className="fas fa-long-arrow-alt-right"></i>
+                <div className="timeline-connector">
+                  <i className="fas fa-arrow-right connector-icon"></i>
+                  <span className="connector-text">{previewData.renewal_type === 'STACKED_EXTENSION' ? 'Auto-Stack' : 'Fresh Start'}</span>
                 </div>
 
-                <div className="date-block highlight">
-                  <span className="date-label">New Subscription Period</span>
-                  <span className="date-value">
-                    {previewData.start_date} <span className="to-span">to</span> {previewData.end_date}
+                <div className="timeline-node next highlight">
+                  <span className="node-label">New Renewal Period</span>
+                  <span className="node-date">
+                    {previewData.start_date} <span className="to-txt">to</span> {previewData.end_date}
                   </span>
                   <span className="duration-pill">
-                    +{previewData.duration_months} Months ({previewData.renewal_type === 'STACKED_EXTENSION' ? 'Stacked' : 'Fresh Start'})
+                    +{previewData.duration_months} Months ({previewData.renewal_type === 'STACKED_EXTENSION' ? 'Zero Day Loss' : 'Immediate Start'})
                   </span>
                 </div>
 
@@ -316,54 +339,63 @@ const RenewSubscriptionModal = ({
                 {previewData.renewal_type === 'STACKED_EXTENSION' ? (
                   <p>
                     <i className="fas fa-layer-group text-primary"></i> 
-                    <strong>Stacked Extension:</strong> The new plan will automatically start on <strong>{previewData.start_date}</strong> (day after current end date), ensuring <strong>zero day loss</strong> of the remaining {previewData.current_days_remaining} days.
+                    <span><strong>Stacked Extension:</strong> New plan starts automatically on <strong>{previewData.start_date}</strong> (day after current end date). The member keeps all <strong>{previewData.current_days_remaining} remaining days</strong> without overlap!</span>
                   </p>
                 ) : (
                   <p>
                     <i className="fas fa-bolt text-success"></i> 
-                    <strong>Fresh Reactivation:</strong> The new plan will start immediately today on <strong>{previewData.start_date}</strong> and restore full active gym privileges until <strong>{previewData.end_date}</strong>.
+                    <span><strong>Fresh Reactivation:</strong> Membership reactivates starting <strong>Today ({previewData.start_date})</strong> until <strong>{previewData.end_date}</strong> with instant access.</span>
                   </p>
                 )}
               </div>
 
               <div className="preview-price-summary">
-                <span>Total Amount Payable (Incl. Taxes):</span>
-                <strong>₹{Number(previewData.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
+                <div className="price-info">
+                  <span className="price-lbl">Total Amount Payable</span>
+                  <span className="price-sub">Includes all applicable GST & Taxes</span>
+                </div>
+                <strong className="price-val">₹{Number(previewData.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
               </div>
 
             </div>
           ) : null}
 
-          {/* Payment Section */}
+          {/* Interactive Payment Method Cards */}
           <div className="renew-payment-section">
-            <h4>Payment Information</h4>
-            <div className="renew-payment-grid">
-              
-              <div className="renew-form-group">
-                <label className="renew-label">Payment Method:</label>
-                <select
-                  className="renew-input"
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
+            <h4 className="section-title">Select Payment Mode</h4>
+            
+            <div className="payment-modes-grid">
+              {PAYMENT_METHODS.map(mode => (
+                <div
+                  key={mode.id}
+                  className={`payment-mode-card ${paymentMethod === mode.id ? 'active' : ''}`}
+                  onClick={() => setPaymentMethod(mode.id)}
                 >
-                  <option value="UPI">UPI / QR Code</option>
-                  <option value="CARD">Credit / Debit Card</option>
-                  <option value="CASH">Cash</option>
-                  <option value="BANK_TRANSFER">Bank Transfer / NEFT</option>
-                </select>
-              </div>
+                  <div className="mode-icon-box">
+                    <i className={mode.icon}></i>
+                  </div>
+                  <div className="mode-text">
+                    <span className="mode-label">{mode.label}</span>
+                    <span className="mode-desc">{mode.desc}</span>
+                  </div>
+                  {paymentMethod === mode.id && (
+                    <div className="mode-check">
+                      <i className="fas fa-check-circle"></i>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
 
-              <div className="renew-form-group">
-                <label className="renew-label">Transaction Ref / Notes (Optional):</label>
-                <input
-                  type="text"
-                  className="renew-input"
-                  placeholder="e.g. UPI-9988776655 or Receipt #12"
-                  value={transactionRef}
-                  onChange={(e) => setTransactionRef(e.target.value)}
-                />
-              </div>
-
+            <div className="renew-form-group mt-3">
+              <label className="renew-label">Transaction Reference / Reference Notes (Optional):</label>
+              <input
+                type="text"
+                className="renew-input-styled"
+                placeholder="e.g. UPI-9988776655, Cheque #1042, or Cash Receipt ID"
+                value={transactionRef}
+                onChange={(e) => setTransactionRef(e.target.value)}
+              />
             </div>
           </div>
 
@@ -379,7 +411,7 @@ const RenewSubscriptionModal = ({
             >
               {submitting ? (
                 <>
-                  <i className="fas fa-spinner fa-spin"></i> Processing Renewal...
+                  <i className="fas fa-circle-notch fa-spin"></i> Processing Renewal...
                 </>
               ) : (
                 <>
