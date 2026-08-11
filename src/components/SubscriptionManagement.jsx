@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { tokenManager } from '../utils/tokenManager';
 import InvoiceModal from './InvoiceModal';
+import RevertSubscriptionModal from './RevertSubscriptionModal';
 import './SubscriptionManagement.css';
 
 const ALLOWED_ENTITLEMENTS = [
@@ -107,6 +108,15 @@ const SubscriptionManagement = () => {
     // Invoice View Modal state
     const [activeInvoiceId, setActiveInvoiceId] = useState(null);
     const [showInvoice, setShowInvoice] = useState(false);
+
+    // 24-Hour Purchase Reversal Modal State
+    const [showRevertModal, setShowRevertModal] = useState(false);
+    const [selectedSubForRevert, setSelectedSubForRevert] = useState(null);
+
+    const openRevertModal = (sub = null) => {
+        setSelectedSubForRevert(sub);
+        setShowRevertModal(true);
+    };
 
     // Modal 2.2: Manual Subscription Provisioning Desk
     const [showProvisionModal, setShowProvisionModal] = useState(false);
@@ -776,9 +786,19 @@ const SubscriptionManagement = () => {
                             <i className="fas fa-plus"></i> Create Membership Plan
                         </button>
                     ) : (
-                        <button className="sub-btn sub-btn-primary" onClick={openProvisionModal}>
-                            <i className="fas fa-user-plus"></i> Provision Member Subscription
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                                className="sub-btn sub-btn-secondary"
+                                onClick={() => openRevertModal(null)}
+                                title="Revert Accidental Subscription Purchase within 24 Hours"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                            >
+                                <i className="fas fa-undo-alt" style={{ color: '#7c3aed' }}></i> 24h Revert Purchase
+                            </button>
+                            <button className="sub-btn sub-btn-primary" onClick={openProvisionModal}>
+                                <i className="fas fa-user-plus"></i> Provision Member Subscription
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
@@ -1248,7 +1268,7 @@ const SubscriptionManagement = () => {
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <div className="table-actions">
+                                                        <div className="table-actions" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                                             <button
                                                                 className={`sub-btn sub-btn-xs ${isExpanded ? 'sub-btn-primary' : 'sub-btn-outline'}`}
                                                                 onClick={() => setExpandedSubId(isExpanded ? null : sub.subscription_id)}
@@ -1257,6 +1277,28 @@ const SubscriptionManagement = () => {
                                                                 <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-wallet'}`}></i>
                                                                 {isExpanded ? ' Hide Wallet' : ` Wallet (${credits.length})`}
                                                             </button>
+
+                                                            {sub.status === 1 && (
+                                                                <button
+                                                                    className="sub-btn sub-btn-xs"
+                                                                    onClick={() => openRevertModal({
+                                                                        ...sub,
+                                                                        invoice_id: resolvedInvoiceId || sub.invoice_id,
+                                                                        plan_name: resolvedPlanName,
+                                                                        price: resolvedPrice
+                                                                    })}
+                                                                    title="Revert Purchase (Within 24 Hours)"
+                                                                    style={{
+                                                                        background: '#f5f3ff',
+                                                                        color: '#7c3aed',
+                                                                        border: '1px solid #ddd6fe',
+                                                                        fontWeight: 600,
+                                                                        whiteSpace: 'nowrap'
+                                                                    }}
+                                                                >
+                                                                    <i className="fas fa-undo-alt"></i> 24h Revert
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -1812,6 +1854,23 @@ const SubscriptionManagement = () => {
                     onClose={() => {
                         setShowInvoice(false);
                         setActiveInvoiceId(null);
+                    }}
+                />
+            )}
+
+            {/* 24-Hour Purchase Reversal Modal */}
+            {showRevertModal && (
+                <RevertSubscriptionModal
+                    isOpen={showRevertModal}
+                    invoiceId={selectedSubForRevert?.invoice_id}
+                    subscriptionDetails={selectedSubForRevert}
+                    onClose={() => {
+                        setShowRevertModal(false);
+                        setSelectedSubForRevert(null);
+                    }}
+                    onSuccess={(res) => {
+                        showNotice(res.message || 'Subscription purchase successfully reverted within 24-hour window.');
+                        fetchSubscriptions();
                     }}
                 />
             )}

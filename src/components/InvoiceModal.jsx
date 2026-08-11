@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import tokenManager from '../utils/tokenManager';
+import RevertSubscriptionModal from './RevertSubscriptionModal';
 import './InvoiceModal.css';
 
 const InvoiceModal = ({ isOpen, invoiceId, onClose }) => {
@@ -7,6 +8,7 @@ const InvoiceModal = ({ isOpen, invoiceId, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showRevertModal, setShowRevertModal] = useState(false);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
 
@@ -16,7 +18,13 @@ const InvoiceModal = ({ isOpen, invoiceId, onClose }) => {
     return {
       invoice: {
         invoice_id: id || 8,
-        user_id: 616,
+        user_id: id || 616,
+        user_name: "Anil Kumar",
+        reg_no: "FG-REG-0616",
+        first_name: "Anil",
+        last_name: "Kumar",
+        email: "anil.kumar@fitnessguru.org.in",
+        phone: "+91 98765 43210",
         invoice_number: `INV-2026-${String(id || 8).padStart(4, '0')}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
         total_amount: isPt ? "4237.29" : "5932.20",
         tax_amount: isPt ? "762.71" : "1067.80",
@@ -151,6 +159,17 @@ const InvoiceModal = ({ isOpen, invoiceId, onClose }) => {
         
         {/* Modal Header controls */}
         <div className="invoice-modal-header-actions no-print">
+          {invoiceData?.invoice && ['PAID', 'COMPLETED'].includes(String(invoiceData.invoice.status || '').toUpperCase()) && (
+            <button
+              type="button"
+              className="invoice-ctrl-btn revert-btn"
+              onClick={() => setShowRevertModal(true)}
+              title="Revert Accidental Subscription Purchase (Within 24 Hours)"
+              style={{ background: '#7c3aed', color: '#ffffff', borderColor: '#6d28d9' }}
+            >
+              <i className="fas fa-undo-alt"></i> Revert 24h Purchase
+            </button>
+          )}
           <button 
             type="button" 
             className="invoice-ctrl-btn print-btn"
@@ -209,8 +228,8 @@ const InvoiceModal = ({ isOpen, invoiceId, onClose }) => {
                     <span className="logo-accent">FITNESS</span> GURU
                   </h2>
                   <p className="gym-corporate-address">
-                    Branch Hub: Premier Sector 2, Ring Road Plaza<br />
-                    GSTIN: 07AAAFF9988C1Z2 | Support: info@fitnessguru.org.in
+                    Fitness Guru Gym, Sundarpada, Bhubaneswar, Odisha, India<br />
+                    GSTIN: 21AAACF9988C1Z2 | Phone: +91 90901 77009 | Email: bharatfitnessguru@gmail.com
                   </p>
                 </div>
                 <div className="invoice-doc-label">
@@ -228,8 +247,18 @@ const InvoiceModal = ({ isOpen, invoiceId, onClose }) => {
                 <div className="meta-col-bill-to">
                   <h3>BILL TO MEMBER:</h3>
                   <div className="meta-bill-detail">
-                    <strong>Member Ref:</strong> #{invoiceData.invoice?.user_id || '616'}<br />
-                    <strong>Gym Location:</strong> Main Branch Hub (HQ)
+                    <strong style={{ fontSize: '1.05rem', color: '#0f172a', display: 'block', marginBottom: '2px' }}>
+                      {invoiceData.invoice?.user_name ||
+                       (invoiceData.invoice?.first_name ? `${invoiceData.invoice.first_name} ${invoiceData.invoice.last_name || ''}`.trim() : '') ||
+                       invoiceData.invoice?.member_name ||
+                       (invoiceData.invoice?.user_id ? `Member #${invoiceData.invoice.user_id}` : 'Gym Member')}
+                    </strong>
+                    <div style={{ color: '#475569', fontSize: '0.85rem' }}>
+                      <strong>Reg No:</strong> {invoiceData.invoice?.reg_no || invoiceData.invoice?.registration_no || (invoiceData.invoice?.user_id ? `FG-REG-${String(invoiceData.invoice.user_id).padStart(4, '0')}` : 'FG-REG-0616')}
+                    </div>
+                    <div style={{ color: '#475569', fontSize: '0.85rem' }}>
+                      <strong>Email:</strong> {invoiceData.invoice?.email || 'N/A'}
+                    </div>
                   </div>
                 </div>
 
@@ -361,6 +390,20 @@ const InvoiceModal = ({ isOpen, invoiceId, onClose }) => {
         </div>
 
       </div>
+
+      {/* 24-Hour Purchase Reversal Modal */}
+      {showRevertModal && (
+        <RevertSubscriptionModal
+          isOpen={showRevertModal}
+          invoiceId={invoiceId || invoiceData?.invoice?.invoice_id}
+          invoiceData={invoiceData}
+          onClose={() => setShowRevertModal(false)}
+          onSuccess={() => {
+            setShowRevertModal(false);
+            if (invoiceId) fetchInvoiceDetails(invoiceId);
+          }}
+        />
+      )}
     </div>
   );
 };
