@@ -257,6 +257,29 @@ const RevertSubscriptionModal = ({
                 )}
               </div>
 
+              {/* 5. System Action Consequences & Business Rule Warning */}
+              <div className="revert-consequences-box">
+                <div className="consequences-header">
+                  <i className="fas fa-exclamation-triangle"></i>
+                  <span>System Action Consequences Warning</span>
+                </div>
+                <ul className="consequences-list">
+                  
+                  <li>
+                    <i className="fas fa-user-slash"></i>
+                    <span>Subscription is <strong>DEACTIVATED</strong> & associated wallet credits <strong>REVOKED</strong>.</span>
+                  </li>
+                  <li>
+                    <i className="fas fa-sitemap"></i>
+                    <span>If no active Base Membership remains, dependent <strong>PT & Add-On plans</strong> will also be automatically <strong>DEACTIVATED</strong>.</span>
+                  </li>
+                  <li>
+                    <i className="fas fa-calendar-alt"></i>
+                    <span>If future stacked renewals exist, the earliest renewal will automatically shift to start <strong>TODAY</strong> to prevent access lockout.</span>
+                  </li>
+                </ul>
+              </div>
+
               {/* Response Alerts */}
               {errorMsg && (
                 <div className="revert-alert alert-error">

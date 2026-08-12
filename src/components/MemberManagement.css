@@ -630,6 +630,168 @@
   border-radius: 8px;
 }
 
+/* Custom Color-Coding for Not Provided Data */
+.not-provided-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px dashed #fdba74;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.not-provided-tag i {
+  font-size: 0.72rem;
+  color: #ea580c;
+}
+
+.field-value-provided {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Interactive Pointer Card to Subscriptions Desk */
+.subscription-pointer-card {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer !important;
+  border-left-color: #6366f1 !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.subscription-pointer-card:hover {
+  border-color: #6366f1;
+  border-left-color: #4f46e5 !important;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.18);
+  transform: translateY(-2px);
+}
+
+.sub-card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.sub-pointer-link-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #4f46e5;
+  background: #e0e7ff;
+  padding: 0.35rem 0.8rem;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.25s ease;
+  box-shadow: 0 1px 3px rgba(79, 70, 229, 0.15);
+}
+
+.subscription-pointer-card:hover .sub-pointer-link-badge {
+  background: #4f46e5;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+/* Profile Completion Meter Card */
+.profile-completion-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.profile-completion-card.level-high {
+  border-left: 4px solid #10b981;
+}
+
+.profile-completion-card.level-medium {
+  border-left: 4px solid #f59e0b;
+}
+
+.profile-completion-card.level-low {
+  border-left: 4px solid #ef4444;
+}
+
+.completion-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.completion-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.completion-subtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.completion-badge {
+  padding: 0.15rem 0.55rem;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.completion-badge.badge-high {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.completion-badge.badge-medium {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.completion-badge.badge-low {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.completion-bar-container {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.completion-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fill-high {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.fill-medium {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.fill-low {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
 /* Edit & Add Form Styling */
 .member-form-section {
   margin-bottom: 1.25rem;

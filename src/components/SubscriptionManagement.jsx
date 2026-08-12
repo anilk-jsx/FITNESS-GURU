@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { tokenManager } from '../utils/tokenManager';
 import InvoiceModal from './InvoiceModal';
 import RevertSubscriptionModal from './RevertSubscriptionModal';
+import RenewSubscriptionModal from './RenewSubscriptionModal';
 import './SubscriptionManagement.css';
 
 const ALLOWED_ENTITLEMENTS = [
@@ -116,6 +117,19 @@ const SubscriptionManagement = () => {
     const openRevertModal = (sub = null) => {
         setSelectedSubForRevert(sub);
         setShowRevertModal(true);
+    };
+
+    // Subscription Renewal Modal State
+    const [showRenewModal, setShowRenewModal] = useState(false);
+    const [renewModalUserId, setRenewModalUserId] = useState('');
+    const [renewModalPlanId, setRenewModalPlanId] = useState('');
+    const [renewModalMemberData, setRenewModalMemberData] = useState(null);
+
+    const openRenewModal = (userId = '', planId = '', member = null) => {
+        setRenewModalUserId(userId);
+        setRenewModalPlanId(planId);
+        setRenewModalMemberData(member);
+        setShowRenewModal(true);
     };
 
     // Modal 2.2: Manual Subscription Provisioning Desk
@@ -786,19 +800,9 @@ const SubscriptionManagement = () => {
                             <i className="fas fa-plus"></i> Create Membership Plan
                         </button>
                     ) : (
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                                className="sub-btn sub-btn-secondary"
-                                onClick={() => openRevertModal(null)}
-                                title="Revert Accidental Subscription Purchase within 24 Hours"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                            >
-                                <i className="fas fa-undo-alt" style={{ color: '#7c3aed' }}></i> 24h Revert Purchase
-                            </button>
-                            <button className="sub-btn sub-btn-primary" onClick={openProvisionModal}>
-                                <i className="fas fa-user-plus"></i> Provision Member Subscription
-                            </button>
-                        </div>
+                        <button className="sub-btn sub-btn-primary" onClick={openProvisionModal}>
+                            <i className="fas fa-user-plus"></i> Provision Member Subscription
+                        </button>
                     )}
                 </div>
             </div>
@@ -1263,24 +1267,44 @@ const SubscriptionManagement = () => {
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <span className={`status-pill ${sub.status === 1 ? 'status-active' : 'status-canceled'}`}>
-                                                            {sub.status === 1 ? 'Active' : 'Canceled'}
-                                                        </span>
+                                                        {(() => {
+                                                            const todayStr = new Date().toISOString().split('T')[0];
+                                                            const daysLeft = sub.end_date ? Math.round((new Date(sub.end_date) - new Date(todayStr)) / 86400000) : 0;
+                                                            const isExpiringSoon = sub.status === 1 && daysLeft >= 0 && daysLeft <= 7;
+                                                            return (
+                                                                <span className={`status-pill ${isExpiringSoon ? 'status-expiring' : (sub.status === 1 ? 'status-active' : 'status-canceled')}`} style={isExpiringSoon ? { background: '#fef3c7', color: '#d97706', border: '1px solid #f59e0b', fontWeight: 700 } : {}}>
+                                                                    {isExpiringSoon ? `⚡ Expiring Soon (${daysLeft}d)` : (sub.status === 1 ? 'Active' : 'Canceled')}
+                                                                </span>
+                                                            );
+                                                        })()}
                                                     </td>
                                                     <td>
-                                                        <div className="table-actions" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                        <div className="table-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                                             <button
-                                                                className={`sub-btn sub-btn-xs ${isExpanded ? 'sub-btn-primary' : 'sub-btn-outline'}`}
+                                                                type="button"
+                                                                className="table-icon-btn btn-renew"
+                                                                onClick={() => openRenewModal(sub.user_id, sub.plan_id, { user_id: sub.user_id, name: sub.member_name, email: sub.member_email, reg_no: sub.member_reg_no })}
+                                                                title="Renew Subscription"
+                                                            >
+                                                                <i className="fas fa-sync-alt"></i>
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                className={`table-icon-btn btn-wallet ${isExpanded ? 'active-drawer' : ''}`}
                                                                 onClick={() => setExpandedSubId(isExpanded ? null : sub.subscription_id)}
-                                                                title="View Provisioned Wallet Credits"
+                                                                title={isExpanded ? "Hide Wallet Credits" : `View Provisioned Wallet Credits (${credits.length})`}
                                                             >
                                                                 <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-wallet'}`}></i>
-                                                                {isExpanded ? ' Hide Wallet' : ` Wallet (${credits.length})`}
+                                                                {credits.length > 0 && !isExpanded && (
+                                                                    <span className="table-icon-badge">{credits.length}</span>
+                                                                )}
                                                             </button>
 
                                                             {sub.status === 1 && (
                                                                 <button
-                                                                    className="sub-btn sub-btn-xs"
+                                                                    type="button"
+                                                                    className="table-icon-btn btn-revert"
                                                                     onClick={() => openRevertModal({
                                                                         ...sub,
                                                                         invoice_id: resolvedInvoiceId || sub.invoice_id,
@@ -1288,15 +1312,8 @@ const SubscriptionManagement = () => {
                                                                         price: resolvedPrice
                                                                     })}
                                                                     title="Revert Purchase (Within 24 Hours)"
-                                                                    style={{
-                                                                        background: '#f5f3ff',
-                                                                        color: '#7c3aed',
-                                                                        border: '1px solid #ddd6fe',
-                                                                        fontWeight: 600,
-                                                                        whiteSpace: 'nowrap'
-                                                                    }}
                                                                 >
-                                                                    <i className="fas fa-undo-alt"></i> 24h Revert
+                                                                    <i className="fas fa-undo-alt"></i>
                                                                 </button>
                                                             )}
                                                         </div>
@@ -1870,6 +1887,31 @@ const SubscriptionManagement = () => {
                     }}
                     onSuccess={(res) => {
                         showNotice(res.message || 'Subscription purchase successfully reverted within 24-hour window.');
+                        fetchSubscriptions();
+                    }}
+                />
+            )}
+
+            {/* Subscription Renewal Modal */}
+            {showRenewModal && (
+                <RenewSubscriptionModal
+                    isOpen={showRenewModal}
+                    initialUserId={renewModalUserId}
+                    initialPlanId={renewModalPlanId}
+                    memberData={renewModalMemberData}
+                    onClose={() => {
+                        setShowRenewModal(false);
+                        setRenewModalUserId('');
+                        setRenewModalPlanId('');
+                        setRenewModalMemberData(null);
+                    }}
+                    onSuccess={(res) => {
+                        showNotice(res.message || 'Subscription successfully renewed!');
+                        const invId = res.invoice_id || (res.data && res.data.invoice_id);
+                        if (invId) {
+                            setActiveInvoiceId(invId);
+                            setShowInvoice(true);
+                        }
                         fetchSubscriptions();
                     }}
                 />
