@@ -76,6 +76,18 @@ const AdminSidebar = ({
           </NavLink>
         </div>
 
+        {/* 4. Attendance Desk */}
+        <div className="nav-item">
+          <NavLink 
+            to="/admin-dashboard/attendance"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            onClick={handleNavClick}
+          >
+            <i className="fas fa-calendar-check"></i>
+            <span>Attendance Desk</span>
+          </NavLink>
+        </div>
+
         {/* 4. Subscription Management */}
         <div className="nav-item">
           <div 
