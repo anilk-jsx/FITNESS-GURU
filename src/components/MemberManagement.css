@@ -370,6 +370,91 @@
   border: 1px solid #fecaca;
 }
 
+/* Plan Column & Provisioning Badges */
+.member-plan-cell {
+  vertical-align: middle;
+}
+
+.plan-name-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  background: #f1f5f9;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.plan-name-badge i {
+  color: #6366f1;
+  font-size: 0.8rem;
+}
+
+.member-plan-cell.unpurchased-plan-cell {
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+  border-radius: 6px;
+}
+
+.member-plan-cell.unpurchased-plan-cell:hover {
+  background-color: #f5f3ff !important;
+}
+
+.plan-provision-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.55rem;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+}
+
+.member-plan-cell.unpurchased-plan-cell:hover .plan-provision-chip {
+  border-color: #6366f1;
+  background: #faf5ff;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.15);
+  transform: translateY(-1px);
+}
+
+.plan-unpurchased-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #e11d48;
+  background: #ffe4e6;
+  padding: 0.15rem 0.45rem;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.plan-unpurchased-tag i {
+  font-size: 0.7rem;
+}
+
+.plan-provision-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #4f46e5;
+  transition: color 0.2s ease;
+}
+
+.member-plan-cell.unpurchased-plan-cell:hover .plan-provision-action {
+  color: #4338ca;
+  text-decoration: underline;
+}
+
 /* Action Buttons */
 .member-actions-cell {
   display: flex;

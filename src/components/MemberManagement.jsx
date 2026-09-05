@@ -78,6 +78,31 @@ const MemberManagement = () => {
     navigate(`/admin-dashboard/subscriptions?search=${encodeURIComponent(userId)}`);
   }, [navigate]);
 
+  // Navigate to Provision Subscription for a specific member
+  const handleProvisionForMember = useCallback((member) => {
+    if (!member) return;
+    const userId = member.user_id || member.id;
+    const branchId = member.branch_id || "";
+    setShowMemberProfile(false);
+    navigate(`/admin-dashboard/subscriptions?action=provision&userId=${encodeURIComponent(userId)}&branchId=${encodeURIComponent(branchId)}`, {
+      state: {
+        openProvision: true,
+        provisionUserId: String(userId),
+        provisionBranchId: branchId ? String(branchId) : "",
+        member: {
+          user_id: userId,
+          id: userId,
+          name: member.name,
+          first_name: member.first_name || member.name,
+          last_name: member.last_name || "",
+          email: member.email,
+          phone: member.phone || member.phone_number,
+          branch_id: branchId,
+        }
+      }
+    });
+  }, [navigate]);
+
   // Password visibility state for add member form
   const [showPassword, setShowPassword] = useState(false);
 
@@ -105,7 +130,11 @@ const MemberManagement = () => {
     status: "", // All statuses
     gym_id: "",
     branch_id: "",
+    base_membership: "", // Base membership filter
   });
+
+  // Base Membership plans for the filter dropdown
+  const [baseMembershipFilterPlans, setBaseMembershipFilterPlans] = useState([]);
   const [addFormData, setAddFormData] = useState({
     // User fields
     name: "",
@@ -191,6 +220,32 @@ const MemberManagement = () => {
   const toIntOrNull = (value) => {
     const parsed = Number.parseInt(value, 10);
     return Number.isNaN(parsed) ? null : parsed;
+  };
+
+  const hasPurchasedSubscription = (member) => {
+    if (!member) return false;
+    if (member.subscription_id && Number(member.subscription_id) > 0) return true;
+    if (member.plan_name) {
+      const str = String(member.plan_name).trim().toLowerCase();
+      if (
+        str !== "" &&
+        str !== "n/a" &&
+        str !== "none" &&
+        str !== "null" &&
+        str !== "not provided" &&
+        str !== "not specified" &&
+        str !== "not assigned" &&
+        str !== "unassigned" &&
+        str !== "0" &&
+        str !== "no active subscription" &&
+        str !== "not purchased"
+      ) {
+        return true;
+      }
+    }
+    if (member.membership_plan && Number(member.membership_plan) > 0) return true;
+    if (member.plan_id && Number(member.plan_id) > 0) return true;
+    return false;
   };
 
   const normalizeMembershipPlan = (plan, index) => {
@@ -483,15 +538,43 @@ const MemberManagement = () => {
     }
   };
 
-  // Effect to fetch members when filters change
+  // Fetch Base Membership plans for filter
+  const fetchBaseMembershipFilterPlans = async () => {
+    try {
+      let res = await tokenManager.apiCall(
+        buildApiUrl("membership-plans?status=1&plan_type=BASE_MEMBERSHIP"),
+        { method: "GET" }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const list = data.data || data.plans || (Array.isArray(data) ? data : []);
+        setBaseMembershipFilterPlans(list);
+      } else {
+        res = await tokenManager.apiCall(
+          buildApiUrl("membership-plans?plan_type=BASE_MEMBERSHIP"),
+          { method: "GET" }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const list = data.data || data.plans || [];
+          setBaseMembershipFilterPlans(list);
+        }
+      }
+    } catch (err) {
+      console.warn("Could not load base membership plans for filter:", err);
+    }
+  };
+
+  // Effect to fetch members when server filters change
   useEffect(() => {
     fetchMembers();
-  }, [filters]);
+  }, [filters.role, filters.status, filters.gym_id, filters.branch_id]);
 
   // Effect to fetch dropdown data on component mount
   useEffect(() => {
     fetchCountries();
     fetchBranches(1); // Fetch branches for gym_id = 1
+    fetchBaseMembershipFilterPlans();
     // Note: membershipPlans will be fetched when user selects a branch
 
     // Clean debug function - available in console as window.testAPI()
@@ -700,8 +783,71 @@ const MemberManagement = () => {
     }));
   };
 
-  // Return members matching search query
+  // Available base plans for the filter dropdown
+  const availableBasePlansForFilter = useMemo(() => {
+    const plansMap = new Map();
+    baseMembershipFilterPlans.forEach((plan) => {
+      const name = plan.plan_name;
+      if (name && !plansMap.has(name.toLowerCase())) {
+        plansMap.set(name.toLowerCase(), {
+          id: plan.plan_id || name,
+          name: name,
+        });
+      }
+    });
+
+    members.forEach((m) => {
+      if (m.plan_name) {
+        const clean = String(m.plan_name).trim();
+        const lower = clean.toLowerCase();
+        if (
+          clean !== "" &&
+          lower !== "n/a" &&
+          lower !== "none" &&
+          lower !== "not provided" &&
+          lower !== "not assigned" &&
+          lower !== "unassigned" &&
+          lower !== "no active subscription" &&
+          lower !== "not purchased"
+        ) {
+          if (!plansMap.has(lower)) {
+            plansMap.set(lower, {
+              id: m.membership_plan || m.plan_id || clean,
+              name: clean,
+            });
+          }
+        }
+      }
+    });
+
+    return Array.from(plansMap.values());
+  }, [baseMembershipFilterPlans, members]);
+
+  // Return members matching search query and base membership filter
   const filteredMembers = members.filter((member) => {
+    // Base Membership filter
+    if (filters.base_membership) {
+      const hasPurchased = hasPurchasedSubscription(member);
+      if (filters.base_membership === "NOT_PURCHASED") {
+        if (hasPurchased) return false;
+      } else if (filters.base_membership === "PURCHASED") {
+        if (!hasPurchased) return false;
+      } else {
+        const selectedVal = filters.base_membership.toLowerCase().trim();
+        const memberPlanName = (member.plan_name || "").toLowerCase().trim();
+        const memberPlanId = member.membership_plan !== undefined && member.membership_plan !== null ? String(member.membership_plan).toLowerCase().trim() : "";
+        const memberDirectPlanId = member.plan_id !== undefined && member.plan_id !== null ? String(member.plan_id).toLowerCase().trim() : "";
+
+        const isMatched = (
+          memberPlanName === selectedVal ||
+          memberPlanName.includes(selectedVal) ||
+          memberPlanId === selectedVal ||
+          memberDirectPlanId === selectedVal
+        );
+        if (!isMatched) return false;
+      }
+    }
+
     if (!searchQuery) return true; // Return all if no search
     const query = searchQuery.toLowerCase();
     return (
@@ -709,7 +855,8 @@ const MemberManagement = () => {
       member.email?.toLowerCase().includes(query) ||
       member.phone?.includes(searchQuery) ||
       member.user_id?.toString().includes(searchQuery) ||
-      member.registration_number?.toString().includes(searchQuery)
+      member.registration_number?.toString().includes(searchQuery) ||
+      member.plan_name?.toLowerCase().includes(query)
     );
   });
 
@@ -1751,6 +1898,25 @@ const MemberManagement = () => {
             )}
           </select>
 
+          <select
+            className="member-filter-select"
+            value={filters.base_membership}
+            onChange={(e) => handleFilterChange("base_membership", e.target.value)}
+          >
+            <option value="">All Plans  </option>
+            <option value="NOT_PURCHASED">Not Purchased (No Subscription)</option>
+            <option value="PURCHASED">Purchased (Active Subscription)</option>
+            {availableBasePlansForFilter.length > 0 && (
+              <optgroup label="Specific Base Membership">
+                {availableBasePlansForFilter.map((plan) => (
+                  <option key={plan.id || plan.name} value={plan.name}>
+                    {plan.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+
           <button
             className="member-refresh-btn"
             onClick={() => fetchMembers()}
@@ -1846,7 +2012,6 @@ const MemberManagement = () => {
                   <th>Plan</th>
                   <th>Join Date</th>
                   <th>Branch</th>
-                  <th>Trainer</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -1867,10 +2032,38 @@ const MemberManagement = () => {
                         <small>{member.phone}</small>
                       </div>
                     </td>
-                    <td>{member.plan_name || (member.membership_plan ? `Plan #${member.membership_plan}` : "N/A")}</td>
+                    {hasPurchasedSubscription(member) ? (
+                      <td className="member-plan-cell active-plan-cell">
+                        <span className="plan-name-badge">
+                          <i className="fas fa-id-card"></i> {member.plan_name || (member.membership_plan ? `Plan #${member.membership_plan}` : "Active Plan")}
+                        </span>
+                      </td>
+                    ) : (
+                      <td
+                        className="member-plan-cell unpurchased-plan-cell"
+                        onClick={() => handleProvisionForMember(member)}
+                        title="Subscription not purchased. Click to provision subscription"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleProvisionForMember(member);
+                          }
+                        }}
+                      >
+                        <div className="plan-provision-chip">
+                          <span className="plan-unpurchased-tag">
+                            <i className="fas fa-exclamation-circle"></i> Not Purchased
+                          </span>
+                          <span className="plan-provision-action">
+                            <i className="fas fa-plus"></i> Provision
+                          </span>
+                        </div>
+                      </td>
+                    )}
                     <td>{formatDate(member.date_of_joining || member.createdDate || member.join_date)}</td>
                     <td>{member.branch_name || getBranchName(member.branch_id)}</td>
-                    <td>{member.trainer_name || "Unassigned"}</td>
                     <td>
                       <span
                         className={`member-status-badge ${getStatusBadgeClass(member.status)}`}
@@ -2167,7 +2360,14 @@ const MemberManagement = () => {
                         </div>
                       </div>
                     ) : (
-                      <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#ffffff', borderRadius: '8px', border: '1px dashed #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div
+                        style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#ffffff', borderRadius: '8px', border: '1px dashed #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleProvisionForMember(memberDetails);
+                        }}
+                        title="Click to provision a subscription for this member"
+                      >
                         {renderFieldValue(null, "No Active Subscription")}
                         <span style={{ fontSize: '0.8rem', color: '#4f46e5', fontWeight: 600 }}>Provision Subscription &rarr;</span>
                       </div>
