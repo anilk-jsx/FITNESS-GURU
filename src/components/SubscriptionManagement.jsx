@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { tokenManager } from '../utils/tokenManager';
 import InvoiceModal from './InvoiceModal';
 import RevertSubscriptionModal from './RevertSubscriptionModal';
@@ -48,6 +48,7 @@ const SubscriptionManagement = () => {
     const isAuthorized = userData && (userData.role === 'ADMIN' || userData.role === 'SUPER-ADMIN' || userData.role === 'SUPER_ADMIN');
 
     const [searchParams, setSearchParams] = useSearchParams();
+    const location = useLocation();
     const tabParam = searchParams.get('tab');
     const [activeTab, setActiveTab] = useState(tabParam || 'subscriptions');
 
@@ -102,8 +103,8 @@ const SubscriptionManagement = () => {
     const [loadingStats, setLoadingStats] = useState(false);
     const [subStatusFilter, setSubStatusFilter] = useState('ALL'); // 'ALL', '1', '0', 'EXPIRING', '2'
     const [subPlanFilter, setSubPlanFilter] = useState('');
-    const [subUserIdFilter, setSubUserIdFilter] = useState('');
-    const [subSearchQuery, setSubSearchQuery] = useState('');
+    const [subUserIdFilter, setSubUserIdFilter] = useState(searchParams.get('userId') || searchParams.get('search') || '');
+    const [subSearchQuery, setSubSearchQuery] = useState(searchParams.get('search') || '');
     const [expandedSubId, setExpandedSubId] = useState(null); // Expand wallet credits row ledger
 
     // Invoice View Modal state
@@ -145,6 +146,41 @@ const SubscriptionManagement = () => {
         payment_method: 'CASH',
         transaction_ref: ''
     });
+
+    // Auto-open Provision Subscription modal when navigating from Member Management
+    useEffect(() => {
+        const action = searchParams.get('action');
+        const openProvision = action === 'provision' || location.state?.openProvision;
+        const targetUserId = searchParams.get('userId') || searchParams.get('user_id') || location.state?.provisionUserId || location.state?.member?.user_id;
+        const targetBranchId = searchParams.get('branchId') || searchParams.get('branch_id') || location.state?.provisionBranchId || location.state?.member?.branch_id;
+        const passedMember = location.state?.member;
+
+        if (openProvision) {
+            setActiveTab('subscriptions');
+
+            if (passedMember) {
+                const uid = String(passedMember.user_id || passedMember.id);
+                setMembersList(prev => {
+                    if (!prev.some(m => String(m.user_id || m.id) === uid)) {
+                        return [passedMember, ...prev];
+                    }
+                    return prev;
+                });
+            }
+
+            setProvisionFormData(prev => ({
+                ...prev,
+                user_id: targetUserId ? String(targetUserId) : prev.user_id,
+                branch_id: targetBranchId ? String(targetBranchId) : prev.branch_id
+            }));
+
+            if (passedMember?.name) {
+                setMemberSearchTerm(passedMember.name);
+            }
+
+            setShowProvisionModal(true);
+        }
+    }, [searchParams, location.state]);
 
     // Modal 2.3: Subscription Lifecycle Revision Panel
     const [showRevisionModal, setShowRevisionModal] = useState(false);
@@ -420,7 +456,11 @@ const SubscriptionManagement = () => {
             const res = await tokenManager.apiCall(url, { method: 'GET' });
             const data = await res.json();
             if (res.ok && data.status === 'success') {
-                setMembersList(data.data || data.users || []);
+                const fetched = data.data || data.users || [];
+                setMembersList(prev => {
+                    const existingInjected = prev.filter(p => !fetched.some(f => String(f.user_id || f.id) === String(p.user_id || p.id)));
+                    return [...existingInjected, ...fetched];
+                });
             }
         } catch (err) {
             console.warn('Could not fetch members list for provision lookup:', err);
@@ -766,11 +806,16 @@ const SubscriptionManagement = () => {
     });
 
     const filteredMembersForLookup = membersList.filter(m => {
-        const term = memberSearchTerm.toLowerCase();
+        const uid = String(m.user_id || m.id || '');
+        if (provisionFormData.user_id && uid === String(provisionFormData.user_id)) {
+            return true;
+        }
+        const term = memberSearchTerm.toLowerCase().trim();
+        if (!term) return true;
         const name = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.name || '';
         const email = m.email || '';
         const phone = m.phone || m.phone_number || '';
-        return name.toLowerCase().includes(term) || email.toLowerCase().includes(term) || phone.includes(term);
+        return uid.includes(term) || name.toLowerCase().includes(term) || email.toLowerCase().includes(term) || phone.includes(term);
     });
 
     // If unauthorized role, render access denied guardrail
@@ -1697,6 +1742,11 @@ const SubscriptionManagement = () => {
                                     className="member-select-list"
                                 >
                                     <option value="">-- Select Registered Member --</option>
+                                    {provisionFormData.user_id && !filteredMembersForLookup.some(m => String(m.user_id || m.id) === String(provisionFormData.user_id)) && (
+                                        <option value={provisionFormData.user_id}>
+                                            #{provisionFormData.user_id} - {location.state?.member?.name || `Selected Member #${provisionFormData.user_id}`}
+                                        </option>
+                                    )}
                                     {filteredMembersForLookup.map(m => {
                                         const uid = m.user_id || m.id;
                                         const name = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.name || `User #${uid}`;
