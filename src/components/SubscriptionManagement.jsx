@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { tokenManager } from '../utils/tokenManager';
 import InvoiceModal from './InvoiceModal';
+import RevertSubscriptionModal from './RevertSubscriptionModal';
+import RenewSubscriptionModal from './RenewSubscriptionModal';
 import './SubscriptionManagement.css';
 
 const ALLOWED_ENTITLEMENTS = [
@@ -46,6 +48,7 @@ const SubscriptionManagement = () => {
     const isAuthorized = userData && (userData.role === 'ADMIN' || userData.role === 'SUPER-ADMIN' || userData.role === 'SUPER_ADMIN');
 
     const [searchParams, setSearchParams] = useSearchParams();
+    const location = useLocation();
     const tabParam = searchParams.get('tab');
     const [activeTab, setActiveTab] = useState(tabParam || 'subscriptions');
 
@@ -100,13 +103,35 @@ const SubscriptionManagement = () => {
     const [loadingStats, setLoadingStats] = useState(false);
     const [subStatusFilter, setSubStatusFilter] = useState('ALL'); // 'ALL', '1', '0', 'EXPIRING', '2'
     const [subPlanFilter, setSubPlanFilter] = useState('');
-    const [subUserIdFilter, setSubUserIdFilter] = useState('');
-    const [subSearchQuery, setSubSearchQuery] = useState('');
+    const [subUserIdFilter, setSubUserIdFilter] = useState(searchParams.get('userId') || searchParams.get('search') || '');
+    const [subSearchQuery, setSubSearchQuery] = useState(searchParams.get('search') || '');
     const [expandedSubId, setExpandedSubId] = useState(null); // Expand wallet credits row ledger
 
     // Invoice View Modal state
     const [activeInvoiceId, setActiveInvoiceId] = useState(null);
     const [showInvoice, setShowInvoice] = useState(false);
+
+    // 24-Hour Purchase Reversal Modal State
+    const [showRevertModal, setShowRevertModal] = useState(false);
+    const [selectedSubForRevert, setSelectedSubForRevert] = useState(null);
+
+    const openRevertModal = (sub = null) => {
+        setSelectedSubForRevert(sub);
+        setShowRevertModal(true);
+    };
+
+    // Subscription Renewal Modal State
+    const [showRenewModal, setShowRenewModal] = useState(false);
+    const [renewModalUserId, setRenewModalUserId] = useState('');
+    const [renewModalPlanId, setRenewModalPlanId] = useState('');
+    const [renewModalMemberData, setRenewModalMemberData] = useState(null);
+
+    const openRenewModal = (userId = '', planId = '', member = null) => {
+        setRenewModalUserId(userId);
+        setRenewModalPlanId(planId);
+        setRenewModalMemberData(member);
+        setShowRenewModal(true);
+    };
 
     // Modal 2.2: Manual Subscription Provisioning Desk
     const [showProvisionModal, setShowProvisionModal] = useState(false);
@@ -121,6 +146,41 @@ const SubscriptionManagement = () => {
         payment_method: 'CASH',
         transaction_ref: ''
     });
+
+    // Auto-open Provision Subscription modal when navigating from Member Management
+    useEffect(() => {
+        const action = searchParams.get('action');
+        const openProvision = action === 'provision' || location.state?.openProvision;
+        const targetUserId = searchParams.get('userId') || searchParams.get('user_id') || location.state?.provisionUserId || location.state?.member?.user_id;
+        const targetBranchId = searchParams.get('branchId') || searchParams.get('branch_id') || location.state?.provisionBranchId || location.state?.member?.branch_id;
+        const passedMember = location.state?.member;
+
+        if (openProvision) {
+            setActiveTab('subscriptions');
+
+            if (passedMember) {
+                const uid = String(passedMember.user_id || passedMember.id);
+                setMembersList(prev => {
+                    if (!prev.some(m => String(m.user_id || m.id) === uid)) {
+                        return [passedMember, ...prev];
+                    }
+                    return prev;
+                });
+            }
+
+            setProvisionFormData(prev => ({
+                ...prev,
+                user_id: targetUserId ? String(targetUserId) : prev.user_id,
+                branch_id: targetBranchId ? String(targetBranchId) : prev.branch_id
+            }));
+
+            if (passedMember?.name) {
+                setMemberSearchTerm(passedMember.name);
+            }
+
+            setShowProvisionModal(true);
+        }
+    }, [searchParams, location.state]);
 
     // Modal 2.3: Subscription Lifecycle Revision Panel
     const [showRevisionModal, setShowRevisionModal] = useState(false);
@@ -396,7 +456,11 @@ const SubscriptionManagement = () => {
             const res = await tokenManager.apiCall(url, { method: 'GET' });
             const data = await res.json();
             if (res.ok && data.status === 'success') {
-                setMembersList(data.data || data.users || []);
+                const fetched = data.data || data.users || [];
+                setMembersList(prev => {
+                    const existingInjected = prev.filter(p => !fetched.some(f => String(f.user_id || f.id) === String(p.user_id || p.id)));
+                    return [...existingInjected, ...fetched];
+                });
             }
         } catch (err) {
             console.warn('Could not fetch members list for provision lookup:', err);
@@ -742,11 +806,16 @@ const SubscriptionManagement = () => {
     });
 
     const filteredMembersForLookup = membersList.filter(m => {
-        const term = memberSearchTerm.toLowerCase();
+        const uid = String(m.user_id || m.id || '');
+        if (provisionFormData.user_id && uid === String(provisionFormData.user_id)) {
+            return true;
+        }
+        const term = memberSearchTerm.toLowerCase().trim();
+        if (!term) return true;
         const name = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.name || '';
         const email = m.email || '';
         const phone = m.phone || m.phone_number || '';
-        return name.toLowerCase().includes(term) || email.toLowerCase().includes(term) || phone.includes(term);
+        return uid.includes(term) || name.toLowerCase().includes(term) || email.toLowerCase().includes(term) || phone.includes(term);
     });
 
     // If unauthorized role, render access denied guardrail
@@ -1243,36 +1312,53 @@ const SubscriptionManagement = () => {
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <span className={`status-pill ${sub.status === 1 ? 'status-active' : 'status-canceled'}`}>
-                                                            {sub.status === 1 ? 'Active' : 'Canceled'}
-                                                        </span>
+                                                        {(() => {
+                                                            const todayStr = new Date().toISOString().split('T')[0];
+                                                            const daysLeft = sub.end_date ? Math.round((new Date(sub.end_date) - new Date(todayStr)) / 86400000) : 0;
+                                                            const isExpiringSoon = sub.status === 1 && daysLeft >= 0 && daysLeft <= 7;
+                                                            return (
+                                                                <span className={`status-pill ${isExpiringSoon ? 'status-expiring' : (sub.status === 1 ? 'status-active' : 'status-canceled')}`} style={isExpiringSoon ? { background: '#fef3c7', color: '#d97706', border: '1px solid #f59e0b', fontWeight: 700 } : {}}>
+                                                                    {isExpiringSoon ? `⚡ Expiring Soon (${daysLeft}d)` : (sub.status === 1 ? 'Active' : 'Canceled')}
+                                                                </span>
+                                                            );
+                                                        })()}
                                                     </td>
                                                     <td>
-                                                        <div className="table-actions">
+                                                        <div className="table-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                                             <button
-                                                                className={`sub-btn sub-btn-xs ${isExpanded ? 'sub-btn-primary' : 'sub-btn-outline'}`}
-                                                                onClick={() => setExpandedSubId(isExpanded ? null : sub.subscription_id)}
-                                                                title="View Provisioned Wallet Credits"
+                                                                type="button"
+                                                                className="table-icon-btn btn-renew"
+                                                                onClick={() => openRenewModal(sub.user_id, sub.plan_id, { user_id: sub.user_id, name: sub.member_name, email: sub.member_email, reg_no: sub.member_reg_no })}
+                                                                title="Renew Subscription"
                                                             >
-                                                                <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-wallet'}`}></i>
-                                                                {isExpanded ? ' Hide Wallet' : ` Wallet (${credits.length})`}
+                                                                <i className="fas fa-sync-alt"></i>
                                                             </button>
 
                                                             <button
-                                                                className="sub-btn sub-btn-xs sub-btn-secondary"
-                                                                onClick={() => openRevisionModal(sub)}
-                                                                title="Edit Subscription Lifecycle & Dates"
+                                                                type="button"
+                                                                className={`table-icon-btn btn-wallet ${isExpanded ? 'active-drawer' : ''}`}
+                                                                onClick={() => setExpandedSubId(isExpanded ? null : sub.subscription_id)}
+                                                                title={isExpanded ? "Hide Wallet Credits" : `View Provisioned Wallet Credits (${credits.length})`}
                                                             >
-                                                                <i className="fas fa-calendar-edit"></i> Revise
+                                                                <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-wallet'}`}></i>
+                                                                {credits.length > 0 && !isExpanded && (
+                                                                    <span className="table-icon-badge">{credits.length}</span>
+                                                                )}
                                                             </button>
 
                                                             {sub.status === 1 && (
                                                                 <button
-                                                                    className="sub-btn sub-btn-xs sub-btn-danger"
-                                                                    onClick={() => handleCancelSubscription(sub)}
-                                                                    title="Cancel Subscription & Revoke Wallet Credits"
+                                                                    type="button"
+                                                                    className="table-icon-btn btn-revert"
+                                                                    onClick={() => openRevertModal({
+                                                                        ...sub,
+                                                                        invoice_id: resolvedInvoiceId || sub.invoice_id,
+                                                                        plan_name: resolvedPlanName,
+                                                                        price: resolvedPrice
+                                                                    })}
+                                                                    title="Revert Purchase (Within 24 Hours)"
                                                                 >
-                                                                    <i className="fas fa-times-circle"></i> Cancel
+                                                                    <i className="fas fa-undo-alt"></i>
                                                                 </button>
                                                             )}
                                                         </div>
@@ -1656,6 +1742,11 @@ const SubscriptionManagement = () => {
                                     className="member-select-list"
                                 >
                                     <option value="">-- Select Registered Member --</option>
+                                    {provisionFormData.user_id && !filteredMembersForLookup.some(m => String(m.user_id || m.id) === String(provisionFormData.user_id)) && (
+                                        <option value={provisionFormData.user_id}>
+                                            #{provisionFormData.user_id} - {location.state?.member?.name || `Selected Member #${provisionFormData.user_id}`}
+                                        </option>
+                                    )}
                                     {filteredMembersForLookup.map(m => {
                                         const uid = m.user_id || m.id;
                                         const name = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.name || `User #${uid}`;
@@ -1830,6 +1921,48 @@ const SubscriptionManagement = () => {
                     onClose={() => {
                         setShowInvoice(false);
                         setActiveInvoiceId(null);
+                    }}
+                />
+            )}
+
+            {/* 24-Hour Purchase Reversal Modal */}
+            {showRevertModal && (
+                <RevertSubscriptionModal
+                    isOpen={showRevertModal}
+                    invoiceId={selectedSubForRevert?.invoice_id}
+                    subscriptionDetails={selectedSubForRevert}
+                    onClose={() => {
+                        setShowRevertModal(false);
+                        setSelectedSubForRevert(null);
+                    }}
+                    onSuccess={(res) => {
+                        showNotice(res.message || 'Subscription purchase successfully reverted within 24-hour window.');
+                        fetchSubscriptions();
+                    }}
+                />
+            )}
+
+            {/* Subscription Renewal Modal */}
+            {showRenewModal && (
+                <RenewSubscriptionModal
+                    isOpen={showRenewModal}
+                    initialUserId={renewModalUserId}
+                    initialPlanId={renewModalPlanId}
+                    memberData={renewModalMemberData}
+                    onClose={() => {
+                        setShowRenewModal(false);
+                        setRenewModalUserId('');
+                        setRenewModalPlanId('');
+                        setRenewModalMemberData(null);
+                    }}
+                    onSuccess={(res) => {
+                        showNotice(res.message || 'Subscription successfully renewed!');
+                        const invId = res.invoice_id || (res.data && res.data.invoice_id);
+                        if (invId) {
+                            setActiveInvoiceId(invId);
+                            setShowInvoice(true);
+                        }
+                        fetchSubscriptions();
                     }}
                 />
             )}

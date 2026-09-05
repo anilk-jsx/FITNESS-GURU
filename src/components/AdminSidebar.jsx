@@ -76,6 +76,18 @@ const AdminSidebar = ({
           </NavLink>
         </div>
 
+        {/* 4. Attendance Desk */}
+        <div className="nav-item">
+          <NavLink 
+            to="/admin-dashboard/attendance"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            onClick={handleNavClick}
+          >
+            <i className="fas fa-calendar-check"></i>
+            <span>Attendance Desk</span>
+          </NavLink>
+        </div>
+
         {/* 4. Subscription Management */}
         <div className="nav-item">
           <div 
@@ -152,6 +164,33 @@ const AdminSidebar = ({
               >
                 <i className="fas fa-heartbeat"></i>
                 <span>Assessments</span>
+              </NavLink>
+
+              <NavLink 
+                to="/admin-dashboard/pt-management?tab=pt-sessions"
+                className={() => `sidebar-sub-link ${location.pathname === '/admin-dashboard/pt-management' && location.search.includes('tab=pt-sessions') ? 'active' : ''}`}
+                onClick={handleNavClick}
+              >
+                <i className="fas fa-chart-line"></i>
+                <span>Sessions & Stats</span>
+              </NavLink>
+
+              <NavLink 
+                to="/admin-dashboard/pt-management?tab=pt-disputes"
+                className={() => `sidebar-sub-link ${location.pathname === '/admin-dashboard/pt-management' && location.search.includes('tab=pt-disputes') ? 'active' : ''}`}
+                onClick={handleNavClick}
+              >
+                <i className="fas fa-gavel"></i>
+                <span>Disputes Arbitration</span>
+              </NavLink>
+
+              <NavLink 
+                to="/admin-dashboard/pt-management?tab=pt-utilities"
+                className={() => `sidebar-sub-link ${location.pathname === '/admin-dashboard/pt-management' && location.search.includes('tab=pt-utilities') ? 'active' : ''}`}
+                onClick={handleNavClick}
+              >
+                <i className="fas fa-tools"></i>
+                <span>Generator & Utilities</span>
               </NavLink>
             </div>
           )}

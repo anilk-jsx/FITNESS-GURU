@@ -16,6 +16,7 @@ const AdminDashboardHome = () => {
 
   const [dashboardKpis, setDashboardKpis] = useState(null);
   const [loadingKpis, setLoadingKpis] = useState(true);
+  const [revenuePeriod, setRevenuePeriod] = useState('this_week');
 
   const [trainers, setTrainers] = useState([]);
   const [loadingTrainers, setLoadingTrainers] = useState(true);
@@ -38,36 +39,86 @@ const AdminDashboardHome = () => {
     }
   };
 
-  // Fetch Dashboard KPIs (Revenue Overview & Membership Status)
-  const fetchDashboardKpis = async () => {
+  // Fetch Revenue Overview KPI (Supports period=this_week / this_month)
+  const fetchRevenueOverview = async (period = revenuePeriod) => {
     try {
       setLoadingKpis(true);
-      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/dashboard-kpis`, {
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/dashboard/revenue-overview?period=${period}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
       const data = await response.json();
       if (data.status === 'success' && data.data) {
-        setDashboardKpis(data.data);
-        if (data.data.membership_status) {
-          setStats(prev => ({
-            ...prev,
-            totalMembers: data.data.membership_status.total_members ?? prev.totalMembers,
-            activeMemberships: data.data.membership_status.active?.count ?? prev.activeMemberships
-          }));
-        }
-        if (data.data.revenue_overview) {
-          setStats(prev => ({
-            ...prev,
-            revenueThisWeek: data.data.revenue_overview.total_revenue ?? prev.revenueThisWeek
-          }));
-        }
+        setDashboardKpis(prev => ({
+          ...prev,
+          revenue_overview: data.data
+        }));
+        setStats(prev => ({
+          ...prev,
+          revenueThisWeek: data.data.total_revenue ?? prev.revenueThisWeek
+        }));
       }
     } catch (err) {
-      console.error('Error fetching dashboard KPIs:', err);
+      console.error('Error fetching revenue overview:', err);
     } finally {
       setLoadingKpis(false);
     }
+  };
+
+  // Fetch Membership Status KPI
+  const fetchMembershipStatus = async () => {
+    try {
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/dashboard/membership-status`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      if (data.status === 'success' && data.data) {
+        setDashboardKpis(prev => ({
+          ...prev,
+          membership_status: data.data
+        }));
+        setStats(prev => ({
+          ...prev,
+          totalMembers: data.data.total_members ?? prev.totalMembers,
+          activeMemberships: data.data.active?.count ?? prev.activeMemberships
+        }));
+      }
+    } catch (err) {
+      console.error('Error fetching membership status:', err);
+    }
+  };
+
+  // Fetch Dashboard High-Level KPI Metrics (Top Cards Summary)
+  const fetchDashboardKpiMetrics = async (period = revenuePeriod) => {
+    try {
+      const response = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/dashboard-kpis?period=${period}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      if (data.status === 'success' && data.data) {
+        setDashboardKpis(prev => ({
+          ...prev,
+          summary_metrics: data.data
+        }));
+        setStats(prev => ({
+          ...prev,
+          totalMembers: data.data.total_members ?? prev.totalMembers,
+          activeMemberships: data.data.active_memberships ?? prev.activeMemberships,
+          revenueThisWeek: data.data.total_revenue ?? prev.revenueThisWeek
+        }));
+      }
+    } catch (err) {
+      console.error('Error fetching dashboard KPI summary metrics:', err);
+    }
+  };
+
+  const handleRevenuePeriodChange = (e) => {
+    const selected = e.target.value;
+    setRevenuePeriod(selected);
+    fetchRevenueOverview(selected);
+    fetchDashboardKpiMetrics(selected);
   };
 
   // Fetch Real Trainers List
@@ -91,7 +142,9 @@ const AdminDashboardHome = () => {
 
   useEffect(() => {
     fetchMemberStats();
-    fetchDashboardKpis();
+    fetchRevenueOverview();
+    fetchMembershipStatus();
+    fetchDashboardKpiMetrics();
     fetchTrainersList();
   }, []);
 
@@ -108,13 +161,16 @@ const AdminDashboardHome = () => {
   const daysList = chartData?.days || ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
   const thisWeekData = chartData?.this_week || [0, 0, 0, 0, 0, 0, 0];
   const lastWeekData = chartData?.last_week || [0, 0, 0, 0, 0, 0, 0];
+  const thisLabel = chartData?.this_label || (revenuePeriod === 'this_month' ? 'This Month' : 'This Week');
+  const lastLabel = chartData?.last_label || (revenuePeriod === 'this_month' ? 'Last Month' : 'Last Week');
 
   const maxVal = Math.max(...thisWeekData, ...lastWeekData, 100);
-  const xCoords = [60, 130, 200, 270, 340, 410, 470];
+  const dataCount = Math.max(daysList.length, 1);
+  const xStep = dataCount > 1 ? (470 - 60) / (dataCount - 1) : 0;
 
   const getPoints = (dataArr) => {
     return dataArr.map((v, i) => {
-      const x = xCoords[i] || (60 + i * 68);
+      const x = 60 + i * xStep;
       const y = 140 - ((v / maxVal) * 110);
       return { x, y, val: v };
     });
@@ -156,63 +212,6 @@ const AdminDashboardHome = () => {
           <div className="dash-title-wrap">
             <h1 className="dash-page-title">Dashboard</h1>
             <p className="dash-page-subtitle">Welcome back! Here's what's happening today.</p>
-          </div>
-          
-          <div className="dash-header-profile-wrap">
-            <div className="dash-header-notifications">
-              <div className="dash-icon-badge" title="Notifications">
-                <i className="far fa-bell"></i>
-                <span className="dash-dot-badge">12</span>
-              </div>
-              <div className="dash-icon-badge" title="Messages">
-                <i className="far fa-comment-alt"></i>
-                <span className="dash-dot-badge">5</span>
-              </div>
-              <div className="dash-icon-badge" title="Calendar">
-                <i className="far fa-calendar-alt"></i>
-              </div>
-            </div>
-            
-            <div className="dash-user-pill">
-              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80" alt="Admin" className="dash-user-img" />
-              <div className="dash-user-info">
-                <span className="dash-user-name">Admin User</span>
-                <span className="dash-user-role">Super Admin</span>
-              </div>
-              <i className="fas fa-chevron-down dash-user-arrow"></i>
-            </div>
-          </div>
-        </div>
-
-        <div className="dash-header-toolbar">
-          <div className="dash-search-box">
-            <i className="fas fa-search dash-search-icon"></i>
-            <input
-              type="text"
-              placeholder="Search members, invoices, reports..."
-              className="dash-search-input"
-            />
-            <span className="dash-search-kbd">Ctrl + K</span>
-          </div>
-
-          <div className="dash-filter-actions">
-            <div className="dash-select-pill">
-              <i className="far fa-building"></i>
-              <select defaultValue="All Branches">
-                <option value="All Branches">All Branches</option>
-                <option value="Main Branch">Main Branch</option>
-                <option value="Downtown">Downtown Branch</option>
-              </select>
-            </div>
-
-            <div className="dash-select-pill">
-              <i className="far fa-calendar"></i>
-              <select defaultValue="10 May 2025 - 16 May 2025">
-                <option value="10 May 2025 - 16 May 2025">10 May 2025 - 16 May 2025</option>
-                <option value="This Month">This Month</option>
-                <option value="This Quarter">This Quarter</option>
-              </select>
-            </div>
           </div>
         </div>
       </div>
@@ -274,12 +273,12 @@ const AdminDashboardHome = () => {
               <i className="fas fa-indian-rupee-sign"></i>
             </div>
             <div>
-              <div className="dash-kpi-label">Revenue (This Week)</div>
+              <div className="dash-kpi-label">Revenue ({revenuePeriod === 'this_month' ? 'This Month' : 'This Week'})</div>
               <div className="dash-kpi-val">{formatCurrency(dashboardKpis?.revenue_overview?.total_revenue ?? stats.revenueThisWeek)}</div>
             </div>
           </div>
           <div className="dash-kpi-trend trend-up">
-            <i className="fas fa-arrow-up"></i> Live <span className="trend-lbl">revenue total</span>
+            <i className="fas fa-arrow-up"></i> Live <span className="trend-lbl">{revenuePeriod === 'this_month' ? 'monthly total' : 'weekly total'}</span>
           </div>
         </div>
 
@@ -306,17 +305,17 @@ const AdminDashboardHome = () => {
         <div className="dash-card">
           <div className="dash-card-header">
             <h3 className="dash-card-title">Revenue Overview</h3>
-            <select className="dash-small-select" defaultValue="This Week">
-              <option value="This Week">This Week</option>
-              <option value="This Month">This Month</option>
+            <select className="dash-small-select" value={revenuePeriod} onChange={handleRevenuePeriodChange}>
+              <option value="this_week">This Week</option>
+              <option value="this_month">This Month</option>
             </select>
           </div>
 
           {/* Dynamic SVG Line Chart */}
           <div className="dash-chart-container">
             <div className="chart-legend-row">
-              <span className="legend-item"><span className="dot dot-blue"></span> This Week</span>
-              <span className="legend-item"><span className="dot dot-dashed"></span> Last Week</span>
+              <span className="legend-item"><span className="dot dot-blue"></span> {thisLabel}</span>
+              <span className="legend-item"><span className="dot dot-dashed"></span> {lastLabel}</span>
             </div>
 
             <svg className="dash-svg-chart" viewBox="0 0 500 160">
@@ -355,7 +354,7 @@ const AdminDashboardHome = () => {
 
               {/* X Axis Labels */}
               {daysList.map((day, i) => (
-                <text key={i} x={xCoords[i] || (60 + i * 68)} y="156" fontSize="10" fill="#94a3b8" textAnchor="middle">{day}</text>
+                <text key={i} x={60 + i * xStep} y="156" fontSize="10" fill="#94a3b8" textAnchor="middle">{day}</text>
               ))}
             </svg>
           </div>
@@ -427,116 +426,6 @@ const AdminDashboardHome = () => {
           <a href="/admin-dashboard/subscriptions" className="dash-card-footer-link">
             View All Memberships <i className="fas fa-arrow-right"></i>
           </a>
-        </div>
-
-        {/* Card 3: Today's Schedule */}
-        <div className="dash-card">
-          <div className="dash-card-header">
-            <h3 className="dash-card-title">Today's Schedule</h3>
-            <a href="/admin-dashboard/pt-management" className="header-link">View Calendar <i className="fas fa-arrow-right"></i></a>
-          </div>
-
-          <div className="dash-schedule-list">
-            <div className="schedule-item">
-              <span className="sch-time">06:00 AM</span>
-              <div className="sch-icon icon-orange"><i className="fas fa-spa"></i></div>
-              <div className="sch-details">
-                <span className="sch-title">Yoga Class</span>
-                <span className="sch-sub">Amit Sharma</span>
-              </div>
-              <span className="sch-pill pill-green">12/20</span>
-            </div>
-
-            <div className="schedule-item">
-              <span className="sch-time">07:30 AM</span>
-              <div className="sch-icon icon-purple"><i className="fas fa-dumbbell"></i></div>
-              <div className="sch-details">
-                <span className="sch-title">Chest Workout</span>
-                <span className="sch-sub">Rahul Verma</span>
-              </div>
-              <span className="sch-pill pill-amber">8/15</span>
-            </div>
-
-            <div className="schedule-item">
-              <span className="sch-time">09:00 AM</span>
-              <div className="sch-icon icon-green"><i className="fas fa-running"></i></div>
-              <div className="sch-details">
-                <span className="sch-title">Zumba Class</span>
-                <span className="sch-sub">Pooja Mehta</span>
-              </div>
-              <span className="sch-pill pill-green">18/25</span>
-            </div>
-
-            <div className="schedule-item">
-              <span className="sch-time">10:30 AM</span>
-              <div className="sch-icon icon-purple"><i className="fas fa-user-check"></i></div>
-              <div className="sch-details">
-                <span className="sch-title">PT Session</span>
-                <span className="sch-sub">John Doe</span>
-              </div>
-              <span className="sch-pill pill-green">1/1</span>
-            </div>
-
-            <div className="schedule-item">
-              <span className="sch-time">04:00 PM</span>
-              <div className="sch-icon icon-orange"><i className="fas fa-fire"></i></div>
-              <div className="sch-details">
-                <span className="sch-title">HIIT Training</span>
-                <span className="sch-sub">Vikram Singh</span>
-              </div>
-              <span className="sch-pill pill-amber">10/15</span>
-            </div>
-          </div>
-
-          <a href="/admin-dashboard/pt-management" className="dash-card-footer-link">
-            View Full Schedule <i className="fas fa-arrow-right"></i>
-          </a>
-        </div>
-
-        {/* Card 4: Alerts & Notifications */}
-        <div className="dash-card">
-          <div className="dash-card-header">
-            <h3 className="dash-card-title">Alerts & Notifications</h3>
-            <a href="/admin-dashboard/dashboard" className="header-link">View All <i className="fas fa-arrow-right"></i></a>
-          </div>
-
-          <div className="dash-alerts-list">
-            <div className="alert-box alert-red">
-              <i className="fas fa-exclamation-triangle alert-icon"></i>
-              <div className="alert-content">
-                <span className="alert-title">{memStatus.expired?.count || 0} Memberships expired</span>
-                <span className="alert-desc">Please renew them to avoid service interruption.</span>
-              </div>
-              <a href="/admin-dashboard/subscriptions" className="alert-action">View</a>
-            </div>
-
-            <div className="alert-box alert-orange">
-              <i className="fas fa-exclamation-circle alert-icon"></i>
-              <div className="alert-content">
-                <span className="alert-title">{memStatus.expiring_soon?.count || 0} Memberships expiring soon</span>
-                <span className="alert-desc">Within the next 7 days.</span>
-              </div>
-              <a href="/admin-dashboard/subscriptions" className="alert-action">View</a>
-            </div>
-
-            <div className="alert-box alert-blue">
-              <i className="fas fa-lock alert-icon"></i>
-              <div className="alert-content">
-                <span className="alert-title">12 Pending payments</span>
-                <span className="alert-desc">Total amount: ₹86,430</span>
-              </div>
-              <a href="/admin-dashboard/subscriptions" className="alert-action">View</a>
-            </div>
-
-            <div className="alert-box alert-green">
-              <i className="fas fa-shield-check alert-icon"></i>
-              <div className="alert-content">
-                <span className="alert-title">5 Assessment due</span>
-                <span className="alert-desc">Members have pending fitness assessments.</span>
-              </div>
-              <a href="/admin-dashboard/pt-management?tab=assessments" className="alert-action">View</a>
-            </div>
-          </div>
         </div>
 
         {/* Real Top Trainers List */}
