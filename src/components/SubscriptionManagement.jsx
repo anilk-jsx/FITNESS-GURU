@@ -40,6 +40,15 @@ const PLAN_TYPES = [
     { label: 'Add-On', value: 'ADD_ON' }
 ];
 
+const calculateValidDaysFromMonths = (months) => {
+    const m = parseInt(months, 10);
+    if (isNaN(m) || m <= 0) return '';
+    if (m % 12 === 0) {
+        return (m / 12) * 365;
+    }
+    return m * 30;
+};
+
 const SubscriptionManagement = () => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
 
@@ -83,7 +92,7 @@ const SubscriptionManagement = () => {
     const [planFormData, setPlanFormData] = useState({
         plan_name: '',
         plan_type: 'BASE_MEMBERSHIP',
-        duration_months: 12,
+        duration_months: '',
         price: '',
         requires_membership: 0,
         status: 1,
@@ -242,6 +251,12 @@ const SubscriptionManagement = () => {
             return;
         }
 
+        if (!planFormData.duration_months || parseInt(planFormData.duration_months, 10) <= 0) {
+            showNotice('Please enter a valid duration in months', true);
+            setActionLoading(false);
+            return;
+        }
+
         if (!planFormData.price || parseFloat(planFormData.price) <= 0) {
             showNotice('Please enter a valid price', true);
             setActionLoading(false);
@@ -283,7 +298,7 @@ const SubscriptionManagement = () => {
                 plan_type: planFormData.plan_type,
                 duration_months: parseInt(planFormData.duration_months, 10),
                 price: parseFloat(planFormData.price),
-                requires_membership: parseInt(planFormData.requires_membership, 10),
+                requires_membership: planFormData.plan_type === 'BASE_MEMBERSHIP' ? 0 : (parseInt(planFormData.requires_membership, 10) || 0),
                 status: parseInt(planFormData.status, 10),
                 entitlements: planFormData.entitlements.map(e => ({
                     entitlement_type: e.entitlement_type,
@@ -344,6 +359,19 @@ const SubscriptionManagement = () => {
     const handleSaveEntitlementsBatch = async () => {
         if (!selectedPlanForEntitlements) return;
         setActionLoading(true);
+
+        for (const ent of entitlementsManageList) {
+            if (!ent.entitlement_type) {
+                showNotice('All entitlement rows must select a valid type', true);
+                setActionLoading(false);
+                return;
+            }
+            if (!ent.quantity || parseInt(ent.quantity, 10) < 1 || !ent.valid_days || parseInt(ent.valid_days, 10) < 1) {
+                showNotice('Quantity and Valid Days must be at least 1 for each entitlement', true);
+                setActionLoading(false);
+                return;
+            }
+        }
 
         try {
             const url = `${API_BASE_URL}/api/admin/membership-plans/${selectedPlanForEntitlements.plan_id}/entitlements`;
@@ -667,13 +695,11 @@ const SubscriptionManagement = () => {
         setPlanFormData({
             plan_name: '',
             plan_type: 'BASE_MEMBERSHIP',
-            duration_months: 12,
+            duration_months: '',
             price: '',
             requires_membership: 0,
             status: 1,
-            entitlements: [
-                { entitlement_type: 'GYM_ACCESS', quantity: 365, valid_days: 365 }
-            ]
+            entitlements: []
         });
         setShowPlanDrawer(true);
     };
@@ -683,9 +709,9 @@ const SubscriptionManagement = () => {
         setPlanFormData({
             plan_name: plan.plan_name || '',
             plan_type: plan.plan_type || 'BASE_MEMBERSHIP',
-            duration_months: plan.duration_months || 12,
+            duration_months: plan.duration_months || '',
             price: plan.price || '',
-            requires_membership: plan.requires_membership ?? 0,
+            requires_membership: plan.plan_type === 'BASE_MEMBERSHIP' ? 0 : (plan.requires_membership ?? 0),
             status: plan.status ?? 1,
             entitlements: plan.entitlements ? JSON.parse(JSON.stringify(plan.entitlements)) : []
         });
@@ -708,17 +734,31 @@ const SubscriptionManagement = () => {
         setShowRevisionModal(true);
     };
 
+    const handleDurationChange = (months) => {
+        const calculatedDays = calculateValidDaysFromMonths(months);
+        setPlanFormData(prev => ({
+            ...prev,
+            duration_months: months,
+            entitlements: prev.entitlements.map(ent => ({
+                ...ent,
+                valid_days: calculatedDays !== '' ? calculatedDays : ent.valid_days
+            }))
+        }));
+    };
+
     // Entitlement Factory Row Handlers (Plan Drawer)
     const handleAddEntitlementRow = () => {
-        const unused = ALLOWED_ENTITLEMENTS.find(type =>
-            !planFormData.entitlements.some(e => e.entitlement_type === type)
-        ) || ALLOWED_ENTITLEMENTS[0];
-
+        const calculatedDays = calculateValidDaysFromMonths(planFormData.duration_months);
         setPlanFormData(prev => ({
             ...prev,
             entitlements: [
-                { entitlement_type: unused, quantity: 30, valid_days: 30, isNew: true },
-                ...prev.entitlements
+                ...prev.entitlements,
+                {
+                    entitlement_type: '',
+                    quantity: '',
+                    valid_days: calculatedDays !== '' ? calculatedDays : '',
+                    isNew: true
+                }
             ]
         }));
     };
@@ -740,13 +780,15 @@ const SubscriptionManagement = () => {
 
     // Entitlement Factory Row Handlers (Standalone Entitlements Modal)
     const handleAddManageEntitlementRow = () => {
-        const unused = ALLOWED_ENTITLEMENTS.find(type =>
-            !entitlementsManageList.some(e => e.entitlement_type === type)
-        ) || ALLOWED_ENTITLEMENTS[0];
-
+        const calculatedDays = calculateValidDaysFromMonths(selectedPlanForEntitlements?.duration_months);
         setEntitlementsManageList(prev => [
-            { entitlement_type: unused, quantity: 30, valid_days: 30, isNew: true },
-            ...prev
+            ...prev,
+            {
+                entitlement_type: '',
+                quantity: '',
+                valid_days: calculatedDays !== '' ? calculatedDays : '',
+                isNew: true
+            }
         ]);
     };
 
@@ -1466,7 +1508,14 @@ const SubscriptionManagement = () => {
                                     <label>Plan Type <span className="req">*</span></label>
                                     <select
                                         value={planFormData.plan_type}
-                                        onChange={(e) => setPlanFormData({ ...planFormData, plan_type: e.target.value })}
+                                        onChange={(e) => {
+                                            const newType = e.target.value;
+                                            setPlanFormData(prev => ({
+                                                ...prev,
+                                                plan_type: newType,
+                                                requires_membership: newType === 'BASE_MEMBERSHIP' ? 0 : prev.requires_membership
+                                            }));
+                                        }}
                                         required
                                     >
                                         {PLAN_TYPES.map(pt => (
@@ -1483,8 +1532,9 @@ const SubscriptionManagement = () => {
                                         type="number"
                                         min="1"
                                         max="60"
+                                        placeholder="e.g. 12"
                                         value={planFormData.duration_months}
-                                        onChange={(e) => setPlanFormData({ ...planFormData, duration_months: e.target.value })}
+                                        onChange={(e) => handleDurationChange(e.target.value)}
                                         required
                                     />
                                 </div>
@@ -1514,16 +1564,18 @@ const SubscriptionManagement = () => {
                                 </div>
                             </div>
 
-                            <div className="form-group checkbox-group">
-                                <label className="checkbox-label">
-                                    <input
-                                        type="checkbox"
-                                        checked={planFormData.requires_membership === 1}
-                                        onChange={(e) => setPlanFormData({ ...planFormData, requires_membership: e.target.checked ? 1 : 0 })}
-                                    />
-                                    Requires Active Base Membership First
-                                </label>
-                            </div>
+                            {planFormData.plan_type !== 'BASE_MEMBERSHIP' && (
+                                <div className="form-group checkbox-group">
+                                    <label className="checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={planFormData.requires_membership === 1}
+                                            onChange={(e) => setPlanFormData({ ...planFormData, requires_membership: e.target.checked ? 1 : 0 })}
+                                        />
+                                        Requires Active Base Membership First
+                                    </label>
+                                </div>
+                            )}
 
                             {/* DYNAMIC ENTITLEMENT FACTORY ARRAY */}
                             <div className="entitlement-factory-section">
@@ -1543,13 +1595,15 @@ const SubscriptionManagement = () => {
                                 ) : (
                                     <div className="factory-rows-container">
                                         {planFormData.entitlements.map((ent, idx) => (
-                                            <div key={ent.entitlement_type || idx} className={`factory-row ${ent.isNew ? 'newly-added-row' : ''}`}>
+                                            <div key={idx} className={`factory-row ${ent.isNew ? 'newly-added-row' : ''}`}>
                                                 <div className="factory-col col-type">
                                                     <label>Entitlement Type</label>
                                                     <select
                                                         value={ent.entitlement_type}
                                                         onChange={(e) => handleUpdateEntitlementRow(idx, 'entitlement_type', e.target.value)}
+                                                        required
                                                     >
+                                                        <option value="">-- Select Entitlement Type --</option>
                                                         {ALLOWED_ENTITLEMENTS.map(type => (
                                                             <option key={type} value={type}>{formatEntitlementType(type)}</option>
                                                         ))}
@@ -1561,6 +1615,7 @@ const SubscriptionManagement = () => {
                                                     <input
                                                         type="number"
                                                         min="1"
+                                                        placeholder="e.g. 365"
                                                         value={ent.quantity}
                                                         onChange={(e) => handleUpdateEntitlementRow(idx, 'quantity', e.target.value)}
                                                         required
@@ -1572,6 +1627,7 @@ const SubscriptionManagement = () => {
                                                     <input
                                                         type="number"
                                                         min="1"
+                                                        placeholder="e.g. 365"
                                                         value={ent.valid_days}
                                                         onChange={(e) => handleUpdateEntitlementRow(idx, 'valid_days', e.target.value)}
                                                         required
@@ -1640,13 +1696,14 @@ const SubscriptionManagement = () => {
 
                             <div className="factory-rows-container">
                                 {entitlementsManageList.map((ent, idx) => (
-                                    <div key={ent.entitlement_type || idx} className={`factory-row ${ent.isNew ? 'newly-added-row' : ''}`}>
+                                    <div key={idx} className={`factory-row ${ent.isNew ? 'newly-added-row' : ''}`}>
                                         <div className="factory-col col-type">
                                             <label>Entitlement Type</label>
                                             <select
                                                 value={ent.entitlement_type}
                                                 onChange={(e) => handleUpdateManageEntitlementRow(idx, 'entitlement_type', e.target.value)}
                                             >
+                                                <option value="">-- Select Entitlement Type --</option>
                                                 {ALLOWED_ENTITLEMENTS.map(type => (
                                                     <option key={type} value={type}>{formatEntitlementType(type)}</option>
                                                 ))}
@@ -1658,6 +1715,7 @@ const SubscriptionManagement = () => {
                                             <input
                                                 type="number"
                                                 min="1"
+                                                placeholder="e.g. 12"
                                                 value={ent.quantity}
                                                 onChange={(e) => handleUpdateManageEntitlementRow(idx, 'quantity', e.target.value)}
                                             />
@@ -1668,6 +1726,7 @@ const SubscriptionManagement = () => {
                                             <input
                                                 type="number"
                                                 min="1"
+                                                placeholder="e.g. 365"
                                                 value={ent.valid_days}
                                                 onChange={(e) => handleUpdateManageEntitlementRow(idx, 'valid_days', e.target.value)}
                                             />
@@ -1678,8 +1737,14 @@ const SubscriptionManagement = () => {
                                             <button
                                                 type="button"
                                                 className="remove-row-btn"
-                                                onClick={() => handleDeleteSingleEntitlement(ent.entitlement_type)}
-                                                title="Delete single entitlement from API"
+                                                onClick={() => {
+                                                    if (ent.isNew || !ent.entitlement_type) {
+                                                        setEntitlementsManageList(prev => prev.filter((_, i) => i !== idx));
+                                                    } else {
+                                                        handleDeleteSingleEntitlement(ent.entitlement_type);
+                                                    }
+                                                }}
+                                                title="Remove entitlement"
                                             >
                                                 <i className="fas fa-trash-alt"></i>
                                             </button>
