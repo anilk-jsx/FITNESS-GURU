@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { tokenManager } from '../utils/tokenManager';
 import InvoiceModal from './InvoiceModal';
@@ -456,8 +456,6 @@ const SubscriptionManagement = () => {
         fetchSubscriptionStats();
         try {
             const queryParams = new URLSearchParams();
-            if (subStatusFilter !== 'ALL') queryParams.append('status', subStatusFilter);
-            if (subPlanFilter) queryParams.append('plan_id', subPlanFilter);
             if (subUserIdFilter) queryParams.append('user_id', subUserIdFilter);
 
             const url = `${API_BASE_URL}/api/admin/subscriptions?${queryParams.toString()}`;
@@ -687,7 +685,7 @@ const SubscriptionManagement = () => {
             fetchMembersList();
             fetchBranchesList();
         }
-    }, [activeTab, planTypeFilter, planStatusFilter, subStatusFilter, subPlanFilter, subUserIdFilter]);
+    }, [activeTab, planTypeFilter, planStatusFilter, subUserIdFilter]);
 
     // ==========================================
     // FORM HELPERS & FACTORY HANDLERS
@@ -824,52 +822,115 @@ const SubscriptionManagement = () => {
         });
     };
 
+    // Real-time Calculated Statistics
+    const displayStats = useMemo(() => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const in7DaysStr = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const currentMonthStr = new Date().toISOString().slice(0, 7);
+
+        let activeCount = 0;
+        let expiringSoonCount = 0;
+        let expiredCount = 0;
+        let frozenCount = 0;
+        let newThisMonthCount = 0;
+        let totalRevenueSum = 0;
+
+        subscriptions.forEach(sub => {
+            const subEndDate = sub.end_date ? String(sub.end_date).split('T')[0] : '';
+            const isExp = sub.status === 0 || sub.status === '0' || sub.status === 'INACTIVE' || sub.status === 'EXPIRED' || (subEndDate && subEndDate < todayStr);
+            const isFz = sub.status === 2 || sub.status === '2' || sub.status === 'FROZEN';
+            const isAct = (sub.status === 1 || sub.status === '1' || sub.status === 'ACTIVE') && (!subEndDate || subEndDate >= todayStr);
+            const isExpSoon = (sub.status === 1 || sub.status === '1' || sub.status === 'ACTIVE') && subEndDate && subEndDate >= todayStr && subEndDate <= in7DaysStr;
+
+            if (isExp) expiredCount++;
+            else if (isFz) frozenCount++;
+            else if (isAct) activeCount++;
+
+            if (isExpSoon) expiringSoonCount++;
+
+            if (sub.start_date && String(sub.start_date).startsWith(currentMonthStr)) {
+                newThisMonthCount++;
+            }
+
+            const price = parseFloat(sub.plan_price || sub.price || 0);
+            if (!isNaN(price) && price > 0) {
+                totalRevenueSum += price;
+            }
+        });
+
+        return {
+            total: subscriptions.length || (subStats?.total_subscriptions ?? 0),
+            active: activeCount || (subStats?.active_subscriptions ?? 0),
+            expiringSoon: expiringSoonCount || (subStats?.expiring_soon_subscriptions ?? 0),
+            expired: expiredCount || (subStats?.expired_subscriptions ?? 0),
+            frozen: frozenCount || (subStats?.frozen_subscriptions ?? 0),
+            newThisMonth: subStats?.new_subscriptions_this_month ?? newThisMonthCount,
+            revenue: subStats?.total_revenue ?? subStats?.total_subscription_revenue ?? totalRevenueSum
+        };
+    }, [subscriptions, subStats]);
+
     // Filter calculations
-    const filteredPlans = plans.filter(p =>
-        p.plan_name.toLowerCase().includes(planSearchQuery.toLowerCase()) ||
-        p.plan_type.toLowerCase().includes(planSearchQuery.toLowerCase())
-    );
+    const filteredPlans = useMemo(() => {
+        return plans.filter(p =>
+            p.plan_name.toLowerCase().includes(planSearchQuery.toLowerCase()) ||
+            p.plan_type.toLowerCase().includes(planSearchQuery.toLowerCase())
+        );
+    }, [plans, planSearchQuery]);
 
-    const filteredSubscriptions = subscriptions.filter(sub => {
+    const filteredSubscriptions = useMemo(() => {
         const query = subSearchQuery.toLowerCase().trim();
-        const memberName = (sub.member_name || '').toLowerCase();
-        const memberEmail = (sub.member_email || '').toLowerCase();
-        const memberPhone = (sub.member_phone || '');
-        const planName = (sub.plan_name || sub.subscription_name || '').toLowerCase();
-        const subIdStr = (sub.subscription_id || '').toString();
-        const userIdStr = (sub.user_id || '').toString();
-
-        const matchesQuery = !query ||
-            memberName.includes(query) ||
-            memberEmail.includes(query) ||
-            memberPhone.includes(query) ||
-            planName.includes(query) ||
-            subIdStr.includes(query) ||
-            userIdStr.includes(query);
-
-        // Frontend Status Filter Logic
-        let matchesStatus = true;
         const today = new Date().toISOString().split('T')[0];
         const in7Days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-        if (subStatusFilter === '1' || subStatusFilter === 'ACTIVE') {
-            matchesStatus = sub.status === 1 && (!sub.end_date || sub.end_date >= today);
-        } else if (subStatusFilter === 'EXPIRING') {
-            matchesStatus = sub.status === 1 && sub.end_date && sub.end_date >= today && sub.end_date <= in7Days;
-        } else if (subStatusFilter === '0' || subStatusFilter === 'EXPIRED') {
-            matchesStatus = sub.status === 0 || (sub.end_date && sub.end_date < today);
-        } else if (subStatusFilter === '2' || subStatusFilter === 'FROZEN') {
-            matchesStatus = sub.status === 2;
-        }
+        return subscriptions.filter(sub => {
+            const memberName = (sub.member_name || sub.name || '').toLowerCase();
+            const memberEmail = (sub.member_email || sub.email || '').toLowerCase();
+            const memberPhone = (sub.member_phone || sub.phone || '');
+            const planName = (sub.plan_name || sub.subscription_name || '').toLowerCase();
+            const subIdStr = (sub.subscription_id || sub.id || '').toString();
+            const userIdStr = (sub.user_id || '').toString();
+            const branchName = (sub.branch_name || '').toLowerCase();
 
-        // Plan Filter Logic
-        let matchesPlan = true;
-        if (subPlanFilter) {
-            matchesPlan = String(sub.plan_id) === String(subPlanFilter);
-        }
+            const matchesQuery = !query ||
+                memberName.includes(query) ||
+                memberEmail.includes(query) ||
+                memberPhone.includes(query) ||
+                planName.includes(query) ||
+                subIdStr.includes(query) ||
+                userIdStr.includes(query) ||
+                branchName.includes(query);
 
-        return matchesQuery && matchesStatus && matchesPlan;
-    });
+            if (!matchesQuery) return false;
+
+            // Plan Filter Logic
+            if (subPlanFilter && subPlanFilter !== 'ALL' && subPlanFilter !== '') {
+                const matchesPlan = String(sub.plan_id) === String(subPlanFilter) || String(sub.plan_name).toLowerCase() === String(subPlanFilter).toLowerCase();
+                if (!matchesPlan) return false;
+            }
+
+            // Status Filter Logic
+            const subEndDate = sub.end_date ? String(sub.end_date).split('T')[0] : '';
+            const isSubExpired = sub.status === 0 || sub.status === '0' || sub.status === 'INACTIVE' || sub.status === 'EXPIRED' || (subEndDate && subEndDate < today);
+            const isSubFrozen = sub.status === 2 || sub.status === '2' || sub.status === 'FROZEN';
+            const isSubActive = (sub.status === 1 || sub.status === '1' || sub.status === 'ACTIVE') && (!subEndDate || subEndDate >= today);
+            const isSubExpiring = (sub.status === 1 || sub.status === '1' || sub.status === 'ACTIVE') && subEndDate && subEndDate >= today && subEndDate <= in7Days;
+
+            if (subStatusFilter === '1' || subStatusFilter === 'ACTIVE') {
+                return isSubActive;
+            }
+            if (subStatusFilter === 'EXPIRING') {
+                return isSubExpiring;
+            }
+            if (subStatusFilter === '0' || subStatusFilter === 'EXPIRED') {
+                return isSubExpired;
+            }
+            if (subStatusFilter === '2' || subStatusFilter === 'FROZEN') {
+                return isSubFrozen;
+            }
+
+            return true;
+        });
+    }, [subscriptions, subSearchQuery, subStatusFilter, subPlanFilter]);
 
     const filteredMembersForLookup = membersList.filter(m => {
         const uid = String(m.user_id || m.id || '');
@@ -1105,7 +1166,7 @@ const SubscriptionManagement = () => {
                 <div className="subscriptions-workbench">
                     {/* Top Subscription Statistics Cards Grid */}
                     <div className="sub-stats-grid">
-                        <div 
+                        <div
                             className={`sub-stat-card ${subStatusFilter === 'ALL' ? 'active-card' : ''}`}
                             onClick={() => setSubStatusFilter('ALL')}
                             title="Show All Subscriptions"
@@ -1114,26 +1175,26 @@ const SubscriptionManagement = () => {
                                 <i className="fas fa-id-card"></i>
                             </div>
                             <div className="sub-stat-details">
-                                <span className="sub-stat-val">{subStats?.total_subscriptions ?? subscriptions.length}</span>
+                                <span className="sub-stat-val">{displayStats.total}</span>
                                 <span className="sub-stat-lbl">Total Subscriptions</span>
                             </div>
                         </div>
 
-                        <div 
+                        <div
                             className={`sub-stat-card ${subStatusFilter === '1' || subStatusFilter === 'ACTIVE' ? 'active-card' : ''}`}
-                            onClick={() => setSubStatusFilter(subStatusFilter === '1' || subStatusFilter === 'ACTIVE' ? 'ALL' : '1')}
+                            onClick={() => setSubStatusFilter(subStatusFilter === '1' || subStatusFilter === 'ACTIVE' ? 'ALL' : 'ACTIVE')}
                             title="Filter Active Subscriptions"
                         >
                             <div className="sub-stat-icon bg-sub-green">
                                 <i className="fas fa-check-circle"></i>
                             </div>
                             <div className="sub-stat-details">
-                                <span className="sub-stat-val">{subStats?.active_subscriptions ?? 0}</span>
+                                <span className="sub-stat-val">{displayStats.active}</span>
                                 <span className="sub-stat-lbl">Active</span>
                             </div>
                         </div>
 
-                        <div 
+                        <div
                             className={`sub-stat-card ${subStatusFilter === 'EXPIRING' ? 'active-card' : ''}`}
                             onClick={() => setSubStatusFilter(subStatusFilter === 'EXPIRING' ? 'ALL' : 'EXPIRING')}
                             title="Filter Expiring Soon (Next 7 Days)"
@@ -1142,35 +1203,35 @@ const SubscriptionManagement = () => {
                                 <i className="fas fa-exclamation-triangle"></i>
                             </div>
                             <div className="sub-stat-details">
-                                <span className="sub-stat-val">{subStats?.expiring_soon_subscriptions ?? 0}</span>
+                                <span className="sub-stat-val">{displayStats.expiringSoon}</span>
                                 <span className="sub-stat-lbl">Expiring Soon</span>
                             </div>
                         </div>
 
-                        <div 
+                        <div
                             className={`sub-stat-card ${subStatusFilter === '0' || subStatusFilter === 'EXPIRED' ? 'active-card' : ''}`}
-                            onClick={() => setSubStatusFilter(subStatusFilter === '0' || subStatusFilter === 'EXPIRED' ? 'ALL' : '0')}
+                            onClick={() => setSubStatusFilter(subStatusFilter === '0' || subStatusFilter === 'EXPIRED' ? 'ALL' : 'EXPIRED')}
                             title="Filter Expired / Canceled Subscriptions"
                         >
                             <div className="sub-stat-icon bg-sub-red">
                                 <i className="fas fa-times-circle"></i>
                             </div>
                             <div className="sub-stat-details">
-                                <span className="sub-stat-val">{subStats?.expired_subscriptions ?? 0}</span>
+                                <span className="sub-stat-val">{displayStats.expired}</span>
                                 <span className="sub-stat-lbl">Expired / Canceled</span>
                             </div>
                         </div>
 
-                        <div 
+                        <div
                             className={`sub-stat-card ${subStatusFilter === '2' || subStatusFilter === 'FROZEN' ? 'active-card' : ''}`}
-                            onClick={() => setSubStatusFilter(subStatusFilter === '2' || subStatusFilter === 'FROZEN' ? 'ALL' : '2')}
+                            onClick={() => setSubStatusFilter(subStatusFilter === '2' || subStatusFilter === 'FROZEN' ? 'ALL' : 'FROZEN')}
                             title="Filter Frozen Subscriptions"
                         >
                             <div className="sub-stat-icon bg-sub-purple">
                                 <i className="fas fa-snowflake"></i>
                             </div>
                             <div className="sub-stat-details">
-                                <span className="sub-stat-val">{subStats?.frozen_subscriptions ?? 0}</span>
+                                <span className="sub-stat-val">{displayStats.frozen}</span>
                                 <span className="sub-stat-lbl">Frozen</span>
                             </div>
                         </div>
@@ -1180,7 +1241,7 @@ const SubscriptionManagement = () => {
                                 <i className="fas fa-user-plus"></i>
                             </div>
                             <div className="sub-stat-details">
-                                <span className="sub-stat-val">{subStats?.new_subscriptions_this_month ?? 0}</span>
+                                <span className="sub-stat-val">{displayStats.newThisMonth}</span>
                                 <span className="sub-stat-lbl">New This Month</span>
                             </div>
                         </div>
@@ -1190,7 +1251,7 @@ const SubscriptionManagement = () => {
                                 <i className="fas fa-indian-rupee-sign"></i>
                             </div>
                             <div className="sub-stat-details">
-                                <span className="sub-stat-val">₹{new Intl.NumberFormat('en-IN').format(subStats?.total_revenue ?? subStats?.total_subscription_revenue ?? 0)}</span>
+                                <span className="sub-stat-val">₹{new Intl.NumberFormat('en-IN').format(displayStats.revenue)}</span>
                                 <span className="sub-stat-lbl">Total Revenue</span>
                             </div>
                         </div>
@@ -1218,10 +1279,10 @@ const SubscriptionManagement = () => {
                                 className="sub-select"
                             >
                                 <option value="ALL">All Statuses</option>
-                                <option value="1">Active Only</option>
+                                <option value="ACTIVE">Active Only</option>
                                 <option value="EXPIRING">Expiring Soon (7 Days)</option>
-                                <option value="0">Expired / Canceled Only</option>
-                                <option value="2">Frozen Only</option>
+                                <option value="EXPIRED">Expired / Canceled Only</option>
+                                <option value="FROZEN">Frozen Only</option>
                             </select>
 
                             <select
@@ -1380,11 +1441,36 @@ const SubscriptionManagement = () => {
                                                     <td>
                                                         {(() => {
                                                             const todayStr = new Date().toISOString().split('T')[0];
-                                                            const daysLeft = sub.end_date ? Math.round((new Date(sub.end_date) - new Date(todayStr)) / 86400000) : 0;
-                                                            const isExpiringSoon = sub.status === 1 && daysLeft >= 0 && daysLeft <= 7;
+                                                            const subEndDate = sub.end_date ? String(sub.end_date).split('T')[0] : '';
+                                                            const daysLeft = subEndDate ? Math.round((new Date(subEndDate) - new Date(todayStr)) / 86400000) : 0;
+                                                            const isExp = sub.status === 0 || sub.status === '0' || sub.status === 'INACTIVE' || sub.status === 'EXPIRED' || (subEndDate && subEndDate < todayStr);
+                                                            const isFz = sub.status === 2 || sub.status === '2' || sub.status === 'FROZEN';
+                                                            const isExpSoon = !isExp && !isFz && (sub.status === 1 || sub.status === '1' || sub.status === 'ACTIVE') && subEndDate && daysLeft >= 0 && daysLeft <= 7;
+
+                                                            if (isExpSoon) {
+                                                                return (
+                                                                    <span className="status-pill status-expiring" style={{ background: '#fef3c7', color: '#d97706', border: '1px solid #f59e0b', fontWeight: 700 }}>
+                                                                        ⚡ Expiring Soon ({daysLeft}d)
+                                                                    </span>
+                                                                );
+                                                            }
+                                                            if (isExp) {
+                                                                return (
+                                                                    <span className="status-pill status-canceled" style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', fontWeight: 600 }}>
+                                                                        Expired
+                                                                    </span>
+                                                                );
+                                                            }
+                                                            if (isFz) {
+                                                                return (
+                                                                    <span className="status-pill status-frozen" style={{ background: '#ede9fe', color: '#7c3aed', border: '1px solid #c4b5fd', fontWeight: 600 }}>
+                                                                        Frozen
+                                                                    </span>
+                                                                );
+                                                            }
                                                             return (
-                                                                <span className={`status-pill ${isExpiringSoon ? 'status-expiring' : (sub.status === 1 ? 'status-active' : 'status-canceled')}`} style={isExpiringSoon ? { background: '#fef3c7', color: '#d97706', border: '1px solid #f59e0b', fontWeight: 700 } : {}}>
-                                                                    {isExpiringSoon ? `⚡ Expiring Soon (${daysLeft}d)` : (sub.status === 1 ? 'Active' : 'Canceled')}
+                                                                <span className="status-pill status-active">
+                                                                    Active
                                                                 </span>
                                                             );
                                                         })()}
