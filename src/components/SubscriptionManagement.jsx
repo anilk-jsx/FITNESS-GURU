@@ -824,9 +824,29 @@ const SubscriptionManagement = () => {
 
     // Real-time Calculated Statistics
     const displayStats = useMemo(() => {
-        const todayStr = new Date().toISOString().split('T')[0];
-        const in7DaysStr = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        const currentMonthStr = new Date().toISOString().slice(0, 7);
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+        const in7DaysDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const in7DaysYear = in7DaysDate.getFullYear();
+        const in7DaysMonth = String(in7DaysDate.getMonth() + 1).padStart(2, '0');
+        const in7DaysDay = String(in7DaysDate.getDate()).padStart(2, '0');
+        const in7DaysStr = `${in7DaysYear}-${in7DaysMonth}-${in7DaysDay}`;
+        const currentMonthStr = `${year}-${month}`;
+
+        if (!subscriptions || subscriptions.length === 0) {
+            return {
+                total: subStats?.total_subscriptions ?? 0,
+                active: subStats?.active_subscriptions ?? 0,
+                expiringSoon: subStats?.expiring_soon_subscriptions ?? 0,
+                expired: subStats?.expired_subscriptions ?? 0,
+                frozen: subStats?.frozen_subscriptions ?? 0,
+                newThisMonth: subStats?.new_subscriptions_this_month ?? 0,
+                revenue: parseFloat(subStats?.total_revenue ?? subStats?.total_subscription_revenue ?? 0) || 0
+            };
+        }
 
         let activeCount = 0;
         let expiringSoonCount = 0;
@@ -836,11 +856,11 @@ const SubscriptionManagement = () => {
         let totalRevenueSum = 0;
 
         subscriptions.forEach(sub => {
-            const subEndDate = sub.end_date ? String(sub.end_date).split('T')[0] : '';
+            const subEndDate = sub.end_date ? String(sub.end_date).split('T')[0].split(' ')[0] : '';
             const isExp = sub.status === 0 || sub.status === '0' || sub.status === 'INACTIVE' || sub.status === 'EXPIRED' || (subEndDate && subEndDate < todayStr);
             const isFz = sub.status === 2 || sub.status === '2' || sub.status === 'FROZEN';
             const isAct = (sub.status === 1 || sub.status === '1' || sub.status === 'ACTIVE') && (!subEndDate || subEndDate >= todayStr);
-            const isExpSoon = (sub.status === 1 || sub.status === '1' || sub.status === 'ACTIVE') && subEndDate && subEndDate >= todayStr && subEndDate <= in7DaysStr;
+            const isExpSoon = isAct && subEndDate && subEndDate >= todayStr && subEndDate <= in7DaysStr;
 
             if (isExp) expiredCount++;
             else if (isFz) frozenCount++;
@@ -848,26 +868,28 @@ const SubscriptionManagement = () => {
 
             if (isExpSoon) expiringSoonCount++;
 
-            if (sub.start_date && String(sub.start_date).startsWith(currentMonthStr)) {
+            const isNewThisMonth = Boolean(sub.start_date && String(sub.start_date).slice(0, 7) === currentMonthStr);
+            if (isNewThisMonth) {
                 newThisMonthCount++;
             }
 
-            const price = parseFloat(sub.plan_price || sub.price || 0);
+            const matchedPlan = plans.find(p => String(p.plan_id) === String(sub.plan_id) || String(p.id) === String(sub.plan_id));
+            const price = parseFloat(sub.plan_price ?? sub.price ?? sub.final_amount ?? sub.amount ?? sub.plan?.price ?? matchedPlan?.price ?? 0);
             if (!isNaN(price) && price > 0) {
                 totalRevenueSum += price;
             }
         });
 
         return {
-            total: subscriptions.length || (subStats?.total_subscriptions ?? 0),
-            active: activeCount || (subStats?.active_subscriptions ?? 0),
-            expiringSoon: expiringSoonCount || (subStats?.expiring_soon_subscriptions ?? 0),
-            expired: expiredCount || (subStats?.expired_subscriptions ?? 0),
-            frozen: frozenCount || (subStats?.frozen_subscriptions ?? 0),
-            newThisMonth: subStats?.new_subscriptions_this_month ?? newThisMonthCount,
-            revenue: subStats?.total_revenue ?? subStats?.total_subscription_revenue ?? totalRevenueSum
+            total: subscriptions.length,
+            active: activeCount,
+            expiringSoon: expiringSoonCount,
+            expired: expiredCount,
+            frozen: frozenCount,
+            newThisMonth: newThisMonthCount || (subStats?.new_subscriptions_this_month ?? 0),
+            revenue: totalRevenueSum || (parseFloat(subStats?.total_revenue ?? subStats?.total_subscription_revenue ?? 0) || 0)
         };
-    }, [subscriptions, subStats]);
+    }, [subscriptions, subStats, plans]);
 
     // Filter calculations
     const filteredPlans = useMemo(() => {
@@ -879,8 +901,17 @@ const SubscriptionManagement = () => {
 
     const filteredSubscriptions = useMemo(() => {
         const query = subSearchQuery.toLowerCase().trim();
-        const today = new Date().toISOString().split('T')[0];
-        const in7Days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const today = `${year}-${month}-${day}`;
+        const currentMonthStr = `${year}-${month}`;
+        const in7DaysDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const in7DaysYear = in7DaysDate.getFullYear();
+        const in7DaysMonth = String(in7DaysDate.getMonth() + 1).padStart(2, '0');
+        const in7DaysDay = String(in7DaysDate.getDate()).padStart(2, '0');
+        const in7Days = `${in7DaysYear}-${in7DaysMonth}-${in7DaysDay}`;
 
         return subscriptions.filter(sub => {
             const memberName = (sub.member_name || sub.name || '').toLowerCase();
@@ -909,11 +940,12 @@ const SubscriptionManagement = () => {
             }
 
             // Status Filter Logic
-            const subEndDate = sub.end_date ? String(sub.end_date).split('T')[0] : '';
+            const subEndDate = sub.end_date ? String(sub.end_date).split('T')[0].split(' ')[0] : '';
             const isSubExpired = sub.status === 0 || sub.status === '0' || sub.status === 'INACTIVE' || sub.status === 'EXPIRED' || (subEndDate && subEndDate < today);
             const isSubFrozen = sub.status === 2 || sub.status === '2' || sub.status === 'FROZEN';
             const isSubActive = (sub.status === 1 || sub.status === '1' || sub.status === 'ACTIVE') && (!subEndDate || subEndDate >= today);
-            const isSubExpiring = (sub.status === 1 || sub.status === '1' || sub.status === 'ACTIVE') && subEndDate && subEndDate >= today && subEndDate <= in7Days;
+            const isSubExpiring = isSubActive && subEndDate && subEndDate >= today && subEndDate <= in7Days;
+            const isSubNewThisMonth = Boolean(sub.start_date && String(sub.start_date).slice(0, 7) === currentMonthStr);
 
             if (subStatusFilter === '1' || subStatusFilter === 'ACTIVE') {
                 return isSubActive;
@@ -926,6 +958,9 @@ const SubscriptionManagement = () => {
             }
             if (subStatusFilter === '2' || subStatusFilter === 'FROZEN') {
                 return isSubFrozen;
+            }
+            if (subStatusFilter === 'NEW_THIS_MONTH') {
+                return isSubNewThisMonth;
             }
 
             return true;
@@ -1236,7 +1271,11 @@ const SubscriptionManagement = () => {
                             </div>
                         </div>
 
-                        <div className="sub-stat-card">
+                        <div 
+                            className={`sub-stat-card ${subStatusFilter === 'NEW_THIS_MONTH' ? 'active-card' : ''}`}
+                            onClick={() => setSubStatusFilter(subStatusFilter === 'NEW_THIS_MONTH' ? 'ALL' : 'NEW_THIS_MONTH')}
+                            title="Filter New Subscriptions Started / Created This Month"
+                        >
                             <div className="sub-stat-icon bg-sub-cyan">
                                 <i className="fas fa-user-plus"></i>
                             </div>
@@ -1283,6 +1322,7 @@ const SubscriptionManagement = () => {
                                 <option value="EXPIRING">Expiring Soon (7 Days)</option>
                                 <option value="EXPIRED">Expired / Canceled Only</option>
                                 <option value="FROZEN">Frozen Only</option>
+                                <option value="NEW_THIS_MONTH">New This Month</option>
                             </select>
 
                             <select
@@ -1440,8 +1480,9 @@ const SubscriptionManagement = () => {
                                                     </td>
                                                     <td>
                                                         {(() => {
-                                                            const todayStr = new Date().toISOString().split('T')[0];
-                                                            const subEndDate = sub.end_date ? String(sub.end_date).split('T')[0] : '';
+                                                            const now = new Date();
+                                                            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                                                            const subEndDate = sub.end_date ? String(sub.end_date).split('T')[0].split(' ')[0] : '';
                                                             const daysLeft = subEndDate ? Math.round((new Date(subEndDate) - new Date(todayStr)) / 86400000) : 0;
                                                             const isExp = sub.status === 0 || sub.status === '0' || sub.status === 'INACTIVE' || sub.status === 'EXPIRED' || (subEndDate && subEndDate < todayStr);
                                                             const isFz = sub.status === 2 || sub.status === '2' || sub.status === 'FROZEN';
