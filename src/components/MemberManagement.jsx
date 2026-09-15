@@ -152,10 +152,7 @@ const MemberManagement = () => {
     // Member fields
     branch_id: "",
     join_date: new Date().toISOString().split("T")[0],
-    status: "",
-    // Membership plan
-    plan_id: "",
-    payment_method: "UPI",
+    status: "ACTIVE",
     // Profile fields
     dob: "",
     gender: "",
@@ -1217,10 +1214,6 @@ const MemberManagement = () => {
       errors.status = "Please select a status";
     }
 
-    if (!formData.plan_id) {
-      errors.plan_id = "Please select a membership plan";
-    }
-
     if (!formData.dob) {
       errors.dob = "Date of birth is required";
     }
@@ -1598,31 +1591,6 @@ const MemberManagement = () => {
     try {
 
 
-      // Handle membership plan ID mapping
-      let membershipPlanId = null;
-      if (addFormData.plan_id) {
-        const selectedPlan = membershipPlans.find(plan =>
-          String(plan.plan_id) === String(addFormData.plan_id) ||
-          getPlanOptionValue(plan) === addFormData.plan_id ||
-          plan.plan_name === addFormData.plan_id
-        );
-
-        if (selectedPlan && selectedPlan.plan_id && !isNaN(Number(selectedPlan.plan_id))) {
-          membershipPlanId = Number(selectedPlan.plan_id);
-        } else if (selectedPlan) {
-          const planMap = {
-            'Monthly Plan': 1,
-            'Quarterly Plan': 2,
-            'Yearly Plan': 3
-          };
-          membershipPlanId = planMap[selectedPlan.plan_name] || 1;
-        } else if (!isNaN(Number(addFormData.plan_id))) {
-          membershipPlanId = Number(addFormData.plan_id);
-        } else {
-          membershipPlanId = 1;
-        }
-      }
-
       // Prepare member data for API call matching the updated API spec
       const memberData = {
         name: addFormData.name || "",
@@ -1635,8 +1603,6 @@ const MemberManagement = () => {
         registration_number: addFormData.registration_number ? parseInt(addFormData.registration_number, 10) : null,
         join_date:
           addFormData.join_date || new Date().toISOString().split("T")[0],
-        membership_plan: membershipPlanId,
-        payment_method: addFormData.payment_method || "UPI",
         dob: addFormData.dob || "",
         gender: addFormData.gender || "",
         blood_group: addFormData.blood_group || "",
@@ -1707,9 +1673,7 @@ const MemberManagement = () => {
           registration_number: "",
           branch_id: "",
           join_date: new Date().toISOString().split("T")[0],
-          status: "",
-          plan_id: "",
-          payment_method: "UPI",
+          status: "ACTIVE",
           dob: "",
           gender: "",
           blood_group: "",
@@ -1763,9 +1727,7 @@ const MemberManagement = () => {
       registration_number: "",
       branch_id: "",
       join_date: new Date().toISOString().split("T")[0], // Current date
-      status: "",
-      plan_id: "",
-      payment_method: "UPI",
+      status: "ACTIVE",
       dob: "",
       gender: "",
       blood_group: "",
@@ -3335,76 +3297,41 @@ const MemberManagement = () => {
                         required
                       />
                     </div>
-                    <div className="member-form-group">
+                    <div className="member-form-group member-status-radio-group member-full-width">
                       <ValidationError error={addFormErrors.status} />
-                      <label>Status</label>
-                      <select
-                        name="status"
-                        value={addFormData.status}
-                        onChange={handleAddFormChange}
-                      >
-                        <option value="">Select Status</option>
-                        <option value="ACTIVE">Active</option>
-                        <option value="INACTIVE">Inactive</option>
-                        <option value="SUSPENDED">Suspended</option>
-                      </select>
-                    </div>
-                    <div className="member-form-group">
-                      <label>Payment Method *</label>
-                      <select
-                        name="payment_method"
-                        value={addFormData.payment_method}
-                        onChange={handleAddFormChange}
-                        required
-                      >
-                        <option value="UPI">UPI</option>
-                        <option value="CASH">Cash</option>
-                        <option value="CARD">Card / POS</option>
-                        <option value="NET_BANKING">Net Banking</option>
-                      </select>
-                    </div>
-                    <div className="member-form-group member-full-width">
-                      <ValidationError error={addFormErrors.plan_id} />
-                      <label>Membership Plan *</label>
-                      <select
-                        name="plan_id"
-                        value={addFormData.plan_id}
-                        onChange={handleAddFormChange}
-                        required
-                        disabled={!addFormData.branch_id}
-                      >
-                        <option key="select-plan" value="">
-                          Select Membership Plan
-                        </option>
-                        {getAvailablePlans(addFormData.branch_id).map((plan, index) => (
-                          <option
-                            key={`plan-${plan.plan_id ?? plan.plan_name}-${index}`}
-                            value={getPlanOptionValue(plan)}
-                          >
-                            {plan.plan_name}
-                          </option>
-                        ))}
-                      </select>
-                      {addFormData.plan_id && (
-                        <small
-                          style={{
-                            color: "#7f8c8d",
-                            marginTop: "0.5rem",
-                            display: "block",
-                          }}
-                        >
-                          {
-                            membershipPlans.find(
-                              (p) => {
-                                // Try multiple comparison approaches
-                                const pValue = getPlanOptionValue(p);
-                                const selectedValue = String(addFormData.plan_id);
-                                return pValue === selectedValue || p.plan_name === selectedValue;
-                              },
-                            )?.description
-                          }
-                        </small>
-                      )}
+                      <label className="member-status-group-label">Status *</label>
+                      <div className="member-status-bullet-container">
+                        <label className={`status-bullet-option ${addFormData.status === 'ACTIVE' ? 'active-selected' : ''}`}>
+                          <input
+                            type="radio"
+                            name="status"
+                            value="ACTIVE"
+                            checked={addFormData.status === 'ACTIVE'}
+                            onChange={handleAddFormChange}
+                          />
+                          <span className="status-bullet-text">Active</span>
+                        </label>
+                        <label className={`status-bullet-option ${addFormData.status === 'INACTIVE' ? 'inactive-selected' : ''}`}>
+                          <input
+                            type="radio"
+                            name="status"
+                            value="INACTIVE"
+                            checked={addFormData.status === 'INACTIVE'}
+                            onChange={handleAddFormChange}
+                          />
+                          <span className="status-bullet-text">Inactive</span>
+                        </label>
+                        <label className={`status-bullet-option ${addFormData.status === 'SUSPENDED' ? 'suspended-selected' : ''}`}>
+                          <input
+                            type="radio"
+                            name="status"
+                            value="SUSPENDED"
+                            checked={addFormData.status === 'SUSPENDED'}
+                            onChange={handleAddFormChange}
+                          />
+                          <span className="status-bullet-text">Suspended</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </div>
