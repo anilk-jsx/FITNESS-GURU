@@ -687,3 +687,56 @@
   font-weight: 600;
   color: #1e293b;
 }
+
+/* Slot card state styling */
+.slot-card.mine-pending {
+  border-color: #fde047;
+  background: #fefce8;
+  box-shadow: 0 4px 10px rgba(254, 240, 138, 0.2);
+}
+
+.slot-card.mine-attended {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.slot-card.mine-noshow {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.slot-card.mine-disputed {
+  border-color: #d8b4fe;
+  background: #faf5ff;
+}
+
+.slot-card.mine-trainerabsent {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.slot-card.mine-resolved {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+}
+
+/* Badges */
+.slot-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.badge-available { background: #eff6ff; color: #1d4ed8; }
+.badge-pending { background: #fef9c3; color: #854d0e; }
+.badge-attended { background: #d1fae5; color: #065f46; }
+.badge-noshow { background: #fee2e2; color: #991b1b; }
+.badge-disputed { background: #f3e8ff; color: #6b21a8; }
+.badge-trainerabsent { background: #f1f5f9; color: #475569; }
+.badge-resolved { background: #ccfbf1; color: #0f766e; }
+.badge-reserved { background: #f1f5f9; color: #64748b; }
+
+
+

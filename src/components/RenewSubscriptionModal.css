@@ -1,0 +1,502 @@
+/* RenewSubscriptionModal.css - Clean Minimal Professional UI */
+
+.renew-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.renew-modal-card {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Minimal Header */
+.renew-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.1rem 1.5rem;
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.renew-modal-header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.renew-subtitle {
+  margin: 0.15rem 0 0 0;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.renew-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.renew-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Modal Form Container */
+.renew-modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Scrollable Body */
+.renew-modal-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.renew-modal-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.renew-modal-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* Form Selection Grid */
+.renew-selection-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.renew-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.renew-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.renew-static-info {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  min-height: 38px;
+  justify-content: center;
+}
+
+.renew-static-info strong {
+  font-size: 0.88rem;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.renew-static-info span {
+  font-size: 0.75rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.renew-select, .renew-input {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: #0f172a;
+  background: #ffffff;
+  transition: border-color 0.2s ease;
+  min-height: 38px;
+}
+
+.renew-select option {
+  background: #ffffff;
+  color: #0f172a;
+  padding: 0.5rem;
+}
+
+.renew-select:focus, .renew-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* Alert Boxes */
+.renew-alert {
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.renew-alert-danger {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.renew-alert-warning {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  color: #d48806;
+}
+
+/* Preview Card */
+.renew-preview-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.renew-preview-card.EXPIRING_SOON {
+  border-color: #f59e0b;
+  background: #fffbe6;
+}
+
+.renew-preview-card.ACTIVE {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.renew-preview-card.EXPIRED {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+/* Stacked Chains List */
+.stacked-chain-box {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.stacked-chain-header {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.stacked-chain-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.stacked-chain-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.55rem;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.stacked-chain-item .item-num {
+  font-weight: 700;
+  color: #64748b;
+  width: 22px;
+}
+
+.stacked-chain-item .item-name {
+  font-weight: 600;
+  color: #0f172a;
+  flex: 1;
+}
+
+.stacked-chain-item .item-dates {
+  color: #475569;
+}
+
+.preview-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preview-card-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.state-badge {
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.badge-expiring_soon {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #f59e0b;
+}
+
+.badge-active {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #3b82f6;
+}
+
+.badge-expired {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #ef4444;
+}
+
+.preview-timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  padding: 0.75rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  gap: 0.5rem;
+}
+
+.timeline-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.col-lbl {
+  font-size: 0.7rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.col-val {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.timeline-col.highlight .col-val {
+  color: #15803d;
+}
+
+.timeline-arrow {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.rem-days {
+  font-size: 0.7rem;
+  color: #b45309;
+  font-weight: 600;
+}
+
+.type-tag {
+  font-size: 0.7rem;
+  color: #166534;
+  font-weight: 600;
+}
+
+.preview-payable-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px dashed #cbd5e1;
+  padding-top: 0.6rem;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+.payable-price {
+  font-size: 1.15rem;
+  color: #059669;
+  font-weight: 800;
+}
+
+/* Payment Section */
+.renew-payment-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.85rem;
+}
+
+.payment-options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.payment-option-btn {
+  padding: 0.6rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.payment-option-btn:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.payment-option-btn.active {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.renew-loading-state {
+  padding: 1.25rem;
+  text-align: center;
+  background: #f8fafc;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Sticky Modal Footer */
+.renew-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  border-top: 1px solid #e2e8f0;
+  padding: 0.85rem 1.5rem;
+  background: #f8fafc;
+  flex-shrink: 0;
+}
+
+.renew-btn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.renew-btn-cancel {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+}
+
+.renew-btn-cancel:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.renew-btn-primary {
+  background: #2563eb;
+  border: 1px solid #1d4ed8;
+  color: #ffffff;
+}
+
+.renew-btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.renew-btn-primary:disabled {
+  background: #cbd5e1;
+  border-color: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 580px) {
+  .renew-selection-grid, .payment-options-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .preview-timeline {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .timeline-arrow {
+    transform: rotate(90deg);
+  }
+}

@@ -627,7 +627,7 @@ const TrainerDietPlans = () => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '24px', minHeight: '650px' }}>
+          <div className="diet-plans-layout">
             
             {/* Sidebar Member directory */}
             <div className="clients-list-panel" style={{ height: 'auto', alignSelf: 'stretch' }}>
@@ -714,7 +714,7 @@ const TrainerDietPlans = () => {
               )}
 
               {/* Grid split of Diet plans history + Active details */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '24px' }}>
+              <div className="diet-plans-split-grid">
                 
                 {/* Diet Plans History Table */}
                 <div className="m-card" style={{ padding: '20px' }}>

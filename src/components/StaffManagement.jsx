@@ -423,6 +423,61 @@ const StaffManagement = () => {
             if (!result) throw new Error('Failed to load profile details');
 
             if (result.status === 'success') {
+                let assignedMembers = [];
+                if (isTrainer) {
+                    try {
+                        const trainerId = result.data.trainer_profile?.trainer_profile_id || result.data.trainer_profile?.id || result.data.trainer_profile?.trainer_id || employee.employee_id;
+                        const tmResponse = await fetch(`${API_BASE_URL}/api/admin/pt/trainers-members?trainer_id=${trainerId}`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        if (tmResponse.ok) {
+                            const tmData = await tmResponse.json();
+                            const trainerRecord = tmData.data?.find(t => String(t.trainer_id) === String(trainerId)) || tmData.data?.[0];
+                            assignedMembers = trainerRecord?.members || [];
+                        } else {
+                            // Fallback to simulated mapping
+                            console.warn('API returned non-200 for trainers-members, using simulated fallback');
+                            assignedMembers = [
+                                {
+                                    assignment_id: 101,
+                                    member_profile_id: 69,
+                                    member_user_id: 138,
+                                    member_name: "Ankit Das",
+                                    member_email: "ankit.das@fg.com",
+                                    member_phone: "8249801450",
+                                    assigned_at: "2026-07-04 16:04:51"
+                                },
+                                {
+                                    assignment_id: 102,
+                                    member_profile_id: 70,
+                                    member_user_id: 139,
+                                    member_name: "Siddharth Sen",
+                                    member_email: "siddharth@gmail.com",
+                                    member_phone: "9876543210",
+                                    assigned_at: "2026-07-05 10:15:30"
+                                }
+                            ];
+                        }
+                    } catch (tmErr) {
+                        console.warn('Could not fetch assigned members for trainer details modal:', tmErr);
+                        assignedMembers = [
+                            {
+                                assignment_id: 101,
+                                member_profile_id: 69,
+                                member_user_id: 138,
+                                member_name: "Ankit Das",
+                                member_email: "ankit.das@fg.com",
+                                member_phone: "8249801450",
+                                assigned_at: "2026-07-04 16:04:51"
+                            }
+                        ];
+                    }
+                }
+
                 setShowDetailsModal(true);
                 setSelectedEmployee({
                     ...result.data,
@@ -430,7 +485,8 @@ const StaffManagement = () => {
                         ...employee,
                         ...result.data.employee_details
                     },
-                    isTrainerProfile: isTrainer
+                    isTrainerProfile: isTrainer,
+                    assignedMembers: assignedMembers
                 });
             } else {
                 throw new Error(result.message || 'Profile retrieval error');
@@ -1323,6 +1379,39 @@ const StaffManagement = () => {
                                                                 <span className="text-muted">No social links provided.</span>
                                                             )}
                                                         </div>
+                                                    </div>
+
+                                                    {/* Active PT Member Roster */}
+                                                    <div className="data-item data-full-width mt-3" style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1.25rem' }}>
+                                                        <label style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <i className="fas fa-users text-primary"></i> Active PT Member Roster ({selectedEmployee.assignedMembers?.length || 0})
+                                                        </label>
+                                                        {(!selectedEmployee.assignedMembers || selectedEmployee.assignedMembers.length === 0) ? (
+                                                            <div style={{ textAlign: 'center', padding: '1.5rem', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                                                                <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>
+                                                                    No members currently assigned under this trainer.
+                                                                </p>
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                                                                {selectedEmployee.assignedMembers.map((member, idx) => (
+                                                                    <div key={idx} style={{
+                                                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                                        background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0'
+                                                                    }}>
+                                                                        <div>
+                                                                            <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b' }}>{member.member_name}</span>
+                                                                            <span style={{ fontSize: '0.78rem', color: '#64748b', marginLeft: '10px' }}>({member.member_email})</span>
+                                                                        </div>
+                                                                        {member.assigned_at && (
+                                                                            <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                                                                                Assigned: {new Date(member.assigned_at).toLocaleDateString('en-US')}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>

@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { tokenManager } from '../utils/tokenManager';
 import InvoiceModal from './InvoiceModal';
+import RevertSubscriptionModal from './RevertSubscriptionModal';
+import RenewSubscriptionModal from './RenewSubscriptionModal';
 import './SubscriptionManagement.css';
 
 const ALLOWED_ENTITLEMENTS = [
@@ -38,6 +40,15 @@ const PLAN_TYPES = [
     { label: 'Add-On', value: 'ADD_ON' }
 ];
 
+const calculateValidDaysFromMonths = (months) => {
+    const m = parseInt(months, 10);
+    if (isNaN(m) || m <= 0) return '';
+    if (m % 12 === 0) {
+        return (m / 12) * 365;
+    }
+    return m * 30;
+};
+
 const SubscriptionManagement = () => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.fitnessguru.org.in';
 
@@ -46,6 +57,7 @@ const SubscriptionManagement = () => {
     const isAuthorized = userData && (userData.role === 'ADMIN' || userData.role === 'SUPER-ADMIN' || userData.role === 'SUPER_ADMIN');
 
     const [searchParams, setSearchParams] = useSearchParams();
+    const location = useLocation();
     const tabParam = searchParams.get('tab');
     const [activeTab, setActiveTab] = useState(tabParam || 'subscriptions');
 
@@ -80,7 +92,7 @@ const SubscriptionManagement = () => {
     const [planFormData, setPlanFormData] = useState({
         plan_name: '',
         plan_type: 'BASE_MEMBERSHIP',
-        duration_months: 12,
+        duration_months: '',
         price: '',
         requires_membership: 0,
         status: 1,
@@ -100,13 +112,35 @@ const SubscriptionManagement = () => {
     const [loadingStats, setLoadingStats] = useState(false);
     const [subStatusFilter, setSubStatusFilter] = useState('ALL'); // 'ALL', '1', '0', 'EXPIRING', '2'
     const [subPlanFilter, setSubPlanFilter] = useState('');
-    const [subUserIdFilter, setSubUserIdFilter] = useState('');
-    const [subSearchQuery, setSubSearchQuery] = useState('');
+    const [subUserIdFilter, setSubUserIdFilter] = useState(searchParams.get('userId') || searchParams.get('search') || '');
+    const [subSearchQuery, setSubSearchQuery] = useState(searchParams.get('search') || '');
     const [expandedSubId, setExpandedSubId] = useState(null); // Expand wallet credits row ledger
 
     // Invoice View Modal state
     const [activeInvoiceId, setActiveInvoiceId] = useState(null);
     const [showInvoice, setShowInvoice] = useState(false);
+
+    // 24-Hour Purchase Reversal Modal State
+    const [showRevertModal, setShowRevertModal] = useState(false);
+    const [selectedSubForRevert, setSelectedSubForRevert] = useState(null);
+
+    const openRevertModal = (sub = null) => {
+        setSelectedSubForRevert(sub);
+        setShowRevertModal(true);
+    };
+
+    // Subscription Renewal Modal State
+    const [showRenewModal, setShowRenewModal] = useState(false);
+    const [renewModalUserId, setRenewModalUserId] = useState('');
+    const [renewModalPlanId, setRenewModalPlanId] = useState('');
+    const [renewModalMemberData, setRenewModalMemberData] = useState(null);
+
+    const openRenewModal = (userId = '', planId = '', member = null) => {
+        setRenewModalUserId(userId);
+        setRenewModalPlanId(planId);
+        setRenewModalMemberData(member);
+        setShowRenewModal(true);
+    };
 
     // Modal 2.2: Manual Subscription Provisioning Desk
     const [showProvisionModal, setShowProvisionModal] = useState(false);
@@ -121,6 +155,41 @@ const SubscriptionManagement = () => {
         payment_method: 'CASH',
         transaction_ref: ''
     });
+
+    // Auto-open Provision Subscription modal when navigating from Member Management
+    useEffect(() => {
+        const action = searchParams.get('action');
+        const openProvision = action === 'provision' || location.state?.openProvision;
+        const targetUserId = searchParams.get('userId') || searchParams.get('user_id') || location.state?.provisionUserId || location.state?.member?.user_id;
+        const targetBranchId = searchParams.get('branchId') || searchParams.get('branch_id') || location.state?.provisionBranchId || location.state?.member?.branch_id;
+        const passedMember = location.state?.member;
+
+        if (openProvision) {
+            setActiveTab('subscriptions');
+
+            if (passedMember) {
+                const uid = String(passedMember.user_id || passedMember.id);
+                setMembersList(prev => {
+                    if (!prev.some(m => String(m.user_id || m.id) === uid)) {
+                        return [passedMember, ...prev];
+                    }
+                    return prev;
+                });
+            }
+
+            setProvisionFormData(prev => ({
+                ...prev,
+                user_id: targetUserId ? String(targetUserId) : prev.user_id,
+                branch_id: targetBranchId ? String(targetBranchId) : prev.branch_id
+            }));
+
+            if (passedMember?.name) {
+                setMemberSearchTerm(passedMember.name);
+            }
+
+            setShowProvisionModal(true);
+        }
+    }, [searchParams, location.state]);
 
     // Modal 2.3: Subscription Lifecycle Revision Panel
     const [showRevisionModal, setShowRevisionModal] = useState(false);
@@ -182,6 +251,12 @@ const SubscriptionManagement = () => {
             return;
         }
 
+        if (!planFormData.duration_months || parseInt(planFormData.duration_months, 10) <= 0) {
+            showNotice('Please enter a valid duration in months', true);
+            setActionLoading(false);
+            return;
+        }
+
         if (!planFormData.price || parseFloat(planFormData.price) <= 0) {
             showNotice('Please enter a valid price', true);
             setActionLoading(false);
@@ -223,7 +298,7 @@ const SubscriptionManagement = () => {
                 plan_type: planFormData.plan_type,
                 duration_months: parseInt(planFormData.duration_months, 10),
                 price: parseFloat(planFormData.price),
-                requires_membership: parseInt(planFormData.requires_membership, 10),
+                requires_membership: planFormData.plan_type === 'BASE_MEMBERSHIP' ? 0 : (parseInt(planFormData.requires_membership, 10) || 0),
                 status: parseInt(planFormData.status, 10),
                 entitlements: planFormData.entitlements.map(e => ({
                     entitlement_type: e.entitlement_type,
@@ -284,6 +359,19 @@ const SubscriptionManagement = () => {
     const handleSaveEntitlementsBatch = async () => {
         if (!selectedPlanForEntitlements) return;
         setActionLoading(true);
+
+        for (const ent of entitlementsManageList) {
+            if (!ent.entitlement_type) {
+                showNotice('All entitlement rows must select a valid type', true);
+                setActionLoading(false);
+                return;
+            }
+            if (!ent.quantity || parseInt(ent.quantity, 10) < 1 || !ent.valid_days || parseInt(ent.valid_days, 10) < 1) {
+                showNotice('Quantity and Valid Days must be at least 1 for each entitlement', true);
+                setActionLoading(false);
+                return;
+            }
+        }
 
         try {
             const url = `${API_BASE_URL}/api/admin/membership-plans/${selectedPlanForEntitlements.plan_id}/entitlements`;
@@ -368,8 +456,6 @@ const SubscriptionManagement = () => {
         fetchSubscriptionStats();
         try {
             const queryParams = new URLSearchParams();
-            if (subStatusFilter !== 'ALL') queryParams.append('status', subStatusFilter);
-            if (subPlanFilter) queryParams.append('plan_id', subPlanFilter);
             if (subUserIdFilter) queryParams.append('user_id', subUserIdFilter);
 
             const url = `${API_BASE_URL}/api/admin/subscriptions?${queryParams.toString()}`;
@@ -392,11 +478,26 @@ const SubscriptionManagement = () => {
     // Fetch member users for Manual Provisioning auto-complete lookup
     const fetchMembersList = async () => {
         try {
-            const url = `${API_BASE_URL}/api/users/list?role=MEMBER&limit=1000`;
-            const res = await tokenManager.apiCall(url, { method: 'GET' });
-            const data = await res.json();
+            let url = `${API_BASE_URL}/api/users/list?role=MEMBER&limit=1000`;
+            let res = await tokenManager.apiCall(url, { method: 'GET' });
+            let data = await res.json();
+            if (!res.ok || data.status !== 'success' || !data.data?.length) {
+                const fallbackUrl = `${API_BASE_URL}/api/members/viewAllMembers?role=MEMBER`;
+                const fallbackRes = await tokenManager.apiCall(fallbackUrl, { method: 'GET' });
+                if (fallbackRes.ok) {
+                    const fallbackData = await fallbackRes.json();
+                    if (fallbackData.status === 'success') {
+                        data = fallbackData;
+                        res = fallbackRes;
+                    }
+                }
+            }
             if (res.ok && data.status === 'success') {
-                setMembersList(data.data || data.users || []);
+                const fetched = data.data || data.users || [];
+                setMembersList(prev => {
+                    const existingInjected = prev.filter(p => !fetched.some(f => String(f.user_id || f.id) === String(p.user_id || p.id)));
+                    return [...existingInjected, ...fetched];
+                });
             }
         } catch (err) {
             console.warn('Could not fetch members list for provision lookup:', err);
@@ -476,7 +577,7 @@ const SubscriptionManagement = () => {
 
             if (res.ok && data.status === 'success') {
                 showNotice('Subscription purchased & invoice generated successfully!');
-                setShowProvisionModal(false);
+                closeProvisionModal();
                 const firstBranch = branchesList.length > 0 ? String(branchesList[0].branch_id || branchesList[0].id || '') : '';
                 setProvisionFormData({
                     user_id: '',
@@ -584,11 +685,24 @@ const SubscriptionManagement = () => {
             fetchMembersList();
             fetchBranchesList();
         }
-    }, [activeTab, planTypeFilter, planStatusFilter, subStatusFilter, subPlanFilter, subUserIdFilter]);
+    }, [activeTab, planTypeFilter, planStatusFilter, subUserIdFilter]);
 
     // ==========================================
     // FORM HELPERS & FACTORY HANDLERS
     // ==========================================
+    const closeProvisionModal = () => {
+        setShowProvisionModal(false);
+        if (searchParams.get('action') === 'provision') {
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('action');
+            newParams.delete('userId');
+            newParams.delete('user_id');
+            newParams.delete('branchId');
+            newParams.delete('branch_id');
+            setSearchParams(newParams, { replace: true });
+        }
+    };
+
     const openProvisionModal = () => {
         const firstBranch = branchesList.length > 0 ? String(branchesList[0].branch_id || branchesList[0].id || '') : '';
         setProvisionFormData(prev => ({
@@ -603,13 +717,11 @@ const SubscriptionManagement = () => {
         setPlanFormData({
             plan_name: '',
             plan_type: 'BASE_MEMBERSHIP',
-            duration_months: 12,
+            duration_months: '',
             price: '',
             requires_membership: 0,
             status: 1,
-            entitlements: [
-                { entitlement_type: 'GYM_ACCESS', quantity: 365, valid_days: 365 }
-            ]
+            entitlements: []
         });
         setShowPlanDrawer(true);
     };
@@ -619,9 +731,9 @@ const SubscriptionManagement = () => {
         setPlanFormData({
             plan_name: plan.plan_name || '',
             plan_type: plan.plan_type || 'BASE_MEMBERSHIP',
-            duration_months: plan.duration_months || 12,
+            duration_months: plan.duration_months || '',
             price: plan.price || '',
-            requires_membership: plan.requires_membership ?? 0,
+            requires_membership: plan.plan_type === 'BASE_MEMBERSHIP' ? 0 : (plan.requires_membership ?? 0),
             status: plan.status ?? 1,
             entitlements: plan.entitlements ? JSON.parse(JSON.stringify(plan.entitlements)) : []
         });
@@ -644,17 +756,31 @@ const SubscriptionManagement = () => {
         setShowRevisionModal(true);
     };
 
+    const handleDurationChange = (months) => {
+        const calculatedDays = calculateValidDaysFromMonths(months);
+        setPlanFormData(prev => ({
+            ...prev,
+            duration_months: months,
+            entitlements: prev.entitlements.map(ent => ({
+                ...ent,
+                valid_days: calculatedDays !== '' ? calculatedDays : ent.valid_days
+            }))
+        }));
+    };
+
     // Entitlement Factory Row Handlers (Plan Drawer)
     const handleAddEntitlementRow = () => {
-        const unused = ALLOWED_ENTITLEMENTS.find(type =>
-            !planFormData.entitlements.some(e => e.entitlement_type === type)
-        ) || ALLOWED_ENTITLEMENTS[0];
-
+        const calculatedDays = calculateValidDaysFromMonths(planFormData.duration_months);
         setPlanFormData(prev => ({
             ...prev,
             entitlements: [
-                { entitlement_type: unused, quantity: 30, valid_days: 30, isNew: true },
-                ...prev.entitlements
+                ...prev.entitlements,
+                {
+                    entitlement_type: '',
+                    quantity: '',
+                    valid_days: calculatedDays !== '' ? calculatedDays : '',
+                    isNew: true
+                }
             ]
         }));
     };
@@ -676,13 +802,15 @@ const SubscriptionManagement = () => {
 
     // Entitlement Factory Row Handlers (Standalone Entitlements Modal)
     const handleAddManageEntitlementRow = () => {
-        const unused = ALLOWED_ENTITLEMENTS.find(type =>
-            !entitlementsManageList.some(e => e.entitlement_type === type)
-        ) || ALLOWED_ENTITLEMENTS[0];
-
+        const calculatedDays = calculateValidDaysFromMonths(selectedPlanForEntitlements?.duration_months);
         setEntitlementsManageList(prev => [
-            { entitlement_type: unused, quantity: 30, valid_days: 30, isNew: true },
-            ...prev
+            ...prev,
+            {
+                entitlement_type: '',
+                quantity: '',
+                valid_days: calculatedDays !== '' ? calculatedDays : '',
+                isNew: true
+            }
         ]);
     };
 
@@ -694,59 +822,162 @@ const SubscriptionManagement = () => {
         });
     };
 
+    // Real-time Calculated Statistics
+    const displayStats = useMemo(() => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+        const in7DaysDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const in7DaysYear = in7DaysDate.getFullYear();
+        const in7DaysMonth = String(in7DaysDate.getMonth() + 1).padStart(2, '0');
+        const in7DaysDay = String(in7DaysDate.getDate()).padStart(2, '0');
+        const in7DaysStr = `${in7DaysYear}-${in7DaysMonth}-${in7DaysDay}`;
+        const currentMonthStr = `${year}-${month}`;
+
+        if (!subscriptions || subscriptions.length === 0) {
+            return {
+                total: subStats?.total_subscriptions ?? 0,
+                active: subStats?.active_subscriptions ?? 0,
+                expiringSoon: subStats?.expiring_soon_subscriptions ?? 0,
+                expired: subStats?.expired_subscriptions ?? 0,
+                frozen: subStats?.frozen_subscriptions ?? 0,
+                newThisMonth: subStats?.new_subscriptions_this_month ?? 0,
+                revenue: parseFloat(subStats?.total_revenue ?? subStats?.total_subscription_revenue ?? 0) || 0
+            };
+        }
+
+        let activeCount = 0;
+        let expiringSoonCount = 0;
+        let expiredCount = 0;
+        let frozenCount = 0;
+        let newThisMonthCount = 0;
+        let totalRevenueSum = 0;
+
+        subscriptions.forEach(sub => {
+            const subEndDate = sub.end_date ? String(sub.end_date).split('T')[0].split(' ')[0] : '';
+            const isExp = sub.status === 0 || sub.status === '0' || sub.status === 'INACTIVE' || sub.status === 'EXPIRED' || (subEndDate && subEndDate < todayStr);
+            const isFz = sub.status === 2 || sub.status === '2' || sub.status === 'FROZEN';
+            const isAct = (sub.status === 1 || sub.status === '1' || sub.status === 'ACTIVE') && (!subEndDate || subEndDate >= todayStr);
+            const isExpSoon = isAct && subEndDate && subEndDate >= todayStr && subEndDate <= in7DaysStr;
+
+            if (isExp) expiredCount++;
+            else if (isFz) frozenCount++;
+            else if (isAct) activeCount++;
+
+            if (isExpSoon) expiringSoonCount++;
+
+            const isNewThisMonth = Boolean(sub.start_date && String(sub.start_date).slice(0, 7) === currentMonthStr);
+            if (isNewThisMonth) {
+                newThisMonthCount++;
+            }
+
+            const matchedPlan = plans.find(p => String(p.plan_id) === String(sub.plan_id) || String(p.id) === String(sub.plan_id));
+            const price = parseFloat(sub.plan_price ?? sub.price ?? sub.final_amount ?? sub.amount ?? sub.plan?.price ?? matchedPlan?.price ?? 0);
+            if (!isNaN(price) && price > 0) {
+                totalRevenueSum += price;
+            }
+        });
+
+        return {
+            total: subscriptions.length,
+            active: activeCount,
+            expiringSoon: expiringSoonCount,
+            expired: expiredCount,
+            frozen: frozenCount,
+            newThisMonth: newThisMonthCount || (subStats?.new_subscriptions_this_month ?? 0),
+            revenue: totalRevenueSum || (parseFloat(subStats?.total_revenue ?? subStats?.total_subscription_revenue ?? 0) || 0)
+        };
+    }, [subscriptions, subStats, plans]);
+
     // Filter calculations
-    const filteredPlans = plans.filter(p =>
-        p.plan_name.toLowerCase().includes(planSearchQuery.toLowerCase()) ||
-        p.plan_type.toLowerCase().includes(planSearchQuery.toLowerCase())
-    );
+    const filteredPlans = useMemo(() => {
+        return plans.filter(p =>
+            p.plan_name.toLowerCase().includes(planSearchQuery.toLowerCase()) ||
+            p.plan_type.toLowerCase().includes(planSearchQuery.toLowerCase())
+        );
+    }, [plans, planSearchQuery]);
 
-    const filteredSubscriptions = subscriptions.filter(sub => {
+    const filteredSubscriptions = useMemo(() => {
         const query = subSearchQuery.toLowerCase().trim();
-        const memberName = (sub.member_name || '').toLowerCase();
-        const memberEmail = (sub.member_email || '').toLowerCase();
-        const memberPhone = (sub.member_phone || '');
-        const planName = (sub.plan_name || sub.subscription_name || '').toLowerCase();
-        const subIdStr = (sub.subscription_id || '').toString();
-        const userIdStr = (sub.user_id || '').toString();
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const today = `${year}-${month}-${day}`;
+        const currentMonthStr = `${year}-${month}`;
+        const in7DaysDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const in7DaysYear = in7DaysDate.getFullYear();
+        const in7DaysMonth = String(in7DaysDate.getMonth() + 1).padStart(2, '0');
+        const in7DaysDay = String(in7DaysDate.getDate()).padStart(2, '0');
+        const in7Days = `${in7DaysYear}-${in7DaysMonth}-${in7DaysDay}`;
 
-        const matchesQuery = !query ||
-            memberName.includes(query) ||
-            memberEmail.includes(query) ||
-            memberPhone.includes(query) ||
-            planName.includes(query) ||
-            subIdStr.includes(query) ||
-            userIdStr.includes(query);
+        return subscriptions.filter(sub => {
+            const memberName = (sub.member_name || sub.name || '').toLowerCase();
+            const memberEmail = (sub.member_email || sub.email || '').toLowerCase();
+            const memberPhone = (sub.member_phone || sub.phone || '');
+            const planName = (sub.plan_name || sub.subscription_name || '').toLowerCase();
+            const subIdStr = (sub.subscription_id || sub.id || '').toString();
+            const userIdStr = (sub.user_id || '').toString();
+            const branchName = (sub.branch_name || '').toLowerCase();
 
-        // Frontend Status Filter Logic
-        let matchesStatus = true;
-        const today = new Date().toISOString().split('T')[0];
-        const in7Days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            const matchesQuery = !query ||
+                memberName.includes(query) ||
+                memberEmail.includes(query) ||
+                memberPhone.includes(query) ||
+                planName.includes(query) ||
+                subIdStr.includes(query) ||
+                userIdStr.includes(query) ||
+                branchName.includes(query);
 
-        if (subStatusFilter === '1' || subStatusFilter === 'ACTIVE') {
-            matchesStatus = sub.status === 1 && (!sub.end_date || sub.end_date >= today);
-        } else if (subStatusFilter === 'EXPIRING') {
-            matchesStatus = sub.status === 1 && sub.end_date && sub.end_date >= today && sub.end_date <= in7Days;
-        } else if (subStatusFilter === '0' || subStatusFilter === 'EXPIRED') {
-            matchesStatus = sub.status === 0 || (sub.end_date && sub.end_date < today);
-        } else if (subStatusFilter === '2' || subStatusFilter === 'FROZEN') {
-            matchesStatus = sub.status === 2;
-        }
+            if (!matchesQuery) return false;
 
-        // Plan Filter Logic
-        let matchesPlan = true;
-        if (subPlanFilter) {
-            matchesPlan = String(sub.plan_id) === String(subPlanFilter);
-        }
+            // Plan Filter Logic
+            if (subPlanFilter && subPlanFilter !== 'ALL' && subPlanFilter !== '') {
+                const matchesPlan = String(sub.plan_id) === String(subPlanFilter) || String(sub.plan_name).toLowerCase() === String(subPlanFilter).toLowerCase();
+                if (!matchesPlan) return false;
+            }
 
-        return matchesQuery && matchesStatus && matchesPlan;
-    });
+            // Status Filter Logic
+            const subEndDate = sub.end_date ? String(sub.end_date).split('T')[0].split(' ')[0] : '';
+            const isSubExpired = sub.status === 0 || sub.status === '0' || sub.status === 'INACTIVE' || sub.status === 'EXPIRED' || (subEndDate && subEndDate < today);
+            const isSubFrozen = sub.status === 2 || sub.status === '2' || sub.status === 'FROZEN';
+            const isSubActive = (sub.status === 1 || sub.status === '1' || sub.status === 'ACTIVE') && (!subEndDate || subEndDate >= today);
+            const isSubExpiring = isSubActive && subEndDate && subEndDate >= today && subEndDate <= in7Days;
+            const isSubNewThisMonth = Boolean(sub.start_date && String(sub.start_date).slice(0, 7) === currentMonthStr);
+
+            if (subStatusFilter === '1' || subStatusFilter === 'ACTIVE') {
+                return isSubActive;
+            }
+            if (subStatusFilter === 'EXPIRING') {
+                return isSubExpiring;
+            }
+            if (subStatusFilter === '0' || subStatusFilter === 'EXPIRED') {
+                return isSubExpired;
+            }
+            if (subStatusFilter === '2' || subStatusFilter === 'FROZEN') {
+                return isSubFrozen;
+            }
+            if (subStatusFilter === 'NEW_THIS_MONTH') {
+                return isSubNewThisMonth;
+            }
+
+            return true;
+        });
+    }, [subscriptions, subSearchQuery, subStatusFilter, subPlanFilter]);
 
     const filteredMembersForLookup = membersList.filter(m => {
-        const term = memberSearchTerm.toLowerCase();
+        const uid = String(m.user_id || m.id || '');
+        if (provisionFormData.user_id && uid === String(provisionFormData.user_id)) {
+            return true;
+        }
+        const term = memberSearchTerm.toLowerCase().trim();
+        if (!term) return true;
         const name = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.name || '';
         const email = m.email || '';
         const phone = m.phone || m.phone_number || '';
-        return name.toLowerCase().includes(term) || email.toLowerCase().includes(term) || phone.includes(term);
+        return uid.includes(term) || name.toLowerCase().includes(term) || email.toLowerCase().includes(term) || phone.includes(term);
     });
 
     // If unauthorized role, render access denied guardrail
@@ -970,7 +1201,7 @@ const SubscriptionManagement = () => {
                 <div className="subscriptions-workbench">
                     {/* Top Subscription Statistics Cards Grid */}
                     <div className="sub-stats-grid">
-                        <div 
+                        <div
                             className={`sub-stat-card ${subStatusFilter === 'ALL' ? 'active-card' : ''}`}
                             onClick={() => setSubStatusFilter('ALL')}
                             title="Show All Subscriptions"
@@ -979,26 +1210,26 @@ const SubscriptionManagement = () => {
                                 <i className="fas fa-id-card"></i>
                             </div>
                             <div className="sub-stat-details">
-                                <span className="sub-stat-val">{subStats?.total_subscriptions ?? subscriptions.length}</span>
+                                <span className="sub-stat-val">{displayStats.total}</span>
                                 <span className="sub-stat-lbl">Total Subscriptions</span>
                             </div>
                         </div>
 
-                        <div 
+                        <div
                             className={`sub-stat-card ${subStatusFilter === '1' || subStatusFilter === 'ACTIVE' ? 'active-card' : ''}`}
-                            onClick={() => setSubStatusFilter(subStatusFilter === '1' || subStatusFilter === 'ACTIVE' ? 'ALL' : '1')}
+                            onClick={() => setSubStatusFilter(subStatusFilter === '1' || subStatusFilter === 'ACTIVE' ? 'ALL' : 'ACTIVE')}
                             title="Filter Active Subscriptions"
                         >
                             <div className="sub-stat-icon bg-sub-green">
                                 <i className="fas fa-check-circle"></i>
                             </div>
                             <div className="sub-stat-details">
-                                <span className="sub-stat-val">{subStats?.active_subscriptions ?? 0}</span>
+                                <span className="sub-stat-val">{displayStats.active}</span>
                                 <span className="sub-stat-lbl">Active</span>
                             </div>
                         </div>
 
-                        <div 
+                        <div
                             className={`sub-stat-card ${subStatusFilter === 'EXPIRING' ? 'active-card' : ''}`}
                             onClick={() => setSubStatusFilter(subStatusFilter === 'EXPIRING' ? 'ALL' : 'EXPIRING')}
                             title="Filter Expiring Soon (Next 7 Days)"
@@ -1007,45 +1238,49 @@ const SubscriptionManagement = () => {
                                 <i className="fas fa-exclamation-triangle"></i>
                             </div>
                             <div className="sub-stat-details">
-                                <span className="sub-stat-val">{subStats?.expiring_soon_subscriptions ?? 0}</span>
+                                <span className="sub-stat-val">{displayStats.expiringSoon}</span>
                                 <span className="sub-stat-lbl">Expiring Soon</span>
                             </div>
                         </div>
 
-                        <div 
+                        <div
                             className={`sub-stat-card ${subStatusFilter === '0' || subStatusFilter === 'EXPIRED' ? 'active-card' : ''}`}
-                            onClick={() => setSubStatusFilter(subStatusFilter === '0' || subStatusFilter === 'EXPIRED' ? 'ALL' : '0')}
+                            onClick={() => setSubStatusFilter(subStatusFilter === '0' || subStatusFilter === 'EXPIRED' ? 'ALL' : 'EXPIRED')}
                             title="Filter Expired / Canceled Subscriptions"
                         >
                             <div className="sub-stat-icon bg-sub-red">
                                 <i className="fas fa-times-circle"></i>
                             </div>
                             <div className="sub-stat-details">
-                                <span className="sub-stat-val">{subStats?.expired_subscriptions ?? 0}</span>
+                                <span className="sub-stat-val">{displayStats.expired}</span>
                                 <span className="sub-stat-lbl">Expired / Canceled</span>
                             </div>
                         </div>
 
-                        <div 
+                        <div
                             className={`sub-stat-card ${subStatusFilter === '2' || subStatusFilter === 'FROZEN' ? 'active-card' : ''}`}
-                            onClick={() => setSubStatusFilter(subStatusFilter === '2' || subStatusFilter === 'FROZEN' ? 'ALL' : '2')}
+                            onClick={() => setSubStatusFilter(subStatusFilter === '2' || subStatusFilter === 'FROZEN' ? 'ALL' : 'FROZEN')}
                             title="Filter Frozen Subscriptions"
                         >
                             <div className="sub-stat-icon bg-sub-purple">
                                 <i className="fas fa-snowflake"></i>
                             </div>
                             <div className="sub-stat-details">
-                                <span className="sub-stat-val">{subStats?.frozen_subscriptions ?? 0}</span>
+                                <span className="sub-stat-val">{displayStats.frozen}</span>
                                 <span className="sub-stat-lbl">Frozen</span>
                             </div>
                         </div>
 
-                        <div className="sub-stat-card">
+                        <div 
+                            className={`sub-stat-card ${subStatusFilter === 'NEW_THIS_MONTH' ? 'active-card' : ''}`}
+                            onClick={() => setSubStatusFilter(subStatusFilter === 'NEW_THIS_MONTH' ? 'ALL' : 'NEW_THIS_MONTH')}
+                            title="Filter New Subscriptions Started / Created This Month"
+                        >
                             <div className="sub-stat-icon bg-sub-cyan">
                                 <i className="fas fa-user-plus"></i>
                             </div>
                             <div className="sub-stat-details">
-                                <span className="sub-stat-val">{subStats?.new_subscriptions_this_month ?? 0}</span>
+                                <span className="sub-stat-val">{displayStats.newThisMonth}</span>
                                 <span className="sub-stat-lbl">New This Month</span>
                             </div>
                         </div>
@@ -1055,7 +1290,7 @@ const SubscriptionManagement = () => {
                                 <i className="fas fa-indian-rupee-sign"></i>
                             </div>
                             <div className="sub-stat-details">
-                                <span className="sub-stat-val">₹{new Intl.NumberFormat('en-IN').format(subStats?.total_revenue ?? subStats?.total_subscription_revenue ?? 0)}</span>
+                                <span className="sub-stat-val">₹{new Intl.NumberFormat('en-IN').format(displayStats.revenue)}</span>
                                 <span className="sub-stat-lbl">Total Revenue</span>
                             </div>
                         </div>
@@ -1083,10 +1318,11 @@ const SubscriptionManagement = () => {
                                 className="sub-select"
                             >
                                 <option value="ALL">All Statuses</option>
-                                <option value="1">Active Only</option>
+                                <option value="ACTIVE">Active Only</option>
                                 <option value="EXPIRING">Expiring Soon (7 Days)</option>
-                                <option value="0">Expired / Canceled Only</option>
-                                <option value="2">Frozen Only</option>
+                                <option value="EXPIRED">Expired / Canceled Only</option>
+                                <option value="FROZEN">Frozen Only</option>
+                                <option value="NEW_THIS_MONTH">New This Month</option>
                             </select>
 
                             <select
@@ -1243,36 +1479,79 @@ const SubscriptionManagement = () => {
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <span className={`status-pill ${sub.status === 1 ? 'status-active' : 'status-canceled'}`}>
-                                                            {sub.status === 1 ? 'Active' : 'Canceled'}
-                                                        </span>
+                                                        {(() => {
+                                                            const now = new Date();
+                                                            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                                                            const subEndDate = sub.end_date ? String(sub.end_date).split('T')[0].split(' ')[0] : '';
+                                                            const daysLeft = subEndDate ? Math.round((new Date(subEndDate) - new Date(todayStr)) / 86400000) : 0;
+                                                            const isExp = sub.status === 0 || sub.status === '0' || sub.status === 'INACTIVE' || sub.status === 'EXPIRED' || (subEndDate && subEndDate < todayStr);
+                                                            const isFz = sub.status === 2 || sub.status === '2' || sub.status === 'FROZEN';
+                                                            const isExpSoon = !isExp && !isFz && (sub.status === 1 || sub.status === '1' || sub.status === 'ACTIVE') && subEndDate && daysLeft >= 0 && daysLeft <= 7;
+
+                                                            if (isExpSoon) {
+                                                                return (
+                                                                    <span className="status-pill status-expiring" style={{ background: '#fef3c7', color: '#d97706', border: '1px solid #f59e0b', fontWeight: 700 }}>
+                                                                        ⚡ Expiring Soon ({daysLeft}d)
+                                                                    </span>
+                                                                );
+                                                            }
+                                                            if (isExp) {
+                                                                return (
+                                                                    <span className="status-pill status-canceled" style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', fontWeight: 600 }}>
+                                                                        Expired
+                                                                    </span>
+                                                                );
+                                                            }
+                                                            if (isFz) {
+                                                                return (
+                                                                    <span className="status-pill status-frozen" style={{ background: '#ede9fe', color: '#7c3aed', border: '1px solid #c4b5fd', fontWeight: 600 }}>
+                                                                        Frozen
+                                                                    </span>
+                                                                );
+                                                            }
+                                                            return (
+                                                                <span className="status-pill status-active">
+                                                                    Active
+                                                                </span>
+                                                            );
+                                                        })()}
                                                     </td>
                                                     <td>
-                                                        <div className="table-actions">
+                                                        <div className="table-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                                             <button
-                                                                className={`sub-btn sub-btn-xs ${isExpanded ? 'sub-btn-primary' : 'sub-btn-outline'}`}
-                                                                onClick={() => setExpandedSubId(isExpanded ? null : sub.subscription_id)}
-                                                                title="View Provisioned Wallet Credits"
+                                                                type="button"
+                                                                className="table-icon-btn btn-renew"
+                                                                onClick={() => openRenewModal(sub.user_id, sub.plan_id, { user_id: sub.user_id, name: sub.member_name, email: sub.member_email, reg_no: sub.member_reg_no })}
+                                                                title="Renew Subscription"
                                                             >
-                                                                <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-wallet'}`}></i>
-                                                                {isExpanded ? ' Hide Wallet' : ` Wallet (${credits.length})`}
+                                                                <i className="fas fa-sync-alt"></i>
                                                             </button>
 
                                                             <button
-                                                                className="sub-btn sub-btn-xs sub-btn-secondary"
-                                                                onClick={() => openRevisionModal(sub)}
-                                                                title="Edit Subscription Lifecycle & Dates"
+                                                                type="button"
+                                                                className={`table-icon-btn btn-wallet ${isExpanded ? 'active-drawer' : ''}`}
+                                                                onClick={() => setExpandedSubId(isExpanded ? null : sub.subscription_id)}
+                                                                title={isExpanded ? "Hide Wallet Credits" : `View Provisioned Wallet Credits (${credits.length})`}
                                                             >
-                                                                <i className="fas fa-calendar-edit"></i> Revise
+                                                                <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-wallet'}`}></i>
+                                                                {credits.length > 0 && !isExpanded && (
+                                                                    <span className="table-icon-badge">{credits.length}</span>
+                                                                )}
                                                             </button>
 
                                                             {sub.status === 1 && (
                                                                 <button
-                                                                    className="sub-btn sub-btn-xs sub-btn-danger"
-                                                                    onClick={() => handleCancelSubscription(sub)}
-                                                                    title="Cancel Subscription & Revoke Wallet Credits"
+                                                                    type="button"
+                                                                    className="table-icon-btn btn-revert"
+                                                                    onClick={() => openRevertModal({
+                                                                        ...sub,
+                                                                        invoice_id: resolvedInvoiceId || sub.invoice_id,
+                                                                        plan_name: resolvedPlanName,
+                                                                        price: resolvedPrice
+                                                                    })}
+                                                                    title="Revert Purchase (Within 24 Hours)"
                                                                 >
-                                                                    <i className="fas fa-times-circle"></i> Cancel
+                                                                    <i className="fas fa-undo-alt"></i>
                                                                 </button>
                                                             )}
                                                         </div>
@@ -1380,7 +1659,14 @@ const SubscriptionManagement = () => {
                                     <label>Plan Type <span className="req">*</span></label>
                                     <select
                                         value={planFormData.plan_type}
-                                        onChange={(e) => setPlanFormData({ ...planFormData, plan_type: e.target.value })}
+                                        onChange={(e) => {
+                                            const newType = e.target.value;
+                                            setPlanFormData(prev => ({
+                                                ...prev,
+                                                plan_type: newType,
+                                                requires_membership: newType === 'BASE_MEMBERSHIP' ? 0 : prev.requires_membership
+                                            }));
+                                        }}
                                         required
                                     >
                                         {PLAN_TYPES.map(pt => (
@@ -1397,8 +1683,9 @@ const SubscriptionManagement = () => {
                                         type="number"
                                         min="1"
                                         max="60"
+                                        placeholder="e.g. 12"
                                         value={planFormData.duration_months}
-                                        onChange={(e) => setPlanFormData({ ...planFormData, duration_months: e.target.value })}
+                                        onChange={(e) => handleDurationChange(e.target.value)}
                                         required
                                     />
                                 </div>
@@ -1428,16 +1715,18 @@ const SubscriptionManagement = () => {
                                 </div>
                             </div>
 
-                            <div className="form-group checkbox-group">
-                                <label className="checkbox-label">
-                                    <input
-                                        type="checkbox"
-                                        checked={planFormData.requires_membership === 1}
-                                        onChange={(e) => setPlanFormData({ ...planFormData, requires_membership: e.target.checked ? 1 : 0 })}
-                                    />
-                                    Requires Active Base Membership First
-                                </label>
-                            </div>
+                            {planFormData.plan_type !== 'BASE_MEMBERSHIP' && (
+                                <div className="form-group checkbox-group">
+                                    <label className="checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={planFormData.requires_membership === 1}
+                                            onChange={(e) => setPlanFormData({ ...planFormData, requires_membership: e.target.checked ? 1 : 0 })}
+                                        />
+                                        Requires Active Base Membership First
+                                    </label>
+                                </div>
+                            )}
 
                             {/* DYNAMIC ENTITLEMENT FACTORY ARRAY */}
                             <div className="entitlement-factory-section">
@@ -1457,13 +1746,15 @@ const SubscriptionManagement = () => {
                                 ) : (
                                     <div className="factory-rows-container">
                                         {planFormData.entitlements.map((ent, idx) => (
-                                            <div key={ent.entitlement_type || idx} className={`factory-row ${ent.isNew ? 'newly-added-row' : ''}`}>
+                                            <div key={idx} className={`factory-row ${ent.isNew ? 'newly-added-row' : ''}`}>
                                                 <div className="factory-col col-type">
                                                     <label>Entitlement Type</label>
                                                     <select
                                                         value={ent.entitlement_type}
                                                         onChange={(e) => handleUpdateEntitlementRow(idx, 'entitlement_type', e.target.value)}
+                                                        required
                                                     >
+                                                        <option value="">-- Select Entitlement Type --</option>
                                                         {ALLOWED_ENTITLEMENTS.map(type => (
                                                             <option key={type} value={type}>{formatEntitlementType(type)}</option>
                                                         ))}
@@ -1475,6 +1766,7 @@ const SubscriptionManagement = () => {
                                                     <input
                                                         type="number"
                                                         min="1"
+                                                        placeholder="e.g. 365"
                                                         value={ent.quantity}
                                                         onChange={(e) => handleUpdateEntitlementRow(idx, 'quantity', e.target.value)}
                                                         required
@@ -1486,6 +1778,7 @@ const SubscriptionManagement = () => {
                                                     <input
                                                         type="number"
                                                         min="1"
+                                                        placeholder="e.g. 365"
                                                         value={ent.valid_days}
                                                         onChange={(e) => handleUpdateEntitlementRow(idx, 'valid_days', e.target.value)}
                                                         required
@@ -1554,13 +1847,14 @@ const SubscriptionManagement = () => {
 
                             <div className="factory-rows-container">
                                 {entitlementsManageList.map((ent, idx) => (
-                                    <div key={ent.entitlement_type || idx} className={`factory-row ${ent.isNew ? 'newly-added-row' : ''}`}>
+                                    <div key={idx} className={`factory-row ${ent.isNew ? 'newly-added-row' : ''}`}>
                                         <div className="factory-col col-type">
                                             <label>Entitlement Type</label>
                                             <select
                                                 value={ent.entitlement_type}
                                                 onChange={(e) => handleUpdateManageEntitlementRow(idx, 'entitlement_type', e.target.value)}
                                             >
+                                                <option value="">-- Select Entitlement Type --</option>
                                                 {ALLOWED_ENTITLEMENTS.map(type => (
                                                     <option key={type} value={type}>{formatEntitlementType(type)}</option>
                                                 ))}
@@ -1572,6 +1866,7 @@ const SubscriptionManagement = () => {
                                             <input
                                                 type="number"
                                                 min="1"
+                                                placeholder="e.g. 12"
                                                 value={ent.quantity}
                                                 onChange={(e) => handleUpdateManageEntitlementRow(idx, 'quantity', e.target.value)}
                                             />
@@ -1582,6 +1877,7 @@ const SubscriptionManagement = () => {
                                             <input
                                                 type="number"
                                                 min="1"
+                                                placeholder="e.g. 365"
                                                 value={ent.valid_days}
                                                 onChange={(e) => handleUpdateManageEntitlementRow(idx, 'valid_days', e.target.value)}
                                             />
@@ -1592,8 +1888,14 @@ const SubscriptionManagement = () => {
                                             <button
                                                 type="button"
                                                 className="remove-row-btn"
-                                                onClick={() => handleDeleteSingleEntitlement(ent.entitlement_type)}
-                                                title="Delete single entitlement from API"
+                                                onClick={() => {
+                                                    if (ent.isNew || !ent.entitlement_type) {
+                                                        setEntitlementsManageList(prev => prev.filter((_, i) => i !== idx));
+                                                    } else {
+                                                        handleDeleteSingleEntitlement(ent.entitlement_type);
+                                                    }
+                                                }}
+                                                title="Remove entitlement"
                                             >
                                                 <i className="fas fa-trash-alt"></i>
                                             </button>
@@ -1630,7 +1932,7 @@ const SubscriptionManagement = () => {
                             <h2>
                                 <i className="fas fa-user-plus"></i> Purchase Gym Membership Subscription
                             </h2>
-                            <button className="close-btn" onClick={() => setShowProvisionModal(false)}>&times;</button>
+                            <button className="close-btn" onClick={closeProvisionModal}>&times;</button>
                         </div>
 
                         <form onSubmit={handleProvisionSubscription} className="sub-modal-form">
@@ -1656,6 +1958,11 @@ const SubscriptionManagement = () => {
                                     className="member-select-list"
                                 >
                                     <option value="">-- Select Registered Member --</option>
+                                    {provisionFormData.user_id && !filteredMembersForLookup.some(m => String(m.user_id || m.id) === String(provisionFormData.user_id)) && (
+                                        <option value={provisionFormData.user_id}>
+                                            #{provisionFormData.user_id} - {location.state?.member?.name || `Selected Member #${provisionFormData.user_id}`}
+                                        </option>
+                                    )}
                                     {filteredMembersForLookup.map(m => {
                                         const uid = m.user_id || m.id;
                                         const name = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.name || `User #${uid}`;
@@ -1745,7 +2052,7 @@ const SubscriptionManagement = () => {
                             </div>
 
                             <div className="sub-modal-footer">
-                                <button type="button" className="sub-btn sub-btn-secondary" onClick={() => setShowProvisionModal(false)}>
+                                <button type="button" className="sub-btn sub-btn-secondary" onClick={closeProvisionModal}>
                                     Cancel
                                 </button>
                                 <button type="submit" className="sub-btn sub-btn-primary" disabled={actionLoading}>
@@ -1830,6 +2137,48 @@ const SubscriptionManagement = () => {
                     onClose={() => {
                         setShowInvoice(false);
                         setActiveInvoiceId(null);
+                    }}
+                />
+            )}
+
+            {/* 24-Hour Purchase Reversal Modal */}
+            {showRevertModal && (
+                <RevertSubscriptionModal
+                    isOpen={showRevertModal}
+                    invoiceId={selectedSubForRevert?.invoice_id}
+                    subscriptionDetails={selectedSubForRevert}
+                    onClose={() => {
+                        setShowRevertModal(false);
+                        setSelectedSubForRevert(null);
+                    }}
+                    onSuccess={(res) => {
+                        showNotice(res.message || 'Subscription purchase successfully reverted within 24-hour window.');
+                        fetchSubscriptions();
+                    }}
+                />
+            )}
+
+            {/* Subscription Renewal Modal */}
+            {showRenewModal && (
+                <RenewSubscriptionModal
+                    isOpen={showRenewModal}
+                    initialUserId={renewModalUserId}
+                    initialPlanId={renewModalPlanId}
+                    memberData={renewModalMemberData}
+                    onClose={() => {
+                        setShowRenewModal(false);
+                        setRenewModalUserId('');
+                        setRenewModalPlanId('');
+                        setRenewModalMemberData(null);
+                    }}
+                    onSuccess={(res) => {
+                        showNotice(res.message || 'Subscription successfully renewed!');
+                        const invId = res.invoice_id || (res.data && res.data.invoice_id);
+                        if (invId) {
+                            setActiveInvoiceId(invId);
+                            setShowInvoice(true);
+                        }
+                        fetchSubscriptions();
                     }}
                 />
             )}

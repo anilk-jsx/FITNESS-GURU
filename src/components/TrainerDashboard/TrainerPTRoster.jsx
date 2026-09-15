@@ -238,11 +238,13 @@ const TrainerPTRoster = () => {
   // POST /api/trainer/session/complete  body: { schedule_id }
   const [activeHandshakeSchedule, setActiveHandshakeSchedule] = useState(null);
   const [generatedPin, setGeneratedPin] = useState(null);
+  const [workoutSummary, setWorkoutSummary] = useState('');
   const [isCompletingSession, setIsCompletingSession] = useState(false);
 
   const handleInitiateHandshake = (schedule) => {
     setActiveHandshakeSchedule(schedule);
     setGeneratedPin(null);
+    setWorkoutSummary('');
   };
 
   // Reads body as text first so the raw server response is always visible in the console,
@@ -267,7 +269,10 @@ const TrainerPTRoster = () => {
       const res = await tokenManager.apiCall(`${API_BASE_URL}/api/trainer/session/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ schedule_id: activeHandshakeSchedule.schedule_id }),
+        body: JSON.stringify({
+          schedule_id: activeHandshakeSchedule.schedule_id,
+          workout_summary: workoutSummary
+        }),
       });
       const data = await safeJson(res);
 
@@ -317,6 +322,7 @@ const TrainerPTRoster = () => {
   const closeHandshakeModal = () => {
     setActiveHandshakeSchedule(null);
     setGeneratedPin(null);
+    setWorkoutSummary('');
     fetchTrainerRoster(selectedDate);
   };
 
@@ -709,6 +715,20 @@ const TrainerPTRoster = () => {
                 <p className="modal-help-text">
                   <i className="fas fa-info-circle"></i> A 4-digit PIN will be generated and must be shown to the member. They enter it in their app to confirm attendance and deduct 1 credit.
                 </p>
+
+                <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '0.85rem', color: '#475569' }}>
+                    Workout Summary / Notes
+                  </label>
+                  <textarea
+                    className="tr-textarea"
+                    rows="3"
+                    placeholder="e.g. Assisted bench press: 3x10. Squats: 4x8."
+                    value={workoutSummary}
+                    onChange={(e) => setWorkoutSummary(e.target.value)}
+                    required
+                  />
+                </div>
 
                 <button type="submit" className="tr-btn tr-btn-primary btn-block" disabled={isCompletingSession}>
                   {isCompletingSession

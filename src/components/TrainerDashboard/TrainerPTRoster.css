@@ -784,3 +784,89 @@
   background: rgba(239, 68, 68, 0.9);
 }
 
+@media (max-width: 768px) {
+  .trainer-roster-container {
+    padding: 1rem;
+  }
+
+  .tr-title {
+    font-size: 1.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .tr-nav-tabs {
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+  .tr-tab-btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  .tr-card {
+    padding: 1rem;
+  }
+
+  .roster-slot-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .roster-time-col {
+    font-size: 0.8rem;
+  }
+
+  .roster-action-col {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 12px;
+  }
+
+  .action-btn-group {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .action-btn-group button {
+    flex: 1;
+    justify-content: center;
+    padding: 8px;
+    font-size: 0.75rem;
+  }
+
+  .workbench-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 1rem;
+  }
+
+  .wb-client-select, .wb-type-select {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .wb-client-select select, .wb-type-select select {
+    flex: 1;
+    max-width: 70%;
+  }
+
+  .wb-score-display {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 8px;
+  }
+}
+
+

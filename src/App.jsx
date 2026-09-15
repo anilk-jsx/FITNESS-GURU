@@ -39,13 +39,8 @@ import TrainerDashboardLayout from './components/TrainerDashboard/TrainerDashboa
 import TrainerDashboardHome from './components/TrainerDashboard/TrainerDashboardHome';
 import TrainerClients from './components/TrainerDashboard/TrainerClients';
 import TrainerAssessments from './components/TrainerDashboard/TrainerAssessments';
-import TrainerWorkoutPlans from './components/TrainerDashboard/TrainerWorkoutPlans';
 import TrainerDietPlans from './components/TrainerDashboard/TrainerDietPlans';
-import TrainerAttendance from './components/TrainerDashboard/TrainerAttendance';
-import TrainerSchedule from './components/TrainerDashboard/TrainerSchedule';
 import TrainerPTRoster from './components/TrainerDashboard/TrainerPTRoster';
-import TrainerNotifications from './components/TrainerDashboard/TrainerNotifications';
-import TrainerProfile from './components/TrainerDashboard/TrainerProfile';
 import ProtectedRoute from './utils/ProtectedRoute';
 import './App.css';
 
@@ -85,12 +80,7 @@ function App() {
           <Route path="pt-roster" element={<TrainerPTRoster />} />
           <Route path="clients" element={<TrainerClients />} />
           <Route path="assessments" element={<Navigate to="/trainer-dashboard/pt-roster?tab=assessments" replace />} />
-          <Route path="workout-plans" element={<TrainerWorkoutPlans />} />
           <Route path="diet-plans" element={<Navigate to="/trainer-dashboard/pt-roster?tab=diet-plans" replace />} />
-          <Route path="attendance" element={<TrainerAttendance />} />
-          <Route path="schedule" element={<TrainerSchedule />} />
-          <Route path="notifications" element={<TrainerNotifications />} />
-          <Route path="profile" element={<TrainerProfile />} />
         </Route>
         <Route path="/*" element={
           <>

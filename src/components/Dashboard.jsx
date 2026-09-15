@@ -171,22 +171,22 @@ const Dashboard = () => {
       icon: 'fas fa-user-edit',
       color: 'blue',
       title: 'Update Profile',
-      subtitle: 'Complete your information',
+      subtitle: 'Complete your info',
       link: '/profile'
     },
     {
-      icon: 'fas fa-crown',
+      icon: 'fas fa-calendar-check',
       color: 'purple',
+      title: 'Personal Training',
+      subtitle: 'Book & verify PT sessions',
+      link: '/pt-sessions'
+    },
+    {
+      icon: 'fas fa-crown',
+      color: 'green',
       title: 'Manage Plan',
       subtitle: 'View & renew subscription',
       link: '/subscriptions'
-    },
-    {
-      icon: 'fas fa-clock',
-      color: 'green',
-      title: 'Freeze Request',
-      subtitle: 'Pause your membership',
-      link: '/subscriptions?action=freeze'
     },
     {
       icon: 'fas fa-shopping-bag',
