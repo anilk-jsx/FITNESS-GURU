@@ -480,9 +480,20 @@ const SubscriptionManagement = () => {
     // Fetch member users for Manual Provisioning auto-complete lookup
     const fetchMembersList = async () => {
         try {
-            const url = `${API_BASE_URL}/api/users/list?role=MEMBER&limit=1000`;
-            const res = await tokenManager.apiCall(url, { method: 'GET' });
-            const data = await res.json();
+            let url = `${API_BASE_URL}/api/users/list?role=MEMBER&limit=1000`;
+            let res = await tokenManager.apiCall(url, { method: 'GET' });
+            let data = await res.json();
+            if (!res.ok || data.status !== 'success' || !data.data?.length) {
+                const fallbackUrl = `${API_BASE_URL}/api/members/viewAllMembers?role=MEMBER`;
+                const fallbackRes = await tokenManager.apiCall(fallbackUrl, { method: 'GET' });
+                if (fallbackRes.ok) {
+                    const fallbackData = await fallbackRes.json();
+                    if (fallbackData.status === 'success') {
+                        data = fallbackData;
+                        res = fallbackRes;
+                    }
+                }
+            }
             if (res.ok && data.status === 'success') {
                 const fetched = data.data || data.users || [];
                 setMembersList(prev => {
@@ -568,7 +579,7 @@ const SubscriptionManagement = () => {
 
             if (res.ok && data.status === 'success') {
                 showNotice('Subscription purchased & invoice generated successfully!');
-                setShowProvisionModal(false);
+                closeProvisionModal();
                 const firstBranch = branchesList.length > 0 ? String(branchesList[0].branch_id || branchesList[0].id || '') : '';
                 setProvisionFormData({
                     user_id: '',
@@ -681,6 +692,19 @@ const SubscriptionManagement = () => {
     // ==========================================
     // FORM HELPERS & FACTORY HANDLERS
     // ==========================================
+    const closeProvisionModal = () => {
+        setShowProvisionModal(false);
+        if (searchParams.get('action') === 'provision') {
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('action');
+            newParams.delete('userId');
+            newParams.delete('user_id');
+            newParams.delete('branchId');
+            newParams.delete('branch_id');
+            setSearchParams(newParams, { replace: true });
+        }
+    };
+
     const openProvisionModal = () => {
         const firstBranch = branchesList.length > 0 ? String(branchesList[0].branch_id || branchesList[0].id || '') : '';
         setProvisionFormData(prev => ({
@@ -1781,7 +1805,7 @@ const SubscriptionManagement = () => {
                             <h2>
                                 <i className="fas fa-user-plus"></i> Purchase Gym Membership Subscription
                             </h2>
-                            <button className="close-btn" onClick={() => setShowProvisionModal(false)}>&times;</button>
+                            <button className="close-btn" onClick={closeProvisionModal}>&times;</button>
                         </div>
 
                         <form onSubmit={handleProvisionSubscription} className="sub-modal-form">
@@ -1901,7 +1925,7 @@ const SubscriptionManagement = () => {
                             </div>
 
                             <div className="sub-modal-footer">
-                                <button type="button" className="sub-btn sub-btn-secondary" onClick={() => setShowProvisionModal(false)}>
+                                <button type="button" className="sub-btn sub-btn-secondary" onClick={closeProvisionModal}>
                                     Cancel
                                 </button>
                                 <button type="submit" className="sub-btn sub-btn-primary" disabled={actionLoading}>

@@ -81,9 +81,15 @@ const MemberManagement = () => {
   // Navigate to Provision Subscription for a specific member
   const handleProvisionForMember = useCallback((member) => {
     if (!member) return;
-    const userId = member.user_id || member.id;
-    const branchId = member.branch_id || "";
+    const userId = member.user_id || member.id || member.raw_member?.user_id || member.raw_member?.id;
+    const branchId = member.branch_id || member.raw_member?.branch_id || "";
+    const memberName = member.name || member.raw_member?.name || (member.first_name ? `${member.first_name} ${member.last_name || ''}`.trim() : '');
+    const memberEmail = member.email || member.raw_member?.email || "";
+    const memberPhone = member.phone || member.phone_number || member.raw_member?.phone || "";
+
     setShowMemberProfile(false);
+    setShowEditModal(false);
+
     navigate(`/admin-dashboard/subscriptions?action=provision&userId=${encodeURIComponent(userId)}&branchId=${encodeURIComponent(branchId)}`, {
       state: {
         openProvision: true,
@@ -92,11 +98,11 @@ const MemberManagement = () => {
         member: {
           user_id: userId,
           id: userId,
-          name: member.name,
-          first_name: member.first_name || member.name,
+          name: memberName,
+          first_name: member.first_name || memberName,
           last_name: member.last_name || "",
-          email: member.email,
-          phone: member.phone || member.phone_number,
+          email: memberEmail,
+          phone: memberPhone,
           branch_id: branchId,
         }
       }
@@ -225,8 +231,9 @@ const MemberManagement = () => {
   const hasPurchasedSubscription = (member) => {
     if (!member) return false;
     if (member.subscription_id && Number(member.subscription_id) > 0) return true;
-    if (member.plan_name) {
-      const str = String(member.plan_name).trim().toLowerCase();
+    const planCandidate = member.plan_name || member.membership_plan_raw || member.membership_plan;
+    if (planCandidate) {
+      const str = String(planCandidate).trim().toLowerCase();
       if (
         str !== "" &&
         str !== "n/a" &&
@@ -238,12 +245,13 @@ const MemberManagement = () => {
         str !== "unassigned" &&
         str !== "0" &&
         str !== "no active subscription" &&
+        str !== "assigned plan" &&
+        str !== "no plan" &&
         str !== "not purchased"
       ) {
         return true;
       }
     }
-    if (member.membership_plan && Number(member.membership_plan) > 0) return true;
     if (member.plan_id && Number(member.plan_id) > 0) return true;
     return false;
   };
@@ -1051,6 +1059,10 @@ const MemberManagement = () => {
       // Gym and membership
       branch_id: detailedMember.branch_id ? String(detailedMember.branch_id) : "",
       membership_plan_raw: userPlanName,
+      plan_name: detailedMember.plan_name || userPlanName,
+      subscription_id: detailedMember.subscription_id || null,
+      subscription_status: detailedMember.subscription_status,
+      raw_member: detailedMember,
       join_date: detailedMember.join_date
         ? String(detailedMember.join_date).split("T")[0]
         : detailedMember.date_of_joining
@@ -2293,7 +2305,40 @@ const MemberManagement = () => {
                       </div>
                       <div className="member-profile-item">
                         <label>Membership Plan</label>
-                        <span>{renderFieldValue(memberDetails.plan_name, "Not assigned")}</span>
+                        {hasPurchasedSubscription(memberDetails) ? (
+                          <span className="plan-name-badge">
+                            <i className="fas fa-id-card"></i> {memberDetails.plan_name || memberDetails.membership_plan_raw}
+                          </span>
+                        ) : (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+                            <span className="plan-unpurchased-tag">
+                              <i className="fas fa-exclamation-circle"></i> No Plan
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleProvisionForMember(memberDetails);
+                              }}
+                              style={{
+                                padding: '0.15rem 0.5rem',
+                                fontSize: '0.72rem',
+                                background: '#4f46e5',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem'
+                              }}
+                              title="Provision subscription plan"
+                            >
+                              <i className="fas fa-plus"></i> Provision
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <div className="member-profile-item">
                         <label>Assigned Trainer</label>
@@ -2566,16 +2611,49 @@ const MemberManagement = () => {
                         required
                       />
                     </div>
-                    <div className="member-form-group">
-                      <label>Current Plan (Read-only)</label>
-                      <input
-                        type="text"
-                        value={editFormData.membership_plan_raw || "Assigned Plan"}
-                        disabled
-                        style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
-                      />
-                      <small style={{ color: '#7f8c8d', fontSize: '0.78rem', marginTop: '0.25rem', display: 'block' }}>
-                        Membership plans are managed via the Subscriptions module.
+                    <div className="member-form-group member-plan-form-group">
+                      <label>Current Plan</label>
+                      {hasPurchasedSubscription(editFormData) ? (
+                        <div className="member-plan-assigned-box">
+                          <div className="plan-assigned-info">
+                            <i className="fas fa-id-card plan-assigned-icon"></i>
+                            <span className="plan-assigned-name">
+                              {editFormData.membership_plan_raw || editFormData.plan_name || "Active Plan"}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            className="plan-manage-btn"
+                            onClick={() => {
+                              setShowEditModal(false);
+                              handleNavigateToSubscription(editFormData.user_id);
+                            }}
+                            title="Manage subscription in Subscriptions module"
+                          >
+                            <i className="fas fa-external-link-alt"></i> Manage
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="member-no-plan-box">
+                          <div className="no-plan-indicator">
+                            <span className="no-plan-tag">
+                              <i className="fas fa-exclamation-circle"></i> No Plan
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn-provision-plan"
+                            onClick={() => handleProvisionForMember(editFormData)}
+                            title="Open Subscription Purchase/Provision Desk with this member selected"
+                          >
+                            <i className="fas fa-plus-circle"></i> Provision
+                          </button>
+                        </div>
+                      )}
+                      <small style={{ color: '#7f8c8d', fontSize: '0.78rem', marginTop: '0.35rem', display: 'block' }}>
+                        {hasPurchasedSubscription(editFormData)
+                          ? "Membership plans are managed via the Subscriptions module."
+                          : "This member has no active subscription plan. Click Provision to assign one."}
                       </small>
                     </div>
                     <div className="member-form-group">
