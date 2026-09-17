@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import tokenManager from '../utils/tokenManager';
 import './RenewSubscriptionModal.css';
 
@@ -8,6 +8,15 @@ const PAYMENT_METHODS = [
   { id: 'CASH', label: 'Cash Payment', icon: 'fas fa-money-bill-wave' },
   { id: 'BANK_TRANSFER', label: 'Net Banking', icon: 'fas fa-university' }
 ];
+
+const calculateProjectedEndDate = (startStr, months) => {
+  if (!startStr) return '';
+  const d = new Date(startStr);
+  if (isNaN(d.getTime())) return '';
+  const m = parseInt(months, 10) || 1;
+  d.setMonth(d.getMonth() + m);
+  return d.toISOString().split('T')[0];
+};
 
 const RenewSubscriptionModal = ({
   isOpen,
@@ -22,6 +31,7 @@ const RenewSubscriptionModal = ({
   // Selection state
   const [selectedUserId, setSelectedUserId] = useState(initialUserId || '');
   const [selectedPlanId, setSelectedPlanId] = useState(initialPlanId || '');
+  const [startDate, setStartDate] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [transactionRef, setTransactionRef] = useState('');
 
@@ -34,6 +44,7 @@ const RenewSubscriptionModal = ({
   const [previewData, setPreviewData] = useState(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewError, setPreviewError] = useState(null);
+  const [dateValidationError, setDateValidationError] = useState(null);
 
   // Form submission state
   const [submitting, setSubmitting] = useState(false);
@@ -96,6 +107,8 @@ const RenewSubscriptionModal = ({
 
       if (res.ok && data.status === 'success') {
         setPreviewData(data.data);
+        const serverStartDate = data.data.start_date || new Date().toISOString().split('T')[0];
+        setStartDate(serverStartDate);
       } else {
         setPreviewError(data.message || 'Failed to generate subscription renewal preview.');
         setPreviewData(null);
@@ -119,13 +132,40 @@ const RenewSubscriptionModal = ({
       setPreviewData(null);
       setPreviewError(null);
       setSubmitError(null);
+      setDateValidationError(null);
+      setStartDate('');
       setTransactionRef('');
     }
   }, [isOpen, fetchDropdownData, selectedUserId, selectedPlanId, fetchRenewalPreview]);
 
+  // Validate start date against current active end date
+  const validateDateAgainstEndDate = useCallback((dateToTest, currentEnd) => {
+    if (!dateToTest) {
+      setDateValidationError('Renewal start date is required.');
+      return false;
+    }
+    if (currentEnd && dateToTest < currentEnd) {
+      setDateValidationError(`Renewal start date (${dateToTest}) must be on or after the current active subscription end date (${currentEnd}).`);
+      return false;
+    }
+    setDateValidationError(null);
+    return true;
+  }, []);
+
+  const handleStartDateChange = (e) => {
+    const newDate = e.target.value;
+    setStartDate(newDate);
+    if (previewData?.current_active_end_date) {
+      validateDateAgainstEndDate(newDate, previewData.current_active_end_date);
+    } else {
+      setDateValidationError(null);
+    }
+  };
+
   const handleMemberChange = (e) => {
     const uid = e.target.value;
     setSelectedUserId(uid);
+    setDateValidationError(null);
     if (uid && selectedPlanId) {
       fetchRenewalPreview(uid, selectedPlanId);
     } else {
@@ -136,6 +176,7 @@ const RenewSubscriptionModal = ({
   const handlePlanChange = (e) => {
     const pid = e.target.value;
     setSelectedPlanId(pid);
+    setDateValidationError(null);
     if (selectedUserId && pid) {
       fetchRenewalPreview(selectedUserId, pid);
     } else {
@@ -143,10 +184,32 @@ const RenewSubscriptionModal = ({
     }
   };
 
+  // Compute live projected end date
+  const selectedPlanObj = useMemo(() => {
+    return plansList.find(p => String(p.plan_id) === String(selectedPlanId));
+  }, [plansList, selectedPlanId]);
+
+  const durationMonths = selectedPlanObj?.duration_months || 1;
+  const liveProjectedEndDate = useMemo(() => {
+    if (!startDate) return previewData?.end_date || '';
+    return calculateProjectedEndDate(startDate, durationMonths);
+  }, [startDate, durationMonths, previewData]);
+
   const handleSubmitRenewal = async (e) => {
     e.preventDefault();
     if (!selectedUserId || !selectedPlanId) {
       setSubmitError('Please select both a Member and a Membership Plan.');
+      return;
+    }
+
+    if (!startDate) {
+      setSubmitError('Please select a valid Renewal Start Date.');
+      return;
+    }
+
+    // Validate date must be on or after active end date
+    if (previewData?.current_active_end_date && startDate < previewData.current_active_end_date) {
+      setSubmitError(`Renewal start date (${startDate}) must be on or after the current active subscription end date (${previewData.current_active_end_date}).`);
       return;
     }
 
@@ -158,7 +221,8 @@ const RenewSubscriptionModal = ({
         user_id: Number(selectedUserId),
         plan_id: Number(selectedPlanId),
         payment_method: paymentMethod,
-        transaction_ref: transactionRef || undefined
+        transaction_ref: transactionRef || undefined,
+        start_date: startDate
       };
 
       const res = await tokenManager.apiCall(`${API_BASE_URL}/api/admin/subscriptions/renew`, {
@@ -264,6 +328,47 @@ const RenewSubscriptionModal = ({
 
             </div>
 
+            {/* Renewal Start Date Selection with Back-Date Support & Validation */}
+            <div className="renew-form-group" style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <label className="renew-label" style={{ margin: 0 }}>
+                  <i className="fas fa-calendar-alt text-primary"></i> Renewal Start Date (Effective Date):
+                </label>
+                {previewData?.current_active_end_date && (
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                    Active Expiry: <strong style={{ color: '#0f172a' }}>{previewData.current_active_end_date}</strong>
+                  </span>
+                )}
+              </div>
+              <input
+                type="date"
+                className={`renew-input ${dateValidationError ? 'renew-input-invalid' : ''}`}
+                value={startDate}
+                onChange={handleStartDateChange}
+                required
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                <small style={{ fontSize: '0.73rem', color: '#64748b' }}>
+                  {previewData?.current_active_end_date ? (
+                    <>Must be on or after <strong>{previewData.current_active_end_date}</strong>. Back dates allowed if on/after end date.</>
+                  ) : (
+                    <>Select plan start date. Back-dating is supported for past activations.</>
+                  )}
+                </small>
+                {startDate && (
+                  <small style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: 600 }}>
+                    Coverage: {startDate} → {liveProjectedEndDate}
+                  </small>
+                )}
+              </div>
+              {dateValidationError && (
+                <div className="renew-alert renew-alert-danger" style={{ marginTop: '6px', padding: '0.45rem 0.75rem', fontSize: '0.78rem' }}>
+                  <i className="fas fa-exclamation-circle"></i>
+                  <span>{dateValidationError}</span>
+                </div>
+              )}
+            </div>
+
             {/* Live Renewal Preview Card */}
             {loadingPreview ? (
               <div className="renew-loading-state">
@@ -322,12 +427,12 @@ const RenewSubscriptionModal = ({
 
                   <div className="timeline-col highlight">
                     <span className="col-lbl">New Subscription Period</span>
-                    <strong className="col-val">{previewData.start_date} → {previewData.end_date}</strong>
+                    <strong className="col-val">{startDate || previewData.start_date} → {liveProjectedEndDate || previewData.end_date}</strong>
                     <span className="type-tag">
                       {previewData.renewal_type === 'STACKED_EXTENSION' ? (
-                        <>Starts after last active sub ({previewData.current_active_end_date})</>
+                        <>Continuous Stacking ({startDate || previewData.start_date})</>
                       ) : (
-                        <>Fresh Reactivation (Starts Today)</>
+                        <>Direct Activation</>
                       )}
                     </span>
                   </div>
@@ -381,7 +486,7 @@ const RenewSubscriptionModal = ({
             <button
               type="submit"
               className="renew-btn renew-btn-primary"
-              disabled={submitting || !previewData}
+              disabled={submitting || !previewData || !!dateValidationError}
             >
               {submitting ? (
                 <>

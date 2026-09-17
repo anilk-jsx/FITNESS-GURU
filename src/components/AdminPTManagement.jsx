@@ -790,6 +790,50 @@ const AdminPTManagement = () => {
     }
   };
 
+  // Computed Active PT Subscriptions & Latest End Date for Selected Member
+  const memberActivePTSubs = React.useMemo(() => {
+    if (!selectedMember) return [];
+    return ptSubscriptionsList.filter(s =>
+      String(s.user_id) === String(selectedMember.user_id) &&
+      (s.status === 'ACTIVE' || (s.pt_credits && s.pt_credits > 0))
+    );
+  }, [ptSubscriptionsList, selectedMember]);
+
+  const latestActivePTEndDate = React.useMemo(() => {
+    if (!memberActivePTSubs || memberActivePTSubs.length === 0) return null;
+    return memberActivePTSubs.reduce((latest, sub) => {
+      const d = sub.expiry_date || sub.end_date;
+      if (!d) return latest;
+      if (!latest) return d;
+      return d > latest ? d : latest;
+    }, null);
+  }, [memberActivePTSubs]);
+
+  // Selected PT package object
+  const selectedPkg = React.useMemo(() => {
+    return ptPlansList.find(p => String(p.plan_id || p.id) === String(selectedPlan)) || ptPlansList[0] || { price: 4500, plan_name: 'PT Upgrade Plan', duration_months: 1 };
+  }, [ptPlansList, selectedPlan]);
+
+  // Projected PT End Date based on startDate and package duration
+  const projectedPTEndDate = React.useMemo(() => {
+    if (!startDate) return '';
+    const d = new Date(startDate);
+    if (isNaN(d.getTime())) return '';
+    const m = parseInt(selectedPkg?.duration_months, 10) || 1;
+    d.setMonth(d.getMonth() + m);
+    return d.toISOString().split('T')[0];
+  }, [startDate, selectedPkg]);
+
+  // When selectedMember changes, auto-set date if active end date is ahead
+  useEffect(() => {
+    if (latestActivePTEndDate) {
+      const today = new Date().toISOString().split('T')[0];
+      if (today < latestActivePTEndDate) {
+        setStartDate(latestActivePTEndDate);
+      }
+    }
+  }, [latestActivePTEndDate]);
+
   // API 1: Manual PT Purchase Execution
   // Per PT API workflow: Step 1 = Manual Purchase (API 1), Step 2 = Assign Trainer (API 2)
   const handleManualPurchase = async (e) => {
@@ -798,6 +842,18 @@ const AdminPTManagement = () => {
       showToast('Please search and select a member first', 'error');
       return;
     }
+
+    if (!startDate) {
+      showToast('Please select a valid purchase / start date', 'error');
+      return;
+    }
+
+    // Validate that start date is on or after existing active PT end date
+    if (latestActivePTEndDate && startDate < latestActivePTEndDate) {
+      showToast(`Selected date (${startDate}) must be on or after the member's current active PT package end date (${latestActivePTEndDate}).`, 'error');
+      return;
+    }
+
     setIsProvisioning(true);
     try {
       // Step 1: POST /api/admin/pt/manual-purchase — Provisions subscription & wallet credits
@@ -808,7 +864,8 @@ const AdminPTManagement = () => {
           user_id: selectedMember.user_id,
           plan_id: parseInt(selectedPlan),
           trainer_id: selectedTrainerId || undefined,
-          payment_method: paymentMethod
+          payment_method: paymentMethod,
+          start_date: startDate
         })
       });
       const data = await res.json();
@@ -1308,8 +1365,6 @@ const AdminPTManagement = () => {
         sub.member_code.toLowerCase().includes(q) ||
         sub.phone.includes(q);
     });
-
-  const selectedPkg = ptPlansList.find(p => String(p.plan_id || p.id) === String(selectedPlan)) || ptPlansList[0] || { price: 4500, plan_name: 'PT Upgrade Plan' };
 
   return (
     <div className="admin-pt-container">
@@ -1826,6 +1881,47 @@ const AdminPTManagement = () => {
                   )}
                 </div>
 
+                {/* Date Selection for PT Purchase with Back-Date Support & Validation */}
+                <div className="form-group" style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: '#334155' }}>
+                      <i className="fas fa-calendar-alt text-primary"></i> PT Start / Purchase Date:
+                    </label>
+                    {latestActivePTEndDate && (
+                      <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                        Active PT Expiry: <strong style={{ color: '#0f172a' }}>{latestActivePTEndDate}</strong>
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="date"
+                    className={`pt-input ${latestActivePTEndDate && startDate < latestActivePTEndDate ? 'input-error' : ''}`}
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    required
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                    <small style={{ fontSize: '0.73rem', color: '#64748b' }}>
+                      {latestActivePTEndDate ? (
+                        <>Must be on or after <strong>{latestActivePTEndDate}</strong>. Back dates allowed if on/after end date.</>
+                      ) : (
+                        <>Select purchase date. Back-dating is supported for past provisions.</>
+                      )}
+                    </small>
+                    {startDate && (
+                      <small style={{ fontSize: '0.73rem', color: '#15803d', fontWeight: 600 }}>
+                        Period: {startDate} → {projectedPTEndDate}
+                      </small>
+                    )}
+                  </div>
+                  {latestActivePTEndDate && startDate < latestActivePTEndDate && (
+                    <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '0.45rem 0.65rem', borderRadius: '6px', fontSize: '0.76rem', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <i className="fas fa-exclamation-circle"></i>
+                      <span>Selected date must be on or after the active PT package end date ({latestActivePTEndDate}).</span>
+                    </div>
+                  )}
+                </div>
+
                 <div className="form-group">
                   <label>Assign Personal Trainer</label>
                   <select
@@ -1859,7 +1955,7 @@ const AdminPTManagement = () => {
                 <button
                   type="submit"
                   className="pt-btn pt-btn-primary btn-block mt-2"
-                  disabled={isProvisioning || !selectedMember}
+                  disabled={isProvisioning || !selectedMember || (latestActivePTEndDate && startDate < latestActivePTEndDate)}
                 >
                   {isProvisioning ? (
                     <><i className="fas fa-spinner fa-spin"></i> Provisioning...</>

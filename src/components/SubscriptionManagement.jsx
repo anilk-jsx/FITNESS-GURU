@@ -543,6 +543,13 @@ const SubscriptionManagement = () => {
             return;
         }
 
+        // Validate start date if member has an existing active subscription
+        if (provisionMemberLatestEndDate && provisionFormData.start_date && provisionFormData.start_date < provisionMemberLatestEndDate) {
+            showNotice(`Selected start date (${provisionFormData.start_date}) must be on or after the member's current active subscription end date (${provisionMemberLatestEndDate}).`, true);
+            setActionLoading(false);
+            return;
+        }
+
         try {
             const payload = {
                 user_id: parseInt(provisionFormData.user_id, 10),
@@ -979,6 +986,38 @@ const SubscriptionManagement = () => {
         const phone = m.phone || m.phone_number || '';
         return uid.includes(term) || name.toLowerCase().includes(term) || email.toLowerCase().includes(term) || phone.includes(term);
     });
+
+    // Active subscription & end-date lookup for selected provision member
+    const provisionMemberActiveSubs = useMemo(() => {
+        if (!provisionFormData.user_id) return [];
+        return subscriptions.filter(s =>
+            String(s.user_id) === String(provisionFormData.user_id) &&
+            (s.status === 1 || String(s.status).toUpperCase() === 'ACTIVE')
+        );
+    }, [subscriptions, provisionFormData.user_id]);
+
+    const provisionMemberLatestEndDate = useMemo(() => {
+        if (!provisionMemberActiveSubs || provisionMemberActiveSubs.length === 0) return null;
+        return provisionMemberActiveSubs.reduce((latest, s) => {
+            const eDate = s.end_date || s.expiry_date;
+            if (!eDate) return latest;
+            if (!latest) return eDate;
+            return eDate > latest ? eDate : latest;
+        }, null);
+    }, [provisionMemberActiveSubs]);
+
+    const provisionSelectedPlan = useMemo(() => {
+        return plans.find(p => String(p.plan_id) === String(provisionFormData.plan_id));
+    }, [plans, provisionFormData.plan_id]);
+
+    const provisionProjectedEndDate = useMemo(() => {
+        if (!provisionFormData.start_date) return '';
+        const d = new Date(provisionFormData.start_date);
+        if (isNaN(d.getTime())) return '';
+        const m = parseInt(provisionSelectedPlan?.duration_months, 10) || 1;
+        d.setMonth(d.getMonth() + m);
+        return d.toISOString().split('T')[0];
+    }, [provisionFormData.start_date, provisionSelectedPlan]);
 
     // If unauthorized role, render access denied guardrail
     if (!isAuthorized) {
@@ -2041,21 +2080,55 @@ const SubscriptionManagement = () => {
                                 </select>
                             </div>
 
-                            {/* Optional Start Date */}
-                            <div className="form-group">
-                                <label>Start Date <small>(Optional - defaults to today; end date auto-calculated from plan duration)</small></label>
+                            {/* Start Date with Back-Date Support & Validation */}
+                            <div className="form-group" style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                    <label style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: '#334155' }}>
+                                        <i className="fas fa-calendar-alt text-primary"></i> Subscription Start Date (Effective Date):
+                                    </label>
+                                    {provisionMemberLatestEndDate && (
+                                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                                            Active Expiry: <strong style={{ color: '#0f172a' }}>{provisionMemberLatestEndDate}</strong>
+                                        </span>
+                                    )}
+                                </div>
                                 <input
                                     type="date"
                                     value={provisionFormData.start_date}
                                     onChange={(e) => setProvisionFormData({ ...provisionFormData, start_date: e.target.value })}
+                                    style={provisionMemberLatestEndDate && provisionFormData.start_date && provisionFormData.start_date < provisionMemberLatestEndDate ? { borderColor: '#ef4444', background: '#fef2f2' } : {}}
                                 />
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                                    <small className="help-text" style={{ margin: 0 }}>
+                                        {provisionMemberLatestEndDate ? (
+                                            <>Must be on or after <strong>{provisionMemberLatestEndDate}</strong>. Back dates allowed if on/after end date.</>
+                                        ) : (
+                                            <>Defaults to today if left blank. Back-dating is supported.</>
+                                        )}
+                                    </small>
+                                    {provisionFormData.start_date && provisionProjectedEndDate && (
+                                        <small style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: 600 }}>
+                                            Period: {provisionFormData.start_date} → {provisionProjectedEndDate}
+                                        </small>
+                                    )}
+                                </div>
+                                {provisionMemberLatestEndDate && provisionFormData.start_date && provisionFormData.start_date < provisionMemberLatestEndDate && (
+                                    <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '0.45rem 0.65rem', borderRadius: '6px', fontSize: '0.76rem', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <i className="fas fa-exclamation-circle"></i>
+                                        <span>Start date must be on or after {provisionMemberLatestEndDate}. Consider using "Renew Subscription" or selecting a date on/after {provisionMemberLatestEndDate}.</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="sub-modal-footer">
                                 <button type="button" className="sub-btn sub-btn-secondary" onClick={closeProvisionModal}>
                                     Cancel
                                 </button>
-                                <button type="submit" className="sub-btn sub-btn-primary" disabled={actionLoading}>
+                                <button 
+                                    type="submit" 
+                                    className="sub-btn sub-btn-primary" 
+                                    disabled={actionLoading || (provisionMemberLatestEndDate && provisionFormData.start_date && provisionFormData.start_date < provisionMemberLatestEndDate)}
+                                >
                                     {actionLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-receipt"></i>}
                                     &nbsp;Proceed
                                 </button>
