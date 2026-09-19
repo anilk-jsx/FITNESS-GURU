@@ -730,6 +730,7 @@ const Subscriptions = () => {
           initialUserId={userData?.user_id}
           initialPlanId={activeSubscription?.plan_id}
           memberData={userData}
+          isMemberPortal={true}
           onClose={() => setShowRenewModal(false)}
           onSuccess={(res) => {
             alert(res.message || "Subscription successfully renewed!");

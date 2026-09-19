@@ -7,6 +7,7 @@ import { normalizeGender, toIntOrNull, isActiveStatus, findMatchingPlan } from "
 import eyeIcon from "../assets/icons8-eye-50.png";
 import eyeSlashIcon from "../assets/icons8-invisible-48.png";
 import InvoiceModal from "./InvoiceModal";
+import RenewSubscriptionModal from "./RenewSubscriptionModal";
 
 const renderFieldValue = (val, fallback = "Not provided") => {
   if (val === null || val === undefined) {
@@ -123,6 +124,12 @@ const MemberManagement = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Subscription Renewal Modal State
+  const [showRenewModal, setShowRenewModal] = useState(false);
+  const [renewModalUserId, setRenewModalUserId] = useState('');
+  const [renewModalPlanId, setRenewModalPlanId] = useState('');
+  const [renewModalMemberData, setRenewModalMemberData] = useState(null);
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -1903,7 +1910,7 @@ const MemberManagement = () => {
             value={filters.base_membership}
             onChange={(e) => handleFilterChange("base_membership", e.target.value)}
           >
-            <option value="">All Plans  </option>
+            <option value="">All Plans </option>
             <option value="NOT_PURCHASED">Not Purchased (No Subscription)</option>
             <option value="PURCHASED">Purchased (Active Subscription)</option>
             {availableBasePlansForFilter.length > 0 && (
@@ -2329,36 +2336,67 @@ const MemberManagement = () => {
                     </div>
 
                     {memberDetails.subscription_id ? (
-                      <div className="member-profile-grid" style={{ marginTop: '1rem' }}>
-                        <div className="member-profile-item">
-                          <label>Subscription ID</label>
-                          <span>#{memberDetails.subscription_id}</span>
+                      <>
+                        <div className="member-profile-grid" style={{ marginTop: '1rem' }}>
+                          <div className="member-profile-item">
+                            <label>Subscription ID</label>
+                            <span>#{memberDetails.subscription_id}</span>
+                          </div>
+                          <div className="member-profile-item">
+                            <label>Plan Name</label>
+                            <span>{renderFieldValue(memberDetails.plan_name, "N/A")}</span>
+                          </div>
+                          <div className="member-profile-item">
+                            <label>Duration</label>
+                            <span>{memberDetails.duration_months ? `${memberDetails.duration_months} month(s)` : renderFieldValue(null, "N/A")}</span>
+                          </div>
+                          <div className="member-profile-item">
+                            <label>Start Date</label>
+                            <span>{memberDetails.start_date ? formatDate(memberDetails.start_date) : renderFieldValue(null, "N/A")}</span>
+                          </div>
+                          <div className="member-profile-item">
+                            <label>End Date</label>
+                            <span>{memberDetails.end_date ? formatDate(memberDetails.end_date) : renderFieldValue(null, "N/A")}</span>
+                          </div>
+                          <div className="member-profile-item">
+                            <label>Subscription Status</label>
+                            <span
+                              className={`member-status-badge ${getStatusBadgeClass(memberDetails.subscription_status)}`}
+                            >
+                              {formatSubscriptionStatus(memberDetails.subscription_status)}
+                            </span>
+                          </div>
                         </div>
-                        <div className="member-profile-item">
-                          <label>Plan Name</label>
-                          <span>{renderFieldValue(memberDetails.plan_name, "N/A")}</span>
-                        </div>
-                        <div className="member-profile-item">
-                          <label>Duration</label>
-                          <span>{memberDetails.duration_months ? `${memberDetails.duration_months} month(s)` : renderFieldValue(null, "N/A")}</span>
-                        </div>
-                        <div className="member-profile-item">
-                          <label>Start Date</label>
-                          <span>{memberDetails.start_date ? formatDate(memberDetails.start_date) : renderFieldValue(null, "N/A")}</span>
-                        </div>
-                        <div className="member-profile-item">
-                          <label>End Date</label>
-                          <span>{memberDetails.end_date ? formatDate(memberDetails.end_date) : renderFieldValue(null, "N/A")}</span>
-                        </div>
-                        <div className="member-profile-item">
-                          <label>Subscription Status</label>
-                          <span
-                            className={`member-status-badge ${getStatusBadgeClass(memberDetails.subscription_status)}`}
+
+                        <div style={{ marginTop: '0.85rem', display: 'flex', justifyContent: 'flex-end' }}>
+                          <button
+                            type="button"
+                            className="member-modal-btn"
+                            style={{
+                              background: '#10b981',
+                              color: '#ffffff',
+                              border: '1px solid #059669',
+                              padding: '0.45rem 0.9rem',
+                              fontSize: '0.82rem',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.4rem',
+                              fontWeight: 600
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRenewModalUserId(memberDetails.user_id);
+                              setRenewModalPlanId(memberDetails.plan_id || memberDetails.membership_plan || '');
+                              setRenewModalMemberData(memberDetails);
+                              setShowRenewModal(true);
+                            }}
                           >
-                            {formatSubscriptionStatus(memberDetails.subscription_status)}
-                          </span>
+                            <i className="fas fa-sync-alt"></i> Renew This Plan
+                          </button>
                         </div>
-                      </div>
+                      </>
                     ) : (
                       <div
                         style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#ffffff', borderRadius: '8px', border: '1px dashed #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
@@ -2412,6 +2450,29 @@ const MemberManagement = () => {
             </div>
 
             <div className="member-modal-footer">
+              <button
+                type="button"
+                className="member-modal-btn"
+                style={{
+                  background: '#10b981',
+                  color: '#ffffff',
+                  border: '1px solid #059669',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  fontWeight: 600
+                }}
+                onClick={() => {
+                  setRenewModalUserId(memberDetails?.user_id || selectedMember?.user_id);
+                  setRenewModalPlanId(memberDetails?.plan_id || memberDetails?.membership_plan || '');
+                  setRenewModalMemberData(memberDetails || selectedMember);
+                  setShowRenewModal(true);
+                }}
+                disabled={memberDetailsLoading}
+              >
+                <i className="fas fa-sync-alt"></i>
+                Renew Subscription
+              </button>
               <button
                 className="member-modal-btn member-edit"
                 onClick={() => {
@@ -3694,6 +3755,34 @@ const MemberManagement = () => {
           setActiveInvoiceId(null);
         }}
       />
+
+      {/* Subscription Renewal Modal Popup */}
+      {showRenewModal && (
+        <RenewSubscriptionModal
+          isOpen={showRenewModal}
+          initialUserId={renewModalUserId}
+          initialPlanId={renewModalPlanId}
+          memberData={renewModalMemberData}
+          onClose={() => {
+            setShowRenewModal(false);
+            setRenewModalUserId('');
+            setRenewModalPlanId('');
+            setRenewModalMemberData(null);
+          }}
+          onSuccess={(res) => {
+            showNotification(res.message || 'Subscription successfully renewed!', 'success');
+            if (renewModalUserId) {
+              fetchMemberDetails(renewModalUserId);
+            }
+            fetchMembers();
+            const invId = res.invoice_id || (res.data && res.data.invoice_id);
+            if (invId) {
+              setActiveInvoiceId(invId);
+              setShowInvoice(true);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
