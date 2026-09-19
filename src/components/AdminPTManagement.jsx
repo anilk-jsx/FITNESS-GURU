@@ -499,6 +499,7 @@ const AdminPTManagement = () => {
             totalCreds
           );
 
+          const assignedTrainerId = trainerAssignmentObj.trainer_id || sub.assigned_trainer_id || memberObj.assigned_trainer_id || null;
           const regNo = sub.registration_number || memberObj.registration_number || memberObj.reg_no || sub.member_reg_no || sub.user_code;
           return {
             subscription_id: sub.subscription_id || (101 + idx),
@@ -1312,9 +1313,10 @@ const AdminPTManagement = () => {
     .filter(sub => {
       if (!rosterSearch) return true;
       const q = rosterSearch.toLowerCase();
-      return sub.member_name.toLowerCase().includes(q) ||
-        sub.member_code.toLowerCase().includes(q) ||
-        sub.phone.includes(q);
+      return String(sub.member_name || '').toLowerCase().includes(q) ||
+        String(sub.member_code || '').toLowerCase().includes(q) ||
+        String(sub.registration_number || '').toLowerCase().includes(q) ||
+        String(sub.phone || '').includes(q);
     });
 
   const selectedPkg = ptPlansList.find(p => String(p.plan_id || p.id) === String(selectedPlan)) || ptPlansList[0] || { price: 4500, plan_name: 'PT Upgrade Plan' };
@@ -1463,6 +1465,7 @@ const AdminPTManagement = () => {
                           const q = rosterSearch.toLowerCase();
                           return String(sub.member_name || '').toLowerCase().includes(q) ||
                             String(sub.member_code || '').toLowerCase().includes(q) ||
+                            String(sub.registration_number || '').toLowerCase().includes(q) ||
                             String(sub.phone || '').toLowerCase().includes(q);
                         });
 
