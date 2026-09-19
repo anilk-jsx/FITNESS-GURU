@@ -9,6 +9,20 @@ const PAYMENT_METHODS = [
   { id: 'BANK_TRANSFER', label: 'Net Banking', icon: 'fas fa-university' }
 ];
 
+// UTC-safe date addition helper
+const addDays = (dateStr, days = 1) => {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return null;
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  const date = new Date(Date.UTC(year, month, day));
+  if (isNaN(date.getTime())) return null;
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().split('T')[0];
+};
+
 const RenewSubscriptionModal = ({
   isOpen,
   initialUserId,
@@ -47,7 +61,7 @@ const RenewSubscriptionModal = ({
   // Debounce ref for date change
   const debounceTimerRef = useRef(null);
 
-  // Format today's date (YYYY-MM-DD) for min-date constraint in self-service mode
+  // Format today's date (YYYY-MM-DD)
   const todayStr = new Date().toISOString().split('T')[0];
 
   // Sync initial props
@@ -173,16 +187,45 @@ const RenewSubscriptionModal = ({
     }
   };
 
+  // Determine the last subscription's expiration date (if any)
+  const lastExpiryDate = previewData?.last_subscription_end_date
+    || previewData?.current_active_end_date
+    || (Array.isArray(previewData?.stacked_subscriptions) && previewData.stacked_subscriptions.length > 0
+        ? previewData.stacked_subscriptions[previewData.stacked_subscriptions.length - 1]?.end_date
+        : null);
+
+  // Minimum allowed start date is strictly after the expiration of the last subscription
+  const minAllowedStartDate = previewData?.min_start_date
+    || (lastExpiryDate ? addDays(lastExpiryDate, 1) : null);
+
+  // Calculate final min constraint for date picker
+  let calculatedMinDate = '';
+  if (isMemberPortal) {
+    // Members cannot backdate prior to today or into active subscription
+    if (minAllowedStartDate && minAllowedStartDate > todayStr) {
+      calculatedMinDate = minAllowedStartDate;
+    } else {
+      calculatedMinDate = todayStr;
+    }
+  } else {
+    // Admin/Staff: Backdating allowed only after expiration of last subscription
+    calculatedMinDate = minAllowedStartDate || '';
+  }
+
   // Handle Start Date Mode Change (Recommended vs Custom)
   const handleModeChange = (mode) => {
     setStartDateMode(mode);
+    setSubmitError(null);
     if (mode === 'RECOMMENDED') {
       if (selectedUserId && selectedPlanId) {
         fetchRenewalPreview(selectedUserId, selectedPlanId, null);
       }
     } else {
       // Switching to custom: use existing custom date or default start date
-      const targetDate = customStartDate || previewData?.default_start_date || previewData?.start_date || todayStr;
+      let targetDate = customStartDate || previewData?.default_start_date || previewData?.start_date || todayStr;
+      if (calculatedMinDate && targetDate < calculatedMinDate) {
+        targetDate = calculatedMinDate;
+      }
       setCustomStartDate(targetDate);
       if (selectedUserId && selectedPlanId) {
         fetchRenewalPreview(selectedUserId, selectedPlanId, targetDate);
@@ -194,12 +237,21 @@ const RenewSubscriptionModal = ({
   const handleCustomDateChange = (e) => {
     const newDate = e.target.value;
     setCustomStartDate(newDate);
+    setSubmitError(null);
 
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
     if (!newDate || !selectedUserId || !selectedPlanId) return;
+
+    // Enforce backdate restriction: only allow dates after expiration of last subscription
+    if (calculatedMinDate && newDate < calculatedMinDate) {
+      setSubmitError(
+        `Start date cannot be on or before the last subscription's expiration date (${lastExpiryDate || 'previous plan'}). Earliest allowed renewal date is ${calculatedMinDate}.`
+      );
+      return;
+    }
 
     debounceTimerRef.current = setTimeout(() => {
       fetchRenewalPreview(selectedUserId, selectedPlanId, newDate);
@@ -212,6 +264,16 @@ const RenewSubscriptionModal = ({
     if (!selectedUserId || !selectedPlanId) {
       setSubmitError('Please select both a Member and a Membership Plan.');
       return;
+    }
+
+    // Validate date boundary before submission
+    if (startDateMode === 'CUSTOM' && customStartDate) {
+      if (calculatedMinDate && customStartDate < calculatedMinDate) {
+        setSubmitError(
+          `Invalid Start Date: The custom start date (${customStartDate}) cannot be on or before the last subscription's expiration date (${lastExpiryDate || 'previous plan'}). Earliest allowed start date is ${calculatedMinDate}.`
+        );
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -258,11 +320,6 @@ const RenewSubscriptionModal = ({
   };
 
   if (!isOpen) return null;
-
-  // Determine min allowed date for the datepicker
-  const calculatedMinDate = isMemberPortal
-    ? todayStr
-    : (previewData?.min_start_date || previewData?.default_start_date || todayStr);
 
   // Helper to render renewal type badge
   const renderRenewalTypeBadge = () => {
@@ -435,14 +492,26 @@ const RenewSubscriptionModal = ({
                             type="date"
                             className="renew-input renew-date-input"
                             value={customStartDate}
-                            min={calculatedMinDate}
+                            min={calculatedMinDate || undefined}
                             onChange={handleCustomDateChange}
                             required={startDateMode === 'CUSTOM'}
                           />
                         </div>
-                        {isMemberPortal && (
+                        {calculatedMinDate && (
                           <span className="picker-hint">
-                            <i className="fas fa-info-circle"></i> As a member, dates cannot be set prior to today.
+                            {lastExpiryDate ? (
+                              <>
+                                <i className="fas fa-calendar-check"></i> Last subscription expires/expired on <strong>{lastExpiryDate}</strong>. Earliest allowed renewal date is <strong>{calculatedMinDate}</strong>.
+                              </>
+                            ) : isMemberPortal ? (
+                              <>
+                                <i className="fas fa-info-circle"></i> As a member, dates cannot be set prior to today ({todayStr}).
+                              </>
+                            ) : (
+                              <>
+                                <i className="fas fa-info-circle"></i> Earliest allowed start date is <strong>{calculatedMinDate}</strong>.
+                              </>
+                            )}
                           </span>
                         )}
                       </div>
