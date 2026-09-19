@@ -574,7 +574,7 @@ const FitnessAssessment = () => {
                           {m.name || 'Member'}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
-                          ID: {mId} • {entitlement.planName}
+                          {(m.registration_number || m.reg_no || m.member_code) ? `Reg #${m.registration_number || m.reg_no || m.member_code} • ` : ''}{entitlement.planName}
                         </div>
                       </div>
                     </div>
@@ -621,7 +621,7 @@ const FitnessAssessment = () => {
                     )}
                   </div>
                   <p style={{ color: '#c7d2fe', fontSize: '0.8rem', margin: '4px 0 0 0' }}>
-                    ID: {selectedMemberId} • {selectedMember.email || 'No email'} • {selectedMember.phone || 'No phone'}
+                    {(selectedMember.registration_number || selectedMember.reg_no || selectedMember.member_code) ? `Reg #${selectedMember.registration_number || selectedMember.reg_no || selectedMember.member_code} • ` : ''}{selectedMember.email || 'No email'} • {selectedMember.phone || 'No phone'}
                   </p>
                 </div>
               </div>
@@ -787,7 +787,7 @@ const FitnessAssessment = () => {
                   New Fitness Assessment — Step {formStep} of 5
                 </h2>
                 <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
-                  Target Member: <strong>{targetModalMember?.name || 'Selected Member'}</strong> (ID: {formData.member_id})
+                  Target Member: <strong>{targetModalMember?.name || 'Selected Member'}</strong> {(targetModalMember?.registration_number || targetModalMember?.reg_no || targetModalMember?.member_code) ? `(Reg #${targetModalMember?.registration_number || targetModalMember?.reg_no || targetModalMember?.member_code})` : ''}
                 </p>
               </div>
               <button className="pt-icon-btn" onClick={() => setShowCreateModal(false)}>

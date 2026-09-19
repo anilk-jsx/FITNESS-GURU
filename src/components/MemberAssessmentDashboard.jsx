@@ -537,7 +537,9 @@ const MemberAssessmentDashboard = ({ member, initialAssessmentId = null, onBack,
               <span className="mad-status-badge">Active</span>
             </h1>
             <p className="mad-meta-text">
-              <span className="mad-meta-pill">ID: {memberId}</span>
+              {(memberProfile?.registration_number || memberProfile?.reg_no || memberProfile?.member_code) ? (
+                <span className="mad-meta-pill">Reg #{memberProfile.registration_number || memberProfile.reg_no || memberProfile.member_code}</span>
+              ) : null}
               <span className="mad-meta-pill">{memberAge !== 'N/A' ? `${memberAge} yrs` : 'Age N/A'}</span>
               <span className="mad-meta-pill">{memberGender}</span>
               <span className="mad-meta-pill">Height: {metrics ? (typeof metrics.heightCm === 'number' ? `${metrics.heightCm} cm` : metrics.heightCm) : 'N/A'}</span>

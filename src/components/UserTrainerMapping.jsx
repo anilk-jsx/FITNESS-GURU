@@ -475,7 +475,7 @@ const UserTrainerMapping = () => {
                                                 <strong>{mapping.member_name}</strong>
                                                 <span>{mapping.member_email}</span>
                                                 <span>{mapping.member_phone}</span>
-                                                <span className="utm-id-tag">ID: {mapping.member_id}</span>
+                                                <span className="utm-id-tag">Reg #{mapping.registration_number || mapping.reg_no || `REG-${mapping.member_id}`}</span>
                                             </div>
                                         </td>
                                         <td>

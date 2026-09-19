@@ -720,7 +720,7 @@ const AttendanceManagement = () => {
                                                             </span>
                                                             <div className="att-user-sub-row">
                                                                 <span className="att-regd-pill">
-                                                                    ID: {rec.user_id || '--'}
+                                                                    Reg #{rec.registration_number || rec.reg_no || rec.user_reg_no || rec.user_id || '--'}
                                                                 </span>
                                                                 {rec.user_phone && (
                                                                     <span className="att-user-phone">

@@ -986,7 +986,7 @@ const AdminDietPlans = () => {
                         )}
                       </div>
                       <p style={{ color: '#c7d2fe', fontSize: '0.8rem', margin: '6px 0 0 0' }}>
-                        ID: {selectedMember.id} • {calculateAge(memberProfile?.date_of_birth || memberProfile?.dob || selectedMember.dob) !== 'N/A' ? `${calculateAge(memberProfile?.date_of_birth || memberProfile?.dob || selectedMember.dob)} Years` : 'Age N/A'} • {memberProfile?.gender || selectedMember.gender || 'N/A'} • {displayVal(latestAssessment?.weight_kg || memberProfile?.weight_kg || memberProfile?.weight || selectedMember.weight, ' kg')} • {displayVal(latestAssessment?.height_cm || memberProfile?.height_cm || memberProfile?.height || selectedMember.height, ' cm')}
+                        {(memberProfile?.registration_number || memberProfile?.reg_no || selectedMember.registration_number || selectedMember.reg_no) ? `Reg #${memberProfile?.registration_number || memberProfile?.reg_no || selectedMember.registration_number || selectedMember.reg_no} • ` : ''}{calculateAge(memberProfile?.date_of_birth || memberProfile?.dob || selectedMember.dob) !== 'N/A' ? `${calculateAge(memberProfile?.date_of_birth || memberProfile?.dob || selectedMember.dob)} Years` : 'Age N/A'} • {memberProfile?.gender || selectedMember.gender || 'N/A'} • {displayVal(latestAssessment?.weight_kg || memberProfile?.weight_kg || memberProfile?.weight || selectedMember.weight, ' kg')} • {displayVal(latestAssessment?.height_cm || memberProfile?.height_cm || memberProfile?.height || selectedMember.height, ' cm')}
                       </p>
                     </div>
                   </div>

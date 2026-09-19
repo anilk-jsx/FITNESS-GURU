@@ -245,17 +245,21 @@ const AdminPTManagement = () => {
 
       const data = await response.json();
       const rawMembers = data.users || data.data || [];
-      const normalized = rawMembers.map((member, idx) => ({
-        user_id: member.user_id || member.id || member.member_id || idx + 1,
-        member_code: member.member_code || member.code || `MEM-${String(member.user_id || member.id || idx + 1).padStart(4, '0')}`,
-        name: member.name || member.full_name || member.first_name || 'Member',
-        phone: member.phone || member.mobile || '',
-        email: member.email || '',
-        assigned_trainer_id: member.assigned_trainer_id || member.trainer_id || null,
-        assigned_trainer_name: member.assigned_trainer_name || member.trainer_name || '',
-        pt_credits: member.pt_credits ?? member.remaining_credits ?? 0,
-        avatar: member.avatar || member.profile_image || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
-      }));
+      const normalized = rawMembers.map((member, idx) => {
+        const regNo = member.registration_number || member.reg_no || member.reg_number || member.user_code;
+        return {
+          user_id: member.user_id || member.id || member.member_id || idx + 1,
+          registration_number: regNo || '',
+          member_code: regNo ? `Reg #${regNo}` : (member.member_code || member.code || ''),
+          name: member.name || member.full_name || member.first_name || 'Member',
+          phone: member.phone || member.mobile || '',
+          email: member.email || '',
+          assigned_trainer_id: member.assigned_trainer_id || member.trainer_id || null,
+          assigned_trainer_name: member.assigned_trainer_name || member.trainer_name || '',
+          pt_credits: member.pt_credits ?? member.remaining_credits ?? 0,
+          avatar: member.avatar || member.profile_image || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
+        };
+      });
 
       // 2. Fetch active subscriptions to verify base membership plan eligibility
       const eligibleUserIds = new Set();
@@ -495,13 +499,13 @@ const AdminPTManagement = () => {
             totalCreds
           );
 
-          const assignedTrainerId = trainerAssignmentObj.trainer_id || sub.assigned_trainer_id || memberObj.assigned_trainer_id || null;
-
+          const regNo = sub.registration_number || memberObj.registration_number || memberObj.reg_no || sub.member_reg_no || sub.user_code;
           return {
             subscription_id: sub.subscription_id || (101 + idx),
             user_id: memberObj.user_id || sub.user_id || (138 + idx),
-            member_code: sub.member_code || memberObj.member_code || `MEM-${String(memberObj.user_id || sub.user_id || idx + 1).padStart(4, '0')}`,
-            member_name: memberObj.name || sub.member_name || (memberObj.registration_number ? `Reg #${memberObj.registration_number}` : 'Member'),
+            registration_number: regNo || '',
+            member_code: regNo ? `Reg #${regNo}` : (sub.member_code || memberObj.member_code || ''),
+            member_name: memberObj.name || sub.member_name || (regNo ? `Reg #${regNo}` : 'Member'),
             email: memberObj.email || sub.email || '',
             phone: memberObj.phone || sub.phone || '',
             plan_id: planObj.plan_id || 1,
@@ -1048,6 +1052,7 @@ const AdminPTManagement = () => {
         session_note: " // [T-D-L]: Client did not attend // [M-D-L]: I was present at front desk",
         verification_pin: null,
         member_id: 69,
+        registration_number: "REG-2024-069",
         member_name: "Ankit Das",
         member_email: "ankit.das@fg.com",
         trainer_id: 489,
@@ -1066,6 +1071,7 @@ const AdminPTManagement = () => {
         session_note: "",
         verification_pin: 7494,
         member_id: 138,
+        registration_number: "REG-2024-138",
         member_name: "Test Member",
         member_email: "testmember@example.com",
         trainer_id: 489,
@@ -1084,6 +1090,7 @@ const AdminPTManagement = () => {
         session_note: " // [T-D-L]: Client did not attend session. // [M-D-L]: I was stuck in traffic and reached at 06:15 but trainer left.",
         verification_pin: null,
         member_id: 70,
+        registration_number: "REG-2024-070",
         member_name: "Sarah Jenkins",
         member_email: "sarah.j@example.com",
         trainer_id: 490,
@@ -1128,6 +1135,7 @@ const AdminPTManagement = () => {
         session_note: " // [T-D-L]: Client did not attend session. // [M-D-L]: I was stuck in traffic and reached at 06:15 but trainer left.",
         verification_pin: null,
         member_id: 70,
+        registration_number: "REG-2024-070",
         member_name: "Sarah Jenkins",
         member_email: "sarah.j@example.com",
         trainer_id: 490,
@@ -1595,13 +1603,14 @@ const AdminPTManagement = () => {
                                 onClick={() => {
                                   setSelectedMember({
                                     user_id: sub.user_id,
-                                    member_code: sub.member_code,
+                                    registration_number: sub.registration_number,
+                                    member_code: sub.registration_number ? `Reg #${sub.registration_number}` : (sub.member_code || ''),
                                     name: sub.member_name,
-                                    phone: sub.phone,
                                     email: sub.email,
+                                    phone: sub.phone,
+                                    pt_credits: sub.pt_credits,
                                     assigned_trainer_id: sub.assigned_trainer_id,
-                                    assigned_trainer_name: trainerName,
-                                    pt_credits: sub.pt_credits
+                                    assigned_trainer_name: trainerName
                                   });
                                   if (sub.assigned_trainer_id) {
                                     setSelectedTrainerId(sub.assigned_trainer_id);
@@ -1772,7 +1781,7 @@ const AdminPTManagement = () => {
                       >
                         <div className="item-avatar"><i className="fas fa-user"></i></div>
                         <div className="item-details">
-                          <strong>{m.name}</strong> ({m.member_code})
+                          <strong>{m.name}</strong> ({m.registration_number ? `Reg #${m.registration_number}` : (m.member_code || '')})
                         </div>
                       </div>
                     ))}
@@ -1786,7 +1795,9 @@ const AdminPTManagement = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <strong style={{ fontSize: '1rem' }}>{selectedMember.name}</strong>
-                      <div style={{ fontSize: '0.75rem', color: '#c7d2fe', marginTop: '2px' }}>{selectedMember.member_code} • {selectedMember.phone}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#c7d2fe', marginTop: '2px' }}>
+                        {selectedMember.registration_number ? `Reg #${selectedMember.registration_number}` : (selectedMember.member_code || '')} • {selectedMember.phone}
+                      </div>
                     </div>
                     <div style={{ textAlign: 'right', background: 'rgba(255,255,255,0.15)', padding: '6px 10px', borderRadius: '8px' }}>
                       <div style={{ fontSize: '1rem', fontWeight: 800, color: '#fbbf24' }}>{selectedMember.pt_credits || 0}</div>
@@ -2009,9 +2020,14 @@ const AdminPTManagement = () => {
                         </td>
                         <td>
                           <strong>{session.member_name || 'Open Slot'}</strong>
-                          {session.member_email && (
-                            <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>{session.member_email} (ID: {session.member_id})</div>
-                          )}
+                          <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
+                            {session.member_email || ''}
+                            {(() => {
+                              const memberLookup = membersList.find(m => String(m.user_id) === String(session.member_id));
+                              const regNo = session.registration_number || session.member_registration_number || session.member_reg_no || memberLookup?.registration_number;
+                              return regNo ? ` (Reg #${regNo})` : '';
+                            })()}
+                          </div>
                         </td>
                         <td>
                           <strong>{session.trainer_name}</strong>
@@ -2097,7 +2113,13 @@ const AdminPTManagement = () => {
                         <div>
                           <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Member</div>
                           <strong style={{ fontSize: '0.82rem' }}>{dispute.member_name}</strong>
-                          <div style={{ fontSize: '0.68rem', color: '#64748b' }}>ID: {dispute.member_id}</div>
+                          {(() => {
+                            const memberLookup = membersList.find(m => String(m.user_id) === String(dispute.member_id));
+                            const regNo = dispute.registration_number || dispute.member_registration_number || dispute.member_reg_no || memberLookup?.registration_number;
+                            return regNo ? (
+                              <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Reg #{regNo}</div>
+                            ) : null;
+                          })()}
                         </div>
                         <div>
                           <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Trainer</div>
