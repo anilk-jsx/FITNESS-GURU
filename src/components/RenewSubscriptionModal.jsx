@@ -339,43 +339,89 @@ const RenewSubscriptionModal = ({
 
   if (!isOpen) return null;
 
-  // Helper to render renewal type badge
-  const renderRenewalTypeBadge = () => {
-    if (!previewData) return null;
-    const type = previewData.renewal_type || 'STACKED_EXTENSION';
-
-    switch (type) {
-      case 'STACKED_EXTENSION':
-        return (
-          <span className="renewal-type-badge badge-stacked">
-            <i className="fas fa-link"></i> STACKED_EXTENSION (Consecutive - No Gap)
-          </span>
-        );
-      case 'DEFERRED_RENEWAL':
-        return (
-          <span className="renewal-type-badge badge-deferred">
-            <i className="fas fa-calendar-plus"></i> DEFERRED_RENEWAL (Scheduled with Gap)
-          </span>
-        );
-      case 'BACKDATED_REACTIVATION':
-        return (
-          <span className="renewal-type-badge badge-backdated">
-            <i className="fas fa-history"></i> BACKDATED_REACTIVATION (Retroactive)
-          </span>
-        );
-      case 'FRESH_REACTIVATION':
-      default:
-        return (
-          <span className="renewal-type-badge badge-fresh">
-            <i className="fas fa-bolt"></i> FRESH_REACTIVATION (Starts Today)
-          </span>
-        );
+  // Determine effective renewal status dynamically based on current projected start date
+  const getEffectiveRenewalStatus = () => {
+    if (!previewData) {
+      return {
+        type: 'FRESH_REACTIVATION',
+        label: 'FRESH_REACTIVATION (Starts Today)',
+        timelineTag: 'Fresh Reactivation (Starts Today)',
+        badgeClass: 'badge-fresh',
+        icon: 'fas fa-bolt'
+      };
     }
+
+    const rawType = previewData.renewal_type;
+    const startDate = previewData.start_date || customStartDate || todayStr;
+
+    // 1. Stacked Extension (consecutive with zero gap)
+    if (rawType === 'STACKED_EXTENSION') {
+      return {
+        type: 'STACKED_EXTENSION',
+        label: 'STACKED_EXTENSION (Consecutive - No Gap)',
+        timelineTag: `Continuous Renewal (Starts ${startDate})`,
+        badgeClass: 'badge-stacked',
+        icon: 'fas fa-link'
+      };
+    }
+
+    // 2. Deferred Renewal (active member scheduling with gap)
+    if (rawType === 'DEFERRED_RENEWAL') {
+      return {
+        type: 'DEFERRED_RENEWAL',
+        label: 'DEFERRED_RENEWAL (Scheduled with Gap)',
+        timelineTag: `Scheduled Renewal (Starts ${startDate})`,
+        badgeClass: 'badge-deferred',
+        icon: 'fas fa-calendar-plus'
+      };
+    }
+
+    // 3. Backdated Reactivation (past date)
+    if (rawType === 'BACKDATED_REACTIVATION' || previewData.is_backdated || startDate < todayStr) {
+      return {
+        type: 'BACKDATED_REACTIVATION',
+        label: 'BACKDATED_REACTIVATION (Retroactive)',
+        timelineTag: `Retroactive Reactivation (Starts ${startDate})`,
+        badgeClass: 'badge-backdated',
+        icon: 'fas fa-history'
+      };
+    }
+
+    // 4. Future Scheduled Reactivation (future date > today for inactive/expired member)
+    if (rawType === 'FUTURE_REACTIVATION' || rawType === 'SCHEDULED_REACTIVATION' || startDate > todayStr) {
+      return {
+        type: 'FUTURE_REACTIVATION',
+        label: `FUTURE_REACTIVATION (Starts ${startDate})`,
+        timelineTag: `Future Reactivation (Starts ${startDate})`,
+        badgeClass: 'badge-future',
+        icon: 'fas fa-calendar-alt'
+      };
+    }
+
+    // 5. Fresh Reactivation (starts today)
+    return {
+      type: 'FRESH_REACTIVATION',
+      label: 'FRESH_REACTIVATION (Starts Today)',
+      timelineTag: 'Fresh Reactivation (Starts Today)',
+      badgeClass: 'badge-fresh',
+      icon: 'fas fa-bolt'
+    };
   };
 
-  // Calculate inactive gap dates if gap exists
+  const currentStatus = getEffectiveRenewalStatus();
+  const effectiveStartDate = previewData?.start_date || customStartDate || todayStr;
+  const isFutureDate = effectiveStartDate > todayStr;
+  const isBackdatedDate = effectiveStartDate < todayStr;
   const hasGap = previewData?.gap_days && previewData.gap_days > 0;
-  const isBackdated = previewData?.is_backdated || previewData?.renewal_type === 'BACKDATED_REACTIVATION';
+
+  // Helper to render renewal type badge
+  const renderRenewalTypeBadge = () => {
+    return (
+      <span className={`renewal-type-badge ${currentStatus.badgeClass}`}>
+        <i className={currentStatus.icon}></i> {currentStatus.label}
+      </span>
+    );
+  };
 
   return (
     <div className="renew-modal-overlay" onClick={onClose}>
@@ -500,7 +546,7 @@ const RenewSubscriptionModal = ({
                   </div>
                   <div className="mode-content">
                     <strong className="mode-title">Custom Start Date</strong>
-                    <div className="mode-desc">Schedule for a later date or record a retroactive renewal</div>
+                    <div className="mode-desc">Schedule for a future date or record a retroactive renewal</div>
 
                     {startDateMode === 'CUSTOM' && (
                       <div className="custom-datepicker-container" onClick={(e) => e.stopPropagation()}>
@@ -542,7 +588,7 @@ const RenewSubscriptionModal = ({
                 </label>
               </div>
 
-              {/* Dynamic Gap / Retroactive Warning Banners */}
+              {/* Dynamic Gap / Future / Retroactive Warning Banners */}
               {hasGap && startDateMode === 'CUSTOM' && (
                 <div className="renew-gap-warning">
                   <i className="fas fa-exclamation-triangle"></i>
@@ -554,12 +600,22 @@ const RenewSubscriptionModal = ({
                 </div>
               )}
 
-              {isBackdated && startDateMode === 'CUSTOM' && (
+              {isFutureDate && !hasGap && startDateMode === 'CUSTOM' && (
+                <div className="renew-gap-warning renew-future-warning">
+                  <i className="fas fa-calendar-alt"></i>
+                  <div>
+                    <strong>Future Scheduled Reactivation:</strong> Membership will activate on{' '}
+                    <span>{effectiveStartDate}</span>.
+                  </div>
+                </div>
+              )}
+
+              {isBackdatedDate && startDateMode === 'CUSTOM' && (
                 <div className="renew-gap-warning renew-retro-warning">
                   <i className="fas fa-history"></i>
                   <div>
                     <strong>Retroactive Start Date:</strong> Membership coverage starts retroactively on{' '}
-                    <span>{previewData.start_date}</span>.
+                    <span>{effectiveStartDate}</span>.
                   </div>
                 </div>
               )}
@@ -621,13 +677,7 @@ const RenewSubscriptionModal = ({
                     <span className="col-lbl">Projected Subscription Period</span>
                     <strong className="col-val">{previewData.start_date} → {previewData.end_date}</strong>
                     <span className="type-tag">
-                      {previewData.renewal_type === 'STACKED_EXTENSION' ? (
-                        <>Continuous Renewal (Starts {previewData.start_date})</>
-                      ) : previewData.renewal_type === 'DEFERRED_RENEWAL' ? (
-                        <>Scheduled Renewal (Starts {previewData.start_date})</>
-                      ) : (
-                        <>Reactivation Period</>
-                      )}
+                      {currentStatus.timelineTag}
                     </span>
                   </div>
                 </div>

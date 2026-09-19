@@ -359,6 +359,16 @@
   color: #d97706;
 }
 
+.renew-future-warning {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0369a1;
+}
+
+.renew-future-warning i {
+  color: #0284c7;
+}
+
 /* Alert Boxes */
 .renew-alert {
   padding: 0.65rem 0.85rem;
@@ -442,6 +452,12 @@
   background: #f3e8ff;
   color: #7e22ce;
   border: 1px solid #d8b4fe;
+}
+
+.badge-future {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #7dd3fc;
 }
 
 /* Stacked Chains List */
