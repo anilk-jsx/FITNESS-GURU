@@ -431,7 +431,7 @@ const AdminStoreManagement = () => {
     }
 
     if (!isAnonymous && !posUserId.trim()) {
-      showToast('Please provide a Member User ID, or select Walk-in Guest', 'error');
+      showToast('Please provide a Member Registration Number, or select Walk-in Guest', 'error');
       return;
     }
 
@@ -1032,10 +1032,10 @@ const AdminStoreManagement = () => {
 
               {!isAnonymous && (
                 <div className="form-input-block">
-                  <label>Member ID / User ID *</label>
+                  <label>Member Registration Number *</label>
                   <input 
                     type="number" 
-                    placeholder="Enter Fitness Guru member ID..." 
+                    placeholder="Enter member registration number..." 
                     value={posUserId}
                     onChange={(e) => setPosUserId(e.target.value)}
                     className="form-input-ctrl text-light-bg"

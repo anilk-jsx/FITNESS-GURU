@@ -198,8 +198,8 @@ const TrainerClients = () => {
 
       {/* PROFILE OVERVIEW DRAWERS / SIDE DIALOGS */}
       {selectedClient && !editNotesModal && (
-        <div className="modal-overlay" onClick={() => setSelectedClient(null)}>
-          <div className="modal-container" style={{ position: 'absolute', right: 0, top: 0, bottom: 0, height: '100vh', borderRadius: 0, maxWidth: '450px' }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => setSelectedClient(null)} style={{ zIndex: 999 }}>
+          <div className="modal-container" style={{ position: 'fixed', right: 0, top: 0, bottom: 0, height: '100vh', borderRadius: 0, width: '100%', maxWidth: '420px', zIndex: 1000 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Client Profile Overview</h3>
               <button className="modal-close-btn" onClick={() => setSelectedClient(null)}>&times;</button>

@@ -475,7 +475,7 @@ const UserTrainerMapping = () => {
                                                 <strong>{mapping.member_name}</strong>
                                                 <span>{mapping.member_email}</span>
                                                 <span>{mapping.member_phone}</span>
-                                                <span className="utm-id-tag">ID: {mapping.member_id}</span>
+                                                <span className="utm-id-tag">Reg #{mapping.registration_number || mapping.reg_no || `REG-${mapping.member_id}`}</span>
                                             </div>
                                         </td>
                                         <td>
@@ -665,8 +665,8 @@ const UserTrainerMapping = () => {
                                         <span>{selectedMapping.member_name}</span>
                                     </div>
                                     <div className="utm-detail-item">
-                                        <label>Member ID</label>
-                                        <span>#{selectedMapping.member_id}</span>
+                                        <label>Registration No.</label>
+                                        <span>#{selectedMapping.registration_number || selectedMapping.reg_no || selectedMapping.member_id}</span>
                                     </div>
                                     <div className="utm-detail-item">
                                         <label>Email</label>
@@ -762,7 +762,7 @@ const UserTrainerMapping = () => {
                                     />
                                 </div>
                                 <div className="utm-form-group">
-                                    <label>Member ID *</label>
+                                    <label>Registration Number *</label>
                                     <input
                                         type="number"
                                         value={formData.member_id}

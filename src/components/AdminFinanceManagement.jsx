@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import tokenManager from '../utils/tokenManager';
+import RevertSubscriptionModal from './RevertSubscriptionModal';
 import './AdminFinanceManagement.css';
 
 const AdminFinanceManagement = () => {
@@ -116,6 +117,9 @@ const AdminFinanceManagement = () => {
         description: '',
         branch_id: ''
     });
+
+    // 24-Hour Purchase Reversal Modal State
+    const [showRevertSubModal, setShowRevertSubModal] = useState(false);
 
     // Fetch branches list on mount
     useEffect(() => {
@@ -548,6 +552,28 @@ const AdminFinanceManagement = () => {
                             <option key={b.branch_id} value={b.branch_id}>{b.branch_name || `Branch #${b.branch_id}`}</option>
                         ))}
                     </select>
+
+                    <button
+                        className="finance-btn"
+                        onClick={() => setShowRevertSubModal(true)}
+                        title="Revert Accidental Subscription Purchase within 24 Hours"
+                        style={{
+                            background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 14px',
+                            fontSize: '0.88rem',
+                            fontWeight: 600,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(124, 58, 237, 0.2)'
+                        }}
+                    >
+                        <i className="fas fa-undo-alt"></i> Revert 24h Subscription
+                    </button>
 
                     <button 
                         className="finance-btn btn-white"
@@ -1546,6 +1572,18 @@ const AdminFinanceManagement = () => {
                         </form>
                     </div>
                 </div>
+            )}
+            {/* 24-Hour Purchase Reversal Modal */}
+            {showRevertSubModal && (
+                <RevertSubscriptionModal
+                    isOpen={showRevertSubModal}
+                    onClose={() => setShowRevertSubModal(false)}
+                    onSuccess={() => {
+                        setShowRevertSubModal(false);
+                        if (activeTab === 'summary') fetchSummary();
+                        else if (activeTab === 'ledger') fetchLedger();
+                    }}
+                />
             )}
         </div>
     );
