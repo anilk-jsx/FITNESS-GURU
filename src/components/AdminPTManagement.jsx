@@ -501,7 +501,7 @@ const AdminPTManagement = () => {
             subscription_id: sub.subscription_id || (101 + idx),
             user_id: memberObj.user_id || sub.user_id || (138 + idx),
             member_code: sub.member_code || memberObj.member_code || `MEM-${String(memberObj.user_id || sub.user_id || idx + 1).padStart(4, '0')}`,
-            member_name: memberObj.name || sub.member_name || `Member #${memberObj.user_id || idx + 1}`,
+            member_name: memberObj.name || sub.member_name || (memberObj.registration_number ? `Reg #${memberObj.registration_number}` : 'Member'),
             email: memberObj.email || sub.email || '',
             phone: memberObj.phone || sub.phone || '',
             plan_id: planObj.plan_id || 1,
@@ -1488,7 +1488,7 @@ const AdminPTManagement = () => {
                                 <strong style={{ fontSize: '0.9rem', color: '#1e293b' }}>{sub.member_name}</strong>
                                 <div style={{ fontSize: '0.72rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                   <i className="fas fa-id-badge" style={{ color: '#6366f1', fontSize: '0.65rem' }}></i>
-                                  <span>ID: {sub.user_id}</span>
+                                  <span>Reg No: {sub.registration_number || sub.member_reg_no || sub.member_code ? `#${sub.registration_number || sub.member_reg_no || sub.member_code}` : 'N/A'}</span>
                                 </div>
                                 {sub.email && (
                                   <div style={{ fontSize: '0.72rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -1751,7 +1751,7 @@ const AdminPTManagement = () => {
                   <input
                     type="text"
                     className="pt-input search-input"
-                    placeholder="Type name, phone or member ID..."
+                    placeholder="Type name, phone or registration number..."
                     value={memberSearch}
                     onChange={(e) => handleMemberSearch(e.target.value)}
                   />
@@ -1944,8 +1944,8 @@ const AdminPTManagement = () => {
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '4px', display: 'block' }}>Member ID</label>
-                <input type="text" className="pt-input" placeholder="e.g. 138" value={sessionMemberFilter} onChange={(e) => setSessionMemberFilter(e.target.value)} />
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '4px', display: 'block' }}>Registration No.</label>
+                <input type="text" className="pt-input" placeholder="e.g. 1001" value={sessionMemberFilter} onChange={(e) => setSessionMemberFilter(e.target.value)} />
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>

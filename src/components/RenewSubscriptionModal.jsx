@@ -458,8 +458,14 @@ const RenewSubscriptionModal = ({
                 <label className="renew-label">Member:</label>
                 {memberData ? (
                   <div className="renew-static-info">
-                    <strong>{memberData.name || memberData.user_name || `Member #${memberData.user_id}`}</strong>
-                    <span>{memberData.email || memberData.phone || `User ID #${memberData.user_id}`}</span>
+                    <strong>
+                      {memberData.name || memberData.user_name || (memberData.registration_number || memberData.reg_no ? `Member #${memberData.registration_number || memberData.reg_no}` : 'Gym Member')}
+                    </strong>
+                    <span>
+                      {memberData.registration_number || memberData.reg_no
+                        ? `Reg #${memberData.registration_number || memberData.reg_no}${memberData.phone ? ` • ${memberData.phone}` : memberData.email ? ` • ${memberData.email}` : ''}`
+                        : (memberData.email || memberData.phone || '')}
+                    </span>
                   </div>
                 ) : (
                   <select
@@ -470,11 +476,15 @@ const RenewSubscriptionModal = ({
                     disabled={loadingDropdowns}
                   >
                     <option value="">-- Select Member --</option>
-                    {membersList.map(m => (
-                      <option key={m.user_id} value={m.user_id}>
-                        {m.name || `${m.first_name || ''} ${m.last_name || ''}`.trim() || `User #${m.user_id}`} ({m.email || m.phone || 'No Email'})
-                      </option>
-                    ))}
+                    {membersList.map(m => {
+                      const regNum = m.registration_number || m.reg_no || m.registration_no;
+                      const displayName = m.name || `${m.first_name || ''} ${m.last_name || ''}`.trim() || 'Member';
+                      return (
+                        <option key={m.user_id} value={m.user_id}>
+                          {regNum ? `#${regNum} - ${displayName}` : displayName} ({m.phone || m.email || 'No Contact'})
+                        </option>
+                      );
+                    })}
                   </select>
                 )}
               </div>

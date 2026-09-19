@@ -251,10 +251,10 @@ const InvoiceModal = ({ isOpen, invoiceId, onClose }) => {
                       {invoiceData.invoice?.user_name ||
                        (invoiceData.invoice?.first_name ? `${invoiceData.invoice.first_name} ${invoiceData.invoice.last_name || ''}`.trim() : '') ||
                        invoiceData.invoice?.member_name ||
-                       (invoiceData.invoice?.user_id ? `Member #${invoiceData.invoice.user_id}` : 'Gym Member')}
+                       (invoiceData.invoice?.registration_number || invoiceData.invoice?.reg_no ? `Member #${invoiceData.invoice.registration_number || invoiceData.invoice.reg_no}` : 'Gym Member')}
                     </strong>
                     <div style={{ color: '#475569', fontSize: '0.85rem' }}>
-                      <strong>Reg No:</strong> {invoiceData.invoice?.reg_no || invoiceData.invoice?.registration_no || (invoiceData.invoice?.user_id ? `FG-REG-${String(invoiceData.invoice.user_id).padStart(4, '0')}` : 'FG-REG-0616')}
+                      <strong>Reg No:</strong> {invoiceData.invoice?.registration_number ? `#${invoiceData.invoice.registration_number}` : (invoiceData.invoice?.reg_no || invoiceData.invoice?.registration_no || 'N/A')}
                     </div>
                     <div style={{ color: '#475569', fontSize: '0.85rem' }}>
                       <strong>Email:</strong> {invoiceData.invoice?.email || 'N/A'}

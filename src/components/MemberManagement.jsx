@@ -2189,10 +2189,6 @@ const MemberManagement = () => {
                         </span>
                       </div>
                       <div className="member-profile-item">
-                        <label>User ID</label>
-                        <span>#{memberDetails.user_id}</span>
-                      </div>
-                      <div className="member-profile-item">
                         <label>Email</label>
                         <span>{renderFieldValue(memberDetails.email, "Not provided")}</span>
                       </div>
@@ -2528,15 +2524,6 @@ const MemberManagement = () => {
                     User Account Information
                   </h3>
                   <div className="member-form-grid">
-                    <div className="member-form-group">
-                      <label>User ID (Read-only)</label>
-                      <input
-                        type="text"
-                        value={`#${editFormData.user_id}`}
-                        disabled
-                        style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed', fontWeight: 600, color: '#667eea' }}
-                      />
-                    </div>
                     <div className="member-form-group">
                       <ValidationError error={editFormErrors.registration_number} />
                       <label>Registration Number *</label>

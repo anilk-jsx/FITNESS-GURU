@@ -87,7 +87,8 @@ const Profile = () => {
             name: memberData.name || '',
             email: memberData.email || '',
             phone: memberData.phone || '',
-            memberId: `FG-${memberData.user_id}` || '',
+            registrationNumber: memberData.registration_number || memberData.reg_no || '',
+            memberId: memberData.registration_number ? `#${memberData.registration_number}` : (memberData.reg_no ? `#${memberData.reg_no}` : ''),
             dob: memberData.date_of_birth || '',
             gender: memberData.gender || 'Male',
             bloodGroup: memberData.blood_group || 'O+',
@@ -369,7 +370,9 @@ const Profile = () => {
               </div>
               <div className="profile-summary">
                 <h2>{profileData.name}</h2>
-                <p className="member-id">Member ID: {profileData.memberId}</p>
+                <p className="member-id">
+                  {profileData.registrationNumber || profileData.memberId ? `Reg No: ${profileData.registrationNumber || profileData.memberId}` : ''}
+                </p>
                 <div className="quick-stats">
                   <div className="stat-item">
                     <span className="stat-label">Fitness Level</span>

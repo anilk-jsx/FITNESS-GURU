@@ -1419,7 +1419,9 @@ const SubscriptionManagement = () => {
                                                     </td>
                                                     <td>
                                                         <div className="member-cell">
-                                                            <strong className="member-name">{sub.member_name || `User #${sub.user_id}`}</strong>
+                                                            <strong className="member-name">
+                                                                {sub.member_name || (sub.member_reg_no || sub.registration_number ? `Reg #${sub.member_reg_no || sub.registration_number}` : 'Member')}
+                                                            </strong>
                                                             <span className="member-email">{sub.member_email || '—'}</span>
                                                             <span className="member-phone">{sub.member_phone || ''}</span>
                                                         </div>
@@ -1578,7 +1580,9 @@ const SubscriptionManagement = () => {
                                                                             <span style={{ color: '#64748b', fontSize: '0.82rem' }}>— ₹{parseFloat(resolvedPrice).toLocaleString('en-IN')} / {resolvedDuration}m</span>
                                                                         </div>
                                                                     </div>
-                                                                    <span className="ledger-sub-meta">Subscription ID #{sub.subscription_id} | Member ID: {sub.user_id}</span>
+                                                                    <span className="ledger-sub-meta">
+                                                                        Subscription ID #{sub.subscription_id} | Reg No: {sub.member_reg_no || sub.registration_number ? `#${sub.member_reg_no || sub.registration_number}` : 'N/A'}
+                                                                    </span>
                                                                 </div>
 
                                                                 {credits.length === 0 ? (
@@ -1945,7 +1949,7 @@ const SubscriptionManagement = () => {
                                 <label>Search Member User <span className="req">*</span></label>
                                 <input
                                     type="text"
-                                    placeholder="Type member name, email, phone or User ID to filter..."
+                                    placeholder="Type member name, email, phone or Registration Number to filter..."
                                     value={memberSearchTerm}
                                     onChange={(e) => setMemberSearchTerm(e.target.value)}
                                     style={{ marginBottom: '0.5rem' }}
@@ -1960,21 +1964,22 @@ const SubscriptionManagement = () => {
                                     <option value="">-- Select Registered Member --</option>
                                     {provisionFormData.user_id && !filteredMembersForLookup.some(m => String(m.user_id || m.id) === String(provisionFormData.user_id)) && (
                                         <option value={provisionFormData.user_id}>
-                                            #{provisionFormData.user_id} - {location.state?.member?.name || `Selected Member #${provisionFormData.user_id}`}
+                                            {location.state?.member?.registration_number ? `Reg #${location.state.member.registration_number} - ` : ''}{location.state?.member?.name || `Selected Member`}
                                         </option>
                                     )}
                                     {filteredMembersForLookup.map(m => {
                                         const uid = m.user_id || m.id;
-                                        const name = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.name || `User #${uid}`;
+                                        const regNum = m.registration_number || m.reg_no || m.registration_no;
+                                        const name = `${m.first_name || ''} ${m.last_name || ''}`.trim() || m.name || 'Member';
                                         return (
                                             <option key={uid} value={uid}>
-                                                #{uid} - {name} ({m.email || m.phone || 'Member'})
+                                                {regNum ? `Reg #${regNum} - ` : ''}{name} ({m.phone || m.email || 'No Contact'})
                                             </option>
                                         );
                                     })}
                                 </select>
                                 {membersList.length === 0 && (
-                                    <small className="help-text">Directly enter numeric User ID if list is empty.</small>
+                                    <small className="help-text">Select or search by member name / registration number.</small>
                                 )}
                             </div>
 
@@ -2080,7 +2085,7 @@ const SubscriptionManagement = () => {
 
                         <form onSubmit={handleUpdateSubscriptionRevision} className="sub-modal-form">
                             <p className="modal-sub-info">
-                                Revising Subscription <strong>#{editingSubscription.subscription_id}</strong> for Member: <strong>{editingSubscription.member_name || editingSubscription.user_id}</strong>
+                                Revising Subscription <strong>#{editingSubscription.subscription_id}</strong> for Member: <strong>{editingSubscription.member_name || (editingSubscription.member_reg_no || editingSubscription.registration_number ? `Reg #${editingSubscription.member_reg_no || editingSubscription.registration_number}` : 'Member')}</strong>
                             </p>
 
                             <div className="form-grid-2">

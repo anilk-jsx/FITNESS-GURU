@@ -471,7 +471,7 @@ const FitnessAssessment = () => {
           <input
             type="text"
             className="fa-search-input"
-            placeholder="Search members by name, phone, email, or user ID..."
+            placeholder="Search members by name, phone, email, or registration number..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />

@@ -283,7 +283,7 @@ const AttendanceManagement = () => {
 
         const headers = [
             'Attendance ID',
-            'User ID',
+            'Registration No.',
             'User Name',
             'Role',
             'Email',
@@ -301,7 +301,7 @@ const AttendanceManagement = () => {
 
         const rows = displayedAttendance.map((item) => [
             item.attendance_id || '',
-            item.user_id || '',
+            item.registration_number || item.reg_no || item.user_reg_no || '',
             `"${(item.user_name || '').replace(/"/g, '""')}"`,
             item.user_role || '',
             item.user_email || '',
@@ -934,7 +934,9 @@ const AttendanceManagement = () => {
                                                         <span className={`att-badge ${roleInfo.className}`}>
                                                             <i className={`fas ${roleInfo.icon}`}></i> {roleInfo.label}
                                                         </span>
-                                                        <span className="mono-chip">ID: {data.user_id}</span>
+                                                        {(data.registration_number || data.reg_no || data.user_reg_no) ? (
+                                                            <span className="mono-chip">Reg #{data.registration_number || data.reg_no || data.user_reg_no}</span>
+                                                        ) : null}
                                                         {data.attendance_id && (
                                                             <span className="mono-chip">Record #{data.attendance_id}</span>
                                                         )}
