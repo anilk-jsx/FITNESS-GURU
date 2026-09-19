@@ -187,29 +187,47 @@ const RenewSubscriptionModal = ({
     }
   };
 
-  // Determine the last subscription's expiration date (if any)
-  const lastExpiryDate = previewData?.last_subscription_end_date
-    || previewData?.current_active_end_date
+  // Selected member object from props or dropdown list
+  const currentMemberObj = memberData || membersList.find(m => String(m.user_id) === String(selectedUserId)) || {};
+
+  // Check if member has an active subscription ending in the future
+  const isActiveOrExpiring = previewData?.membership_state === 'ACTIVE' || previewData?.membership_state === 'EXPIRING_SOON';
+
+  // Last subscription end date (active or past expired)
+  const rawLastEndDate = previewData?.last_subscription_end_date
+    || previewData?.expired_end_date
+    || (isActiveOrExpiring ? previewData?.current_active_end_date : null)
     || (Array.isArray(previewData?.stacked_subscriptions) && previewData.stacked_subscriptions.length > 0
         ? previewData.stacked_subscriptions[previewData.stacked_subscriptions.length - 1]?.end_date
-        : null);
+        : null)
+    || (currentMemberObj?.end_date && currentMemberObj.end_date !== 'N/A' && currentMemberObj.end_date !== 'None' ? currentMemberObj.end_date : null);
 
-  // Minimum allowed start date is strictly after the expiration of the last subscription
-  const minAllowedStartDate = previewData?.min_start_date
-    || (lastExpiryDate ? addDays(lastExpiryDate, 1) : null);
+  const lastSubscriptionEndDate = rawLastEndDate && rawLastEndDate !== 'Expired / None' && rawLastEndDate !== 'None'
+    ? rawLastEndDate
+    : null;
 
-  // Calculate final min constraint for date picker
+  // Determine minimum allowed start date:
+  // Backdating is allowed only strictly after the expiration of the last subscription
   let calculatedMinDate = '';
   if (isMemberPortal) {
-    // Members cannot backdate prior to today or into active subscription
-    if (minAllowedStartDate && minAllowedStartDate > todayStr) {
-      calculatedMinDate = minAllowedStartDate;
+    // Member self-service: strictly no backdating
+    if (isActiveOrExpiring && lastSubscriptionEndDate) {
+      calculatedMinDate = addDays(lastSubscriptionEndDate, 1);
     } else {
       calculatedMinDate = todayStr;
     }
   } else {
-    // Admin/Staff: Backdating allowed only after expiration of last subscription
-    calculatedMinDate = minAllowedStartDate || '';
+    // Admin / Staff:
+    if (isActiveOrExpiring && lastSubscriptionEndDate) {
+      // If currently active, renewal must start strictly after the active subscription ends
+      calculatedMinDate = addDays(lastSubscriptionEndDate, 1);
+    } else if (lastSubscriptionEndDate) {
+      // If expired, backdating is allowed, but strictly after the expired subscription's end date
+      calculatedMinDate = addDays(lastSubscriptionEndDate, 1);
+    } else {
+      // If member has no prior subscription history, allow backdating (to join date or open)
+      calculatedMinDate = currentMemberObj?.date_of_joining || currentMemberObj?.join_date || '';
+    }
   }
 
   // Handle Start Date Mode Change (Recommended vs Custom)
@@ -248,7 +266,7 @@ const RenewSubscriptionModal = ({
     // Enforce backdate restriction: only allow dates after expiration of last subscription
     if (calculatedMinDate && newDate < calculatedMinDate) {
       setSubmitError(
-        `Start date cannot be on or before the last subscription's expiration date (${lastExpiryDate || 'previous plan'}). Earliest allowed renewal date is ${calculatedMinDate}.`
+        `Start date cannot be on or before the last subscription's expiration date (${lastSubscriptionEndDate || 'join date'}). Earliest allowed renewal date is ${calculatedMinDate}.`
       );
       return;
     }
@@ -270,7 +288,7 @@ const RenewSubscriptionModal = ({
     if (startDateMode === 'CUSTOM' && customStartDate) {
       if (calculatedMinDate && customStartDate < calculatedMinDate) {
         setSubmitError(
-          `Invalid Start Date: The custom start date (${customStartDate}) cannot be on or before the last subscription's expiration date (${lastExpiryDate || 'previous plan'}). Earliest allowed start date is ${calculatedMinDate}.`
+          `Invalid Start Date: The custom start date (${customStartDate}) cannot be on or before the last subscription's expiration date (${lastSubscriptionEndDate || 'join date'}). Earliest allowed start date is ${calculatedMinDate}.`
         );
         return;
       }
@@ -499,9 +517,13 @@ const RenewSubscriptionModal = ({
                         </div>
                         {calculatedMinDate && (
                           <span className="picker-hint">
-                            {lastExpiryDate ? (
+                            {isActiveOrExpiring && lastSubscriptionEndDate ? (
                               <>
-                                <i className="fas fa-calendar-check"></i> Last subscription expires/expired on <strong>{lastExpiryDate}</strong>. Earliest allowed renewal date is <strong>{calculatedMinDate}</strong>.
+                                <i className="fas fa-lock"></i> Current plan active until <strong>{lastSubscriptionEndDate}</strong>. Renewal can start on or after <strong>{calculatedMinDate}</strong>.
+                              </>
+                            ) : lastSubscriptionEndDate ? (
+                              <>
+                                <i className="fas fa-calendar-check"></i> Last subscription expired on <strong>{lastSubscriptionEndDate}</strong>. Backdating allowed on or after <strong>{calculatedMinDate}</strong>.
                               </>
                             ) : isMemberPortal ? (
                               <>
